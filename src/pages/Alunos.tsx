@@ -14,6 +14,7 @@ import { Plus, Pencil, Trash2, Search, Eye } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { alunoSchema } from "@/lib/validations";
 
 interface Aluno {
   id: string;
@@ -181,6 +182,12 @@ const Alunos = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const result = alunoSchema.safeParse(formData);
+    if (!result.success) {
+      const firstError = result.error.errors[0];
+      toast.error(firstError.message);
+      return;
+    }
     if (editingAluno) {
       updateMutation.mutate({ id: editingAluno.id, ...formData });
     } else {
