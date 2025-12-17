@@ -4,6 +4,7 @@ export const alunoSchema = z.object({
   nome_completo: z.string().trim().min(1, "Nome é obrigatório").max(200, "Máximo 200 caracteres"),
   data_nascimento: z.string().min(1, "Data de nascimento é obrigatória"),
   curso_id: z.string().uuid("Selecione um curso válido"),
+  turma_id: z.string().optional(),
   telefone_responsavel: z.string().trim().min(8, "Telefone inválido").max(20, "Máximo 20 caracteres"),
   email_responsavel: z.string().trim().email("E-mail inválido").max(255, "Máximo 255 caracteres"),
   endereco: z.string().trim().min(1, "Endereço é obrigatório").max(500, "Máximo 500 caracteres"),

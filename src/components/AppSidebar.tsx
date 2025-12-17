@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, BookOpen, FileText, CreditCard, Receipt, BarChart3, Settings, LogOut } from "lucide-react";
+import { LayoutDashboard, Users, BookOpen, FileText, CreditCard, Receipt, BarChart3, Settings, LogOut, GraduationCap, Building2 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation, useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,6 +16,8 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Escola", url: "/escola", icon: Building2 },
+  { title: "Turmas", url: "/turmas", icon: GraduationCap },
   { title: "Alunos", url: "/alunos", icon: Users },
   { title: "Cursos", url: "/cursos", icon: BookOpen },
   { title: "Faturas", url: "/faturas", icon: FileText },

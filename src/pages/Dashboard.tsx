@@ -39,7 +39,7 @@ const Dashboard = () => {
       const { data: alunos } = await supabase
         .from("alunos")
         .select("*")
-        .eq("ativo", true);
+        .eq("status_matricula", "ativo");
 
       // Buscar faturas do mês
       const { data: faturas } = await supabase

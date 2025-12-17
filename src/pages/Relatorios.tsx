@@ -41,7 +41,7 @@ const Relatorios = () => {
   const { data: alunos = [] } = useQuery({
     queryKey: ["alunos-relatorio"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("alunos").select("*").eq("ativo", true);
+      const { data, error } = await supabase.from("alunos").select("*").eq("status_matricula", "ativo");
       if (error) throw error;
       return data;
     },

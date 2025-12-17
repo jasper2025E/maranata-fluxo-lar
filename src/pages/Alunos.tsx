@@ -21,19 +21,28 @@ interface Aluno {
   nome_completo: string;
   data_nascimento: string;
   curso_id: string;
+  turma_id: string | null;
   telefone_responsavel: string;
   email_responsavel: string;
   endereco: string;
   data_matricula: string;
-  ativo: boolean;
+  status_matricula: 'ativo' | 'trancado' | 'cancelado' | 'transferido';
+  desconto_percentual: number;
   observacoes: string | null;
   cursos?: { nome: string; mensalidade: number };
+  turmas?: { nome: string; serie: string } | null;
 }
 
 interface Curso {
   id: string;
   nome: string;
   mensalidade: number;
+}
+
+interface Turma {
+  id: string;
+  nome: string;
+  serie: string;
 }
 
 const Alunos = () => {
@@ -47,6 +56,7 @@ const Alunos = () => {
     nome_completo: "",
     data_nascimento: "",
     curso_id: "",
+    turma_id: "",
     telefone_responsavel: "",
     email_responsavel: "",
     endereco: "",
@@ -58,10 +68,10 @@ const Alunos = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("alunos")
-        .select("*, cursos(nome, mensalidade)")
+        .select("*, cursos(nome, mensalidade), turmas(nome, serie)")
         .order("nome_completo");
       if (error) throw error;
-      return data as Aluno[];
+      return data as unknown as Aluno[];
     },
   });
 
@@ -74,6 +84,15 @@ const Alunos = () => {
     },
   });
 
+  const { data: turmas = [] } = useQuery({
+    queryKey: ["turmas"],
+    queryFn: async () => {
+      const { data, error } = await supabase.from("turmas").select("id, nome, serie").eq("ativo", true);
+      if (error) throw error;
+      return data as Turma[];
+    },
+  });
+
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const { data: newAluno, error } = await supabase
@@ -82,6 +101,7 @@ const Alunos = () => {
           nome_completo: data.nome_completo,
           data_nascimento: data.data_nascimento,
           curso_id: data.curso_id,
+          turma_id: data.turma_id || null,
           telefone_responsavel: data.telefone_responsavel,
           email_responsavel: data.email_responsavel,
           endereco: data.endereco,
@@ -119,6 +139,7 @@ const Alunos = () => {
           nome_completo: data.nome_completo,
           data_nascimento: data.data_nascimento,
           curso_id: data.curso_id,
+          turma_id: data.turma_id || null,
           telefone_responsavel: data.telefone_responsavel,
           email_responsavel: data.email_responsavel,
           endereco: data.endereco,
@@ -152,6 +173,7 @@ const Alunos = () => {
       nome_completo: "",
       data_nascimento: "",
       curso_id: "",
+      turma_id: "",
       telefone_responsavel: "",
       email_responsavel: "",
       endereco: "",
@@ -167,6 +189,7 @@ const Alunos = () => {
       nome_completo: aluno.nome_completo,
       data_nascimento: aluno.data_nascimento,
       curso_id: aluno.curso_id,
+      turma_id: aluno.turma_id || "",
       telefone_responsavel: aluno.telefone_responsavel,
       email_responsavel: aluno.email_responsavel,
       endereco: aluno.endereco,
@@ -262,6 +285,21 @@ const Alunos = () => {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="turma">Turma</Label>
+                      <Select value={formData.turma_id} onValueChange={(value) => setFormData({ ...formData, turma_id: value })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecione a turma" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {turmas.map((turma) => (
+                            <SelectItem key={turma.id} value={turma.id}>
+                              {turma.nome} - {turma.serie}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
@@ -345,9 +383,9 @@ const Alunos = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Nome</TableHead>
+                    <TableHead>Turma</TableHead>
                     <TableHead>Curso</TableHead>
                     <TableHead>Telefone</TableHead>
-                    <TableHead>E-mail</TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
@@ -356,12 +394,12 @@ const Alunos = () => {
                   {filteredAlunos.map((aluno) => (
                     <TableRow key={aluno.id}>
                       <TableCell className="font-medium">{aluno.nome_completo}</TableCell>
+                      <TableCell>{aluno.turmas ? `${aluno.turmas.nome} - ${aluno.turmas.serie}` : "-"}</TableCell>
                       <TableCell>{aluno.cursos?.nome || "-"}</TableCell>
                       <TableCell>{aluno.telefone_responsavel}</TableCell>
-                      <TableCell>{aluno.email_responsavel}</TableCell>
                       <TableCell>
-                        <Badge variant={aluno.ativo ? "default" : "secondary"}>
-                          {aluno.ativo ? "Ativo" : "Inativo"}
+                        <Badge variant={aluno.status_matricula === 'ativo' ? "default" : aluno.status_matricula === 'cancelado' ? "destructive" : "secondary"}>
+                          {aluno.status_matricula === 'ativo' ? "Ativo" : aluno.status_matricula === 'trancado' ? "Trancado" : aluno.status_matricula === 'cancelado' ? "Cancelado" : "Transferido"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -403,6 +441,10 @@ const Alunos = () => {
                   <div>
                     <Label className="text-muted-foreground">Data de Nascimento</Label>
                     <p className="font-medium">{format(new Date(viewingAluno.data_nascimento), "dd/MM/yyyy")}</p>
+                  </div>
+                  <div>
+                    <Label className="text-muted-foreground">Turma</Label>
+                    <p className="font-medium">{viewingAluno.turmas ? `${viewingAluno.turmas.nome} - ${viewingAluno.turmas.serie}` : "-"}</p>
                   </div>
                   <div>
                     <Label className="text-muted-foreground">Curso</Label>
