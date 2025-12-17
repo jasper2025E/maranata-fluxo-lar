@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cursoSchema } from "@/lib/validations";
 
 interface Curso {
   id: string;
@@ -115,6 +116,12 @@ const Cursos = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const result = cursoSchema.safeParse(formData);
+    if (!result.success) {
+      const firstError = result.error.errors[0];
+      toast.error(firstError.message);
+      return;
+    }
     if (editingCurso) {
       updateMutation.mutate({ id: editingCurso.id, ...formData });
     } else {

@@ -15,6 +15,7 @@ import { Plus, Pencil, Trash2, Search, CheckCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { despesaSchema } from "@/lib/validations";
 
 interface Despesa {
   id: string;
@@ -152,6 +153,12 @@ const Despesas = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const result = despesaSchema.safeParse(formData);
+    if (!result.success) {
+      const firstError = result.error.errors[0];
+      toast.error(firstError.message);
+      return;
+    }
     if (editingDespesa) {
       updateMutation.mutate({ id: editingDespesa.id, ...formData });
     } else {
