@@ -16,45 +16,51 @@ export type Database = {
     Tables: {
       alunos: {
         Row: {
-          ativo: boolean | null
           created_at: string | null
           curso_id: string
           data_matricula: string
           data_nascimento: string
+          desconto_percentual: number | null
           email_responsavel: string
           endereco: string
           id: string
           nome_completo: string
           observacoes: string | null
+          status_matricula: Database["public"]["Enums"]["aluno_status"] | null
           telefone_responsavel: string
+          turma_id: string | null
           updated_at: string | null
         }
         Insert: {
-          ativo?: boolean | null
           created_at?: string | null
           curso_id: string
           data_matricula?: string
           data_nascimento: string
+          desconto_percentual?: number | null
           email_responsavel: string
           endereco: string
           id?: string
           nome_completo: string
           observacoes?: string | null
+          status_matricula?: Database["public"]["Enums"]["aluno_status"] | null
           telefone_responsavel: string
+          turma_id?: string | null
           updated_at?: string | null
         }
         Update: {
-          ativo?: boolean | null
           created_at?: string | null
           curso_id?: string
           data_matricula?: string
           data_nascimento?: string
+          desconto_percentual?: number | null
           email_responsavel?: string
           endereco?: string
           id?: string
           nome_completo?: string
           observacoes?: string | null
+          status_matricula?: Database["public"]["Enums"]["aluno_status"] | null
           telefone_responsavel?: string
+          turma_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -65,7 +71,47 @@ export type Database = {
             referencedRelation: "cursos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "alunos_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
         ]
+      }
+      audit_logs: {
+        Row: {
+          acao: string
+          created_at: string | null
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          id: string
+          registro_id: string | null
+          tabela: string
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          registro_id?: string | null
+          tabela: string
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          registro_id?: string | null
+          tabela?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       cursos: {
         Row: {
@@ -139,6 +185,45 @@ export type Database = {
         }
         Relationships: []
       }
+      escola: {
+        Row: {
+          ano_letivo: number
+          cnpj: string | null
+          created_at: string | null
+          email: string | null
+          endereco: string | null
+          id: string
+          logo_url: string | null
+          nome: string
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ano_letivo?: number
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          logo_url?: string | null
+          nome: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ano_letivo?: number
+          cnpj?: string | null
+          created_at?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          logo_url?: string | null
+          nome?: string
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       faturas: {
         Row: {
           aluno_id: string
@@ -148,10 +233,13 @@ export type Database = {
           data_emissao: string
           data_vencimento: string
           id: string
+          juros: number | null
           mes_referencia: number
+          multa: number | null
           status: string
           updated_at: string | null
           valor: number
+          valor_total: number | null
         }
         Insert: {
           aluno_id: string
@@ -161,10 +249,13 @@ export type Database = {
           data_emissao?: string
           data_vencimento: string
           id?: string
+          juros?: number | null
           mes_referencia: number
+          multa?: number | null
           status?: string
           updated_at?: string | null
           valor: number
+          valor_total?: number | null
         }
         Update: {
           aluno_id?: string
@@ -174,10 +265,13 @@ export type Database = {
           data_emissao?: string
           data_vencimento?: string
           id?: string
+          juros?: number | null
           mes_referencia?: number
+          multa?: number | null
           status?: string
           updated_at?: string | null
           valor?: number
+          valor_total?: number | null
         }
         Relationships: [
           {
@@ -198,27 +292,39 @@ export type Database = {
       }
       pagamentos: {
         Row: {
+          comprovante_url: string | null
           created_at: string | null
           data_pagamento: string
           fatura_id: string
+          gateway: string | null
+          gateway_id: string | null
+          gateway_status: string | null
           id: string
           metodo: string
           referencia: string | null
           valor: number
         }
         Insert: {
+          comprovante_url?: string | null
           created_at?: string | null
           data_pagamento?: string
           fatura_id: string
+          gateway?: string | null
+          gateway_id?: string | null
+          gateway_status?: string | null
           id?: string
           metodo: string
           referencia?: string | null
           valor: number
         }
         Update: {
+          comprovante_url?: string | null
           created_at?: string | null
           data_pagamento?: string
           fatura_id?: string
+          gateway?: string | null
+          gateway_id?: string | null
+          gateway_status?: string | null
           id?: string
           metodo?: string
           referencia?: string | null
@@ -252,6 +358,36 @@ export type Database = {
           email?: string
           id?: string
           nome?: string
+        }
+        Relationships: []
+      }
+      turmas: {
+        Row: {
+          ano_letivo: number
+          ativo: boolean | null
+          created_at: string | null
+          id: string
+          nome: string
+          serie: string
+          turno: string
+        }
+        Insert: {
+          ano_letivo?: number
+          ativo?: boolean | null
+          created_at?: string | null
+          id?: string
+          nome: string
+          serie: string
+          turno?: string
+        }
+        Update: {
+          ano_letivo?: number
+          ativo?: boolean | null
+          created_at?: string | null
+          id?: string
+          nome?: string
+          serie?: string
+          turno?: string
         }
         Relationships: []
       }
@@ -300,7 +436,8 @@ export type Database = {
       }
     }
     Enums: {
-      app_role: "admin" | "staff"
+      aluno_status: "ativo" | "trancado" | "cancelado" | "transferido"
+      app_role: "admin" | "staff" | "financeiro" | "secretaria"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -428,7 +565,8 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "staff"],
+      aluno_status: ["ativo", "trancado", "cancelado", "transferido"],
+      app_role: ["admin", "staff", "financeiro", "secretaria"],
     },
   },
 } as const
