@@ -1,0 +1,60 @@
+import { UseQueryOptions } from "@tanstack/react-query";
+
+// Default query configuration for optimal performance
+export const defaultQueryConfig: Partial<UseQueryOptions> = {
+  staleTime: 1000 * 60 * 5, // 5 minutes
+  gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+  retry: 2,
+  refetchOnWindowFocus: false,
+};
+
+// Short cache for frequently changing data
+export const shortCacheConfig: Partial<UseQueryOptions> = {
+  staleTime: 1000 * 30, // 30 seconds
+  gcTime: 1000 * 60 * 5, // 5 minutes
+  retry: 2,
+  refetchOnWindowFocus: true,
+};
+
+// Query keys factory for type-safe and consistent keys
+export const queryKeys = {
+  alunos: {
+    all: ["alunos"] as const,
+    list: () => [...queryKeys.alunos.all, "list"] as const,
+    detail: (id: string) => [...queryKeys.alunos.all, "detail", id] as const,
+  },
+  cursos: {
+    all: ["cursos"] as const,
+    list: () => [...queryKeys.cursos.all, "list"] as const,
+    detail: (id: string) => [...queryKeys.cursos.all, "detail", id] as const,
+  },
+  turmas: {
+    all: ["turmas"] as const,
+    list: () => [...queryKeys.turmas.all, "list"] as const,
+    detail: (id: string) => [...queryKeys.turmas.all, "detail", id] as const,
+  },
+  faturas: {
+    all: ["faturas"] as const,
+    list: () => [...queryKeys.faturas.all, "list"] as const,
+    byMonth: (month: number, year: number) => [...queryKeys.faturas.all, "month", month, year] as const,
+    detail: (id: string) => [...queryKeys.faturas.all, "detail", id] as const,
+  },
+  pagamentos: {
+    all: ["pagamentos"] as const,
+    list: () => [...queryKeys.pagamentos.all, "list"] as const,
+    byFatura: (faturaId: string) => [...queryKeys.pagamentos.all, "fatura", faturaId] as const,
+  },
+  despesas: {
+    all: ["despesas"] as const,
+    list: () => [...queryKeys.despesas.all, "list"] as const,
+    detail: (id: string) => [...queryKeys.despesas.all, "detail", id] as const,
+  },
+  escola: {
+    all: ["escola"] as const,
+    info: () => [...queryKeys.escola.all, "info"] as const,
+  },
+  dashboard: {
+    all: ["dashboard"] as const,
+    stats: () => [...queryKeys.dashboard.all, "stats"] as const,
+  },
+} as const;

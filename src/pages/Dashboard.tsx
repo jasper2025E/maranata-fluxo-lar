@@ -1,82 +1,25 @@
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, DollarSign, AlertCircle, TrendingUp, TrendingDown } from "lucide-react";
+import { Users, FileText, DollarSign, AlertCircle, TrendingUp, TrendingDown, Percent, GraduationCap } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-
-interface DashboardStats {
-  totalAlunos: number;
-  faturasAbertas: number;
-  faturasPagas: number;
-  faturasVencidas: number;
-  totalReceitas: number;
-  totalDespesas: number;
-  saldoMensal: number;
-}
+import { StatCard } from "@/components/StatCard";
+import { LoadingState } from "@/components/LoadingState";
+import { EmptyState } from "@/components/EmptyState";
+import {
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  Legend,
+} from "recharts";
 
 const Dashboard = () => {
-  const [stats, setStats] = useState<DashboardStats>({
-    totalAlunos: 0,
-    faturasAbertas: 0,
-    faturasPagas: 0,
-    faturasVencidas: 0,
-    totalReceitas: 0,
-    totalDespesas: 0,
-    saldoMensal: 0,
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    loadDashboardData();
-  }, []);
-
-  const loadDashboardData = async () => {
-    try {
-      const currentMonth = new Date().getMonth() + 1;
-      const currentYear = new Date().getFullYear();
-
-      // Buscar alunos ativos
-      const { data: alunos } = await supabase
-        .from("alunos")
-        .select("*")
-        .eq("status_matricula", "ativo");
-
-      // Buscar faturas do mês
-      const { data: faturas } = await supabase
-        .from("faturas")
-        .select("*")
-        .eq("mes_referencia", currentMonth)
-        .eq("ano_referencia", currentYear);
-
-      // Buscar pagamentos do mês
-      const { data: pagamentos } = await supabase
-        .from("pagamentos")
-        .select("valor");
-
-      // Buscar despesas pagas do mês
-      const { data: despesas } = await supabase
-        .from("despesas")
-        .select("valor")
-        .eq("paga", true);
-
-      const totalReceitas = pagamentos?.reduce((sum, p) => sum + Number(p.valor), 0) || 0;
-      const totalDespesas = despesas?.reduce((sum, d) => sum + Number(d.valor), 0) || 0;
-
-      setStats({
-        totalAlunos: alunos?.length || 0,
-        faturasAbertas: faturas?.filter(f => f.status === "Aberta").length || 0,
-        faturasPagas: faturas?.filter(f => f.status === "Paga").length || 0,
-        faturasVencidas: faturas?.filter(f => f.status === "Vencida").length || 0,
-        totalReceitas,
-        totalDespesas,
-        saldoMensal: totalReceitas - totalDespesas,
-      });
-    } catch (error) {
-      console.error("Erro ao carregar dashboard:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data: stats, isLoading, error } = useDashboardStats();
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", {
@@ -85,19 +28,41 @@ const Dashboard = () => {
     }).format(value);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Carregando...</p>
-        </div>
+        <LoadingState type="dashboard" />
       </DashboardLayout>
     );
   }
 
+  if (error || !stats) {
+    return (
+      <DashboardLayout>
+        <EmptyState
+          icon={AlertCircle}
+          title="Erro ao carregar dados"
+          description="Não foi possível carregar os dados do dashboard. Tente novamente."
+          action={{
+            label: "Recarregar",
+            onClick: () => window.location.reload(),
+          }}
+        />
+      </DashboardLayout>
+    );
+  }
+
+  // Combine data for comparison chart
+  const combinedChartData = stats.receitasMes.map((item, index) => ({
+    mes: item.mes,
+    receitas: item.valor,
+    despesas: stats.despesasMes[index]?.valor || 0,
+  }));
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-6 animate-fade-in">
+        {/* Header */}
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Dashboard Financeiro</h2>
           <p className="text-muted-foreground mt-1">
@@ -105,114 +70,204 @@ const Dashboard = () => {
           </p>
         </div>
 
+        {/* Main Stats */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Alunos Ativos</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalAlunos}</div>
-              <p className="text-xs text-muted-foreground">Total de alunos matriculados</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Faturas Abertas</CardTitle>
-              <FileText className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.faturasAbertas}</div>
-              <p className="text-xs text-muted-foreground">Aguardando pagamento</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Faturas Pagas</CardTitle>
-              <DollarSign className="h-4 w-4 text-success" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-success">{stats.faturasPagas}</div>
-              <p className="text-xs text-muted-foreground">Pagamentos recebidos</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Faturas Vencidas</CardTitle>
-              <AlertCircle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{stats.faturasVencidas}</div>
-              <p className="text-xs text-muted-foreground">Necessitam atenção</p>
-            </CardContent>
-          </Card>
+          <StatCard
+            title="Alunos Ativos"
+            value={stats.alunosAtivos}
+            description={`de ${stats.totalAlunos} matriculados`}
+            icon={Users}
+          />
+          <StatCard
+            title="Faturas Abertas"
+            value={stats.faturasAbertas}
+            description="Aguardando pagamento"
+            icon={FileText}
+          />
+          <StatCard
+            title="Faturas Pagas"
+            value={stats.faturasPagas}
+            description="Este mês"
+            icon={DollarSign}
+            variant="success"
+          />
+          <StatCard
+            title="Inadimplência"
+            value={`${stats.inadimplencia}%`}
+            description={`${stats.faturasVencidas} faturas vencidas`}
+            icon={AlertCircle}
+            variant={stats.inadimplencia > 20 ? "destructive" : stats.inadimplencia > 10 ? "warning" : "default"}
+          />
         </div>
 
+        {/* Financial Stats */}
         <div className="grid gap-4 md:grid-cols-3">
+          <StatCard
+            title="Receitas do Mês"
+            value={formatCurrency(stats.totalReceitas)}
+            description="Total de entradas"
+            icon={TrendingUp}
+            variant="success"
+          />
+          <StatCard
+            title="Despesas do Mês"
+            value={formatCurrency(stats.totalDespesas)}
+            description="Total de saídas"
+            icon={TrendingDown}
+            variant="destructive"
+          />
+          <StatCard
+            title="Saldo Mensal"
+            value={formatCurrency(stats.saldoMensal)}
+            description="Receitas - Despesas"
+            icon={DollarSign}
+            variant={stats.saldoMensal >= 0 ? "success" : "destructive"}
+          />
+        </div>
+
+        {/* Charts */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Revenue Chart */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Receitas do Mês</CardTitle>
-              <TrendingUp className="h-4 w-4 text-success" />
+            <CardHeader>
+              <CardTitle className="text-lg">Receitas vs Despesas</CardTitle>
+              <CardDescription>Comparativo dos últimos 6 meses</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-success">
-                {formatCurrency(stats.totalReceitas)}
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={combinedChartData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis 
+                      dataKey="mes" 
+                      className="text-xs fill-muted-foreground"
+                      tick={{ fill: "hsl(var(--muted-foreground))" }}
+                    />
+                    <YAxis 
+                      className="text-xs fill-muted-foreground"
+                      tick={{ fill: "hsl(var(--muted-foreground))" }}
+                      tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "var(--radius)",
+                      }}
+                      formatter={(value: number) => formatCurrency(value)}
+                    />
+                    <Legend />
+                    <Bar 
+                      dataKey="receitas" 
+                      name="Receitas"
+                      fill="hsl(var(--success))" 
+                      radius={[4, 4, 0, 0]}
+                    />
+                    <Bar 
+                      dataKey="despesas" 
+                      name="Despesas"
+                      fill="hsl(var(--destructive))" 
+                      radius={[4, 4, 0, 0]}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <p className="text-xs text-muted-foreground">Total de entradas</p>
             </CardContent>
           </Card>
 
+          {/* Balance Trend */}
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Despesas do Mês</CardTitle>
-              <TrendingDown className="h-4 w-4 text-destructive" />
+            <CardHeader>
+              <CardTitle className="text-lg">Evolução das Receitas</CardTitle>
+              <CardDescription>Tendência dos últimos 6 meses</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-destructive">
-                {formatCurrency(stats.totalDespesas)}
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={stats.receitasMes}>
+                    <defs>
+                      <linearGradient id="colorReceitas" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <XAxis 
+                      dataKey="mes" 
+                      tick={{ fill: "hsl(var(--muted-foreground))" }}
+                    />
+                    <YAxis 
+                      tick={{ fill: "hsl(var(--muted-foreground))" }}
+                      tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`}
+                    />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: "hsl(var(--card))",
+                        border: "1px solid hsl(var(--border))",
+                        borderRadius: "var(--radius)",
+                      }}
+                      formatter={(value: number) => formatCurrency(value)}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="valor"
+                      name="Receitas"
+                      stroke="hsl(var(--primary))"
+                      strokeWidth={2}
+                      fillOpacity={1}
+                      fill="url(#colorReceitas)"
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
-              <p className="text-xs text-muted-foreground">Total de saídas</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Saldo Mensal</CardTitle>
-              <DollarSign className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${stats.saldoMensal >= 0 ? "text-success" : "text-destructive"}`}>
-                {formatCurrency(stats.saldoMensal)}
-              </div>
-              <p className="text-xs text-muted-foreground">Receitas - Despesas</p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Quick Stats */}
         <Card>
           <CardHeader>
-            <CardTitle>Informações da Instituição</CardTitle>
-            <CardDescription>Dados cadastrais da Escola Maranata</CardDescription>
+            <CardTitle className="text-lg">Resumo Rápido</CardTitle>
+            <CardDescription>Status atual do sistema</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-2">
-            <div className="flex justify-between">
-              <span className="text-sm font-medium">Nome:</span>
-              <span className="text-sm text-muted-foreground">Escola Maranata</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm font-medium">CNPJ:</span>
-              <span className="text-sm text-muted-foreground">53.613.866/0001-34</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm font-medium">Endereço:</span>
-              <span className="text-sm text-muted-foreground">Rua 15 de Novembro, 59, Cebola, Barreirinhas - MA</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm font-medium">E-mail:</span>
-              <span className="text-sm text-muted-foreground">jn.ney@hotmail.com</span>
+          <CardContent>
+            <div className="grid gap-4 md:grid-cols-4">
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <GraduationCap className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{stats.totalAlunos}</p>
+                  <p className="text-xs text-muted-foreground">Total Alunos</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10">
+                <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-success" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{stats.faturasPagas}</p>
+                  <p className="text-xs text-muted-foreground">Pagas no Mês</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-warning/10">
+                <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-warning" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{stats.faturasAbertas}</p>
+                  <p className="text-xs text-muted-foreground">Em Aberto</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10">
+                <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                  <Percent className="h-5 w-5 text-destructive" />
+                </div>
+                <div>
+                  <p className="text-sm font-medium">{stats.inadimplencia}%</p>
+                  <p className="text-xs text-muted-foreground">Inadimplência</p>
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
