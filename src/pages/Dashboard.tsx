@@ -1,8 +1,18 @@
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, DollarSign, AlertCircle, TrendingUp, TrendingDown, Percent, GraduationCap } from "lucide-react";
+import { 
+  Users, 
+  FileText, 
+  BadgeCheck, 
+  AlertCircle, 
+  TrendingUp, 
+  TrendingDown, 
+  Wallet,
+  GraduationCap,
+  Percent
+} from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { StatCard } from "@/components/StatCard";
+import { DashboardCard } from "@/components/DashboardCard";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import {
@@ -61,113 +71,134 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 animate-fade-in">
+      <div className="space-y-8">
         {/* Header */}
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard Financeiro</h2>
-          <p className="text-muted-foreground mt-1">
+        <div className="animate-fade-in">
+          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+            Dashboard Financeiro
+          </h2>
+          <p className="text-gray-500 mt-1.5">
             Visão geral do sistema financeiro da escola
           </p>
         </div>
 
-        {/* Main Stats */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard
+        {/* Main Stats Grid */}
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          <DashboardCard
             title="Alunos Ativos"
             value={stats.alunosAtivos}
-            description={`de ${stats.totalAlunos} matriculados`}
+            subtitle={`de ${stats.totalAlunos} matriculados`}
             icon={Users}
+            color="blue"
           />
-          <StatCard
+          <DashboardCard
             title="Faturas Abertas"
             value={stats.faturasAbertas}
-            description="Aguardando pagamento"
+            subtitle="Aguardando pagamento"
             icon={FileText}
+            color="yellow"
           />
-          <StatCard
+          <DashboardCard
             title="Faturas Pagas"
             value={stats.faturasPagas}
-            description="Este mês"
-            icon={DollarSign}
-            variant="success"
+            subtitle="Este mês"
+            icon={BadgeCheck}
+            color="green"
           />
-          <StatCard
+          <DashboardCard
             title="Inadimplência"
             value={`${stats.inadimplencia}%`}
-            description={`${stats.faturasVencidas} faturas vencidas`}
+            subtitle={`${stats.faturasVencidas} faturas vencidas`}
             icon={AlertCircle}
-            variant={stats.inadimplencia > 20 ? "destructive" : stats.inadimplencia > 10 ? "warning" : "default"}
+            color={stats.inadimplencia > 20 ? "red" : stats.inadimplencia > 10 ? "yellow" : "blue"}
           />
         </div>
 
         {/* Financial Stats */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <StatCard
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          <DashboardCard
             title="Receitas do Mês"
             value={formatCurrency(stats.totalReceitas)}
-            description="Total de entradas"
+            subtitle="Total de entradas"
             icon={TrendingUp}
-            variant="success"
+            color="green"
           />
-          <StatCard
+          <DashboardCard
             title="Despesas do Mês"
             value={formatCurrency(stats.totalDespesas)}
-            description="Total de saídas"
+            subtitle="Total de saídas"
             icon={TrendingDown}
-            variant="destructive"
+            color="red"
           />
-          <StatCard
+          <DashboardCard
             title="Saldo Mensal"
             value={formatCurrency(stats.saldoMensal)}
-            description="Receitas - Despesas"
-            icon={DollarSign}
-            variant={stats.saldoMensal >= 0 ? "success" : "destructive"}
+            subtitle="Receitas - Despesas"
+            icon={Wallet}
+            color={stats.saldoMensal >= 0 ? "green" : "red"}
           />
         </div>
 
         {/* Charts */}
-        <div className="grid gap-4 lg:grid-cols-2">
-          {/* Revenue Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Receitas vs Despesas</CardTitle>
-              <CardDescription>Comparativo dos últimos 6 meses</CardDescription>
+        <div className="grid gap-5 lg:grid-cols-2">
+          {/* Revenue vs Expenses Chart */}
+          <Card className="border-gray-100/80 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Receitas vs Despesas
+              </CardTitle>
+              <CardDescription className="text-gray-500">
+                Comparativo dos últimos 6 meses
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={combinedChartData}>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                  <BarChart data={combinedChartData} barGap={8}>
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke="#f1f5f9" 
+                      vertical={false}
+                    />
                     <XAxis 
                       dataKey="mes" 
-                      className="text-xs fill-muted-foreground"
-                      tick={{ fill: "hsl(var(--muted-foreground))" }}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#94a3b8", fontSize: 12 }}
                     />
                     <YAxis 
-                      className="text-xs fill-muted-foreground"
-                      tick={{ fill: "hsl(var(--muted-foreground))" }}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#94a3b8", fontSize: 12 }}
                       tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "var(--radius)",
+                        backgroundColor: "#fff",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "12px",
+                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                       }}
                       formatter={(value: number) => formatCurrency(value)}
+                      cursor={{ fill: "rgba(148, 163, 184, 0.1)" }}
                     />
-                    <Legend />
+                    <Legend 
+                      iconType="circle"
+                      wrapperStyle={{ paddingTop: "16px" }}
+                    />
                     <Bar 
                       dataKey="receitas" 
                       name="Receitas"
-                      fill="hsl(var(--success))" 
-                      radius={[4, 4, 0, 0]}
+                      fill="#10b981" 
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={40}
                     />
                     <Bar 
                       dataKey="despesas" 
                       name="Despesas"
-                      fill="hsl(var(--destructive))" 
-                      radius={[4, 4, 0, 0]}
+                      fill="#f43f5e" 
+                      radius={[6, 6, 0, 0]}
+                      maxBarSize={40}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -175,36 +206,49 @@ const Dashboard = () => {
             </CardContent>
           </Card>
 
-          {/* Balance Trend */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Evolução das Receitas</CardTitle>
-              <CardDescription>Tendência dos últimos 6 meses</CardDescription>
+          {/* Revenue Trend Chart */}
+          <Card className="border-gray-100/80 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl overflow-hidden">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Evolução das Receitas
+              </CardTitle>
+              <CardDescription className="text-gray-500">
+                Tendência dos últimos 6 meses
+              </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-64">
+              <div className="h-72">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={stats.receitasMes}>
                     <defs>
                       <linearGradient id="colorReceitas" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="hsl(var(--primary))" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.25} />
+                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke="#f1f5f9" 
+                      vertical={false}
+                    />
                     <XAxis 
                       dataKey="mes" 
-                      tick={{ fill: "hsl(var(--muted-foreground))" }}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#94a3b8", fontSize: 12 }}
                     />
                     <YAxis 
-                      tick={{ fill: "hsl(var(--muted-foreground))" }}
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fill: "#94a3b8", fontSize: 12 }}
                       tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`}
                     />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "hsl(var(--card))",
-                        border: "1px solid hsl(var(--border))",
-                        borderRadius: "var(--radius)",
+                        backgroundColor: "#fff",
+                        border: "1px solid #e2e8f0",
+                        borderRadius: "12px",
+                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
                       }}
                       formatter={(value: number) => formatCurrency(value)}
                     />
@@ -212,9 +256,8 @@ const Dashboard = () => {
                       type="monotone"
                       dataKey="valor"
                       name="Receitas"
-                      stroke="hsl(var(--primary))"
-                      strokeWidth={2}
-                      fillOpacity={1}
+                      stroke="#3b82f6"
+                      strokeWidth={2.5}
                       fill="url(#colorReceitas)"
                     />
                   </AreaChart>
@@ -224,48 +267,59 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Quick Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Resumo Rápido</CardTitle>
-            <CardDescription>Status atual do sistema</CardDescription>
+        {/* Quick Stats Summary */}
+        <Card className="border-gray-100/80 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl overflow-hidden">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg font-semibold text-gray-900">
+              Resumo Rápido
+            </CardTitle>
+            <CardDescription className="text-gray-500">
+              Status atual do sistema
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid gap-4 md:grid-cols-4">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-accent/50">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <GraduationCap className="h-5 w-5 text-primary" />
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {/* Total Students */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-50/40 border border-blue-100/50">
+                <div className="h-11 w-11 rounded-xl bg-blue-100 flex items-center justify-center">
+                  <GraduationCap className="h-5 w-5 text-blue-600" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">{stats.totalAlunos}</p>
-                  <p className="text-xs text-muted-foreground">Total Alunos</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.totalAlunos}</p>
+                  <p className="text-sm text-gray-500">Total Alunos</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-success/10">
-                <div className="h-10 w-10 rounded-full bg-success/10 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-success" />
+
+              {/* Paid Invoices */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-emerald-50/80 to-emerald-50/40 border border-emerald-100/50">
+                <div className="h-11 w-11 rounded-xl bg-emerald-100 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-emerald-600" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">{stats.faturasPagas}</p>
-                  <p className="text-xs text-muted-foreground">Pagas no Mês</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.faturasPagas}</p>
+                  <p className="text-sm text-gray-500">Pagas no Mês</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-warning/10">
-                <div className="h-10 w-10 rounded-full bg-warning/10 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-warning" />
+
+              {/* Open Invoices */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-amber-50/80 to-amber-50/40 border border-amber-100/50">
+                <div className="h-11 w-11 rounded-xl bg-amber-100 flex items-center justify-center">
+                  <FileText className="h-5 w-5 text-amber-600" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">{stats.faturasAbertas}</p>
-                  <p className="text-xs text-muted-foreground">Em Aberto</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.faturasAbertas}</p>
+                  <p className="text-sm text-gray-500">Em Aberto</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-destructive/10">
-                <div className="h-10 w-10 rounded-full bg-destructive/10 flex items-center justify-center">
-                  <Percent className="h-5 w-5 text-destructive" />
+
+              {/* Default Rate */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-rose-50/80 to-rose-50/40 border border-rose-100/50">
+                <div className="h-11 w-11 rounded-xl bg-rose-100 flex items-center justify-center">
+                  <Percent className="h-5 w-5 text-rose-600" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium">{stats.inadimplencia}%</p>
-                  <p className="text-xs text-muted-foreground">Inadimplência</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.inadimplencia}%</p>
+                  <p className="text-sm text-gray-500">Inadimplência</p>
                 </div>
               </div>
             </div>
