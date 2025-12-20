@@ -1,19 +1,34 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { queryKeys, shortCacheConfig } from "./useQueryConfig";
+import { queryKeys } from "./useQueryConfig";
 
 export interface DashboardStats {
+  // Responsáveis
+  totalResponsaveis: number;
+  responsaveisAtivos: number;
+  
+  // Alunos
   totalAlunos: number;
   alunosAtivos: number;
+  
+  // Faturas
   faturasAbertas: number;
   faturasPagas: number;
   faturasVencidas: number;
+  
+  // Financeiro
   totalReceitas: number;
   totalDespesas: number;
   saldoMensal: number;
+  valorAReceber: number;
+  
+  // Gráficos
   receitasMes: { mes: string; valor: number }[];
   despesasMes: { mes: string; valor: number }[];
+  
+  // Indicadores
   inadimplencia: number;
+  inadimplenciaResponsaveis: number;
 }
 
 async function fetchDashboardStats(): Promise<DashboardStats> {
@@ -22,6 +37,7 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
 
   // Execute all queries in parallel
   const [
+    responsaveisResult,
     alunosResult,
     faturasResult,
     pagamentosResult,
@@ -29,13 +45,16 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     pagamentosHistoricoResult,
     despesasHistoricoResult,
   ] = await Promise.all([
+    // Responsáveis
+    supabase.from("responsaveis").select("id, ativo"),
+    
     // Total students
     supabase.from("alunos").select("id, status_matricula"),
     
     // Invoices for current month
     supabase
       .from("faturas")
-      .select("id, status, valor")
+      .select("id, status, valor, responsavel_id")
       .eq("mes_referencia", currentMonth)
       .eq("ano_referencia", currentYear),
     
@@ -74,25 +93,46 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .gte("data_pagamento", new Date(currentYear, currentMonth - 6, 1).toISOString().split("T")[0]),
   ]);
 
+  const responsaveis = responsaveisResult.data || [];
   const alunos = alunosResult.data || [];
   const faturas = faturasResult.data || [];
   const pagamentos = pagamentosResult.data || [];
   const despesas = despesasResult.data || [];
 
+  // Responsáveis stats
+  const totalResponsaveis = responsaveis.length;
+  const responsaveisAtivos = responsaveis.filter(r => r.ativo).length;
+
+  // Alunos stats
   const totalAlunos = alunos.length;
   const alunosAtivos = alunos.filter(a => a.status_matricula === "ativo").length;
   
+  // Faturas stats
   const faturasAbertas = faturas.filter(f => f.status === "Aberta").length;
   const faturasPagas = faturas.filter(f => f.status === "Paga").length;
   const faturasVencidas = faturas.filter(f => f.status === "Vencida").length;
   
+  // Valor a receber (faturas abertas)
+  const valorAReceber = faturas
+    .filter(f => f.status === "Aberta" || f.status === "Vencida")
+    .reduce((sum, f) => sum + Number(f.valor), 0);
+  
+  // Financeiro
   const totalReceitas = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0);
   const totalDespesas = despesas.reduce((sum, d) => sum + Number(d.valor), 0);
 
-  // Calculate inadimplência rate
+  // Calculate inadimplência rate (faturas)
   const totalFaturasMes = faturas.length;
   const inadimplencia = totalFaturasMes > 0 
     ? Math.round((faturasVencidas / totalFaturasMes) * 100) 
+    : 0;
+
+  // Inadimplência por responsável
+  const responsaveisComVencidas = new Set(
+    faturas.filter(f => f.status === "Vencida").map(f => f.responsavel_id)
+  ).size;
+  const inadimplenciaResponsaveis = responsaveisAtivos > 0
+    ? Math.round((responsaveisComVencidas / responsaveisAtivos) * 100)
     : 0;
 
   // Process historical data for charts
@@ -102,6 +142,8 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const despesasMes = processMonthlyData(despesasHistoricoResult.data || [], monthNames);
 
   return {
+    totalResponsaveis,
+    responsaveisAtivos,
     totalAlunos,
     alunosAtivos,
     faturasAbertas,
@@ -110,9 +152,11 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     totalReceitas,
     totalDespesas,
     saldoMensal: totalReceitas - totalDespesas,
+    valorAReceber,
     receitasMes,
     despesasMes,
     inadimplencia,
+    inadimplenciaResponsaveis,
   };
 }
 

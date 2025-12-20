@@ -11,6 +11,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import Responsaveis from "./pages/Responsaveis";
 import Alunos from "./pages/Alunos";
 import Cursos from "./pages/Cursos";
 import Turmas from "./pages/Turmas";
@@ -52,6 +53,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Dashboard />
+                  </ProtectedRoute>
+                }
+                />
+              <Route
+                path="/responsaveis"
+                element={
+                  <ProtectedRoute>
+                    <Responsaveis />
                   </ProtectedRoute>
                 }
               />

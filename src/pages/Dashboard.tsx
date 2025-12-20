@@ -8,8 +8,9 @@ import {
   TrendingUp, 
   TrendingDown, 
   Wallet,
-  GraduationCap,
-  Percent
+  UserCheck,
+  Percent,
+  Banknote,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { DashboardCard } from "@/components/DashboardCard";
@@ -78,39 +79,39 @@ const Dashboard = () => {
             Dashboard Financeiro
           </h2>
           <p className="text-gray-500 mt-1.5">
-            Visão geral do sistema financeiro da escola
+            Visão geral centrada nos responsáveis financeiros
           </p>
         </div>
 
-        {/* Main Stats Grid */}
+        {/* Main Stats Grid - Responsáveis Focused */}
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           <DashboardCard
-            title="Alunos Ativos"
-            value={stats.alunosAtivos}
-            subtitle={`de ${stats.totalAlunos} matriculados`}
-            icon={Users}
+            title="Responsáveis Ativos"
+            value={stats.responsaveisAtivos}
+            subtitle={`de ${stats.totalResponsaveis} cadastrados`}
+            icon={UserCheck}
             color="blue"
           />
           <DashboardCard
-            title="Faturas Abertas"
+            title="Mensalidades Abertas"
             value={stats.faturasAbertas}
             subtitle="Aguardando pagamento"
             icon={FileText}
             color="yellow"
           />
           <DashboardCard
-            title="Faturas Pagas"
-            value={stats.faturasPagas}
-            subtitle="Este mês"
-            icon={BadgeCheck}
+            title="Valor a Receber"
+            value={formatCurrency(stats.valorAReceber)}
+            subtitle="Faturas em aberto"
+            icon={Banknote}
             color="green"
           />
           <DashboardCard
             title="Inadimplência"
-            value={`${stats.inadimplencia}%`}
+            value={`${stats.inadimplenciaResponsaveis}%`}
             subtitle={`${stats.faturasVencidas} faturas vencidas`}
             icon={AlertCircle}
-            color={stats.inadimplencia > 20 ? "red" : stats.inadimplencia > 10 ? "yellow" : "blue"}
+            color={stats.inadimplenciaResponsaveis > 20 ? "red" : stats.inadimplenciaResponsaveis > 10 ? "yellow" : "blue"}
           />
         </div>
 
@@ -279,36 +280,36 @@ const Dashboard = () => {
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {/* Total Students */}
+              {/* Total Responsáveis */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-50/40 border border-blue-100/50">
                 <div className="h-11 w-11 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <GraduationCap className="h-5 w-5 text-blue-600" strokeWidth={1.75} />
+                  <UserCheck className="h-5 w-5 text-blue-600" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-gray-900">{stats.totalAlunos}</p>
-                  <p className="text-sm text-gray-500">Total Alunos</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.totalResponsaveis}</p>
+                  <p className="text-sm text-gray-500">Responsáveis</p>
+                </div>
+              </div>
+
+              {/* Total Alunos */}
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-violet-50/80 to-violet-50/40 border border-violet-100/50">
+                <div className="h-11 w-11 rounded-xl bg-violet-100 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-violet-600" strokeWidth={1.75} />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-gray-900">{stats.alunosAtivos}</p>
+                  <p className="text-sm text-gray-500">Alunos Ativos</p>
                 </div>
               </div>
 
               {/* Paid Invoices */}
               <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-emerald-50/80 to-emerald-50/40 border border-emerald-100/50">
                 <div className="h-11 w-11 rounded-xl bg-emerald-100 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-emerald-600" strokeWidth={1.75} />
+                  <BadgeCheck className="h-5 w-5 text-emerald-600" strokeWidth={1.75} />
                 </div>
                 <div>
                   <p className="text-xl font-bold text-gray-900">{stats.faturasPagas}</p>
                   <p className="text-sm text-gray-500">Pagas no Mês</p>
-                </div>
-              </div>
-
-              {/* Open Invoices */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-amber-50/80 to-amber-50/40 border border-amber-100/50">
-                <div className="h-11 w-11 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <FileText className="h-5 w-5 text-amber-600" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{stats.faturasAbertas}</p>
-                  <p className="text-sm text-gray-500">Em Aberto</p>
                 </div>
               </div>
 
@@ -318,7 +319,7 @@ const Dashboard = () => {
                   <Percent className="h-5 w-5 text-rose-600" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-gray-900">{stats.inadimplencia}%</p>
+                  <p className="text-xl font-bold text-gray-900">{stats.inadimplenciaResponsaveis}%</p>
                   <p className="text-sm text-gray-500">Inadimplência</p>
                 </div>
               </div>

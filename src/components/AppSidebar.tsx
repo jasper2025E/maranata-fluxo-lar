@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Building2,
   ChevronRight,
+  UserCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -34,8 +35,9 @@ import { Separator } from "@/components/ui/separator";
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
   { title: "Escola", url: "/escola", icon: Building2, roles: ["admin"] },
-  { title: "Turmas", url: "/turmas", icon: GraduationCap },
+  { title: "Responsáveis", url: "/responsaveis", icon: UserCheck },
   { title: "Alunos", url: "/alunos", icon: Users },
+  { title: "Turmas", url: "/turmas", icon: GraduationCap },
   { title: "Cursos", url: "/cursos", icon: BookOpen },
 ];
 
