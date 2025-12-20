@@ -19,15 +19,16 @@ export type Database = {
           created_at: string | null
           curso_id: string
           data_matricula: string
-          data_nascimento: string
+          data_nascimento: string | null
           desconto_percentual: number | null
-          email_responsavel: string
-          endereco: string
+          email_responsavel: string | null
+          endereco: string | null
           id: string
           nome_completo: string
           observacoes: string | null
+          responsavel_id: string | null
           status_matricula: Database["public"]["Enums"]["aluno_status"] | null
-          telefone_responsavel: string
+          telefone_responsavel: string | null
           turma_id: string | null
           updated_at: string | null
         }
@@ -35,15 +36,16 @@ export type Database = {
           created_at?: string | null
           curso_id: string
           data_matricula?: string
-          data_nascimento: string
+          data_nascimento?: string | null
           desconto_percentual?: number | null
-          email_responsavel: string
-          endereco: string
+          email_responsavel?: string | null
+          endereco?: string | null
           id?: string
           nome_completo: string
           observacoes?: string | null
+          responsavel_id?: string | null
           status_matricula?: Database["public"]["Enums"]["aluno_status"] | null
-          telefone_responsavel: string
+          telefone_responsavel?: string | null
           turma_id?: string | null
           updated_at?: string | null
         }
@@ -51,15 +53,16 @@ export type Database = {
           created_at?: string | null
           curso_id?: string
           data_matricula?: string
-          data_nascimento?: string
+          data_nascimento?: string | null
           desconto_percentual?: number | null
-          email_responsavel?: string
-          endereco?: string
+          email_responsavel?: string | null
+          endereco?: string | null
           id?: string
           nome_completo?: string
           observacoes?: string | null
+          responsavel_id?: string | null
           status_matricula?: Database["public"]["Enums"]["aluno_status"] | null
-          telefone_responsavel?: string
+          telefone_responsavel?: string | null
           turma_id?: string | null
           updated_at?: string | null
         }
@@ -69,6 +72,13 @@ export type Database = {
             columns: ["curso_id"]
             isOneToOne: false
             referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alunos_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
             referencedColumns: ["id"]
           },
           {
@@ -236,6 +246,7 @@ export type Database = {
           juros: number | null
           mes_referencia: number
           multa: number | null
+          responsavel_id: string | null
           status: string
           updated_at: string | null
           valor: number
@@ -252,6 +263,7 @@ export type Database = {
           juros?: number | null
           mes_referencia: number
           multa?: number | null
+          responsavel_id?: string | null
           status?: string
           updated_at?: string | null
           valor: number
@@ -268,6 +280,7 @@ export type Database = {
           juros?: number | null
           mes_referencia?: number
           multa?: number | null
+          responsavel_id?: string | null
           status?: string
           updated_at?: string | null
           valor?: number
@@ -286,6 +299,13 @@ export type Database = {
             columns: ["curso_id"]
             isOneToOne: false
             referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faturas_responsavel_id_fkey"
+            columns: ["responsavel_id"]
+            isOneToOne: false
+            referencedRelation: "responsaveis"
             referencedColumns: ["id"]
           },
         ]
@@ -358,6 +378,45 @@ export type Database = {
           email?: string
           id?: string
           nome?: string
+        }
+        Relationships: []
+      }
+      responsaveis: {
+        Row: {
+          ativo: boolean | null
+          cpf: string | null
+          created_at: string | null
+          email: string | null
+          fatura_consolidada: boolean | null
+          id: string
+          nome: string
+          observacoes: string | null
+          telefone: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          cpf?: string | null
+          created_at?: string | null
+          email?: string | null
+          fatura_consolidada?: boolean | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          telefone: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          cpf?: string | null
+          created_at?: string | null
+          email?: string | null
+          fatura_consolidada?: boolean | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          telefone?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
