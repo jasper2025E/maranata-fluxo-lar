@@ -3,18 +3,18 @@
 @tailwind utilities;
 
 /* 
-  Design System - Escola Maranata Financial System
-  Professional, Modern, Clean
+  Design System - Maranata Financeiro
+  Enterprise SaaS / Banking-grade Professional UI
   All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    /* Base Colors */
-    --background: 210 20% 98%;
+    /* Base Colors - Clean Gray Foundation */
+    --background: 220 14% 96%;
     --foreground: 222 47% 11%;
 
-    /* Card & Surface */
+    /* Card & Surface - Pure White with Depth */
     --card: 0 0% 100%;
     --card-foreground: 222 47% 11%;
 
@@ -22,30 +22,30 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Primary - Professional Blue */
-    --primary: 217 91% 60%;
+    /* Primary - Modern Professional Blue */
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
-    /* Secondary */
-    --secondary: 210 40% 96%;
+    /* Secondary - Soft Gray */
+    --secondary: 220 14% 96%;
     --secondary-foreground: 222 47% 11%;
 
-    /* Muted */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    /* Muted - Elegant Gray */
+    --muted: 220 14% 96%;
+    --muted-foreground: 220 9% 46%;
 
-    /* Accent */
-    --accent: 217 91% 95%;
-    --accent-foreground: 217 91% 40%;
+    /* Accent - Light Blue Tint */
+    --accent: 221 83% 96%;
+    --accent-foreground: 221 83% 40%;
 
-    /* Status Colors */
-    --success: 142 76% 36%;
+    /* Status Colors - Banking Grade */
+    --success: 152 69% 31%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
+    --warning-foreground: 38 92% 10%;
 
-    --destructive: 0 84% 60%;
+    --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 100%;
 
     /* Info */
@@ -53,26 +53,26 @@
     --info-foreground: 0 0% 100%;
 
     /* Borders & Inputs */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 217 91% 60%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 221 83% 53%;
 
-    /* Border Radius */
-    --radius: 0.625rem;
+    /* Border Radius - Modern Rounded */
+    --radius: 0.75rem;
 
-    /* Sidebar - Deep Blue */
+    /* Sidebar - Deep Professional Navy */
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 17%;
+    --sidebar-accent: 222 35% 18%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 17%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-border: 222 35% 18%;
+    --sidebar-ring: 221 83% 53%;
 
-    /* Chart Colors */
-    --chart-1: 217 91% 60%;
-    --chart-2: 142 76% 36%;
+    /* Chart Colors - Harmonious Palette */
+    --chart-1: 221 83% 53%;
+    --chart-2: 152 69% 31%;
     --chart-3: 38 92% 50%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
@@ -88,19 +88,19 @@
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 217 91% 60%;
+    --primary: 221 83% 53%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 217 33% 17%;
+    --secondary: 222 35% 18%;
     --secondary-foreground: 210 40% 98%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 222 35% 18%;
+    --muted-foreground: 220 13% 65%;
 
-    --accent: 217 91% 20%;
+    --accent: 221 83% 20%;
     --accent-foreground: 210 40% 98%;
 
-    --success: 142 70% 45%;
+    --success: 152 69% 40%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
@@ -112,21 +112,21 @@
     --info: 199 89% 48%;
     --info-foreground: 0 0% 100%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 217 91% 60%;
+    --border: 222 35% 18%;
+    --input: 222 35% 18%;
+    --ring: 221 83% 53%;
 
     --sidebar-background: 222 47% 7%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 217 91% 60%;
+    --sidebar-primary: 221 83% 53%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 217 33% 12%;
+    --sidebar-accent: 222 35% 12%;
     --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 33% 12%;
-    --sidebar-ring: 217 91% 60%;
+    --sidebar-border: 222 35% 12%;
+    --sidebar-ring: 221 83% 53%;
 
-    --chart-1: 217 91% 60%;
-    --chart-2: 142 70% 45%;
+    --chart-1: 221 83% 53%;
+    --chart-2: 152 69% 40%;
     --chart-3: 38 92% 50%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
@@ -140,7 +140,7 @@
 
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
   }
 
   /* Smooth scrolling */
@@ -152,16 +152,21 @@
   :focus-visible {
     @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
   }
+
+  /* Typography refinements */
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-semibold;
+  }
 }
 
 @layer utilities {
   /* Animations */
   .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.4s ease-out;
   }
 
   .animate-slide-up {
-    animation: slideUp 0.3s ease-out;
+    animation: slideUp 0.4s ease-out;
   }
 
   .animate-slide-down {
@@ -172,36 +177,60 @@
     animation: scaleIn 0.2s ease-out;
   }
 
-  /* Gradient backgrounds */
+  /* Gradient backgrounds - Enterprise */
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(217 91% 50%) 100%);
+    background: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(221 83% 45%) 100%);
   }
 
   .gradient-success {
-    background: linear-gradient(135deg, hsl(var(--success)) 0%, hsl(142 76% 30%) 100%);
+    background: linear-gradient(135deg, hsl(152 69% 31%) 0%, hsl(152 69% 25%) 100%);
   }
 
   .gradient-warning {
-    background: linear-gradient(135deg, hsl(var(--warning)) 0%, hsl(38 92% 40%) 100%);
+    background: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(38 92% 42%) 100%);
   }
 
   .gradient-destructive {
-    background: linear-gradient(135deg, hsl(var(--destructive)) 0%, hsl(0 84% 50%) 100%);
+    background: linear-gradient(135deg, hsl(0 72% 51%) 0%, hsl(0 72% 43%) 100%);
   }
 
-  /* Glass effect */
+  .gradient-sidebar {
+    background: linear-gradient(180deg, hsl(222 47% 11%) 0%, hsl(222 47% 8%) 100%);
+  }
+
+  /* Glass effect - Premium */
   .glass {
-    background: hsl(var(--background) / 0.8);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    background: hsl(var(--background) / 0.85);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+  }
+
+  /* Card styles - Enterprise */
+  .card-elevated {
+    @apply bg-card border border-border/50 shadow-soft rounded-xl;
+  }
+
+  .card-interactive {
+    @apply bg-card border border-border/50 shadow-soft rounded-xl transition-all duration-200;
+    @apply hover:shadow-medium hover:border-border;
   }
 
   /* Text gradient */
   .text-gradient {
-    background: linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(217 91% 70%) 100%);
+    background: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(221 83% 65%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+  }
+
+  /* Financial value emphasis */
+  .value-currency {
+    @apply font-semibold tabular-nums tracking-tight;
+  }
+
+  /* Status indicator dot */
+  .status-dot {
+    @apply h-2 w-2 rounded-full animate-pulse;
   }
 }
 
@@ -217,7 +246,7 @@
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(12px);
   }
   to {
     opacity: 1;
@@ -239,7 +268,7 @@
 @keyframes scaleIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+    transform: scale(0.96);
   }
   to {
     opacity: 1;
@@ -247,22 +276,42 @@
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar - Refined */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: hsl(var(--muted));
-  border-radius: 4px;
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted-foreground) / 0.3);
-  border-radius: 4px;
+  background: hsl(var(--muted-foreground) / 0.2);
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--muted-foreground) / 0.5);
+  background: hsl(var(--muted-foreground) / 0.35);
+}
+
+/* Skeleton loading */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.skeleton-loading {
+  background: linear-gradient(
+    90deg,
+    hsl(var(--muted)) 0%,
+    hsl(var(--muted-foreground) / 0.1) 50%,
+    hsl(var(--muted)) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
 }

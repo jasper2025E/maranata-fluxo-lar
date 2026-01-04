@@ -10,7 +10,6 @@ import {
   LogOut,
   GraduationCap,
   Building2,
-  ChevronRight,
   UserCheck,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -30,7 +29,6 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { Separator } from "@/components/ui/separator";
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -81,16 +79,13 @@ export function AppSidebar() {
         <NavLink
           to={item.url}
           className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2 transition-all",
-            "hover:bg-sidebar-accent text-sidebar-foreground/70 hover:text-sidebar-foreground"
+            "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200",
+            "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
           )}
-          activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
+          activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px]"
         >
-          <item.icon className="h-5 w-5 shrink-0" />
-          {!isCollapsed && <span>{item.title}</span>}
-          {!isCollapsed && (
-            <ChevronRight className="ml-auto h-4 w-4 opacity-0 group-hover:opacity-50" />
-          )}
+          <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+          {!isCollapsed && <span className="text-sm">{item.title}</span>}
         </NavLink>
       </SidebarMenuButton>
     </SidebarMenuItem>
@@ -98,80 +93,78 @@ export function AppSidebar() {
 
   return (
     <Sidebar className="border-r-0" collapsible="icon">
-      <SidebarContent className="bg-sidebar">
+      <SidebarContent className="gradient-sidebar">
         {/* Logo */}
         <div className={cn(
-          "flex items-center gap-3 px-4 py-5",
+          "flex items-center gap-3 px-4 py-6",
           isCollapsed && "justify-center px-2"
         )}>
-          <div className="h-9 w-9 rounded-lg bg-sidebar-primary flex items-center justify-center shrink-0">
-            <GraduationCap className="h-5 w-5 text-sidebar-primary-foreground" />
+          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/20">
+            <GraduationCap className="h-5 w-5 text-white" strokeWidth={2} />
           </div>
           {!isCollapsed && (
             <div>
-              <h2 className="font-semibold text-sidebar-foreground">Maranata</h2>
-              <p className="text-xs text-sidebar-foreground/60">Financeiro</p>
+              <h2 className="font-bold text-sidebar-foreground text-lg tracking-tight">Maranata</h2>
+              <p className="text-xs text-sidebar-foreground/50 font-medium">Sistema Financeiro</p>
             </div>
           )}
         </div>
 
-        <Separator className="bg-sidebar-border mx-3 w-auto" />
-
         {/* Main Menu */}
-        <SidebarGroup className="px-2">
+        <SidebarGroup className="px-3 mt-2">
           {!isCollapsed && (
-            <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-medium uppercase tracking-wider px-3">
+            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
               Principal
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-0.5">
               {filterByRole(menuItems).map(renderMenuItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Finance Menu */}
-        <SidebarGroup className="px-2">
+        <SidebarGroup className="px-3 mt-6">
           {!isCollapsed && (
-            <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-medium uppercase tracking-wider px-3">
+            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
               Financeiro
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-0.5">
               {filterByRole(financeItems).map(renderMenuItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         {/* Settings Menu */}
-        <SidebarGroup className="px-2">
+        <SidebarGroup className="px-3 mt-6">
           {!isCollapsed && (
-            <SidebarGroupLabel className="text-sidebar-foreground/50 text-xs font-medium uppercase tracking-wider px-3">
+            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
               Sistema
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-0.5">
               {filterByRole(settingsItems).map(renderMenuItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="bg-sidebar border-t border-sidebar-border p-2">
+      <SidebarFooter className="gradient-sidebar border-t border-sidebar-border/50 p-3">
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
               onClick={handleLogout}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 w-full",
-                "text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/10 transition-colors"
+                "flex items-center gap-3 rounded-lg px-3 py-2.5 w-full",
+                "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
               )}
             >
-              <LogOut className="h-5 w-5 shrink-0" />
-              {!isCollapsed && <span>Sair</span>}
+              <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+              {!isCollapsed && <span className="text-sm">Sair do Sistema</span>}
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
