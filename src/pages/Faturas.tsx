@@ -276,6 +276,14 @@ const Faturas = () => {
     },
   });
 
+  // Função para escapar HTML e prevenir XSS
+  const escapeHtml = (text: string | null | undefined): string => {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  };
+
   const generateReceipt = (fatura: Fatura) => {
     // Buscar dados do pagamento relacionado
     supabase
@@ -329,11 +337,11 @@ const Faturas = () => {
                 <div class="section-title">Dados do Aluno</div>
                 <div class="info-row">
                   <span class="info-label">Nome:</span>
-                  <span class="info-value">${fatura.alunos?.nome_completo || 'N/A'}</span>
+                  <span class="info-value">${escapeHtml(fatura.alunos?.nome_completo) || 'N/A'}</span>
                 </div>
                 <div class="info-row">
                   <span class="info-label">Curso:</span>
-                  <span class="info-value">${fatura.cursos?.nome || 'N/A'}</span>
+                  <span class="info-value">${escapeHtml(fatura.cursos?.nome) || 'N/A'}</span>
                 </div>
               </div>
               
@@ -362,12 +370,12 @@ const Faturas = () => {
                 </div>
                 <div class="info-row">
                   <span class="info-label">Método:</span>
-                  <span class="info-value">${pagamento.metodo}</span>
+                  <span class="info-value">${escapeHtml(pagamento.metodo)}</span>
                 </div>
                 ${pagamento.referencia ? `
                 <div class="info-row">
                   <span class="info-label">Referência:</span>
-                  <span class="info-value">${pagamento.referencia}</span>
+                  <span class="info-value">${escapeHtml(pagamento.referencia)}</span>
                 </div>
                 ` : ''}
               </div>
