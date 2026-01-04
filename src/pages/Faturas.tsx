@@ -268,6 +268,135 @@ const Faturas = () => {
     },
   });
 
+  const generateReceipt = (fatura: Fatura) => {
+    // Buscar dados do pagamento relacionado
+    supabase
+      .from("pagamentos")
+      .select("*")
+      .eq("fatura_id", fatura.id)
+      .order("data_pagamento", { ascending: false })
+      .limit(1)
+      .then(({ data: pagamentos }) => {
+        const pagamento = pagamentos?.[0];
+        
+        // Criar conteúdo do recibo em HTML
+        const receiptContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Recibo de Pagamento</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; background: #f5f5f5; }
+              .receipt { max-width: 600px; margin: 0 auto; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+              .header { text-align: center; border-bottom: 2px solid #3b82f6; padding-bottom: 20px; margin-bottom: 30px; }
+              .header h1 { color: #3b82f6; font-size: 28px; margin-bottom: 8px; }
+              .header p { color: #666; font-size: 14px; }
+              .badge { display: inline-block; background: #10b981; color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 10px; }
+              .section { margin-bottom: 25px; }
+              .section-title { font-size: 12px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+              .info-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #eee; }
+              .info-row:last-child { border-bottom: none; }
+              .info-label { color: #666; }
+              .info-value { font-weight: 600; color: #333; }
+              .amount { text-align: center; background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 25px 0; }
+              .amount-label { font-size: 14px; color: #666; margin-bottom: 5px; }
+              .amount-value { font-size: 32px; font-weight: 700; color: #10b981; }
+              .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee; }
+              .footer p { font-size: 12px; color: #888; }
+              .footer .date { margin-top: 10px; font-size: 11px; }
+              @media print { body { background: white; padding: 0; } .receipt { box-shadow: none; } }
+            </style>
+          </head>
+          <body>
+            <div class="receipt">
+              <div class="header">
+                <h1>📋 Recibo de Pagamento</h1>
+                <p>Comprovante de quitação de mensalidade</p>
+                <span class="badge">✓ PAGO</span>
+              </div>
+              
+              <div class="section">
+                <div class="section-title">Dados do Aluno</div>
+                <div class="info-row">
+                  <span class="info-label">Nome:</span>
+                  <span class="info-value">${fatura.alunos?.nome_completo || 'N/A'}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Curso:</span>
+                  <span class="info-value">${fatura.cursos?.nome || 'N/A'}</span>
+                </div>
+              </div>
+              
+              <div class="section">
+                <div class="section-title">Detalhes da Fatura</div>
+                <div class="info-row">
+                  <span class="info-label">Referência:</span>
+                  <span class="info-value">${meses[fatura.mes_referencia - 1]}/${fatura.ano_referencia}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Vencimento:</span>
+                  <span class="info-value">${format(new Date(fatura.data_vencimento), "dd/MM/yyyy")}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Nº Fatura:</span>
+                  <span class="info-value">${fatura.id.slice(0, 8).toUpperCase()}</span>
+                </div>
+              </div>
+
+              ${pagamento ? `
+              <div class="section">
+                <div class="section-title">Dados do Pagamento</div>
+                <div class="info-row">
+                  <span class="info-label">Data do Pagamento:</span>
+                  <span class="info-value">${format(new Date(pagamento.data_pagamento), "dd/MM/yyyy")}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Método:</span>
+                  <span class="info-value">${pagamento.metodo}</span>
+                </div>
+                ${pagamento.referencia ? `
+                <div class="info-row">
+                  <span class="info-label">Referência:</span>
+                  <span class="info-value">${pagamento.referencia}</span>
+                </div>
+                ` : ''}
+              </div>
+              ` : ''}
+              
+              <div class="amount">
+                <div class="amount-label">Valor Pago</div>
+                <div class="amount-value">${formatCurrency(fatura.valor)}</div>
+              </div>
+              
+              <div class="footer">
+                <p>Este documento é um comprovante de pagamento.</p>
+                <p class="date">Emitido em: ${format(new Date(), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+
+        // Abrir em nova janela e imprimir/salvar como PDF
+        const printWindow = window.open('', '_blank');
+        if (printWindow) {
+          printWindow.document.write(receiptContent);
+          printWindow.document.close();
+          
+          // Aguardar carregamento e abrir diálogo de impressão
+          printWindow.onload = () => {
+            printWindow.print();
+          };
+          
+          toast.success("Recibo gerado! Use 'Salvar como PDF' na janela de impressão.");
+        } else {
+          toast.error("Não foi possível abrir a janela do recibo. Verifique o bloqueador de pop-ups.");
+        }
+      });
+  };
+
   const handleOpenPayment = (fatura: Fatura) => {
     setSelectedFatura(fatura);
     setIsPaymentOpen(true);
@@ -592,7 +721,10 @@ const Faturas = () => {
                                 </>
                               )}
                               {fatura.status === "Paga" && (
-                                <DropdownMenuItem className="gap-2 cursor-pointer">
+                                <DropdownMenuItem 
+                                  className="gap-2 cursor-pointer"
+                                  onClick={() => generateReceipt(fatura)}
+                                >
                                   <Download className="h-4 w-4" />
                                   Baixar recibo
                                 </DropdownMenuItem>
