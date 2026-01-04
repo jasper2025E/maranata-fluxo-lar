@@ -13,12 +13,14 @@ import {
   Clock,
   UserPlus,
   Briefcase,
-  BarChart
+  BarChart,
+  MapPinned
 } from "lucide-react";
 import { FuncionariosTab } from "@/components/rh/FuncionariosTab";
 import { CargosTab } from "@/components/rh/CargosTab";
 import { PontoTab } from "@/components/rh/PontoTab";
 import { PontoRelatorios } from "@/components/rh/PontoRelatorios";
+import { PontosAutorizadosManager } from "@/components/rh/PontosAutorizadosManager";
 import { FolhaTab } from "@/components/rh/FolhaTab";
 import { ContratosTab } from "@/components/rh/ContratosTab";
 import { LoadingState } from "@/components/LoadingState";
@@ -51,11 +53,15 @@ export default function RH() {
             <TabsTrigger value="funcionarios">Funcionários</TabsTrigger>
             <TabsTrigger value="cargos">Cargos e Setores</TabsTrigger>
             <TabsTrigger value="ponto">Ponto</TabsTrigger>
+            <TabsTrigger value="locais">
+              <MapPinned className="h-4 w-4 mr-1" />
+              Locais
+            </TabsTrigger>
             <TabsTrigger value="relatorios">
               <BarChart className="h-4 w-4 mr-1" />
               Relatórios
             </TabsTrigger>
-            <TabsTrigger value="folha">Folha de Pagamento</TabsTrigger>
+            <TabsTrigger value="folha">Folha</TabsTrigger>
             <TabsTrigger value="contratos">Contratos</TabsTrigger>
           </TabsList>
 
@@ -139,6 +145,10 @@ export default function RH() {
 
           <TabsContent value="ponto">
             <PontoTab />
+          </TabsContent>
+
+          <TabsContent value="locais">
+            <PontosAutorizadosManager />
           </TabsContent>
 
           <TabsContent value="relatorios">

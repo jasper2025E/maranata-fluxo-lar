@@ -1010,7 +1010,10 @@ export type Database = {
       }
       registrar_ponto_externo: {
         Args: {
+          p_accuracy?: number
           p_ip?: string
+          p_latitude?: number
+          p_longitude?: number
           p_tipo: string
           p_token: string
           p_user_agent?: string

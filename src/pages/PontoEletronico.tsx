@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -15,7 +15,11 @@ import {
   CheckCircle, 
   AlertCircle,
   Loader2,
-  Smartphone
+  Smartphone,
+  MapPin,
+  MapPinOff,
+  Navigation,
+  RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -45,6 +49,16 @@ interface PontoState {
   saida: string | null;
 }
 
+interface GeolocationState {
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
+  status: 'idle' | 'loading' | 'success' | 'error' | 'denied';
+  error: string | null;
+  isWithinArea: boolean | null;
+  localName: string | null;
+}
+
 export default function PontoEletronico() {
   const { token } = useParams<{ token: string }>();
   const [funcionario, setFuncionario] = useState<FuncionarioInfo | null>(null);
@@ -59,12 +73,97 @@ export default function PontoEletronico() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [geo, setGeo] = useState<GeolocationState>({
+    latitude: null,
+    longitude: null,
+    accuracy: null,
+    status: 'idle',
+    error: null,
+    isWithinArea: null,
+    localName: null,
+  });
 
   // Update clock every second
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
+
+  // Request geolocation
+  const requestGeolocation = useCallback(async () => {
+    setGeo(prev => ({ ...prev, status: 'loading', error: null }));
+
+    if (!navigator.geolocation) {
+      setGeo(prev => ({
+        ...prev,
+        status: 'error',
+        error: 'Seu navegador não suporta geolocalização'
+      }));
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        const { latitude, longitude, accuracy } = position.coords;
+        
+        // Validate location against authorized points
+        try {
+          const { data, error } = await supabase.rpc('validar_localizacao' as any, {
+            p_latitude: latitude,
+            p_longitude: longitude
+          });
+
+          if (error) throw error;
+
+          const result = (data as any)?.[0];
+          
+          setGeo({
+            latitude,
+            longitude,
+            accuracy,
+            status: 'success',
+            error: null,
+            isWithinArea: result?.valido ?? true,
+            localName: result?.ponto_nome ?? null,
+          });
+        } catch (err) {
+          console.error('Error validating location:', err);
+          setGeo({
+            latitude,
+            longitude,
+            accuracy,
+            status: 'success',
+            error: null,
+            isWithinArea: true, // Allow if validation fails
+            localName: null,
+          });
+        }
+      },
+      (error) => {
+        let errorMessage = 'Erro ao obter localização';
+        if (error.code === error.PERMISSION_DENIED) {
+          errorMessage = 'Permissão de localização negada. Ative o GPS e permita o acesso.';
+          setGeo(prev => ({ ...prev, status: 'denied', error: errorMessage }));
+        } else if (error.code === error.POSITION_UNAVAILABLE) {
+          errorMessage = 'Localização indisponível. Verifique se o GPS está ativo.';
+          setGeo(prev => ({ ...prev, status: 'error', error: errorMessage }));
+        } else if (error.code === error.TIMEOUT) {
+          errorMessage = 'Tempo esgotado. Tente novamente.';
+          setGeo(prev => ({ ...prev, status: 'error', error: errorMessage }));
+        }
+      },
+      {
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0 // Always get fresh location
+      }
+    );
+  }, []);
+
+  // Request geolocation on mount
+  useEffect(() => {
+    requestGeolocation();
+  }, [requestGeolocation]);
 
   // Validate token and load funcionario info
   useEffect(() => {
@@ -114,6 +213,17 @@ export default function PontoEletronico() {
   const registrarPonto = async (tipo: string) => {
     if (!token) return;
 
+    // Check geolocation first
+    if (geo.status !== 'success' || geo.latitude === null || geo.longitude === null) {
+      toast.error("Aguarde a localização ser obtida ou ative o GPS");
+      return;
+    }
+
+    if (geo.isWithinArea === false) {
+      toast.error("Você está fora da área autorizada para registro de ponto");
+      return;
+    }
+
     setIsRegistering(tipo);
     setSuccessMessage(null);
 
@@ -121,13 +231,16 @@ export default function PontoEletronico() {
       const { data, error } = await supabase.rpc('registrar_ponto_externo', {
         p_token: token,
         p_tipo: tipo,
-        p_ip: null, // IP is captured server-side in production
-        p_user_agent: navigator.userAgent
+        p_ip: null,
+        p_user_agent: navigator.userAgent,
+        p_latitude: geo.latitude,
+        p_longitude: geo.longitude,
+        p_accuracy: geo.accuracy
       });
 
       if (error) throw error;
 
-      const result = data as { success: boolean; error?: string; hora?: string; message?: string };
+      const result = data as { success: boolean; error?: string; hora?: string; message?: string; local?: string };
 
       if (!result.success) {
         toast.error(result.error || "Erro ao registrar ponto");
@@ -140,7 +253,7 @@ export default function PontoEletronico() {
         [tipo]: result.hora
       }));
 
-      setSuccessMessage(getSuccessMessage(tipo));
+      setSuccessMessage(getSuccessMessage(tipo, result.local));
       toast.success("Ponto registrado com sucesso!");
     } catch (err) {
       console.error("Error registering ponto:", err);
@@ -150,12 +263,13 @@ export default function PontoEletronico() {
     }
   };
 
-  const getSuccessMessage = (tipo: string) => {
+  const getSuccessMessage = (tipo: string, local?: string) => {
+    const localMsg = local ? ` em ${local}` : '';
     switch (tipo) {
-      case 'entrada': return 'Entrada registrada! Bom trabalho! 💪';
-      case 'saida_almoco': return 'Bom intervalo! 🍽️';
-      case 'retorno_almoco': return 'Bem-vindo de volta! 👋';
-      case 'saida': return 'Até amanhã! Bom descanso! 🌙';
+      case 'entrada': return `Entrada registrada${localMsg}! Bom trabalho! 💪`;
+      case 'saida_almoco': return `Bom intervalo${localMsg}! 🍽️`;
+      case 'retorno_almoco': return `Bem-vindo de volta${localMsg}! 👋`;
+      case 'saida': return `Até amanhã${localMsg}! Bom descanso! 🌙`;
       default: return 'Registrado!';
     }
   };
@@ -169,6 +283,7 @@ export default function PontoEletronico() {
   };
 
   const nextAction = getNextAction();
+  const canRegister = geo.status === 'success' && geo.isWithinArea !== false;
 
   if (isLoading) {
     return (
@@ -221,7 +336,7 @@ export default function PontoEletronico() {
 
       {/* Main Content */}
       <main className="flex-1 p-4 flex flex-col">
-        <div className="max-w-md mx-auto w-full space-y-6">
+        <div className="max-w-md mx-auto w-full space-y-4">
           {/* User Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -229,17 +344,17 @@ export default function PontoEletronico() {
           >
             <Card className="shadow-lg border-0 bg-white/90 backdrop-blur">
               <CardContent className="pt-6 text-center">
-                <Avatar className="h-24 w-24 mx-auto mb-4 ring-4 ring-primary/20">
+                <Avatar className="h-20 w-20 mx-auto mb-3 ring-4 ring-primary/20">
                   <AvatarImage src={funcionario?.foto_url || undefined} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-2xl">
-                    <User className="h-10 w-10" />
+                  <AvatarFallback className="bg-primary/10 text-primary text-xl">
+                    <User className="h-8 w-8" />
                   </AvatarFallback>
                 </Avatar>
-                <h1 className="text-xl font-bold text-foreground mb-1">
+                <h1 className="text-lg font-bold text-foreground mb-1">
                   {funcionario?.nome_completo}
                 </h1>
                 {funcionario?.cargo_nome && (
-                  <Badge variant="secondary" className="mb-4">
+                  <Badge variant="secondary" className="mb-3">
                     {funcionario.cargo_nome}
                   </Badge>
                 )}
@@ -249,6 +364,88 @@ export default function PontoEletronico() {
                 <p className="text-muted-foreground text-sm">
                   {format(currentTime, "EEEE, dd 'de' MMMM", { locale: ptBR })}
                 </p>
+              </CardContent>
+            </Card>
+          </motion.div>
+
+          {/* Geolocation Status */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+          >
+            <Card className={cn(
+              "shadow-lg border-0 backdrop-blur",
+              geo.status === 'success' && geo.isWithinArea ? "bg-emerald-50/90" : 
+              geo.status === 'success' && !geo.isWithinArea ? "bg-red-50/90" :
+              geo.status === 'denied' ? "bg-red-50/90" :
+              geo.status === 'loading' ? "bg-blue-50/90" :
+              "bg-orange-50/90"
+            )}>
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {geo.status === 'loading' && (
+                      <>
+                        <div className="p-2 rounded-full bg-blue-100">
+                          <Navigation className="h-5 w-5 text-blue-500 animate-pulse" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-blue-700">Obtendo localização...</p>
+                          <p className="text-xs text-blue-600">Aguarde</p>
+                        </div>
+                      </>
+                    )}
+                    {geo.status === 'success' && geo.isWithinArea && (
+                      <>
+                        <div className="p-2 rounded-full bg-emerald-100">
+                          <MapPin className="h-5 w-5 text-emerald-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-emerald-700">Localização válida</p>
+                          <p className="text-xs text-emerald-600">
+                            {geo.localName || 'Área autorizada'} 
+                            {geo.accuracy && ` • Precisão: ${Math.round(geo.accuracy)}m`}
+                          </p>
+                        </div>
+                      </>
+                    )}
+                    {geo.status === 'success' && geo.isWithinArea === false && (
+                      <>
+                        <div className="p-2 rounded-full bg-red-100">
+                          <MapPinOff className="h-5 w-5 text-red-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-red-700">Fora da área autorizada</p>
+                          <p className="text-xs text-red-600">Aproxime-se do local de trabalho</p>
+                        </div>
+                      </>
+                    )}
+                    {(geo.status === 'error' || geo.status === 'denied') && (
+                      <>
+                        <div className="p-2 rounded-full bg-red-100">
+                          <MapPinOff className="h-5 w-5 text-red-500" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-red-700">
+                            {geo.status === 'denied' ? 'GPS não permitido' : 'Erro de localização'}
+                          </p>
+                          <p className="text-xs text-red-600">{geo.error}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {(geo.status === 'error' || geo.status === 'denied' || (geo.status === 'success' && !geo.isWithinArea)) && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={requestGeolocation}
+                      className="shrink-0"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -329,7 +526,7 @@ export default function PontoEletronico() {
                   label="Registrar Entrada"
                   icon={LogIn}
                   color="emerald"
-                  disabled={pontoState.entrada !== null}
+                  disabled={pontoState.entrada !== null || !canRegister}
                   isLoading={isRegistering === 'entrada'}
                   isNext={nextAction === 'entrada'}
                   onClick={() => registrarPonto('entrada')}
@@ -339,7 +536,7 @@ export default function PontoEletronico() {
                   label="Saída para Intervalo"
                   icon={Coffee}
                   color="amber"
-                  disabled={!pontoState.entrada || pontoState.saida_almoco !== null}
+                  disabled={!pontoState.entrada || pontoState.saida_almoco !== null || !canRegister}
                   isLoading={isRegistering === 'saida_almoco'}
                   isNext={nextAction === 'saida_almoco'}
                   onClick={() => registrarPonto('saida_almoco')}
@@ -349,7 +546,7 @@ export default function PontoEletronico() {
                   label="Retorno do Intervalo"
                   icon={Play}
                   color="blue"
-                  disabled={!pontoState.saida_almoco || pontoState.retorno_almoco !== null}
+                  disabled={!pontoState.saida_almoco || pontoState.retorno_almoco !== null || !canRegister}
                   isLoading={isRegistering === 'retorno_almoco'}
                   isNext={nextAction === 'retorno_almoco'}
                   onClick={() => registrarPonto('retorno_almoco')}
@@ -359,7 +556,7 @@ export default function PontoEletronico() {
                   label="Registrar Saída"
                   icon={LogOut}
                   color="purple"
-                  disabled={!pontoState.entrada || pontoState.saida !== null}
+                  disabled={!pontoState.entrada || pontoState.saida !== null || !canRegister}
                   isLoading={isRegistering === 'saida'}
                   isNext={nextAction === 'saida'}
                   onClick={() => registrarPonto('saida')}
@@ -452,7 +649,7 @@ function ActionButton({
     purple: 'from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700',
   };
 
-  if (disabled && !isLoading) {
+  if (disabled && !isLoading && !isNext) {
     return null;
   }
 
@@ -468,8 +665,8 @@ function ActionButton({
           "w-full h-16 text-lg font-semibold rounded-2xl shadow-lg",
           "bg-gradient-to-r text-white",
           "transition-all duration-200",
-          isNext && colorClasses[color],
-          !isNext && "bg-gray-300 hover:bg-gray-300"
+          isNext && !disabled && colorClasses[color],
+          (disabled || !isNext) && "bg-gray-300 hover:bg-gray-300"
         )}
       >
         {isLoading ? (
