@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
@@ -13,8 +13,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useNavigate } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -23,6 +24,25 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const loadAvatar = async () => {
+      if (!user) return;
+      
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url")
+        .eq("id", user.id)
+        .maybeSingle();
+      
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
+    };
+
+    loadAvatar();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -79,6 +99,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="flex items-center gap-3 px-3 h-10 rounded-xl hover:bg-muted">
                     <Avatar className="h-8 w-8 ring-2 ring-border">
+                      <AvatarImage src={avatarUrl || undefined} alt="Foto de perfil" />
                       <AvatarFallback className={`${roleColors[role || 'staff']} text-white text-xs font-semibold`}>
                         {user?.email ? getInitials(user.email) : "U"}
                       </AvatarFallback>
