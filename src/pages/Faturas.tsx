@@ -22,7 +22,11 @@ import {
   MoreHorizontal,
   Download,
   Eye,
-  Ban
+  Ban,
+  Link,
+  ExternalLink,
+  Copy,
+  Loader2
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -47,6 +51,8 @@ interface Fatura {
   data_emissao: string;
   data_vencimento: string;
   status: string;
+  payment_url?: string | null;
+  stripe_checkout_session_id?: string | null;
   alunos?: { nome_completo: string; email_responsavel: string };
   cursos?: { nome: string };
 }
@@ -153,7 +159,10 @@ const Faturas = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("todas");
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [isPaymentLinkOpen, setIsPaymentLinkOpen] = useState(false);
   const [selectedFatura, setSelectedFatura] = useState<Fatura | null>(null);
+  const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
+  const [isGeneratingLink, setIsGeneratingLink] = useState<string | null>(null);
   const [paymentData, setPaymentData] = useState({
     metodo: "",
     referencia: "",
@@ -170,6 +179,48 @@ const Faturas = () => {
         .order("data_vencimento", { ascending: false });
       if (error) throw error;
       return data as Fatura[];
+    },
+  });
+
+  // Mutation para gerar link de pagamento Stripe
+  const generatePaymentLinkMutation = useMutation({
+    mutationFn: async (faturaId: string) => {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData?.session?.access_token;
+      
+      if (!token) {
+        throw new Error("Usuário não autenticado");
+      }
+
+      const response = await supabase.functions.invoke("create-checkout", {
+        body: {
+          faturaId,
+          successUrl: `${window.location.origin}/faturas?success=true&fatura_id=${faturaId}`,
+          cancelUrl: `${window.location.origin}/faturas?canceled=true`,
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || "Erro ao gerar link de pagamento");
+      }
+
+      return response.data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["faturas"] });
+      setPaymentUrl(data.url);
+      setIsPaymentLinkOpen(true);
+      setIsGeneratingLink(null);
+      if (data.existing) {
+        toast.info("Link de pagamento recuperado");
+      } else {
+        toast.success("Link de pagamento gerado com sucesso!");
+      }
+    },
+    onError: (error: Error) => {
+      console.error("Erro ao gerar link de pagamento:", error);
+      toast.error(`Erro: ${error.message}`);
+      setIsGeneratingLink(null);
     },
   });
 
@@ -220,6 +271,26 @@ const Faturas = () => {
   const handleOpenPayment = (fatura: Fatura) => {
     setSelectedFatura(fatura);
     setIsPaymentOpen(true);
+  };
+
+  const handleGeneratePaymentLink = (fatura: Fatura) => {
+    setSelectedFatura(fatura);
+    setIsGeneratingLink(fatura.id);
+    
+    // Se já tem URL, mostrar direto
+    if (fatura.payment_url) {
+      setPaymentUrl(fatura.payment_url);
+      setIsPaymentLinkOpen(true);
+      setIsGeneratingLink(null);
+      return;
+    }
+    
+    generatePaymentLinkMutation.mutate(fatura.id);
+  };
+
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Link copiado para a área de transferência!");
   };
 
   const handleSubmitPayment = (e: React.FormEvent) => {
@@ -492,11 +563,23 @@ const Faturas = () => {
                               {(fatura.status === "Aberta" || fatura.status === "Vencida") && (
                                 <>
                                   <DropdownMenuItem 
+                                    className="gap-2 cursor-pointer text-primary focus:text-primary"
+                                    onClick={() => handleGeneratePaymentLink(fatura)}
+                                    disabled={isGeneratingLink === fatura.id}
+                                  >
+                                    {isGeneratingLink === fatura.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Link className="h-4 w-4" />
+                                    )}
+                                    {fatura.payment_url ? "Ver link de pagamento" : "Gerar link de pagamento"}
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
                                     className="gap-2 cursor-pointer text-success focus:text-success"
                                     onClick={() => handleOpenPayment(fatura)}
                                   >
                                     <CreditCard className="h-4 w-4" />
-                                    Registrar pagamento
+                                    Registrar pagamento manual
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
@@ -604,6 +687,84 @@ const Faturas = () => {
                 </Button>
               </DialogFooter>
             </form>
+          </DialogContent>
+        </Dialog>
+
+        {/* Payment Link Dialog */}
+        <Dialog open={isPaymentLinkOpen} onOpenChange={setIsPaymentLinkOpen}>
+          <DialogContent className="sm:max-w-lg rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                <Link className="h-5 w-5 text-primary" />
+                Link de Pagamento
+              </DialogTitle>
+              <DialogDescription>
+                Compartilhe este link com o responsável para pagamento online.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedFatura && (
+              <div className="my-4 p-4 rounded-xl bg-muted/50 border">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-sm font-bold text-primary">
+                      {selectedFatura.alunos?.nome_completo.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium">{selectedFatura.alunos?.nome_completo}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {meses[selectedFatura.mes_referencia - 1]}/{selectedFatura.ano_referencia}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-3 border-t">
+                  <span className="text-sm text-muted-foreground">Valor</span>
+                  <span className="text-xl font-bold text-primary value-currency">
+                    {formatCurrency(selectedFatura.valor)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            {paymentUrl && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Link de pagamento:</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    value={paymentUrl} 
+                    readOnly 
+                    className="flex-1 text-sm bg-muted"
+                  />
+                  <Button 
+                    variant="outline" 
+                    size="icon"
+                    onClick={() => copyToClipboard(paymentUrl)}
+                    title="Copiar link"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  O responsável pode acessar este link para pagar com cartão de crédito ou boleto.
+                </p>
+              </div>
+            )}
+
+            <DialogFooter className="mt-6 gap-2">
+              <Button variant="outline" onClick={() => setIsPaymentLinkOpen(false)}>
+                Fechar
+              </Button>
+              {paymentUrl && (
+                <Button 
+                  onClick={() => window.open(paymentUrl, "_blank")}
+                  className="gap-2"
+                >
+                  <ExternalLink className="h-4 w-4" />
+                  Abrir página de pagamento
+                </Button>
+              )}
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
