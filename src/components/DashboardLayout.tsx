@@ -2,7 +2,10 @@ import { ReactNode, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { Bell, Search, FileText, CreditCard, Users, Clock } from "lucide-react";
+import { Bell, Search, FileText, CreditCard, Users, Clock, Info, AlertTriangle, CheckCircle2, Check } from "lucide-react";
+import { useNotifications, Notification } from "@/hooks/useNotifications";
+import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -27,6 +30,33 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const { notifications, unreadCount, markAsRead, markAllAsRead, loading: loadingNotifications } = useNotifications();
+
+  const getNotificationIcon = (type: Notification["type"]) => {
+    switch (type) {
+      case "success":
+        return <CheckCircle2 className="h-4 w-4 text-success" />;
+      case "warning":
+        return <AlertTriangle className="h-4 w-4 text-warning" />;
+      case "error":
+        return <AlertTriangle className="h-4 w-4 text-destructive" />;
+      default:
+        return <Info className="h-4 w-4 text-primary" />;
+    }
+  };
+
+  const getNotificationBg = (type: Notification["type"]) => {
+    switch (type) {
+      case "success":
+        return "bg-success/10";
+      case "warning":
+        return "bg-warning/10";
+      case "error":
+        return "bg-destructive/10";
+      default:
+        return "bg-primary/10";
+    }
+  };
 
   useEffect(() => {
     const loadAvatar = async () => {
@@ -95,59 +125,95 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-muted">
                     <Bell className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.75} />
-                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive animate-pulse-subtle" />
+                    {unreadCount > 0 && (
+                      <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive animate-pulse-subtle" />
+                    )}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent align="end" className="w-80 p-0 rounded-xl shadow-large">
-                  <div className="p-4 border-b">
-                    <h4 className="font-semibold text-sm">Notificações</h4>
-                    <p className="text-xs text-muted-foreground">Você tem 3 notificações não lidas</p>
+                  <div className="p-4 border-b flex items-center justify-between">
+                    <div>
+                      <h4 className="font-semibold text-sm">Notificações</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {unreadCount > 0 
+                          ? `Você tem ${unreadCount} notificação${unreadCount > 1 ? "ões" : ""} não lida${unreadCount > 1 ? "s" : ""}`
+                          : "Nenhuma notificação não lida"
+                        }
+                      </p>
+                    </div>
+                    {unreadCount > 0 && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs h-7"
+                        onClick={markAllAsRead}
+                      >
+                        <Check className="h-3 w-3 mr-1" />
+                        Marcar todas
+                      </Button>
+                    )}
                   </div>
                   <ScrollArea className="h-[280px]">
-                    <div className="p-2 space-y-1">
-                      <div className="flex gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                          <CreditCard className="h-4 w-4 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">Novo pagamento recebido</p>
-                          <p className="text-xs text-muted-foreground truncate">Fatura #1234 foi paga</p>
-                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> Há 5 minutos
-                          </p>
-                        </div>
+                    {loadingNotifications ? (
+                      <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
                       </div>
-                      <div className="flex gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                        <div className="h-9 w-9 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
-                          <FileText className="h-4 w-4 text-warning" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">Fatura vencendo</p>
-                          <p className="text-xs text-muted-foreground truncate">2 faturas vencem amanhã</p>
-                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> Há 1 hora
-                          </p>
-                        </div>
+                    ) : notifications.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-8 text-center">
+                        <Bell className="h-10 w-10 text-muted-foreground/30 mb-2" />
+                        <p className="text-sm text-muted-foreground">Nenhuma notificação</p>
+                        <p className="text-xs text-muted-foreground/70">Você será notificado sobre atualizações importantes</p>
                       </div>
-                      <div className="flex gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
-                        <div className="h-9 w-9 rounded-full bg-success/10 flex items-center justify-center shrink-0">
-                          <Users className="h-4 w-4 text-success" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium">Nova matrícula</p>
-                          <p className="text-xs text-muted-foreground truncate">Aluno João Silva matriculado</p>
-                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
-                            <Clock className="h-3 w-3" /> Há 2 horas
-                          </p>
-                        </div>
+                    ) : (
+                      <div className="p-2 space-y-1">
+                        {notifications.map((notification) => (
+                          <div 
+                            key={notification.id}
+                            onClick={() => {
+                              if (!notification.read) {
+                                markAsRead(notification.id);
+                              }
+                              if (notification.link) {
+                                navigate(notification.link);
+                              }
+                            }}
+                            className={`flex gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors ${
+                              !notification.read ? "bg-muted/30" : ""
+                            }`}
+                          >
+                            <div className={`h-9 w-9 rounded-full ${getNotificationBg(notification.type)} flex items-center justify-center shrink-0`}>
+                              {getNotificationIcon(notification.type)}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-start gap-2">
+                                <p className={`text-sm ${!notification.read ? "font-semibold" : "font-medium"}`}>
+                                  {notification.title}
+                                </p>
+                                {!notification.read && (
+                                  <span className="h-2 w-2 rounded-full bg-primary shrink-0 mt-1.5" />
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">{notification.message}</p>
+                              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                                <Clock className="h-3 w-3" /> 
+                                {formatDistanceToNow(new Date(notification.created_at), { 
+                                  addSuffix: true, 
+                                  locale: ptBR 
+                                })}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    </div>
+                    )}
                   </ScrollArea>
-                  <div className="p-3 border-t">
-                    <Button variant="ghost" className="w-full text-sm" size="sm">
-                      Ver todas as notificações
-                    </Button>
-                  </div>
+                  {notifications.length > 0 && (
+                    <div className="p-3 border-t">
+                      <Button variant="ghost" className="w-full text-sm" size="sm">
+                        Ver todas as notificações
+                      </Button>
+                    </div>
+                  )}
                 </PopoverContent>
               </Popover>
 
