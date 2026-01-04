@@ -195,7 +195,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `${escolaNome} <onboarding@resend.dev>`,
+        from: `${escolaNome} <noreply@maranata.com>`,
         to: [recipientEmail],
         subject: `Recibo de Pagamento - ${meses[fatura.mes_referencia - 1]}/${fatura.ano_referencia}`,
         html: emailHtml,
