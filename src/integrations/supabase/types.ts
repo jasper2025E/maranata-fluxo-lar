@@ -246,8 +246,11 @@ export type Database = {
           juros: number | null
           mes_referencia: number
           multa: number | null
+          payment_url: string | null
           responsavel_id: string | null
           status: string
+          stripe_checkout_session_id: string | null
+          stripe_payment_intent_id: string | null
           updated_at: string | null
           valor: number
           valor_total: number | null
@@ -263,8 +266,11 @@ export type Database = {
           juros?: number | null
           mes_referencia: number
           multa?: number | null
+          payment_url?: string | null
           responsavel_id?: string | null
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
           updated_at?: string | null
           valor: number
           valor_total?: number | null
@@ -280,8 +286,11 @@ export type Database = {
           juros?: number | null
           mes_referencia?: number
           multa?: number | null
+          payment_url?: string | null
           responsavel_id?: string | null
           status?: string
+          stripe_checkout_session_id?: string | null
+          stripe_payment_intent_id?: string | null
           updated_at?: string | null
           valor?: number
           valor_total?: number | null
@@ -427,6 +436,7 @@ export type Database = {
           id: string
           nome: string
           observacoes: string | null
+          stripe_customer_id: string | null
           telefone: string
           updated_at: string | null
         }
@@ -439,6 +449,7 @@ export type Database = {
           id?: string
           nome: string
           observacoes?: string | null
+          stripe_customer_id?: string | null
           telefone: string
           updated_at?: string | null
         }
@@ -451,6 +462,7 @@ export type Database = {
           id?: string
           nome?: string
           observacoes?: string | null
+          stripe_customer_id?: string | null
           telefone?: string
           updated_at?: string | null
         }
