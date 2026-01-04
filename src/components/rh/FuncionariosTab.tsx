@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useFuncionarios, useCreateFuncionario, useUpdateFuncionario, useDeleteFuncionario, Funcionario } from "@/hooks/useRH";
 import { FuncionarioForm } from "./FuncionarioForm";
+import { DocumentosUpload } from "./DocumentosUpload";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Plus, Pencil, Trash2, Search, User } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Plus, Pencil, Trash2, Search, User, FileText } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
@@ -30,7 +33,7 @@ export function FuncionariosTab() {
   const [search, setSearch] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFuncionario, setEditingFuncionario] = useState<Funcionario | null>(null);
-
+  const [documentosFuncionario, setDocumentosFuncionario] = useState<Funcionario | null>(null);
   const { data: funcionarios, isLoading } = useFuncionarios();
   const createMutation = useCreateFuncionario();
   const updateMutation = useUpdateFuncionario();
@@ -129,9 +132,17 @@ export function FuncionariosTab() {
               {filteredFuncionarios?.map((funcionario) => (
                 <TableRow key={funcionario.id}>
                   <TableCell>
-                    <div>
-                      <p className="font-medium">{funcionario.nome_completo}</p>
-                      <p className="text-sm text-muted-foreground">{funcionario.email}</p>
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-10 w-10">
+                        <AvatarImage src={funcionario.foto_url || undefined} alt={funcionario.nome_completo} />
+                        <AvatarFallback>
+                          <User className="h-5 w-5" />
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <p className="font-medium">{funcionario.nome_completo}</p>
+                        <p className="text-sm text-muted-foreground">{funcionario.email}</p>
+                      </div>
                     </div>
                   </TableCell>
                   <TableCell>{funcionario.cargos?.nome || "-"}</TableCell>
@@ -143,7 +154,15 @@ export function FuncionariosTab() {
                   </TableCell>
                   <TableCell>{formatCurrency(funcionario.salario_base)}</TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-1">
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => setDocumentosFuncionario(funcionario)}
+                        title="Documentos"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => handleEdit(funcionario)}>
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -176,6 +195,31 @@ export function FuncionariosTab() {
           </Table>
         </div>
       )}
+
+      {/* Sheet para Documentos */}
+      <Sheet open={!!documentosFuncionario} onOpenChange={(open) => !open && setDocumentosFuncionario(null)}>
+        <SheetContent className="w-full sm:max-w-xl overflow-y-auto">
+          <SheetHeader>
+            <SheetTitle className="flex items-center gap-3">
+              {documentosFuncionario?.foto_url && (
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={documentosFuncionario.foto_url} />
+                  <AvatarFallback><User className="h-5 w-5" /></AvatarFallback>
+                </Avatar>
+              )}
+              <div>
+                <span>{documentosFuncionario?.nome_completo}</span>
+                <p className="text-sm font-normal text-muted-foreground">Documentos do funcionário</p>
+              </div>
+            </SheetTitle>
+          </SheetHeader>
+          <div className="mt-6">
+            {documentosFuncionario && (
+              <DocumentosUpload funcionarioId={documentosFuncionario.id} />
+            )}
+          </div>
+        </SheetContent>
+      </Sheet>
     </motion.div>
   );
 }
