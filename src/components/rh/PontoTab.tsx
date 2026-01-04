@@ -1,11 +1,12 @@
-import { useState } from "react";
-import { useFuncionarios, usePontoRegistros, useRegistrarPonto, PontoRegistro } from "@/hooks/useRH";
+import { useState, useEffect } from "react";
+import { useFuncionarios, usePontoRegistros, useRegistrarPonto } from "@/hooks/useRH";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, LogIn, LogOut, Coffee, Play } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Clock, LogIn, LogOut, Coffee, Play, MapPin } from "lucide-react";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { motion } from "framer-motion";
@@ -15,9 +16,9 @@ import { toast } from "sonner";
 
 export function PontoTab() {
   const [selectedFuncionario, setSelectedFuncionario] = useState<string>("");
-  const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [startDate, setStartDate] = useState(format(new Date(new Date().setDate(1)), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(new Date(), "yyyy-MM-dd"));
+  const [currentTime, setCurrentTime] = useState(new Date());
 
   const { data: funcionarios, isLoading: loadingFuncionarios } = useFuncionarios();
   const { data: registros, isLoading: loadingRegistros } = usePontoRegistros(
@@ -28,6 +29,12 @@ export function PontoTab() {
   const registrarPonto = useRegistrarPonto();
 
   const funcionariosAtivos = funcionarios?.filter(f => f.status === 'ativo') || [];
+
+  // Update clock every second
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const handleRegistrarPonto = async (tipo: 'entrada' | 'saida_almoco' | 'retorno_almoco' | 'saida') => {
     if (!selectedFuncionario) {
@@ -80,9 +87,9 @@ export function PontoTab() {
               </SelectContent>
             </Select>
 
-            <div className="text-lg font-medium flex items-center gap-2">
+            <div className="text-lg font-medium flex items-center gap-2 font-mono">
               <Clock className="h-5 w-5 text-muted-foreground" />
-              {format(new Date(), "dd 'de' MMMM, HH:mm", { locale: ptBR })}
+              {format(currentTime, "dd 'de' MMMM, HH:mm:ss", { locale: ptBR })}
             </div>
           </div>
 
@@ -190,7 +197,8 @@ export function PontoTab() {
                     <TableHead>Saída Almoço</TableHead>
                     <TableHead>Retorno</TableHead>
                     <TableHead>Saída</TableHead>
-                    <TableHead>Horas Trab.</TableHead>
+                    <TableHead>Saída</TableHead>
+                    <TableHead>Local</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -204,7 +212,15 @@ export function PontoTab() {
                       <TableCell>{registro.saida_almoco || "-"}</TableCell>
                       <TableCell>{registro.retorno_almoco || "-"}</TableCell>
                       <TableCell>{registro.saida || "-"}</TableCell>
-                      <TableCell>{registro.horas_trabalhadas || "-"}</TableCell>
+                      <TableCell>{registro.saida || "-"}</TableCell>
+                      <TableCell>
+                        {(registro as any).localizacao_valida ? (
+                          <Badge variant="outline" className="text-xs">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            Válido
+                          </Badge>
+                        ) : "-"}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
