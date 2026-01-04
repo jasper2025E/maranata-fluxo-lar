@@ -50,11 +50,9 @@ export class ErrorBoundary extends Component<Props, State> {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {this.state.error && (
-                <div className="p-3 rounded-md bg-muted text-sm text-muted-foreground font-mono overflow-auto max-h-32">
-                  {this.state.error.message}
-                </div>
-              )}
+              <div className="p-3 rounded-md bg-muted text-sm text-muted-foreground">
+                Se o problema persistir, entre em contato com o suporte técnico.
+              </div>
               <Button onClick={this.handleRetry} className="w-full">
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Tentar novamente
