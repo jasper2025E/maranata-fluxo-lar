@@ -165,6 +165,7 @@ const Faturas = () => {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isPaymentLinkOpen, setIsPaymentLinkOpen] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedFatura, setSelectedFatura] = useState<Fatura | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [isGeneratingLink, setIsGeneratingLink] = useState<string | null>(null);
@@ -733,7 +734,13 @@ const Faturas = () => {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48 rounded-xl">
-                              <DropdownMenuItem className="gap-2 cursor-pointer">
+                              <DropdownMenuItem 
+                                className="gap-2 cursor-pointer"
+                                onClick={() => {
+                                  setSelectedFatura(fatura);
+                                  setIsDetailsOpen(true);
+                                }}
+                              >
                                 <Eye className="h-4 w-4" />
                                 Ver detalhes
                               </DropdownMenuItem>
@@ -953,6 +960,90 @@ const Faturas = () => {
                   Abrir página de pagamento
                 </Button>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Details Dialog */}
+        <Dialog open={isDetailsOpen} onOpenChange={setIsDetailsOpen}>
+          <DialogContent className="sm:max-w-lg rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                <FileText className="h-5 w-5 text-primary" />
+                Detalhes da Fatura
+              </DialogTitle>
+            </DialogHeader>
+            
+            {selectedFatura && (
+              <div className="space-y-4">
+                <div className="p-4 rounded-xl bg-muted/50 border">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-bold text-primary">
+                        {selectedFatura.alunos?.nome_completo.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{selectedFatura.alunos?.nome_completo}</p>
+                      <p className="text-sm text-muted-foreground">{selectedFatura.cursos?.nome}</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 rounded-lg border">
+                    <p className="text-xs text-muted-foreground mb-1">Referência</p>
+                    <p className="font-medium">{meses[selectedFatura.mes_referencia - 1]}/{selectedFatura.ano_referencia}</p>
+                  </div>
+                  <div className="p-3 rounded-lg border">
+                    <p className="text-xs text-muted-foreground mb-1">Status</p>
+                    <Badge 
+                      variant="outline"
+                      className={cn(
+                        "font-medium gap-1.5",
+                        getStatusConfig(selectedFatura.status, selectedFatura.data_vencimento).className
+                      )}
+                    >
+                      {selectedFatura.status}
+                    </Badge>
+                  </div>
+                  <div className="p-3 rounded-lg border">
+                    <p className="text-xs text-muted-foreground mb-1">Vencimento</p>
+                    <p className="font-medium">{format(new Date(selectedFatura.data_vencimento), "dd/MM/yyyy")}</p>
+                  </div>
+                  <div className="p-3 rounded-lg border">
+                    <p className="text-xs text-muted-foreground mb-1">Emissão</p>
+                    <p className="font-medium">{format(new Date(selectedFatura.data_emissao), "dd/MM/yyyy")}</p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 text-center">
+                  <p className="text-sm text-muted-foreground mb-1">Valor da Fatura</p>
+                  <p className="text-2xl font-bold text-primary value-currency">{formatCurrency(selectedFatura.valor)}</p>
+                </div>
+
+                {selectedFatura.responsaveis && (
+                  <div className="p-4 rounded-lg border">
+                    <p className="text-xs text-muted-foreground mb-2">Responsável</p>
+                    <p className="font-medium">{selectedFatura.responsaveis.nome}</p>
+                    {selectedFatura.responsaveis.email && (
+                      <p className="text-sm text-muted-foreground">{selectedFatura.responsaveis.email}</p>
+                    )}
+                    <p className="text-sm text-muted-foreground">{selectedFatura.responsaveis.telefone}</p>
+                  </div>
+                )}
+
+                <div className="p-3 rounded-lg border bg-muted/30">
+                  <p className="text-xs text-muted-foreground mb-1">ID da Fatura</p>
+                  <p className="font-mono text-sm">{selectedFatura.id}</p>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="mt-4">
+              <Button variant="outline" onClick={() => setIsDetailsOpen(false)}>
+                Fechar
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
