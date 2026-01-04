@@ -12,6 +12,7 @@ import { ThemeProvider } from "@/components/ThemeProvider";
 import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
+import ResponsavelDashboard from "./pages/ResponsavelDashboard";
 import Responsaveis from "./pages/Responsaveis";
 import Alunos from "./pages/Alunos";
 import Cursos from "./pages/Cursos";
@@ -58,7 +59,15 @@ const App = () => (
                     <Dashboard />
                   </ProtectedRoute>
                 }
-                />
+              />
+              <Route
+                path="/dashboard/financeiro"
+                element={
+                  <ProtectedRoute>
+                    <ResponsavelDashboard />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/responsaveis"
                 element={

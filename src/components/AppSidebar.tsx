@@ -11,6 +11,7 @@ import {
   GraduationCap,
   Building2,
   UserCheck,
+  Wallet,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -32,6 +33,7 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Dashboard Financeiro", url: "/dashboard/financeiro", icon: Wallet },
   { title: "Escola", url: "/escola", icon: Building2, roles: ["admin"] },
   { title: "Responsáveis", url: "/responsaveis", icon: UserCheck },
   { title: "Alunos", url: "/alunos", icon: Users },
