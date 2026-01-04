@@ -24,8 +24,22 @@ import {
   Sun,
   Save,
   Camera,
-  Upload
+  Upload,
+  Database,
+  AlertTriangle,
+  Trash2
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -260,6 +274,44 @@ const Configuracoes = () => {
     }
   };
 
+  const [resettingData, setResettingData] = useState(false);
+  const [confirmText, setConfirmText] = useState("");
+
+  const handleResetData = async (tableType: "alunos" | "faturas" | "pagamentos" | "responsaveis" | "all") => {
+    if (role !== "admin") {
+      toast.error("Apenas administradores podem redefinir dados");
+      return;
+    }
+
+    setResettingData(true);
+    try {
+      if (tableType === "all") {
+        // Delete in order to respect foreign keys
+        await supabase.from("pagamentos").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        await supabase.from("faturas").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        await supabase.from("alunos").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        await supabase.from("responsaveis").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        await supabase.from("despesas").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        toast.success("Todos os dados foram redefinidos!");
+      } else {
+        await supabase.from(tableType).delete().neq("id", "00000000-0000-0000-0000-000000000000");
+        const labels: Record<string, string> = {
+          alunos: "Alunos",
+          faturas: "Faturas",
+          pagamentos: "Pagamentos",
+          responsaveis: "Responsáveis",
+        };
+        toast.success(`${labels[tableType]} foram excluídos!`);
+      }
+      setConfirmText("");
+    } catch (error: any) {
+      console.error("Error resetting data:", error);
+      toast.error("Erro ao redefinir dados: " + error.message);
+    } finally {
+      setResettingData(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl">
@@ -285,6 +337,12 @@ const Configuracoes = () => {
               <Settings className="h-4 w-4" />
               Preferências
             </TabsTrigger>
+            {role === "admin" && (
+              <TabsTrigger value="sistema" className="gap-2">
+                <Database className="h-4 w-4" />
+                Sistema
+              </TabsTrigger>
+            )}
           </TabsList>
 
           {/* Perfil Tab */}
@@ -680,6 +738,224 @@ const Configuracoes = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Sistema Tab - Admin Only */}
+          {role === "admin" && (
+            <TabsContent value="sistema" className="space-y-6">
+              <Card className="border shadow-sm border-destructive/20">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-destructive">
+                    <AlertTriangle className="h-5 w-5" />
+                    Redefinir Dados do Sistema
+                  </CardTitle>
+                  <CardDescription>
+                    Atenção: Estas ações são irreversíveis e excluirão permanentemente os dados selecionados.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="rounded-lg border border-warning/30 bg-warning/5 p-4">
+                    <div className="flex items-start gap-3">
+                      <AlertTriangle className="h-5 w-5 text-warning mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">Aviso Importante</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Ao redefinir os dados, todas as informações selecionadas serão permanentemente excluídas. 
+                          Esta ação não pode ser desfeita. Certifique-se de fazer backup dos dados antes de prosseguir.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-sm">Redefinir por categoria</h4>
+                    
+                    <div className="grid gap-3">
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" className="justify-start gap-2 w-full sm:w-auto">
+                            <Trash2 className="h-4 w-4" />
+                            Excluir todos os Alunos
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir todos os alunos?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação excluirá permanentemente todos os alunos cadastrados no sistema. 
+                              As faturas e pagamentos relacionados também podem ser afetados.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleResetData("alunos")}
+                              className="bg-destructive hover:bg-destructive/90"
+                              disabled={resettingData}
+                            >
+                              {resettingData ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar Exclusão"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" className="justify-start gap-2 w-full sm:w-auto">
+                            <Trash2 className="h-4 w-4" />
+                            Excluir todos os Responsáveis
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir todos os responsáveis?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação excluirá permanentemente todos os responsáveis cadastrados no sistema.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleResetData("responsaveis")}
+                              className="bg-destructive hover:bg-destructive/90"
+                              disabled={resettingData}
+                            >
+                              {resettingData ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar Exclusão"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" className="justify-start gap-2 w-full sm:w-auto">
+                            <Trash2 className="h-4 w-4" />
+                            Excluir todas as Faturas
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir todas as faturas?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação excluirá permanentemente todas as faturas do sistema, incluindo histórico financeiro.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleResetData("faturas")}
+                              className="bg-destructive hover:bg-destructive/90"
+                              disabled={resettingData}
+                            >
+                              {resettingData ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar Exclusão"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="outline" className="justify-start gap-2 w-full sm:w-auto">
+                            <Trash2 className="h-4 w-4" />
+                            Excluir todos os Pagamentos
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Excluir todos os pagamentos?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação excluirá permanentemente todos os registros de pagamentos do sistema.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleResetData("pagamentos")}
+                              className="bg-destructive hover:bg-destructive/90"
+                              disabled={resettingData}
+                            >
+                              {resettingData ? <Loader2 className="h-4 w-4 animate-spin" /> : "Confirmar Exclusão"}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  <div className="space-y-4">
+                    <h4 className="font-medium text-sm text-destructive">Zona de Perigo</h4>
+                    
+                    <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-4 space-y-4">
+                      <div>
+                        <p className="font-medium text-sm">Redefinir TODOS os dados do sistema</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Isso excluirá permanentemente: alunos, responsáveis, faturas, pagamentos e despesas.
+                          Dados da escola, cursos e turmas serão mantidos.
+                        </p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <Label htmlFor="confirm-reset" className="text-xs">
+                          Digite "REDEFINIR" para confirmar:
+                        </Label>
+                        <Input
+                          id="confirm-reset"
+                          value={confirmText}
+                          onChange={(e) => setConfirmText(e.target.value)}
+                          placeholder="REDEFINIR"
+                          className="max-w-xs"
+                        />
+                      </div>
+
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button 
+                            variant="destructive" 
+                            className="gap-2"
+                            disabled={confirmText !== "REDEFINIR" || resettingData}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Redefinir Todos os Dados
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle className="text-destructive">
+                              Redefinir TODOS os dados?
+                            </AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Esta ação é IRREVERSÍVEL. Todos os alunos, responsáveis, faturas, pagamentos 
+                              e despesas serão permanentemente excluídos do sistema.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleResetData("all")}
+                              className="bg-destructive hover:bg-destructive/90"
+                              disabled={resettingData}
+                            >
+                              {resettingData ? (
+                                <>
+                                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                  Redefinindo...
+                                </>
+                              ) : (
+                                "Sim, Redefinir Tudo"
+                              )}
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </DashboardLayout>
