@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -7,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCargos, Funcionario } from "@/hooks/useRH";
+import { FotoUpload } from "./FotoUpload";
 import { Loader2 } from "lucide-react";
 
 const funcionarioSchema = z.object({
@@ -23,6 +25,7 @@ const funcionarioSchema = z.object({
   salario_base: z.coerce.number().min(0, "Salário deve ser positivo"),
   data_admissao: z.string().min(1, "Data de admissão é obrigatória"),
   observacoes: z.string().optional(),
+  foto_url: z.string().optional(),
 });
 
 type FuncionarioFormData = z.infer<typeof funcionarioSchema>;
@@ -35,6 +38,7 @@ interface FuncionarioFormProps {
 
 export function FuncionarioForm({ funcionario, onSubmit, isLoading }: FuncionarioFormProps) {
   const { data: cargos } = useCargos();
+  const [fotoUrl, setFotoUrl] = useState<string | null>(funcionario?.foto_url || null);
 
   const form = useForm<FuncionarioFormData>({
     resolver: zodResolver(funcionarioSchema),
@@ -52,12 +56,28 @@ export function FuncionarioForm({ funcionario, onSubmit, isLoading }: Funcionari
       salario_base: funcionario?.salario_base || 0,
       data_admissao: funcionario?.data_admissao || new Date().toISOString().split('T')[0],
       observacoes: funcionario?.observacoes || "",
+      foto_url: funcionario?.foto_url || "",
     },
   });
 
+  const handleFotoUpload = (url: string) => {
+    setFotoUrl(url);
+    form.setValue('foto_url', url);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {/* Foto Upload */}
+        <div className="flex justify-center pb-4 border-b">
+          <FotoUpload
+            funcionarioId={funcionario?.id}
+            currentPhotoUrl={fotoUrl}
+            onUploadComplete={handleFotoUpload}
+            disabled={isLoading}
+          />
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormField
             control={form.control}
