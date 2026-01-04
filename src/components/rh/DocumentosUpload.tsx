@@ -4,12 +4,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Upload, FileText, Trash2, Download, Loader2, File, Image, FileIcon } from "lucide-react";
+import { Upload, FileText, Trash2, Download, Loader2, File, Image, FileIcon, Eye, X, ZoomIn, ZoomOut } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { EmptyState } from "@/components/EmptyState";
+import { cn } from "@/lib/utils";
 
 interface DocumentosUploadProps {
   funcionarioId: string;
@@ -30,8 +32,13 @@ const getFileIcon = (tipo: string | null) => {
   return <FileIcon className="h-5 w-5 text-gray-500" />;
 };
 
+const isImage = (tipo: string | null) => tipo?.startsWith('image/');
+const isPDF = (tipo: string | null) => tipo?.includes('pdf');
+
 export function DocumentosUpload({ funcionarioId }: DocumentosUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<Documento | null>(null);
+  const [imageZoom, setImageZoom] = useState(1);
   const inputRef = useRef<HTMLInputElement>(null);
   const queryClient = useQueryClient();
 
@@ -137,8 +144,19 @@ export function DocumentosUpload({ funcionarioId }: DocumentosUploadProps) {
     }
   };
 
+  const canPreview = (doc: Documento) => isImage(doc.tipo) || isPDF(doc.tipo);
+
+  const handlePreview = (doc: Documento) => {
+    setImageZoom(1);
+    setPreviewDoc(doc);
+  };
+
+  const zoomIn = () => setImageZoom(prev => Math.min(prev + 0.25, 3));
+  const zoomOut = () => setImageZoom(prev => Math.max(prev - 0.25, 0.5));
+
   return (
-    <Card>
+    <>
+      <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg flex items-center gap-2">
           <FileText className="h-5 w-5" />
@@ -213,17 +231,28 @@ export function DocumentosUpload({ funcionarioId }: DocumentosUploadProps) {
                     {format(new Date(doc.created_at), 'dd/MM/yyyy HH:mm')}
                   </TableCell>
                   <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-1">
+                      {canPreview(doc) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handlePreview(doc)}
+                          title="Visualizar"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      )}
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => window.open(doc.url, '_blank')}
+                        title="Download"
                       >
                         <Download className="h-4 w-4" />
                       </Button>
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button variant="ghost" size="icon" className="text-destructive">
+                          <Button variant="ghost" size="icon" className="text-destructive" title="Excluir">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </AlertDialogTrigger>
@@ -254,5 +283,57 @@ export function DocumentosUpload({ funcionarioId }: DocumentosUploadProps) {
         )}
       </CardContent>
     </Card>
+
+    {/* Modal de Visualização */}
+    <Dialog open={!!previewDoc} onOpenChange={(open) => !open && setPreviewDoc(null)}>
+      <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden">
+        <DialogHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+          <DialogTitle className="flex items-center gap-2 text-base">
+            {previewDoc && getFileIcon(previewDoc.tipo)}
+            {previewDoc?.nome}
+          </DialogTitle>
+          <div className="flex items-center gap-2">
+            {previewDoc && isImage(previewDoc.tipo) && (
+              <>
+                <Button variant="ghost" size="icon" onClick={zoomOut} disabled={imageZoom <= 0.5}>
+                  <ZoomOut className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground w-12 text-center">
+                  {Math.round(imageZoom * 100)}%
+                </span>
+                <Button variant="ghost" size="icon" onClick={zoomIn} disabled={imageZoom >= 3}>
+                  <ZoomIn className="h-4 w-4" />
+                </Button>
+              </>
+            )}
+            <Button variant="ghost" size="icon" onClick={() => previewDoc && window.open(previewDoc.url, '_blank')}>
+              <Download className="h-4 w-4" />
+            </Button>
+          </div>
+        </DialogHeader>
+        
+        <div className="flex-1 overflow-auto bg-muted/30 min-h-[60vh]">
+          {previewDoc && isImage(previewDoc.tipo) && (
+            <div className="flex items-center justify-center p-4 min-h-[60vh]">
+              <img
+                src={previewDoc.url}
+                alt={previewDoc.nome}
+                className="max-w-full transition-transform duration-200"
+                style={{ transform: `scale(${imageZoom})` }}
+              />
+            </div>
+          )}
+          
+          {previewDoc && isPDF(previewDoc.tipo) && (
+            <iframe
+              src={previewDoc.url}
+              className="w-full h-[70vh] border-0"
+              title={previewDoc.nome}
+            />
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
