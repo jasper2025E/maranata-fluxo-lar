@@ -594,6 +594,8 @@ export type Database = {
           id: string
           nome_completo: string
           observacoes: string | null
+          ponto_token: string | null
+          ponto_token_expires_at: string | null
           rg: string | null
           salario_base: number
           status: Database["public"]["Enums"]["funcionario_status"]
@@ -614,6 +616,8 @@ export type Database = {
           id?: string
           nome_completo: string
           observacoes?: string | null
+          ponto_token?: string | null
+          ponto_token_expires_at?: string | null
           rg?: string | null
           salario_base?: number
           status?: Database["public"]["Enums"]["funcionario_status"]
@@ -634,6 +638,8 @@ export type Database = {
           id?: string
           nome_completo?: string
           observacoes?: string | null
+          ponto_token?: string | null
+          ponto_token_expires_at?: string | null
           rg?: string | null
           salario_base?: number
           status?: Database["public"]["Enums"]["funcionario_status"]
@@ -744,11 +750,14 @@ export type Database = {
           horas_extras: unknown
           horas_trabalhadas: unknown
           id: string
+          ip_address: string | null
           observacoes: string | null
           retorno_almoco: string | null
           saida: string | null
           saida_almoco: string | null
+          tipo_registro: string | null
           updated_at: string | null
+          user_agent: string | null
         }
         Insert: {
           created_at?: string | null
@@ -759,11 +768,14 @@ export type Database = {
           horas_extras?: unknown
           horas_trabalhadas?: unknown
           id?: string
+          ip_address?: string | null
           observacoes?: string | null
           retorno_almoco?: string | null
           saida?: string | null
           saida_almoco?: string | null
+          tipo_registro?: string | null
           updated_at?: string | null
+          user_agent?: string | null
         }
         Update: {
           created_at?: string | null
@@ -774,11 +786,14 @@ export type Database = {
           horas_extras?: unknown
           horas_trabalhadas?: unknown
           id?: string
+          ip_address?: string | null
           observacoes?: string | null
           retorno_almoco?: string | null
           saida?: string | null
           saida_almoco?: string | null
+          tipo_registro?: string | null
           updated_at?: string | null
+          user_agent?: string | null
         }
         Relationships: [
           {
@@ -973,6 +988,10 @@ export type Database = {
     }
     Functions: {
       atualizar_status_faturas: { Args: never; Returns: undefined }
+      generate_ponto_token: {
+        Args: { p_funcionario_id: string }
+        Returns: string
+      }
       gerar_faturas_aluno: {
         Args: {
           p_aluno_id: string
@@ -988,6 +1007,25 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      registrar_ponto_externo: {
+        Args: {
+          p_ip?: string
+          p_tipo: string
+          p_token: string
+          p_user_agent?: string
+        }
+        Returns: Json
+      }
+      validate_ponto_token: {
+        Args: { p_token: string }
+        Returns: {
+          cargo_nome: string
+          foto_url: string
+          funcionario_id: string
+          nome_completo: string
+          ultimo_registro: Json
+        }[]
       }
     }
     Enums: {
