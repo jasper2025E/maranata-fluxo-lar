@@ -742,6 +742,7 @@ export type Database = {
       }
       ponto_registros: {
         Row: {
+          accuracy: number | null
           created_at: string | null
           data: string
           editado_por: string | null
@@ -751,6 +752,9 @@ export type Database = {
           horas_trabalhadas: unknown
           id: string
           ip_address: string | null
+          latitude: number | null
+          localizacao_valida: boolean | null
+          longitude: number | null
           observacoes: string | null
           retorno_almoco: string | null
           saida: string | null
@@ -760,6 +764,7 @@ export type Database = {
           user_agent: string | null
         }
         Insert: {
+          accuracy?: number | null
           created_at?: string | null
           data?: string
           editado_por?: string | null
@@ -769,6 +774,9 @@ export type Database = {
           horas_trabalhadas?: unknown
           id?: string
           ip_address?: string | null
+          latitude?: number | null
+          localizacao_valida?: boolean | null
+          longitude?: number | null
           observacoes?: string | null
           retorno_almoco?: string | null
           saida?: string | null
@@ -778,6 +786,7 @@ export type Database = {
           user_agent?: string | null
         }
         Update: {
+          accuracy?: number | null
           created_at?: string | null
           data?: string
           editado_por?: string | null
@@ -787,6 +796,9 @@ export type Database = {
           horas_trabalhadas?: unknown
           id?: string
           ip_address?: string | null
+          latitude?: number | null
+          localizacao_valida?: boolean | null
+          longitude?: number | null
           observacoes?: string | null
           retorno_almoco?: string | null
           saida?: string | null
@@ -804,6 +816,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      pontos_autorizados: {
+        Row: {
+          ativo: boolean
+          created_at: string
+          id: string
+          latitude: number
+          longitude: number
+          nome: string
+          raio_metros: number
+        }
+        Insert: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          latitude: number
+          longitude: number
+          nome: string
+          raio_metros?: number
+        }
+        Update: {
+          ativo?: boolean
+          created_at?: string
+          id?: string
+          latitude?: number
+          longitude?: number
+          nome?: string
+          raio_metros?: number
+        }
+        Relationships: []
       }
       profiles: {
         Row: {
@@ -1019,6 +1061,14 @@ export type Database = {
           p_user_agent?: string
         }
         Returns: Json
+      }
+      validar_localizacao: {
+        Args: { p_latitude: number; p_longitude: number }
+        Returns: {
+          distancia_metros: number
+          ponto_nome: string
+          valido: boolean
+        }[]
       }
       validate_ponto_token: {
         Args: { p_token: string }
