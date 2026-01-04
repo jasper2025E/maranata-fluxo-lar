@@ -440,7 +440,12 @@ const Faturas = () => {
       setEmailToSend("");
     } catch (error: any) {
       console.error("Erro ao enviar email:", error);
-      toast.error(`Erro ao enviar email: ${error.message}`);
+      // Check for Resend domain verification error
+      if (error.message?.includes("non-2xx")) {
+        toast.error("Erro: Você precisa verificar um domínio no Resend para enviar emails para outros destinatários. Acesse resend.com/domains para configurar.");
+      } else {
+        toast.error(`Erro ao enviar email: ${error.message}`);
+      }
     } finally {
       setIsSendingEmail(false);
     }
@@ -972,6 +977,9 @@ const Faturas = () => {
                 <FileText className="h-5 w-5 text-primary" />
                 Detalhes da Fatura
               </DialogTitle>
+              <DialogDescription>
+                Informações completas da fatura selecionada.
+              </DialogDescription>
             </DialogHeader>
             
             {selectedFatura && (
