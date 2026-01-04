@@ -22,8 +22,11 @@ import {
   Loader2,
   Moon,
   Sun,
-  Save
+  Save,
+  Camera,
+  Upload
 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -50,6 +53,8 @@ const Configuracoes = () => {
   const [loading, setLoading] = useState(false);
   const [savingPrefs, setSavingPrefs] = useState(false);
   const [loadingPrefs, setLoadingPrefs] = useState(true);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -67,41 +72,107 @@ const Configuracoes = () => {
     theme: "light",
   });
 
-  // Load user preferences on mount
+  // Load user preferences and profile on mount
   useEffect(() => {
-    const loadPreferences = async () => {
+    const loadData = async () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        // Load preferences
+        const { data: prefsData, error: prefsError } = await supabase
           .from("user_preferences")
           .select("*")
           .eq("user_id", user.id)
           .maybeSingle();
 
-        if (error) throw error;
+        if (prefsError) throw prefsError;
 
-        if (data) {
+        if (prefsData) {
           setPreferences({
-            email_notifications: data.email_notifications ?? true,
-            browser_notifications: data.browser_notifications ?? false,
-            weekly_report: data.weekly_report ?? true,
-            theme: data.theme ?? "light",
+            email_notifications: prefsData.email_notifications ?? true,
+            browser_notifications: prefsData.browser_notifications ?? false,
+            weekly_report: prefsData.weekly_report ?? true,
+            theme: prefsData.theme ?? "light",
           });
-          // Sync theme with stored preference
-          if (data.theme) {
-            setTheme(data.theme);
+          if (prefsData.theme) {
+            setTheme(prefsData.theme);
           }
         }
+
+        // Load profile avatar
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select("avatar_url")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (profileError) throw profileError;
+
+        if (profileData?.avatar_url) {
+          setAvatarUrl(profileData.avatar_url);
+        }
       } catch (error) {
-        console.error("Error loading preferences:", error);
+        console.error("Error loading data:", error);
       } finally {
         setLoadingPrefs(false);
       }
     };
 
-    loadPreferences();
+    loadData();
   }, [user, setTheme]);
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!file.type.startsWith("image/")) {
+      toast.error("Por favor, selecione uma imagem válida");
+      return;
+    }
+
+    // Validate file size (max 2MB)
+    if (file.size > 2 * 1024 * 1024) {
+      toast.error("A imagem deve ter no máximo 2MB");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const fileExt = file.name.split(".").pop();
+      const filePath = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to storage
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const publicUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+
+      // Update profile
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: publicUrl })
+        .eq("id", user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast.success("Foto de perfil atualizada!");
+    } catch (error: any) {
+      console.error("Error uploading avatar:", error);
+      toast.error("Erro ao atualizar foto de perfil");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
 
   const roleLabels: Record<string, string> = {
     admin: "Administrador",
@@ -229,19 +300,68 @@ const Configuracoes = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center gap-4">
-                  <div className="h-20 w-20 rounded-full bg-primary/10 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-primary">
-                      {user?.email?.substring(0, 2).toUpperCase()}
-                    </span>
+                <div className="flex items-center gap-6">
+                  <div className="relative group">
+                    <Avatar className="h-24 w-24 border-2 border-border">
+                      <AvatarImage src={avatarUrl || undefined} alt="Foto de perfil" />
+                      <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
+                        {user?.email?.substring(0, 2).toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <label 
+                      htmlFor="avatar-upload" 
+                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                    >
+                      {uploadingAvatar ? (
+                        <Loader2 className="h-6 w-6 text-white animate-spin" />
+                      ) : (
+                        <Camera className="h-6 w-6 text-white" />
+                      )}
+                    </label>
+                    <input
+                      id="avatar-upload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleAvatarUpload}
+                      disabled={uploadingAvatar}
+                      className="hidden"
+                    />
                   </div>
-                  <div className="space-y-1">
+                  <div className="space-y-2">
                     <p className="text-lg font-semibold">{user?.email?.split("@")[0]}</p>
                     <p className="text-sm text-muted-foreground">{user?.email}</p>
                     <Badge variant="secondary" className="mt-1">
                       <Shield className="h-3 w-3 mr-1" />
                       {role ? roleLabels[role] : "Usuário"}
                     </Badge>
+                    <div className="pt-2">
+                      <label htmlFor="avatar-upload-btn">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="gap-2"
+                          disabled={uploadingAvatar}
+                          asChild
+                        >
+                          <span>
+                            {uploadingAvatar ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <Upload className="h-4 w-4" />
+                            )}
+                            Alterar foto
+                          </span>
+                        </Button>
+                      </label>
+                      <input
+                        id="avatar-upload-btn"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleAvatarUpload}
+                        disabled={uploadingAvatar}
+                        className="hidden"
+                      />
+                    </div>
                   </div>
                 </div>
 
