@@ -1,13 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { GraduationCap, Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, BookOpen } from "lucide-react";
 import { z } from "zod";
+import { supabase } from "@/integrations/supabase/client";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -22,6 +22,20 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [escolaNome, setEscolaNome] = useState("Escola");
+
+  // Fetch escola info
+  useEffect(() => {
+    const fetchEscola = async () => {
+      const { data } = await supabase.from("escola").select("nome, logo_url").limit(1).maybeSingle();
+      if (data) {
+        setEscolaNome(data.nome);
+        setLogoUrl(data.logo_url);
+      }
+    };
+    fetchEscola();
+  }, []);
 
   // Redirect if already authenticated
   if (user && !authLoading) {
@@ -33,7 +47,6 @@ const Auth = () => {
     e.preventDefault();
     setErrors({});
 
-    // Validate
     const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
       const fieldErrors: { email?: string; password?: string } = {};
@@ -69,61 +82,85 @@ const Auth = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-100 via-pink-50 to-blue-100">
+        <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-accent/10 p-4">
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-accent/20 rounded-full blur-3xl" />
-      </div>
+    <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-violet-50 to-pink-50" />
+      
+      {/* Floating gradient blobs */}
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-gradient-to-br from-violet-400/40 to-blue-400/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/4 animate-pulse" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gradient-to-tl from-pink-300/50 to-violet-300/40 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
+      <div className="absolute top-1/2 right-1/4 w-[300px] h-[300px] bg-gradient-to-l from-pink-200/60 to-purple-200/40 rounded-full blur-2xl" />
 
-      <Card className="w-full max-w-md shadow-large relative animate-scale-in">
-        <CardHeader className="space-y-4 text-center pb-2">
-          <div className="flex justify-center">
-            <div className="h-16 w-16 rounded-xl gradient-primary flex items-center justify-center shadow-medium">
-              <GraduationCap className="h-9 w-9 text-primary-foreground" />
-            </div>
+      {/* Login Card */}
+      <div className="relative w-full max-w-md">
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-100/80 via-violet-100/60 to-white/80 rounded-3xl blur-xl" />
+        
+        <div className="relative bg-gradient-to-br from-pink-50/90 via-white/95 to-violet-50/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 p-8 md:p-10">
+          {/* Logo */}
+          <div className="flex justify-center mb-6">
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt={escolaNome} 
+                className="h-28 w-28 object-contain rounded-full shadow-lg border-4 border-white"
+              />
+            ) : (
+              <div className="h-28 w-28 rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg border-4 border-white">
+                <BookOpen className="h-14 w-14 text-white" />
+              </div>
+            )}
           </div>
-          <div className="space-y-1">
-            <CardTitle className="text-2xl font-bold">Escola Maranata</CardTitle>
-            <CardDescription className="text-base">
-              Sistema de Gestão Financeira
-            </CardDescription>
+
+          {/* Title */}
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Bem-vindo</h1>
+            <p className="text-gray-600">Entre com qualquer email e senha</p>
           </div>
-        </CardHeader>
-        <CardContent className="pt-4">
-          <form onSubmit={handleLogin} className="space-y-4">
+
+          {/* Form */}
+          <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
+              <Label htmlFor="email" className="text-gray-700 font-medium">
+                Email
+              </Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="seu@email.com"
+                placeholder="Digite seu email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className={errors.email ? "border-destructive" : ""}
+                className={`h-12 bg-white/80 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 ${
+                  errors.email ? "border-red-400" : ""
+                }`}
                 disabled={loading}
                 autoComplete="email"
               />
               {errors.email && (
-                <p className="text-xs text-destructive">{errors.email}</p>
+                <p className="text-xs text-red-500">{errors.email}</p>
               )}
             </div>
+
             <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
+              <Label htmlFor="password" className="text-gray-700 font-medium">
+                Senha
+              </Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
+                  placeholder="Digite sua senha"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className={errors.password ? "border-destructive pr-10" : "pr-10"}
+                  className={`h-12 bg-white/80 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 pr-12 ${
+                    errors.password ? "border-red-400" : ""
+                  }`}
                   disabled={loading}
                   autoComplete="current-password"
                 />
@@ -131,21 +168,22 @@ const Auth = () => {
                   type="button"
                   variant="ghost"
                   size="icon"
-                  className="absolute right-0 top-0 h-full px-3 hover:bg-transparent"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
                 >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4 text-muted-foreground" />
-                  ) : (
-                    <Eye className="h-4 w-4 text-muted-foreground" />
-                  )}
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
               {errors.password && (
-                <p className="text-xs text-destructive">{errors.password}</p>
+                <p className="text-xs text-red-500">{errors.password}</p>
               )}
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 bg-gradient-to-r from-violet-500 via-purple-500 to-violet-600 hover:from-violet-600 hover:via-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/40"
+            >
               {loading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -156,14 +194,15 @@ const Auth = () => {
               )}
             </Button>
           </form>
-          
-          <div className="mt-6 pt-4 border-t text-center">
-            <p className="text-xs text-muted-foreground">
-              Acesso restrito aos funcionários da escola
+
+          {/* Footer */}
+          <div className="mt-8 text-center">
+            <p className="text-sm text-gray-500">
+              Sistema de Gestão Escolar {escolaNome}
             </p>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
