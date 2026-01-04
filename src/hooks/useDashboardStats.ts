@@ -29,6 +29,11 @@ export interface DashboardStats {
   // Indicadores
   inadimplencia: number;
   inadimplenciaResponsaveis: number;
+  
+  // RH
+  totalFuncionarios: number;
+  funcionariosAtivos: number;
+  gastoRHMensal: number;
 }
 
 async function fetchDashboardStats(): Promise<DashboardStats> {
@@ -44,6 +49,8 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     despesasResult,
     pagamentosHistoricoResult,
     despesasHistoricoResult,
+    funcionariosResult,
+    folhaPagamentoResult,
   ] = await Promise.all([
     // Responsáveis
     supabase.from("responsaveis").select("id, ativo"),
@@ -91,6 +98,17 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .select("valor, data_pagamento")
       .eq("paga", true)
       .gte("data_pagamento", new Date(currentYear, currentMonth - 6, 1).toISOString().split("T")[0]),
+
+    // Funcionários
+    supabase.from("funcionarios").select("id, status, salario_base"),
+
+    // Folha de pagamento do mês atual
+    supabase
+      .from("folha_pagamento")
+      .select("total_liquido, pago")
+      .eq("mes_referencia", currentMonth)
+      .eq("ano_referencia", currentYear)
+      .eq("pago", true),
   ]);
 
   const responsaveis = responsaveisResult.data || [];
@@ -98,7 +116,8 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const faturas = faturasResult.data || [];
   const pagamentos = pagamentosResult.data || [];
   const despesas = despesasResult.data || [];
-
+  const funcionarios = funcionariosResult.data || [];
+  const folhaPagamento = folhaPagamentoResult.data || [];
   // Responsáveis stats
   const totalResponsaveis = responsaveis.length;
   const responsaveisAtivos = responsaveis.filter(r => r.ativo).length;
@@ -137,7 +156,11 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
 
   // Process historical data for charts
   const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-  
+  // RH Stats
+  const totalFuncionarios = funcionarios.length;
+  const funcionariosAtivos = funcionarios.filter(f => f.status === 'ativo').length;
+  const gastoRHMensal = folhaPagamento.reduce((sum, f) => sum + Number(f.total_liquido || 0), 0);
+
   const receitasMes = processMonthlyData(pagamentosHistoricoResult.data || [], monthNames);
   const despesasMes = processMonthlyData(despesasHistoricoResult.data || [], monthNames);
 
@@ -157,6 +180,9 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     despesasMes,
     inadimplencia,
     inadimplenciaResponsaveis,
+    totalFuncionarios,
+    funcionariosAtivos,
+    gastoRHMensal,
   };
 }
 
