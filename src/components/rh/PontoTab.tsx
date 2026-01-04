@@ -197,7 +197,7 @@ export function PontoTab() {
                     <TableHead>Saída Almoço</TableHead>
                     <TableHead>Retorno</TableHead>
                     <TableHead>Saída</TableHead>
-                    <TableHead>Saída</TableHead>
+                    <TableHead>Horas Trab.</TableHead>
                     <TableHead>Local</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -212,12 +212,16 @@ export function PontoTab() {
                       <TableCell>{registro.saida_almoco || "-"}</TableCell>
                       <TableCell>{registro.retorno_almoco || "-"}</TableCell>
                       <TableCell>{registro.saida || "-"}</TableCell>
-                      <TableCell>{registro.saida || "-"}</TableCell>
+                      <TableCell>
+                        {registro.horas_trabalhadas ? (
+                          <Badge variant="outline">{String(registro.horas_trabalhadas).slice(0, 5)}</Badge>
+                        ) : "-"}
+                      </TableCell>
                       <TableCell>
                         {(registro as any).localizacao_valida ? (
-                          <Badge variant="outline" className="text-xs">
+                          <Badge variant="outline" className="text-xs text-green-600">
                             <MapPin className="h-3 w-3 mr-1" />
-                            Válido
+                            OK
                           </Badge>
                         ) : "-"}
                       </TableCell>
