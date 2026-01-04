@@ -12,11 +12,13 @@ import {
   CheckCircle,
   Clock,
   UserPlus,
-  Briefcase
+  Briefcase,
+  BarChart
 } from "lucide-react";
 import { FuncionariosTab } from "@/components/rh/FuncionariosTab";
 import { CargosTab } from "@/components/rh/CargosTab";
 import { PontoTab } from "@/components/rh/PontoTab";
+import { PontoRelatorios } from "@/components/rh/PontoRelatorios";
 import { FolhaTab } from "@/components/rh/FolhaTab";
 import { ContratosTab } from "@/components/rh/ContratosTab";
 import { LoadingState } from "@/components/LoadingState";
@@ -44,11 +46,15 @@ export default function RH() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <TabsList className="bg-muted/50 p-1">
+          <TabsList className="bg-muted/50 p-1 flex-wrap">
             <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
             <TabsTrigger value="funcionarios">Funcionários</TabsTrigger>
             <TabsTrigger value="cargos">Cargos e Setores</TabsTrigger>
             <TabsTrigger value="ponto">Ponto</TabsTrigger>
+            <TabsTrigger value="relatorios">
+              <BarChart className="h-4 w-4 mr-1" />
+              Relatórios
+            </TabsTrigger>
             <TabsTrigger value="folha">Folha de Pagamento</TabsTrigger>
             <TabsTrigger value="contratos">Contratos</TabsTrigger>
           </TabsList>
@@ -133,6 +139,10 @@ export default function RH() {
 
           <TabsContent value="ponto">
             <PontoTab />
+          </TabsContent>
+
+          <TabsContent value="relatorios">
+            <PontoRelatorios />
           </TabsContent>
 
           <TabsContent value="folha">
