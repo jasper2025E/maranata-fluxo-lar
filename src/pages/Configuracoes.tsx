@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +19,9 @@ import {
   Eye, 
   EyeOff,
   CheckCircle2,
-  Loader2
+  Loader2,
+  Moon,
+  Sun
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -35,6 +38,7 @@ const passwordSchema = z.object({
 
 const Configuracoes = () => {
   const { user, role } = useAuth();
+  const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -50,7 +54,6 @@ const Configuracoes = () => {
     emailNotifications: true,
     browserNotifications: false,
     weeklyReport: true,
-    darkMode: false,
   });
 
   const roleLabels: Record<string, string> = {
@@ -421,17 +424,22 @@ const Configuracoes = () => {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="font-medium">Modo escuro</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Altere entre tema claro e escuro
-                    </p>
+                  <div className="flex items-center gap-3">
+                    {theme === "dark" ? (
+                      <Moon className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Sun className="h-5 w-5 text-warning" />
+                    )}
+                    <div className="space-y-0.5">
+                      <Label className="font-medium">Modo escuro</Label>
+                      <p className="text-sm text-muted-foreground">
+                        {theme === "dark" ? "Tema escuro ativado" : "Tema claro ativado"}
+                      </p>
+                    </div>
                   </div>
                   <Switch
-                    checked={preferences.darkMode}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, darkMode: checked })
-                    }
+                    checked={theme === "dark"}
+                    onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
                   />
                 </div>
 
