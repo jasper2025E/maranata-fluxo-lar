@@ -11,12 +11,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Search, Eye, Users, UserCheck, UserX, GraduationCap, Phone, Mail, MapPin, Calendar } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, Eye, Users, UserCheck, UserX, GraduationCap, Phone, Mail, MapPin, Calendar, BookOpen } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { alunoSchema } from "@/lib/validations";
 import { cn } from "@/lib/utils";
+import { useEnturmar } from "@/hooks/useEnturmacao";
 
 interface Aluno {
   id: string;
@@ -114,6 +115,9 @@ const Alunos = () => {
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
+  const [isEnturmarOpen, setIsEnturmarOpen] = useState(false);
+  const [enturmandoAluno, setEnturmandoAluno] = useState<Aluno | null>(null);
+  const [selectedTurmaId, setSelectedTurmaId] = useState("");
   const [viewingAluno, setViewingAluno] = useState<Aluno | null>(null);
   const [editingAluno, setEditingAluno] = useState<Aluno | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
@@ -127,6 +131,8 @@ const Alunos = () => {
     endereco: "",
     observacoes: "",
   });
+
+  const enturmarMutation = useEnturmar();
 
   const { data: alunos = [], isLoading } = useQuery({
     queryKey: ["alunos"],
@@ -269,6 +275,35 @@ const Alunos = () => {
   const handleView = (aluno: Aluno) => {
     setViewingAluno(aluno);
     setIsViewOpen(true);
+  };
+
+  const handleEnturmar = (aluno: Aluno) => {
+    setEnturmandoAluno(aluno);
+    setSelectedTurmaId(aluno.turma_id || "");
+    setIsEnturmarOpen(true);
+  };
+
+  const handleConfirmEnturmacao = async () => {
+    if (!enturmandoAluno || !selectedTurmaId) return;
+
+    const curso = cursos.find((c) => c.id === enturmandoAluno.curso_id);
+    if (!curso) {
+      toast.error("Curso não encontrado");
+      return;
+    }
+
+    await enturmarMutation.mutateAsync({
+      alunoId: enturmandoAluno.id,
+      turmaId: selectedTurmaId,
+      cursoId: enturmandoAluno.curso_id,
+      valorMensalidade: curso.mensalidade,
+      responsavelId: (enturmandoAluno as any).responsavel_id,
+      gerarFaturas: !enturmandoAluno.turma_id, // Só gera faturas se não tinha turma antes
+    });
+
+    setIsEnturmarOpen(false);
+    setEnturmandoAluno(null);
+    setSelectedTurmaId("");
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -565,6 +600,15 @@ const Alunos = () => {
                           <Button 
                             variant="ghost" 
                             size="icon"
+                            className="h-8 w-8 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50"
+                            onClick={() => handleEnturmar(aluno)}
+                            title="Enturmar"
+                          >
+                            <BookOpen className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
                             className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50"
                             onClick={() => handleView(aluno)}
                           >
@@ -685,6 +729,98 @@ const Alunos = () => {
                 </div>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Enturmação Dialog */}
+        <Dialog open={isEnturmarOpen} onOpenChange={(open) => {
+          if (!open) {
+            setEnturmandoAluno(null);
+            setSelectedTurmaId("");
+          }
+          setIsEnturmarOpen(open);
+        }}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                <BookOpen className="h-5 w-5 text-emerald-600" />
+                Enturmação Simplificada
+              </DialogTitle>
+              <DialogDescription className="text-gray-500">
+                Selecione a turma e confirme. As faturas serão geradas automaticamente.
+              </DialogDescription>
+            </DialogHeader>
+            {enturmandoAluno && (
+              <div className="space-y-6 py-4">
+                {/* Aluno Info */}
+                <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 border">
+                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                    <span className="text-lg font-bold text-blue-600">
+                      {enturmandoAluno.nome_completo.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-gray-900">{enturmandoAluno.nome_completo}</h3>
+                    <p className="text-sm text-gray-500">
+                      {enturmandoAluno.cursos?.nome} • {formatCurrency(enturmandoAluno.cursos?.mensalidade || 0)}/mês
+                    </p>
+                  </div>
+                </div>
+
+                {/* Turma atual */}
+                {enturmandoAluno.turmas && (
+                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+                    <p className="text-sm text-amber-700">
+                      <strong>Turma atual:</strong> {enturmandoAluno.turmas.nome} - {enturmandoAluno.turmas.serie}
+                    </p>
+                  </div>
+                )}
+
+                {/* Seleção de Turma */}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    {enturmandoAluno.turmas ? "Nova Turma" : "Selecione a Turma"}
+                  </Label>
+                  <Select value={selectedTurmaId} onValueChange={setSelectedTurmaId}>
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Escolha uma turma..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {turmas.map((turma) => (
+                        <SelectItem key={turma.id} value={turma.id}>
+                          {turma.nome} - {turma.serie}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Info sobre faturas */}
+                {!enturmandoAluno.turma_id && selectedTurmaId && (
+                  <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
+                    <p className="text-sm text-emerald-700">
+                      ✓ Ao confirmar, 12 faturas mensais de <strong>{formatCurrency(enturmandoAluno.cursos?.mensalidade || 0)}</strong> serão geradas automaticamente.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+            <DialogFooter className="gap-2">
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsEnturmarOpen(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleConfirmEnturmacao}
+                disabled={!selectedTurmaId || enturmarMutation.isPending}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                {enturmarMutation.isPending ? "Processando..." : "Confirmar Enturmação"}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
