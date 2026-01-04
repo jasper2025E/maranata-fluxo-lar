@@ -121,6 +121,7 @@ const Alunos = () => {
   const [viewingAluno, setViewingAluno] = useState<Aluno | null>(null);
   const [editingAluno, setEditingAluno] = useState<Aluno | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterSemTurma, setFilterSemTurma] = useState(false);
   const [formData, setFormData] = useState({
     nome_completo: "",
     data_nascimento: "",
@@ -321,11 +322,13 @@ const Alunos = () => {
     }
   };
 
-  const filteredAlunos = alunos.filter(
-    (aluno) =>
+  const filteredAlunos = alunos.filter((aluno) => {
+    const matchesSearch = 
       aluno.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      aluno.email_responsavel.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      aluno.email_responsavel?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesTurmaFilter = filterSemTurma ? !aluno.turma_id : true;
+    return matchesSearch && matchesTurmaFilter;
+  });
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -336,6 +339,7 @@ const Alunos = () => {
   const alunosAtivos = alunos.filter(a => a.status_matricula === 'ativo').length;
   const alunosTrancados = alunos.filter(a => a.status_matricula === 'trancado').length;
   const alunosCancelados = alunos.filter(a => a.status_matricula === 'cancelado' || a.status_matricula === 'transferido').length;
+  const alunosSemTurma = alunos.filter(a => !a.turma_id).length;
 
   return (
     <DashboardLayout>
@@ -502,29 +506,44 @@ const Alunos = () => {
           <StatCardMini title="Total de Alunos" value={totalAlunos} icon={Users} color="blue" />
           <StatCardMini title="Alunos Ativos" value={alunosAtivos} icon={UserCheck} color="green" />
           <StatCardMini title="Trancados" value={alunosTrancados} icon={Users} color="amber" />
-          <StatCardMini title="Cancelados/Transf." value={alunosCancelados} icon={UserX} color="red" />
+          <StatCardMini title="Sem Turma" value={alunosSemTurma} icon={BookOpen} color="red" />
         </div>
 
         {/* Table Card */}
         <Card className="border-gray-100/80 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
           <CardHeader className="border-b border-gray-100 bg-gray-50/50">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
               <div>
                 <CardTitle className="text-lg font-semibold text-gray-900">
                   Lista de Alunos
                 </CardTitle>
                 <CardDescription className="text-gray-500">
                   {filteredAlunos.length} aluno(s) encontrado(s)
+                  {filterSemTurma && " • Filtro: sem turma"}
                 </CardDescription>
               </div>
-              <div className="relative w-72">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar por nome ou email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 h-10 bg-white"
-                />
+              <div className="flex items-center gap-3">
+                <Button
+                  variant={filterSemTurma ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setFilterSemTurma(!filterSemTurma)}
+                  className={cn(
+                    "h-10",
+                    filterSemTurma && "bg-rose-600 hover:bg-rose-700"
+                  )}
+                >
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  Sem Turma ({alunosSemTurma})
+                </Button>
+                <div className="relative w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Input
+                    placeholder="Buscar por nome ou email..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-9 h-10 bg-white"
+                  />
+                </div>
               </div>
             </div>
           </CardHeader>
