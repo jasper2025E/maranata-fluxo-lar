@@ -32,6 +32,11 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -116,22 +121,44 @@ export function AppSidebar() {
           "flex items-center gap-3 px-4 py-6",
           isCollapsed && "justify-center px-2"
         )}>
-          {logoUrl ? (
-            <img 
-              src={logoUrl} 
-              alt={escolaNome} 
-              className="h-10 w-10 rounded-xl object-cover shrink-0 shadow-lg"
-            />
+          {isCollapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                {logoUrl ? (
+                  <img 
+                    src={logoUrl} 
+                    alt={escolaNome} 
+                    className="h-10 w-10 rounded-xl object-cover shrink-0 shadow-lg cursor-pointer"
+                  />
+                ) : (
+                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/20 cursor-pointer">
+                    <GraduationCap className="h-5 w-5 text-white" strokeWidth={2} />
+                  </div>
+                )}
+              </TooltipTrigger>
+              <TooltipContent side="right" className="font-medium">
+                <p>{escolaNome}</p>
+                <p className="text-xs text-muted-foreground">Sistema Financeiro</p>
+              </TooltipContent>
+            </Tooltip>
           ) : (
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/20">
-              <GraduationCap className="h-5 w-5 text-white" strokeWidth={2} />
-            </div>
-          )}
-          {!isCollapsed && (
-            <div>
-              <h2 className="font-bold text-sidebar-foreground text-lg tracking-tight leading-tight">{escolaNome}</h2>
-              <p className="text-xs text-sidebar-foreground/50 font-medium">Sistema Financeiro</p>
-            </div>
+            <>
+              {logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt={escolaNome} 
+                  className="h-10 w-10 rounded-xl object-cover shrink-0 shadow-lg"
+                />
+              ) : (
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/20">
+                  <GraduationCap className="h-5 w-5 text-white" strokeWidth={2} />
+                </div>
+              )}
+              <div>
+                <h2 className="font-bold text-sidebar-foreground text-lg tracking-tight leading-tight">{escolaNome}</h2>
+                <p className="text-xs text-sidebar-foreground/50 font-medium">Sistema Financeiro</p>
+              </div>
+            </>
           )}
         </div>
 
