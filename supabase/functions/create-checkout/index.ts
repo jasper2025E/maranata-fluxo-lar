@@ -120,11 +120,11 @@ serve(async (req) => {
     // Criar Checkout Session no Stripe
     console.log("Criando Checkout Session...");
     
-    const baseUrl = successUrl?.split("?")[0] || "https://example.com";
+    const baseUrl = successUrl?.split("/faturas")[0] || successUrl?.split("?")[0] || "https://example.com";
     const sessionParams = new URLSearchParams({
       "mode": "payment",
-      "success_url": successUrl || `${baseUrl}/faturas?success=true&fatura_id=${faturaId}`,
-      "cancel_url": cancelUrl || `${baseUrl}/faturas?canceled=true`,
+      "success_url": successUrl || `${baseUrl}/pagamento/resultado?success=true&fatura_id=${faturaId}`,
+      "cancel_url": cancelUrl || `${baseUrl}/pagamento/resultado?canceled=true&fatura_id=${faturaId}`,
       "line_items[0][price_data][currency]": "brl",
       "line_items[0][price_data][product_data][name]": descricao,
       "line_items[0][price_data][unit_amount]": Math.round(fatura.valor * 100).toString(),

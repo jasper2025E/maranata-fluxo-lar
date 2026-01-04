@@ -195,8 +195,8 @@ const Faturas = () => {
       const response = await supabase.functions.invoke("create-checkout", {
         body: {
           faturaId,
-          successUrl: `${window.location.origin}/faturas?success=true&fatura_id=${faturaId}`,
-          cancelUrl: `${window.location.origin}/faturas?canceled=true`,
+          successUrl: `${window.location.origin}/pagamento/resultado?success=true&fatura_id=${faturaId}`,
+          cancelUrl: `${window.location.origin}/pagamento/resultado?canceled=true&fatura_id=${faturaId}`,
         },
       });
 

@@ -22,6 +22,7 @@ import Pagamentos from "./pages/Pagamentos";
 import Despesas from "./pages/Despesas";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
+import PaymentResult from "./pages/PaymentResult";
 import NotFound from "./pages/NotFound";
 
 // Query client with optimized defaults
@@ -138,6 +139,9 @@ const App = () => (
                   </ProtectedRoute>
                 }
               />
+              
+              {/* Public Payment Result Page */}
+              <Route path="/pagamento/resultado" element={<PaymentResult />} />
               
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />
