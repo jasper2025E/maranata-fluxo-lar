@@ -24,6 +24,7 @@ import Despesas from "./pages/Despesas";
 import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import PaymentResult from "./pages/PaymentResult";
+import RH from "./pages/RH";
 import NotFound from "./pages/NotFound";
 
 // Query client with optimized defaults
@@ -145,6 +146,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <Configuracoes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rh"
+                element={
+                  <ProtectedRoute>
+                    <RH />
                   </ProtectedRoute>
                 }
               />

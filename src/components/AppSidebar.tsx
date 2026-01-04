@@ -12,6 +12,7 @@ import {
   Building2,
   UserCheck,
   Wallet,
+  Briefcase,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -45,6 +46,7 @@ const menuItems = [
   { title: "Alunos", url: "/alunos", icon: Users },
   { title: "Turmas", url: "/turmas", icon: GraduationCap },
   { title: "Cursos", url: "/cursos", icon: BookOpen },
+  { title: "RH", url: "/rh", icon: Briefcase, roles: ["admin", "staff"] },
 ];
 
 const financeItems = [

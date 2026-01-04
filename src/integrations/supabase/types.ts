@@ -123,6 +123,100 @@ export type Database = {
         }
         Relationships: []
       }
+      cargos: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          salario_base: number
+          setor_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          salario_base?: number
+          setor_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          salario_base?: number
+          setor_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cargos_setor_id_fkey"
+            columns: ["setor_id"]
+            isOneToOne: false
+            referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      contratos: {
+        Row: {
+          ativo: boolean | null
+          carga_horaria: number | null
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string
+          documento_url: string | null
+          funcionario_id: string
+          id: string
+          observacoes: string | null
+          salario: number
+          tipo: Database["public"]["Enums"]["contrato_tipo"]
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          carga_horaria?: number | null
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio: string
+          documento_url?: string | null
+          funcionario_id: string
+          id?: string
+          observacoes?: string | null
+          salario: number
+          tipo?: Database["public"]["Enums"]["contrato_tipo"]
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          carga_horaria?: number | null
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string
+          documento_url?: string | null
+          funcionario_id?: string
+          id?: string
+          observacoes?: string | null
+          salario?: number
+          tipo?: Database["public"]["Enums"]["contrato_tipo"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contratos_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       cursos: {
         Row: {
           ativo: boolean | null
@@ -319,6 +413,244 @@ export type Database = {
           },
         ]
       }
+      folha_pagamento: {
+        Row: {
+          adicional_noturno: number | null
+          adicional_periculosidade: number | null
+          ano_referencia: number
+          bonificacoes: number | null
+          created_at: string | null
+          data_pagamento: string | null
+          descontos: number | null
+          despesa_id: string | null
+          faltas_atrasos: number | null
+          fgts: number | null
+          funcionario_id: string
+          horas_extras_valor: number | null
+          id: string
+          inss: number | null
+          irrf: number | null
+          mes_referencia: number
+          observacoes: string | null
+          outros_adicionais: number | null
+          pago: boolean | null
+          salario_base: number
+          total_bruto: number
+          total_liquido: number
+          updated_at: string | null
+        }
+        Insert: {
+          adicional_noturno?: number | null
+          adicional_periculosidade?: number | null
+          ano_referencia: number
+          bonificacoes?: number | null
+          created_at?: string | null
+          data_pagamento?: string | null
+          descontos?: number | null
+          despesa_id?: string | null
+          faltas_atrasos?: number | null
+          fgts?: number | null
+          funcionario_id: string
+          horas_extras_valor?: number | null
+          id?: string
+          inss?: number | null
+          irrf?: number | null
+          mes_referencia: number
+          observacoes?: string | null
+          outros_adicionais?: number | null
+          pago?: boolean | null
+          salario_base: number
+          total_bruto: number
+          total_liquido: number
+          updated_at?: string | null
+        }
+        Update: {
+          adicional_noturno?: number | null
+          adicional_periculosidade?: number | null
+          ano_referencia?: number
+          bonificacoes?: number | null
+          created_at?: string | null
+          data_pagamento?: string | null
+          descontos?: number | null
+          despesa_id?: string | null
+          faltas_atrasos?: number | null
+          fgts?: number | null
+          funcionario_id?: string
+          horas_extras_valor?: number | null
+          id?: string
+          inss?: number | null
+          irrf?: number | null
+          mes_referencia?: number
+          observacoes?: string | null
+          outros_adicionais?: number | null
+          pago?: boolean | null
+          salario_base?: number
+          total_bruto?: number
+          total_liquido?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "folha_pagamento_despesa_id_fkey"
+            columns: ["despesa_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "folha_pagamento_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funcionario_documentos: {
+        Row: {
+          created_at: string | null
+          funcionario_id: string
+          id: string
+          nome: string
+          tipo: string | null
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          funcionario_id: string
+          id?: string
+          nome: string
+          tipo?: string | null
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          funcionario_id?: string
+          id?: string
+          nome?: string
+          tipo?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funcionario_documentos_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funcionario_turmas: {
+        Row: {
+          created_at: string | null
+          funcionario_id: string
+          id: string
+          materia: string | null
+          turma_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          funcionario_id: string
+          id?: string
+          materia?: string | null
+          turma_id: string
+        }
+        Update: {
+          created_at?: string | null
+          funcionario_id?: string
+          id?: string
+          materia?: string | null
+          turma_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funcionario_turmas_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funcionario_turmas_turma_id_fkey"
+            columns: ["turma_id"]
+            isOneToOne: false
+            referencedRelation: "turmas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      funcionarios: {
+        Row: {
+          cargo_id: string | null
+          cpf: string | null
+          created_at: string | null
+          data_admissao: string
+          data_demissao: string | null
+          data_nascimento: string | null
+          email: string | null
+          endereco: string | null
+          foto_url: string | null
+          id: string
+          nome_completo: string
+          observacoes: string | null
+          rg: string | null
+          salario_base: number
+          status: Database["public"]["Enums"]["funcionario_status"]
+          telefone: string | null
+          tipo: Database["public"]["Enums"]["funcionario_tipo"]
+          updated_at: string | null
+        }
+        Insert: {
+          cargo_id?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          data_admissao?: string
+          data_demissao?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          foto_url?: string | null
+          id?: string
+          nome_completo: string
+          observacoes?: string | null
+          rg?: string | null
+          salario_base?: number
+          status?: Database["public"]["Enums"]["funcionario_status"]
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["funcionario_tipo"]
+          updated_at?: string | null
+        }
+        Update: {
+          cargo_id?: string | null
+          cpf?: string | null
+          created_at?: string | null
+          data_admissao?: string
+          data_demissao?: string | null
+          data_nascimento?: string | null
+          email?: string | null
+          endereco?: string | null
+          foto_url?: string | null
+          id?: string
+          nome_completo?: string
+          observacoes?: string | null
+          rg?: string | null
+          salario_base?: number
+          status?: Database["public"]["Enums"]["funcionario_status"]
+          telefone?: string | null
+          tipo?: Database["public"]["Enums"]["funcionario_tipo"]
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "funcionarios_cargo_id_fkey"
+            columns: ["cargo_id"]
+            isOneToOne: false
+            referencedRelation: "cargos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -402,6 +734,62 @@ export type Database = {
           },
         ]
       }
+      ponto_registros: {
+        Row: {
+          created_at: string | null
+          data: string
+          editado_por: string | null
+          entrada: string | null
+          funcionario_id: string
+          horas_extras: unknown
+          horas_trabalhadas: unknown
+          id: string
+          observacoes: string | null
+          retorno_almoco: string | null
+          saida: string | null
+          saida_almoco: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          data?: string
+          editado_por?: string | null
+          entrada?: string | null
+          funcionario_id: string
+          horas_extras?: unknown
+          horas_trabalhadas?: unknown
+          id?: string
+          observacoes?: string | null
+          retorno_almoco?: string | null
+          saida?: string | null
+          saida_almoco?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          data?: string
+          editado_por?: string | null
+          entrada?: string | null
+          funcionario_id?: string
+          horas_extras?: unknown
+          horas_trabalhadas?: unknown
+          id?: string
+          observacoes?: string | null
+          retorno_almoco?: string | null
+          saida?: string | null
+          saida_almoco?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ponto_registros_funcionario_id_fkey"
+            columns: ["funcionario_id"]
+            isOneToOne: false
+            referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -464,6 +852,33 @@ export type Database = {
           observacoes?: string | null
           stripe_customer_id?: string | null
           telefone?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      setores: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -578,6 +993,9 @@ export type Database = {
     Enums: {
       aluno_status: "ativo" | "trancado" | "cancelado" | "transferido"
       app_role: "admin" | "staff" | "financeiro" | "secretaria"
+      contrato_tipo: "clt" | "pj" | "temporario" | "estagio"
+      funcionario_status: "ativo" | "inativo" | "afastado" | "ferias"
+      funcionario_tipo: "professor" | "administrativo" | "outro"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -707,6 +1125,9 @@ export const Constants = {
     Enums: {
       aluno_status: ["ativo", "trancado", "cancelado", "transferido"],
       app_role: ["admin", "staff", "financeiro", "secretaria"],
+      contrato_tipo: ["clt", "pj", "temporario", "estagio"],
+      funcionario_status: ["ativo", "inativo", "afastado", "ferias"],
+      funcionario_tipo: ["professor", "administrativo", "outro"],
     },
   },
 } as const
