@@ -25,6 +25,7 @@ interface Aluno {
   data_nascimento: string;
   curso_id: string;
   turma_id: string | null;
+  responsavel_id: string | null;
   telefone_responsavel: string;
   email_responsavel: string;
   endereco: string;
@@ -34,6 +35,13 @@ interface Aluno {
   observacoes: string | null;
   cursos?: { nome: string; mensalidade: number };
   turmas?: { nome: string; serie: string } | null;
+  responsaveis?: { id: string; nome: string } | null;
+}
+
+interface Responsavel {
+  id: string;
+  nome: string;
+  telefone: string;
 }
 
 interface Curso {
@@ -127,6 +135,7 @@ const Alunos = () => {
     data_nascimento: "",
     curso_id: "",
     turma_id: "",
+    responsavel_id: "",
     telefone_responsavel: "",
     email_responsavel: "",
     endereco: "",
@@ -140,10 +149,23 @@ const Alunos = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("alunos")
-        .select("*, cursos(nome, mensalidade), turmas(nome, serie)")
+        .select("*, cursos(nome, mensalidade), turmas(nome, serie), responsaveis(id, nome)")
         .order("nome_completo");
       if (error) throw error;
       return data as unknown as Aluno[];
+    },
+  });
+
+  const { data: responsaveisLista = [] } = useQuery({
+    queryKey: ["responsaveis-lista"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("responsaveis")
+        .select("id, nome, telefone")
+        .eq("ativo", true)
+        .order("nome");
+      if (error) throw error;
+      return data as Responsavel[];
     },
   });
 
@@ -174,6 +196,7 @@ const Alunos = () => {
           data_nascimento: data.data_nascimento,
           curso_id: data.curso_id,
           turma_id: data.turma_id || null,
+          responsavel_id: data.responsavel_id || null,
           telefone_responsavel: data.telefone_responsavel,
           email_responsavel: data.email_responsavel,
           endereco: data.endereco,
@@ -197,6 +220,7 @@ const Alunos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
       queryClient.invalidateQueries({ queryKey: ["faturas"] });
+      queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
       toast.success("Aluno cadastrado e faturas geradas com sucesso!");
       resetForm();
     },
@@ -215,6 +239,7 @@ const Alunos = () => {
           data_nascimento: data.data_nascimento,
           curso_id: data.curso_id,
           turma_id: data.turma_id || null,
+          responsavel_id: data.responsavel_id || null,
           telefone_responsavel: data.telefone_responsavel,
           email_responsavel: data.email_responsavel,
           endereco: data.endereco,
@@ -225,6 +250,7 @@ const Alunos = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
+      queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
       toast.success("Aluno atualizado com sucesso!");
       resetForm();
     },
@@ -249,6 +275,7 @@ const Alunos = () => {
       data_nascimento: "",
       curso_id: "",
       turma_id: "",
+      responsavel_id: "",
       telefone_responsavel: "",
       email_responsavel: "",
       endereco: "",
@@ -265,6 +292,7 @@ const Alunos = () => {
       data_nascimento: aluno.data_nascimento,
       curso_id: aluno.curso_id,
       turma_id: aluno.turma_id || "",
+      responsavel_id: aluno.responsavel_id || "",
       telefone_responsavel: aluno.telefone_responsavel,
       email_responsavel: aluno.email_responsavel,
       endereco: aluno.endereco,
@@ -414,22 +442,44 @@ const Alunos = () => {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="turma" className="text-sm font-medium text-gray-700">
-                      Turma
-                    </Label>
-                    <Select value={formData.turma_id} onValueChange={(value) => setFormData({ ...formData, turma_id: value })}>
-                      <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Selecione a turma" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {turmas.map((turma) => (
-                          <SelectItem key={turma.id} value={turma.id}>
-                            {turma.nome} - {turma.serie}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label htmlFor="turma" className="text-sm font-medium text-gray-700">
+                        Turma
+                      </Label>
+                      <Select value={formData.turma_id} onValueChange={(value) => setFormData({ ...formData, turma_id: value })}>
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Selecione a turma" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {turmas.map((turma) => (
+                            <SelectItem key={turma.id} value={turma.id}>
+                              {turma.nome} - {turma.serie}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label htmlFor="responsavel" className="text-sm font-medium text-gray-700">
+                        Responsável Financeiro
+                      </Label>
+                      <Select 
+                        value={formData.responsavel_id} 
+                        onValueChange={(value) => setFormData({ ...formData, responsavel_id: value })}
+                      >
+                        <SelectTrigger className="h-11">
+                          <SelectValue placeholder="Selecione o responsável" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {responsaveisLista.map((resp) => (
+                            <SelectItem key={resp.id} value={resp.id}>
+                              {resp.nome}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">

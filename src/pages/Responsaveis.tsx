@@ -70,6 +70,13 @@ interface ResponsavelFormData {
   email?: string;
   observacoes?: string;
   fatura_consolidada?: boolean;
+  alunos_ids?: string[];
+}
+
+interface AlunoSemResponsavel {
+  id: string;
+  nome_completo: string;
+  curso?: { nome: string } | null;
 }
 
 // Stats Card Component
@@ -129,6 +136,20 @@ export default function Responsaveis() {
   const [formData, setFormData] = useState<ResponsavelFormData>({
     nome: "",
     telefone: "",
+    alunos_ids: [],
+  });
+
+  // Fetch alunos para vincular
+  const { data: alunosDisponiveis = [] } = useQuery({
+    queryKey: ["alunos-para-vincular"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("alunos")
+        .select("id, nome_completo, responsavel_id, cursos(nome)")
+        .order("nome_completo");
+      if (error) throw error;
+      return data as (AlunoSemResponsavel & { responsavel_id: string | null })[];
+    },
   });
 
   // Fetch responsáveis with their alunos
@@ -181,6 +202,8 @@ export default function Responsaveis() {
   // Create/Update mutation
   const saveMutation = useMutation({
     mutationFn: async (data: ResponsavelFormData & { id?: string }) => {
+      let responsavelId = data.id;
+      
       if (data.id) {
         const { error } = await supabase
           .from("responsaveis")
@@ -195,20 +218,44 @@ export default function Responsaveis() {
           .eq("id", data.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("responsaveis").insert({
-          nome: data.nome,
-          telefone: data.telefone,
-          cpf: data.cpf || null,
-          email: data.email || null,
-          observacoes: data.observacoes || null,
-          fatura_consolidada: data.fatura_consolidada || false,
-        });
+        const { data: newResp, error } = await supabase
+          .from("responsaveis")
+          .insert({
+            nome: data.nome,
+            telefone: data.telefone,
+            cpf: data.cpf || null,
+            email: data.email || null,
+            observacoes: data.observacoes || null,
+            fatura_consolidada: data.fatura_consolidada || false,
+          })
+          .select()
+          .single();
         if (error) throw error;
+        responsavelId = newResp.id;
+      }
+
+      // Atualizar vinculação dos alunos
+      if (responsavelId && data.alunos_ids) {
+        // Primeiro remove o responsável de todos os alunos que tinham esse responsável
+        await supabase
+          .from("alunos")
+          .update({ responsavel_id: null })
+          .eq("responsavel_id", responsavelId);
+
+        // Depois vincula os alunos selecionados
+        if (data.alunos_ids.length > 0) {
+          await supabase
+            .from("alunos")
+            .update({ responsavel_id: responsavelId })
+            .in("id", data.alunos_ids);
+        }
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
       queryClient.invalidateQueries({ queryKey: ["responsaveis-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["alunos"] });
+      queryClient.invalidateQueries({ queryKey: ["alunos-para-vincular"] });
       toast.success(selectedResponsavel ? "Responsável atualizado!" : "Responsável cadastrado!");
       resetForm();
     },
@@ -234,7 +281,7 @@ export default function Responsaveis() {
   });
 
   const resetForm = () => {
-    setFormData({ nome: "", telefone: "" });
+    setFormData({ nome: "", telefone: "", alunos_ids: [] });
     setSelectedResponsavel(null);
     setIsDialogOpen(false);
   };
@@ -248,6 +295,7 @@ export default function Responsaveis() {
       email: responsavel.email || "",
       observacoes: responsavel.observacoes || "",
       fatura_consolidada: responsavel.fatura_consolidada,
+      alunos_ids: responsavel.alunos?.map(a => a.id) || [],
     });
     setIsDialogOpen(true);
   };
@@ -366,6 +414,60 @@ export default function Responsaveis() {
                       placeholder="Anotações sobre o responsável..."
                       rows={2}
                     />
+                  </div>
+
+                  {/* Seleção de Alunos */}
+                  <div className="space-y-2">
+                    <Label className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      Vincular Alunos
+                    </Label>
+                    <div className="border rounded-lg max-h-40 overflow-y-auto p-2 space-y-1">
+                      {alunosDisponiveis.length === 0 ? (
+                        <p className="text-sm text-gray-500 text-center py-2">Nenhum aluno cadastrado</p>
+                      ) : (
+                        alunosDisponiveis.map((aluno) => {
+                          const isSelected = formData.alunos_ids?.includes(aluno.id);
+                          const hasOtherResponsavel = aluno.responsavel_id && 
+                            aluno.responsavel_id !== selectedResponsavel?.id;
+                          
+                          return (
+                            <label 
+                              key={aluno.id}
+                              className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                                isSelected ? 'bg-blue-50 border border-blue-200' : 'hover:bg-gray-50'
+                              } ${hasOtherResponsavel ? 'opacity-50' : ''}`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => {
+                                  const newIds = e.target.checked
+                                    ? [...(formData.alunos_ids || []), aluno.id]
+                                    : formData.alunos_ids?.filter(id => id !== aluno.id) || [];
+                                  setFormData({ ...formData, alunos_ids: newIds });
+                                }}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <div className="flex-1">
+                                <span className="text-sm font-medium text-gray-900">{aluno.nome_completo}</span>
+                                {aluno.curso && (
+                                  <span className="text-xs text-gray-500 ml-2">({aluno.curso.nome})</span>
+                                )}
+                                {hasOtherResponsavel && (
+                                  <span className="text-xs text-amber-600 ml-2">(outro responsável)</span>
+                                )}
+                              </div>
+                            </label>
+                          );
+                        })
+                      )}
+                    </div>
+                    {formData.alunos_ids && formData.alunos_ids.length > 0 && (
+                      <p className="text-xs text-gray-500">
+                        {formData.alunos_ids.length} aluno(s) selecionado(s)
+                      </p>
+                    )}
                   </div>
                 </div>
 
