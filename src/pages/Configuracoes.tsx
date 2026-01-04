@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -21,11 +21,19 @@ import {
   CheckCircle2,
   Loader2,
   Moon,
-  Sun
+  Sun,
+  Save
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+
+interface UserPreferences {
+  email_notifications: boolean;
+  browser_notifications: boolean;
+  weekly_report: boolean;
+  theme: string;
+}
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(6, "Senha atual deve ter no mínimo 6 caracteres"),
@@ -40,6 +48,8 @@ const Configuracoes = () => {
   const { user, role } = useAuth();
   const { theme, setTheme } = useTheme();
   const [loading, setLoading] = useState(false);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+  const [loadingPrefs, setLoadingPrefs] = useState(true);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -50,11 +60,48 @@ const Configuracoes = () => {
     confirmPassword: "",
   });
 
-  const [preferences, setPreferences] = useState({
-    emailNotifications: true,
-    browserNotifications: false,
-    weeklyReport: true,
+  const [preferences, setPreferences] = useState<UserPreferences>({
+    email_notifications: true,
+    browser_notifications: false,
+    weekly_report: true,
+    theme: "light",
   });
+
+  // Load user preferences on mount
+  useEffect(() => {
+    const loadPreferences = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("user_preferences")
+          .select("*")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data) {
+          setPreferences({
+            email_notifications: data.email_notifications ?? true,
+            browser_notifications: data.browser_notifications ?? false,
+            weekly_report: data.weekly_report ?? true,
+            theme: data.theme ?? "light",
+          });
+          // Sync theme with stored preference
+          if (data.theme) {
+            setTheme(data.theme);
+          }
+        }
+      } catch (error) {
+        console.error("Error loading preferences:", error);
+      } finally {
+        setLoadingPrefs(false);
+      }
+    };
+
+    loadPreferences();
+  }, [user, setTheme]);
 
   const roleLabels: Record<string, string> = {
     admin: "Administrador",
@@ -95,9 +142,51 @@ const Configuracoes = () => {
     }
   };
 
-  const handlePreferenceSave = () => {
-    // Aqui você pode salvar as preferências no banco de dados
-    toast.success("Preferências salvas com sucesso!");
+  const handlePreferenceSave = async () => {
+    if (!user) return;
+    
+    setSavingPrefs(true);
+    try {
+      const prefsToSave = {
+        user_id: user.id,
+        email_notifications: preferences.email_notifications,
+        browser_notifications: preferences.browser_notifications,
+        weekly_report: preferences.weekly_report,
+        theme: theme || "light",
+      };
+
+      const { error } = await supabase
+        .from("user_preferences")
+        .upsert(prefsToSave, { onConflict: "user_id" });
+
+      if (error) throw error;
+
+      toast.success("Preferências salvas com sucesso!");
+    } catch (error: any) {
+      console.error("Error saving preferences:", error);
+      toast.error("Erro ao salvar preferências");
+    } finally {
+      setSavingPrefs(false);
+    }
+  };
+
+  const handleThemeChange = async (isDark: boolean) => {
+    const newTheme = isDark ? "dark" : "light";
+    setTheme(newTheme);
+    
+    // Auto-save theme preference
+    if (user) {
+      try {
+        await supabase
+          .from("user_preferences")
+          .upsert({
+            user_id: user.id,
+            theme: newTheme,
+          }, { onConflict: "user_id" });
+      } catch (error) {
+        console.error("Error saving theme preference:", error);
+      }
+    }
   };
 
   return (
@@ -361,54 +450,80 @@ const Configuracoes = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="font-medium">Notificações por e-mail</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receba atualizações importantes por e-mail
-                    </p>
+                {loadingPrefs ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
-                  <Switch
-                    checked={preferences.emailNotifications}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, emailNotifications: checked })
-                    }
-                  />
-                </div>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="font-medium">Notificações por e-mail</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Receba atualizações importantes por e-mail
+                        </p>
+                      </div>
+                      <Switch
+                        checked={preferences.email_notifications}
+                        onCheckedChange={(checked) => 
+                          setPreferences({ ...preferences, email_notifications: checked })
+                        }
+                      />
+                    </div>
 
-                <Separator />
+                    <Separator />
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="font-medium">Notificações no navegador</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Receba alertas em tempo real
-                    </p>
-                  </div>
-                  <Switch
-                    checked={preferences.browserNotifications}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, browserNotifications: checked })
-                    }
-                  />
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="font-medium">Notificações no navegador</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Receba alertas em tempo real
+                        </p>
+                      </div>
+                      <Switch
+                        checked={preferences.browser_notifications}
+                        onCheckedChange={(checked) => 
+                          setPreferences({ ...preferences, browser_notifications: checked })
+                        }
+                      />
+                    </div>
 
-                <Separator />
+                    <Separator />
 
-                <div className="flex items-center justify-between">
-                  <div className="space-y-0.5">
-                    <Label className="font-medium">Relatório semanal</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Resumo financeiro enviado toda segunda-feira
-                    </p>
-                  </div>
-                  <Switch
-                    checked={preferences.weeklyReport}
-                    onCheckedChange={(checked) => 
-                      setPreferences({ ...preferences, weeklyReport: checked })
-                    }
-                  />
-                </div>
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <Label className="font-medium">Relatório semanal</Label>
+                        <p className="text-sm text-muted-foreground">
+                          Resumo financeiro enviado toda segunda-feira
+                        </p>
+                      </div>
+                      <Switch
+                        checked={preferences.weekly_report}
+                        onCheckedChange={(checked) => 
+                          setPreferences({ ...preferences, weekly_report: checked })
+                        }
+                      />
+                    </div>
+
+                    <Button 
+                      onClick={handlePreferenceSave} 
+                      disabled={savingPrefs}
+                      className="w-full sm:w-auto"
+                    >
+                      {savingPrefs ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Salvando...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="mr-2 h-4 w-4" />
+                          Salvar Notificações
+                        </>
+                      )}
+                    </Button>
+                  </>
+                )}
               </CardContent>
             </Card>
 
@@ -439,13 +554,9 @@ const Configuracoes = () => {
                   </div>
                   <Switch
                     checked={theme === "dark"}
-                    onCheckedChange={(checked) => setTheme(checked ? "dark" : "light")}
+                    onCheckedChange={handleThemeChange}
                   />
                 </div>
-
-                <Button onClick={handlePreferenceSave} className="w-full sm:w-auto">
-                  Salvar Preferências
-                </Button>
               </CardContent>
             </Card>
           </TabsContent>
