@@ -131,10 +131,13 @@ serve(async (req) => {
       "line_items[0][quantity]": "1",
       "payment_method_types[0]": "card",
       "payment_method_types[1]": "boleto",
+      "payment_method_types[2]": "pix",
       "metadata[fatura_id]": faturaId,
       "metadata[aluno_nome]": fatura.alunos?.nome_completo || "",
       "metadata[curso_nome]": fatura.cursos?.nome || "",
       "locale": "pt-BR",
+      "payment_method_options[boleto][expires_after_days]": "3",
+      "payment_method_options[pix][expires_after_seconds]": "86400",
     });
 
     if (customerId) {
