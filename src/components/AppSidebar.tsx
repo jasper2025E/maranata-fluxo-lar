@@ -1,4 +1,3 @@
-import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -19,7 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { supabase } from "@/integrations/supabase/client";
+import { useEscola } from "@/hooks/useEscola";
 import {
   Sidebar,
   SidebarContent,
@@ -64,23 +63,13 @@ export function AppSidebar() {
   const { signOut, hasRole } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [escolaNome, setEscolaNome] = useState("Maranata");
-  const [escolaCnpj, setEscolaCnpj] = useState<string | null>(null);
-  const [escolaEndereco, setEscolaEndereco] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchEscola = async () => {
-      const { data } = await supabase.from("escola").select("nome, logo_url, cnpj, endereco").limit(1).maybeSingle();
-      if (data) {
-        setEscolaNome(data.nome);
-        setLogoUrl(data.logo_url);
-        setEscolaCnpj(data.cnpj);
-        setEscolaEndereco(data.endereco);
-      }
-    };
-    fetchEscola();
-  }, []);
+  
+  // Use React Query para cachear os dados da escola
+  const { data: escola } = useEscola();
+  const escolaNome = escola?.nome || "Maranata";
+  const logoUrl = escola?.logo_url;
+  const escolaCnpj = escola?.cnpj;
+  const escolaEndereco = escola?.endereco;
 
   const handleLogout = async () => {
     try {

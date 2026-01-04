@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { queryKeys, defaultQueryConfig } from "./useQueryConfig";
+import { queryKeys } from "./useQueryConfig";
 import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -10,7 +10,7 @@ type EscolaUpdate = Database["public"]["Tables"]["escola"]["Update"];
 export function useEscola() {
   return useQuery({
     queryKey: queryKeys.escola.info(),
-    queryFn: async () => {
+    queryFn: async (): Promise<Escola | null> => {
       const { data, error } = await supabase
         .from("escola")
         .select("*")
@@ -20,7 +20,10 @@ export function useEscola() {
       if (error) throw error;
       return data;
     },
-    ...defaultQueryConfig,
+    staleTime: 1000 * 60 * 10, // 10 minutes - dados da escola mudam raramente
+    gcTime: 1000 * 60 * 60, // 1 hour cache
+    retry: 2,
+    refetchOnWindowFocus: false,
   });
 }
 
