@@ -91,6 +91,7 @@ const Dashboard = () => {
             subtitle={`de ${stats.totalResponsaveis} cadastrados`}
             icon={UserCheck}
             color="blue"
+            index={0}
           />
           <DashboardCard
             title="Mensalidades Abertas"
@@ -98,6 +99,7 @@ const Dashboard = () => {
             subtitle="Aguardando pagamento"
             icon={FileText}
             color="yellow"
+            index={1}
           />
           <DashboardCard
             title="Valor a Receber"
@@ -105,6 +107,7 @@ const Dashboard = () => {
             subtitle="Faturas em aberto"
             icon={Banknote}
             color="green"
+            index={2}
           />
           <DashboardCard
             title="Inadimplência"
@@ -112,6 +115,7 @@ const Dashboard = () => {
             subtitle={`${stats.faturasVencidas} faturas vencidas`}
             icon={AlertCircle}
             color={stats.inadimplenciaResponsaveis > 20 ? "red" : stats.inadimplenciaResponsaveis > 10 ? "yellow" : "blue"}
+            index={3}
           />
         </div>
 
@@ -123,6 +127,7 @@ const Dashboard = () => {
             subtitle="Total de entradas"
             icon={TrendingUp}
             color="green"
+            index={4}
           />
           <DashboardCard
             title="Despesas do Mês"
@@ -130,6 +135,7 @@ const Dashboard = () => {
             subtitle="Total de saídas"
             icon={TrendingDown}
             color="red"
+            index={5}
           />
           <DashboardCard
             title="Saldo Mensal"
@@ -137,6 +143,7 @@ const Dashboard = () => {
             subtitle="Receitas - Despesas"
             icon={Wallet}
             color={stats.saldoMensal >= 0 ? "green" : "red"}
+            index={6}
           />
         </div>
 

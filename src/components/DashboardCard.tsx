@@ -1,4 +1,5 @@
 import { LucideIcon } from "lucide-react";
+import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 interface DashboardCardProps {
@@ -12,33 +13,34 @@ interface DashboardCardProps {
     isPositive: boolean;
   };
   className?: string;
+  index?: number;
 }
 
 const colorConfig = {
   blue: {
-    iconBg: "bg-blue-50",
+    iconBg: "bg-blue-500/10",
     iconColor: "text-blue-600",
-    accentBorder: "hover:border-blue-200/50",
+    accentBorder: "hover:border-blue-200/60",
   },
   green: {
-    iconBg: "bg-emerald-50",
+    iconBg: "bg-emerald-500/10",
     iconColor: "text-emerald-600",
-    accentBorder: "hover:border-emerald-200/50",
+    accentBorder: "hover:border-emerald-200/60",
   },
   red: {
-    iconBg: "bg-rose-50",
+    iconBg: "bg-rose-500/10",
     iconColor: "text-rose-600",
-    accentBorder: "hover:border-rose-200/50",
+    accentBorder: "hover:border-rose-200/60",
   },
   yellow: {
-    iconBg: "bg-amber-50",
+    iconBg: "bg-amber-500/10",
     iconColor: "text-amber-600",
-    accentBorder: "hover:border-amber-200/50",
+    accentBorder: "hover:border-amber-200/60",
   },
   purple: {
-    iconBg: "bg-violet-50",
+    iconBg: "bg-violet-500/10",
     iconColor: "text-violet-600",
-    accentBorder: "hover:border-violet-200/50",
+    accentBorder: "hover:border-violet-200/60",
   },
 };
 
@@ -50,23 +52,35 @@ export function DashboardCard({
   color = "blue",
   trend,
   className,
+  index = 0,
 }: DashboardCardProps) {
   const colors = colorConfig[color];
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: 0.4,
+        delay: index * 0.08,
+        ease: [0.25, 0.46, 0.45, 0.94],
+      }}
+      whileHover={{
+        y: -2,
+        transition: { duration: 0.2, ease: "easeOut" },
+      }}
       className={cn(
-        // Base styles
-        "group relative bg-white rounded-2xl p-6",
-        // Border and shadow
-        "border border-gray-100/80 shadow-sm",
-        // Hover effects
-        "hover:shadow-lg hover:-translate-y-0.5",
+        // Base styles - white background
+        "group relative bg-white rounded-[20px] p-6",
+        // Border subtle
+        "border border-gray-200/50",
+        // Shadow elegant
+        "shadow-[0_1px_3px_0_rgb(0,0,0,0.02),0_4px_12px_-2px_rgb(0,0,0,0.05)]",
+        // Hover shadow
+        "hover:shadow-[0_4px_16px_-2px_rgb(0,0,0,0.08),0_8px_24px_-4px_rgb(0,0,0,0.06)]",
         colors.accentBorder,
-        // Transitions
+        // Smooth transition
         "transition-all duration-300 ease-out",
-        // Animation
-        "animate-fade-in",
         className
       )}
     >
@@ -80,7 +94,7 @@ export function DashboardCard({
           </p>
 
           {/* Value */}
-          <p className="text-3xl font-bold text-gray-900 tracking-tight">
+          <p className="text-[28px] font-bold text-gray-900 tracking-tight leading-none">
             {value}
           </p>
 
@@ -98,38 +112,33 @@ export function DashboardCard({
               <span className="text-sm text-gray-400">vs. mês anterior</span>
             </div>
           ) : subtitle ? (
-            <p className="text-sm text-gray-400 font-normal">{subtitle}</p>
+            <p className="text-[13px] text-gray-400 font-normal leading-relaxed">
+              {subtitle}
+            </p>
           ) : null}
         </div>
 
-        {/* Right side - Icon */}
-        <div
+        {/* Right side - Icon container circular */}
+        <motion.div
+          whileHover={{ scale: 1.05 }}
+          transition={{ duration: 0.2 }}
           className={cn(
-            // Container circular
-            "flex-shrink-0 h-12 w-12 rounded-xl",
-            // Background
+            // Circular container
+            "flex-shrink-0 h-12 w-12 rounded-full",
+            // Background with low opacity
             colors.iconBg,
             // Flex center
             "flex items-center justify-center",
-            // Hover scale
-            "group-hover:scale-105 transition-transform duration-300"
+            // Transition
+            "transition-transform duration-300"
           )}
         >
           <Icon
-            className={cn("h-6 w-6", colors.iconColor)}
-            strokeWidth={1.75}
+            className={cn("h-[22px] w-[22px]", colors.iconColor)}
+            strokeWidth={1.5}
           />
-        </div>
+        </motion.div>
       </div>
-
-      {/* Subtle gradient overlay on hover */}
-      <div
-        className={cn(
-          "absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100",
-          "bg-gradient-to-br from-white/50 via-transparent to-transparent",
-          "pointer-events-none transition-opacity duration-300"
-        )}
-      />
-    </div>
+    </motion.div>
   );
 }
