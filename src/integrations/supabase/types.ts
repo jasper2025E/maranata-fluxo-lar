@@ -450,6 +450,39 @@ export type Database = {
         }
         Relationships: []
       }
+      user_preferences: {
+        Row: {
+          browser_notifications: boolean | null
+          created_at: string | null
+          email_notifications: boolean | null
+          id: string
+          theme: string | null
+          updated_at: string | null
+          user_id: string
+          weekly_report: boolean | null
+        }
+        Insert: {
+          browser_notifications?: boolean | null
+          created_at?: string | null
+          email_notifications?: boolean | null
+          id?: string
+          theme?: string | null
+          updated_at?: string | null
+          user_id: string
+          weekly_report?: boolean | null
+        }
+        Update: {
+          browser_notifications?: boolean | null
+          created_at?: string | null
+          email_notifications?: boolean | null
+          id?: string
+          theme?: string | null
+          updated_at?: string | null
+          user_id?: string
+          weekly_report?: boolean | null
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
