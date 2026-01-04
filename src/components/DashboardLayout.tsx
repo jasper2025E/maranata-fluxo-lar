@@ -2,7 +2,7 @@ import { ReactNode, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { Bell, Search } from "lucide-react";
+import { Bell, Search, FileText, CreditCard, Users, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -14,6 +14,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -89,10 +91,65 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
 
             <div className="flex items-center gap-3">
               {/* Notifications */}
-              <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-muted">
-                <Bell className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.75} />
-                <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive animate-pulse-subtle" />
-              </Button>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-muted">
+                    <Bell className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.75} />
+                    <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive animate-pulse-subtle" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent align="end" className="w-80 p-0 rounded-xl shadow-large">
+                  <div className="p-4 border-b">
+                    <h4 className="font-semibold text-sm">Notificações</h4>
+                    <p className="text-xs text-muted-foreground">Você tem 3 notificações não lidas</p>
+                  </div>
+                  <ScrollArea className="h-[280px]">
+                    <div className="p-2 space-y-1">
+                      <div className="flex gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                          <CreditCard className="h-4 w-4 text-primary" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Novo pagamento recebido</p>
+                          <p className="text-xs text-muted-foreground truncate">Fatura #1234 foi paga</p>
+                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> Há 5 minutos
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                        <div className="h-9 w-9 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
+                          <FileText className="h-4 w-4 text-warning" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Fatura vencendo</p>
+                          <p className="text-xs text-muted-foreground truncate">2 faturas vencem amanhã</p>
+                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> Há 1 hora
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex gap-3 p-3 rounded-lg hover:bg-muted/50 cursor-pointer transition-colors">
+                        <div className="h-9 w-9 rounded-full bg-success/10 flex items-center justify-center shrink-0">
+                          <Users className="h-4 w-4 text-success" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">Nova matrícula</p>
+                          <p className="text-xs text-muted-foreground truncate">Aluno João Silva matriculado</p>
+                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                            <Clock className="h-3 w-3" /> Há 2 horas
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </ScrollArea>
+                  <div className="p-3 border-t">
+                    <Button variant="ghost" className="w-full text-sm" size="sm">
+                      Ver todas as notificações
+                    </Button>
+                  </div>
+                </PopoverContent>
+              </Popover>
 
               {/* User Menu */}
               <DropdownMenu>
