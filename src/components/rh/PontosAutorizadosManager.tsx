@@ -166,6 +166,8 @@ export function PontosAutorizadosManager() {
     }
 
     setIsGettingLocation(true);
+    toast.info('Obtendo localização... Permita o acesso quando solicitado.');
+    
     navigator.geolocation.getCurrentPosition(
       (position) => {
         setFormData(prev => ({
@@ -173,14 +175,77 @@ export function PontosAutorizadosManager() {
           latitude: position.coords.latitude.toFixed(6),
           longitude: position.coords.longitude.toFixed(6),
         }));
-        toast.success('Localização obtida!');
+        toast.success(`Localização obtida! Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`);
         setIsGettingLocation(false);
       },
-      () => {
-        toast.error('Erro ao obter localização');
+      (error) => {
+        setIsGettingLocation(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            toast.error('Permissão negada. Ative a localização nas configurações do navegador.');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            toast.error('Localização indisponível. Verifique se o GPS está ativado.');
+            break;
+          case error.TIMEOUT:
+            toast.error('Tempo esgotado. Tente novamente.');
+            break;
+          default:
+            toast.error('Erro ao obter localização. Tente novamente.');
+        }
+      },
+      { 
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
+    );
+  };
+
+  const addLocationWithCurrentPosition = () => {
+    if (!navigator.geolocation) {
+      toast.error('Geolocalização não suportada pelo navegador');
+      return;
+    }
+
+    setIsGettingLocation(true);
+    toast.info('Obtendo sua localização...');
+    
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setFormData({
+          nome: '',
+          latitude: position.coords.latitude.toFixed(6),
+          longitude: position.coords.longitude.toFixed(6),
+          raio_metros: '100',
+          ativo: true,
+        });
+        setEditingPonto(null);
+        setDialogOpen(true);
+        toast.success('Localização obtida! Preencha o nome do local.');
         setIsGettingLocation(false);
       },
-      { enableHighAccuracy: true }
+      (error) => {
+        setIsGettingLocation(false);
+        switch (error.code) {
+          case error.PERMISSION_DENIED:
+            toast.error('Permissão negada. Clique no ícone de cadeado na barra de endereço e permita localização.');
+            break;
+          case error.POSITION_UNAVAILABLE:
+            toast.error('Localização indisponível. Verifique se o GPS está ativado.');
+            break;
+          case error.TIMEOUT:
+            toast.error('Tempo esgotado ao obter localização.');
+            break;
+          default:
+            toast.error('Erro ao obter localização.');
+        }
+      },
+      { 
+        enableHighAccuracy: true,
+        timeout: 15000,
+        maximumAge: 0
+      }
     );
   };
 
@@ -200,10 +265,20 @@ export function PontosAutorizadosManager() {
             <MapPinned className="h-5 w-5" />
             Locais Autorizados para Ponto
           </CardTitle>
-          <Button onClick={() => openDialog()}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Local
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={addLocationWithCurrentPosition}
+              disabled={isGettingLocation}
+            >
+              <Navigation className="h-4 w-4 mr-2" />
+              {isGettingLocation ? 'Obtendo...' : 'Usar Minha Localização'}
+            </Button>
+            <Button onClick={() => openDialog()}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Local
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {pontos?.length === 0 ? (
