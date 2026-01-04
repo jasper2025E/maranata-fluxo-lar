@@ -39,6 +39,8 @@ export interface Funcionario {
   data_demissao: string | null;
   foto_url: string | null;
   observacoes: string | null;
+  ponto_token: string | null;
+  ponto_token_expires_at: string | null;
   created_at: string;
   cargos?: Cargo | null;
 }

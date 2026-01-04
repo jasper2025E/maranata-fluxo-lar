@@ -25,6 +25,7 @@ import Relatorios from "./pages/Relatorios";
 import Configuracoes from "./pages/Configuracoes";
 import PaymentResult from "./pages/PaymentResult";
 import RH from "./pages/RH";
+import PontoEletronico from "./pages/PontoEletronico";
 import NotFound from "./pages/NotFound";
 
 // Query client with optimized defaults
@@ -160,6 +161,9 @@ const App = () => (
               
               {/* Public Payment Result Page */}
               <Route path="/pagamento/resultado" element={<PaymentResult />} />
+              
+              {/* Public Ponto Eletrônico Page */}
+              <Route path="/ponto/:token" element={<PontoEletronico />} />
               
               {/* Catch-all */}
               <Route path="*" element={<NotFound />} />

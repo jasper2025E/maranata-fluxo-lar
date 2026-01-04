@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useFuncionarios, useCreateFuncionario, useUpdateFuncionario, useDeleteFuncionario, Funcionario } from "@/hooks/useRH";
 import { FuncionarioForm } from "./FuncionarioForm";
 import { DocumentosUpload } from "./DocumentosUpload";
+import { PontoLinkManager } from "./PontoLinkManager";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
@@ -10,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Plus, Pencil, Trash2, Search, User, FileText } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, User, FileText, Link2 } from "lucide-react";
 import { formatCurrency } from "@/lib/formatters";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
@@ -34,6 +35,7 @@ export function FuncionariosTab() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingFuncionario, setEditingFuncionario] = useState<Funcionario | null>(null);
   const [documentosFuncionario, setDocumentosFuncionario] = useState<Funcionario | null>(null);
+  const [pontoLinkFuncionario, setPontoLinkFuncionario] = useState<Funcionario | null>(null);
   const { data: funcionarios, isLoading } = useFuncionarios();
   const createMutation = useCreateFuncionario();
   const updateMutation = useUpdateFuncionario();
@@ -158,6 +160,15 @@ export function FuncionariosTab() {
                       <Button 
                         variant="ghost" 
                         size="icon" 
+                        onClick={() => setPontoLinkFuncionario(funcionario)}
+                        title="Link de Ponto"
+                        className={funcionario.ponto_token ? "text-green-600" : ""}
+                      >
+                        <Link2 className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
                         onClick={() => setDocumentosFuncionario(funcionario)}
                         title="Documentos"
                       >
@@ -220,6 +231,15 @@ export function FuncionariosTab() {
           </div>
         </SheetContent>
       </Sheet>
+
+      {/* Modal de Link de Ponto */}
+      {pontoLinkFuncionario && (
+        <PontoLinkManager
+          funcionario={pontoLinkFuncionario}
+          open={!!pontoLinkFuncionario}
+          onOpenChange={(open) => !open && setPontoLinkFuncionario(null)}
+        />
+      )}
     </motion.div>
   );
 }
