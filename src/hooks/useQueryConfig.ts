@@ -49,6 +49,11 @@ export const queryKeys = {
     list: () => [...queryKeys.despesas.all, "list"] as const,
     detail: (id: string) => [...queryKeys.despesas.all, "detail", id] as const,
   },
+  responsaveis: {
+    all: ["responsaveis"] as const,
+    list: () => [...queryKeys.responsaveis.all, "list"] as const,
+    detail: (id: string) => [...queryKeys.responsaveis.all, "detail", id] as const,
+  },
   escola: {
     all: ["escola"] as const,
     info: () => [...queryKeys.escola.all, "info"] as const,
