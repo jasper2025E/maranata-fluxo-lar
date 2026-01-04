@@ -72,7 +72,10 @@ const Despesas = () => {
       toast.success("Despesa cadastrada com sucesso!");
       resetForm();
     },
-    onError: () => toast.error("Erro ao cadastrar despesa"),
+    onError: (error: Error) => {
+      console.error("Erro ao cadastrar despesa:", error);
+      toast.error(`Erro ao cadastrar despesa: ${error.message}`);
+    },
   });
 
   const updateMutation = useMutation({
@@ -95,7 +98,10 @@ const Despesas = () => {
       toast.success("Despesa atualizada com sucesso!");
       resetForm();
     },
-    onError: () => toast.error("Erro ao atualizar despesa"),
+    onError: (error: Error) => {
+      console.error("Erro ao atualizar despesa:", error);
+      toast.error(`Erro ao atualizar despesa: ${error.message}`);
+    },
   });
 
   const deleteMutation = useMutation({
@@ -107,7 +113,10 @@ const Despesas = () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"] });
       toast.success("Despesa removida com sucesso!");
     },
-    onError: () => toast.error("Erro ao remover despesa"),
+    onError: (error: Error) => {
+      console.error("Erro ao remover despesa:", error);
+      toast.error(`Erro ao remover despesa: ${error.message}`);
+    },
   });
 
   const markAsPaidMutation = useMutation({
@@ -122,7 +131,10 @@ const Despesas = () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"] });
       toast.success("Despesa marcada como paga!");
     },
-    onError: () => toast.error("Erro ao atualizar despesa"),
+    onError: (error: Error) => {
+      console.error("Erro ao atualizar despesa:", error);
+      toast.error(`Erro ao atualizar despesa: ${error.message}`);
+    },
   });
 
   const resetForm = () => {
@@ -178,12 +190,14 @@ const Despesas = () => {
 
   const getCategoryBadge = (categoria: string) => {
     switch (categoria) {
-      case "fixa":
+      case "Fixa":
         return <Badge>Fixa</Badge>;
-      case "variavel":
+      case "Variável":
         return <Badge variant="secondary">Variável</Badge>;
-      default:
+      case "Única":
         return <Badge variant="outline">Única</Badge>;
+      default:
+        return <Badge variant="outline">{categoria}</Badge>;
     }
   };
 
@@ -231,9 +245,9 @@ const Despesas = () => {
                           <SelectValue placeholder="Selecione" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="fixa">Fixa</SelectItem>
-                          <SelectItem value="variavel">Variável</SelectItem>
-                          <SelectItem value="unica">Única</SelectItem>
+                          <SelectItem value="Fixa">Fixa</SelectItem>
+                          <SelectItem value="Variável">Variável</SelectItem>
+                          <SelectItem value="Única">Única</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>

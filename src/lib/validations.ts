@@ -20,8 +20,8 @@ export const cursoSchema = z.object({
 
 export const despesaSchema = z.object({
   titulo: z.string().trim().min(1, "Título é obrigatório").max(200, "Máximo 200 caracteres"),
-  categoria: z.string().min(1, "Categoria é obrigatória"),
-  valor: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valor inválido"),
+  categoria: z.enum(["Fixa", "Variável", "Única"], { errorMap: () => ({ message: "Categoria inválida. Use: Fixa, Variável ou Única" }) }),
+  valor: z.string().refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Valor deve ser maior que zero"),
   data_vencimento: z.string().min(1, "Data de vencimento é obrigatória"),
   recorrente: z.boolean(),
   observacoes: z.string().max(1000, "Máximo 1000 caracteres").optional(),

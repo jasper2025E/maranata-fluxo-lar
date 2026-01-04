@@ -196,7 +196,10 @@ const Faturas = () => {
       setIsPaymentOpen(false);
       setPaymentData({ metodo: "", referencia: "" });
     },
-    onError: () => toast.error("Erro ao registrar pagamento"),
+    onError: (error: Error) => {
+      console.error("Erro ao registrar pagamento:", error);
+      toast.error(`Erro ao registrar pagamento: ${error.message}`);
+    },
   });
 
   const cancelMutation = useMutation({
@@ -206,9 +209,12 @@ const Faturas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["faturas"] });
-      toast.success("Fatura cancelada");
+      toast.success("Fatura cancelada com sucesso");
     },
-    onError: () => toast.error("Erro ao cancelar fatura"),
+    onError: (error: Error) => {
+      console.error("Erro ao cancelar fatura:", error);
+      toast.error(`Erro ao cancelar fatura: ${error.message}`);
+    },
   });
 
   const handleOpenPayment = (fatura: Fatura) => {
