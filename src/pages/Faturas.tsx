@@ -26,7 +26,9 @@ import {
   Link,
   ExternalLink,
   Copy,
-  Loader2
+  Loader2,
+  Mail,
+  Send,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -45,6 +47,7 @@ interface Fatura {
   id: string;
   aluno_id: string;
   curso_id: string;
+  responsavel_id?: string | null;
   valor: number;
   mes_referencia: number;
   ano_referencia: number;
@@ -53,8 +56,9 @@ interface Fatura {
   status: string;
   payment_url?: string | null;
   stripe_checkout_session_id?: string | null;
-  alunos?: { nome_completo: string; email_responsavel: string };
+  alunos?: { nome_completo: string; email_responsavel: string; responsavel_id?: string | null };
   cursos?: { nome: string };
+  responsaveis?: { nome: string; email: string | null; telefone: string } | null;
 }
 
 const meses = [
@@ -160,9 +164,12 @@ const Faturas = () => {
   const [statusFilter, setStatusFilter] = useState("todas");
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isPaymentLinkOpen, setIsPaymentLinkOpen] = useState(false);
+  const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [selectedFatura, setSelectedFatura] = useState<Fatura | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [isGeneratingLink, setIsGeneratingLink] = useState<string | null>(null);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailToSend, setEmailToSend] = useState("");
   const [paymentData, setPaymentData] = useState({
     metodo: "",
     referencia: "",
@@ -175,7 +182,7 @@ const Faturas = () => {
       
       const { data, error } = await supabase
         .from("faturas")
-        .select("*, alunos(nome_completo, email_responsavel), cursos(nome)")
+        .select("*, alunos(nome_completo, email_responsavel, responsavel_id), cursos(nome), responsaveis(nome, email, telefone)")
         .order("data_vencimento", { ascending: false });
       if (error) throw error;
       return data as Fatura[];
@@ -395,6 +402,47 @@ const Faturas = () => {
           toast.error("Não foi possível abrir a janela do recibo. Verifique o bloqueador de pop-ups.");
         }
       });
+  };
+
+  const handleOpenEmailDialog = (fatura: Fatura) => {
+    setSelectedFatura(fatura);
+    // Get email from responsavel or aluno
+    const email = fatura.responsaveis?.email || fatura.alunos?.email_responsavel || "";
+    setEmailToSend(email);
+    setIsEmailDialogOpen(true);
+  };
+
+  const handleSendReceiptEmail = async () => {
+    if (!selectedFatura || !emailToSend) {
+      toast.error("Email é obrigatório");
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      const recipientName = selectedFatura.responsaveis?.nome || 
+        selectedFatura.alunos?.nome_completo?.split(" ")[0] || 
+        "Responsável";
+
+      const { error } = await supabase.functions.invoke("send-receipt-email", {
+        body: {
+          faturaId: selectedFatura.id,
+          recipientEmail: emailToSend,
+          recipientName: recipientName,
+        },
+      });
+
+      if (error) throw error;
+
+      toast.success("Recibo enviado por email com sucesso!");
+      setIsEmailDialogOpen(false);
+      setEmailToSend("");
+    } catch (error: any) {
+      console.error("Erro ao enviar email:", error);
+      toast.error(`Erro ao enviar email: ${error.message}`);
+    } finally {
+      setIsSendingEmail(false);
+    }
   };
 
   const handleOpenPayment = (fatura: Fatura) => {
@@ -721,13 +769,22 @@ const Faturas = () => {
                                 </>
                               )}
                               {fatura.status === "Paga" && (
-                                <DropdownMenuItem 
-                                  className="gap-2 cursor-pointer"
-                                  onClick={() => generateReceipt(fatura)}
-                                >
-                                  <Download className="h-4 w-4" />
-                                  Baixar recibo
-                                </DropdownMenuItem>
+                                <>
+                                  <DropdownMenuItem 
+                                    className="gap-2 cursor-pointer"
+                                    onClick={() => generateReceipt(fatura)}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                    Baixar recibo
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    className="gap-2 cursor-pointer text-primary focus:text-primary"
+                                    onClick={() => handleOpenEmailDialog(fatura)}
+                                  >
+                                    <Mail className="h-4 w-4" />
+                                    Enviar recibo por email
+                                  </DropdownMenuItem>
+                                </>
                               )}
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -896,6 +953,84 @@ const Faturas = () => {
                   Abrir página de pagamento
                 </Button>
               )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Email Receipt Dialog */}
+        <Dialog open={isEmailDialogOpen} onOpenChange={setIsEmailDialogOpen}>
+          <DialogContent className="sm:max-w-md rounded-2xl">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                <Mail className="h-5 w-5 text-primary" />
+                Enviar Recibo por Email
+              </DialogTitle>
+              <DialogDescription>
+                O recibo será enviado para o email informado.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedFatura && (
+              <div className="my-4 p-4 rounded-xl bg-muted/50 border">
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span className="text-sm font-bold text-primary">
+                      {selectedFatura.alunos?.nome_completo.charAt(0).toUpperCase()}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium">{selectedFatura.alunos?.nome_completo}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {meses[selectedFatura.mes_referencia - 1]}/{selectedFatura.ano_referencia}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between pt-3 border-t">
+                  <span className="text-sm text-muted-foreground">Valor</span>
+                  <span className="text-xl font-bold text-success value-currency">
+                    {formatCurrency(selectedFatura.valor)}
+                  </span>
+                </div>
+              </div>
+            )}
+
+            <div className="grid gap-2">
+              <Label className="text-sm font-medium">Email do destinatário</Label>
+              <Input
+                type="email"
+                value={emailToSend}
+                onChange={(e) => setEmailToSend(e.target.value)}
+                placeholder="email@exemplo.com"
+                className="h-11"
+              />
+              {!emailToSend && (
+                <p className="text-xs text-destructive">
+                  Nenhum email cadastrado para este responsável/aluno. Digite manualmente.
+                </p>
+              )}
+            </div>
+
+            <DialogFooter className="mt-6 gap-2">
+              <Button variant="outline" onClick={() => setIsEmailDialogOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSendReceiptEmail}
+                disabled={isSendingEmail || !emailToSend}
+                className="gap-2"
+              >
+                {isSendingEmail ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4" />
+                    Enviar recibo
+                  </>
+                )}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
