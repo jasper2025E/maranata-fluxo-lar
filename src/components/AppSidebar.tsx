@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -18,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Sidebar,
   SidebarContent,
@@ -57,6 +59,19 @@ export function AppSidebar() {
   const { signOut, hasRole } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [escolaNome, setEscolaNome] = useState("Maranata");
+
+  useEffect(() => {
+    const fetchEscola = async () => {
+      const { data } = await supabase.from("escola").select("nome, logo_url").limit(1).maybeSingle();
+      if (data) {
+        setEscolaNome(data.nome);
+        setLogoUrl(data.logo_url);
+      }
+    };
+    fetchEscola();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -101,12 +116,20 @@ export function AppSidebar() {
           "flex items-center gap-3 px-4 py-6",
           isCollapsed && "justify-center px-2"
         )}>
-          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/20">
-            <GraduationCap className="h-5 w-5 text-white" strokeWidth={2} />
-          </div>
+          {logoUrl ? (
+            <img 
+              src={logoUrl} 
+              alt={escolaNome} 
+              className="h-10 w-10 rounded-xl object-cover shrink-0 shadow-lg"
+            />
+          ) : (
+            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/20">
+              <GraduationCap className="h-5 w-5 text-white" strokeWidth={2} />
+            </div>
+          )}
           {!isCollapsed && (
             <div>
-              <h2 className="font-bold text-sidebar-foreground text-lg tracking-tight">Maranata</h2>
+              <h2 className="font-bold text-sidebar-foreground text-lg tracking-tight leading-tight">{escolaNome}</h2>
               <p className="text-xs text-sidebar-foreground/50 font-medium">Sistema Financeiro</p>
             </div>
           )}
