@@ -66,13 +66,17 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [escolaNome, setEscolaNome] = useState("Maranata");
+  const [escolaCnpj, setEscolaCnpj] = useState<string | null>(null);
+  const [escolaEndereco, setEscolaEndereco] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchEscola = async () => {
-      const { data } = await supabase.from("escola").select("nome, logo_url").limit(1).maybeSingle();
+      const { data } = await supabase.from("escola").select("nome, logo_url, cnpj, endereco").limit(1).maybeSingle();
       if (data) {
         setEscolaNome(data.nome);
         setLogoUrl(data.logo_url);
+        setEscolaCnpj(data.cnpj);
+        setEscolaEndereco(data.endereco);
       }
     };
     fetchEscola();
@@ -206,6 +210,19 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="gradient-sidebar border-t border-sidebar-border/50 p-3">
+        {/* School Info */}
+        {!isCollapsed && (escolaCnpj || escolaEndereco) && (
+          <div className="mb-3 px-3 py-3 rounded-lg bg-sidebar-accent/50 border border-sidebar-border/30">
+            <p className="font-semibold text-sm text-sidebar-foreground">{escolaNome}</p>
+            {escolaCnpj && (
+              <p className="text-xs text-sidebar-primary mt-0.5">CNPJ: {escolaCnpj}</p>
+            )}
+            {escolaEndereco && (
+              <p className="text-xs text-sidebar-foreground/50 mt-0.5">{escolaEndereco}</p>
+            )}
+          </div>
+        )}
+        
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton
