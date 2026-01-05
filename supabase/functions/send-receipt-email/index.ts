@@ -3,11 +3,46 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
-};
+// Allowed origins for CORS
+const ALLOWED_ORIGINS = [
+  "https://sznckclviajjmmvsgrpp.lovable.app",
+  "https://preview--sznckclviajjmmvsgrpp.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+  
+  if (origin && ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed.replace(/\/$/, '')))) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Credentials"] = "true";
+  }
+  
+  return headers;
+}
+
+// HTML escape function to prevent injection
+function escapeHtml(unsafe: string): string {
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;")
+    .replace(/\r\n|\r|\n/g, " "); // Remove line breaks for header injection prevention
+}
+
+// Strict sanitization for email "from" name
+function sanitizeFromName(name: string): string {
+  return name
+    .replace(/[^a-zA-Z0-9À-ÿ\s]/g, '') // Only allow alphanumeric, accented chars, and spaces
+    .substring(0, 50) // Limit length
+    .trim();
+}
 
 interface SendReceiptRequest {
   faturaId: string;
@@ -16,13 +51,36 @@ interface SendReceiptRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  // Validate origin for non-OPTIONS requests
+  if (!origin || !ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed.replace(/\/$/, '')))) {
+    console.error("Origin not allowed:", origin);
+    return new Response(
+      JSON.stringify({ error: "Origin not allowed" }),
+      { status: 403, headers: { "Content-Type": "application/json" } }
+    );
+  }
+
   try {
     const { faturaId, recipientEmail, recipientName }: SendReceiptRequest = await req.json();
+
+    // Validate inputs
+    if (!faturaId || typeof faturaId !== 'string') {
+      throw new Error("ID da fatura inválido");
+    }
+    if (!recipientEmail || typeof recipientEmail !== 'string' || !recipientEmail.includes('@')) {
+      throw new Error("Email do destinatário inválido");
+    }
+    if (!recipientName || typeof recipientName !== 'string') {
+      throw new Error("Nome do destinatário inválido");
+    }
 
     console.log(`Sending receipt email for fatura ${faturaId} to ${recipientEmail}`);
 
@@ -77,9 +135,16 @@ const handler = async (req: Request): Promise<Response> => {
       return date.toLocaleDateString("pt-BR");
     };
 
-    const escolaNome = escola?.nome || "Sistema de Gestão Escolar";
+    // Escape all user-controlled values for HTML injection prevention
+    const safeEscolaNome = escapeHtml(escola?.nome || "Sistema de Gestão Escolar");
+    const safeRecipientName = escapeHtml(recipientName);
+    const safeStudentName = escapeHtml(fatura.alunos?.nome_completo || 'N/A');
+    const safeCourseName = escapeHtml(fatura.cursos?.nome || 'N/A');
+    const safeFromName = sanitizeFromName(escola?.nome || "Sistema de Gestão Escolar");
+    const safeEscolaTelefone = escola?.telefone ? escapeHtml(escola.telefone) : null;
+    const safeEscolaEmail = escola?.email ? escapeHtml(escola.email) : null;
 
-    // Create email HTML
+    // Create email HTML with escaped values
     const emailHtml = `
       <!DOCTYPE html>
       <html>
@@ -94,13 +159,13 @@ const handler = async (req: Request): Promise<Response> => {
           <!-- Header -->
           <div style="text-align: center; border-bottom: 3px solid #3b82f6; padding-bottom: 25px; margin-bottom: 30px;">
             <h1 style="color: #3b82f6; font-size: 28px; margin: 0 0 8px 0;">📋 Recibo de Pagamento</h1>
-            <p style="color: #666; font-size: 14px; margin: 0;">${escolaNome}</p>
+            <p style="color: #666; font-size: 14px; margin: 0;">${safeEscolaNome}</p>
             <span style="display: inline-block; background: #10b981; color: white; padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 600; margin-top: 15px;">✓ PAGO</span>
           </div>
           
           <!-- Greeting -->
           <p style="color: #333; font-size: 16px; margin-bottom: 25px;">
-            Olá <strong>${recipientName}</strong>,
+            Olá <strong>${safeRecipientName}</strong>,
           </p>
           <p style="color: #666; font-size: 14px; margin-bottom: 30px;">
             Confirmamos o recebimento do pagamento referente à mensalidade abaixo. Este email serve como comprovante de quitação.
@@ -112,11 +177,11 @@ const handler = async (req: Request): Promise<Response> => {
             <table style="width: 100%; border-collapse: collapse;">
               <tr>
                 <td style="padding: 10px 0; color: #666; font-size: 14px;">Nome:</td>
-                <td style="padding: 10px 0; font-weight: 600; color: #333; text-align: right; font-size: 14px;">${fatura.alunos?.nome_completo || 'N/A'}</td>
+                <td style="padding: 10px 0; font-weight: 600; color: #333; text-align: right; font-size: 14px;">${safeStudentName}</td>
               </tr>
               <tr>
                 <td style="padding: 10px 0; color: #666; font-size: 14px; border-top: 1px solid #f0f0f0;">Curso:</td>
-                <td style="padding: 10px 0; font-weight: 600; color: #333; text-align: right; font-size: 14px; border-top: 1px solid #f0f0f0;">${fatura.cursos?.nome || 'N/A'}</td>
+                <td style="padding: 10px 0; font-weight: 600; color: #333; text-align: right; font-size: 14px; border-top: 1px solid #f0f0f0;">${safeCourseName}</td>
               </tr>
             </table>
           </div>
@@ -151,12 +216,12 @@ const handler = async (req: Request): Promise<Response> => {
               </tr>
               <tr>
                 <td style="padding: 10px 0; color: #666; font-size: 14px; border-top: 1px solid #f0f0f0;">Método:</td>
-                <td style="padding: 10px 0; font-weight: 600; color: #333; text-align: right; font-size: 14px; border-top: 1px solid #f0f0f0;">${pagamento.metodo}</td>
+                <td style="padding: 10px 0; font-weight: 600; color: #333; text-align: right; font-size: 14px; border-top: 1px solid #f0f0f0;">${escapeHtml(pagamento.metodo)}</td>
               </tr>
               ${pagamento.referencia ? `
               <tr>
                 <td style="padding: 10px 0; color: #666; font-size: 14px; border-top: 1px solid #f0f0f0;">Referência:</td>
-                <td style="padding: 10px 0; font-weight: 600; color: #333; text-align: right; font-size: 14px; border-top: 1px solid #f0f0f0;">${pagamento.referencia}</td>
+                <td style="padding: 10px 0; font-weight: 600; color: #333; text-align: right; font-size: 14px; border-top: 1px solid #f0f0f0;">${escapeHtml(pagamento.referencia)}</td>
               </tr>
               ` : ''}
             </table>
@@ -175,9 +240,9 @@ const handler = async (req: Request): Promise<Response> => {
             <p style="font-size: 11px; color: #aaa; margin-top: 15px;">
               Emitido em: ${new Date().toLocaleDateString("pt-BR")} às ${new Date().toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' })}
             </p>
-            ${escola?.telefone || escola?.email ? `
+            ${safeEscolaTelefone || safeEscolaEmail ? `
             <p style="font-size: 12px; color: #888; margin-top: 20px;">
-              ${escola.telefone ? `📞 ${escola.telefone}` : ''} ${escola.email ? `| ✉️ ${escola.email}` : ''}
+              ${safeEscolaTelefone ? `📞 ${safeEscolaTelefone}` : ''} ${safeEscolaEmail ? `| ✉️ ${safeEscolaEmail}` : ''}
             </p>
             ` : ''}
           </div>
@@ -195,7 +260,7 @@ const handler = async (req: Request): Promise<Response> => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: `${escolaNome} <noreply@maranata.com>`,
+        from: `${safeFromName} <noreply@maranata.com>`,
         to: [recipientEmail],
         subject: `Recibo de Pagamento - ${meses[fatura.mes_referencia - 1]}/${fatura.ano_referencia}`,
         html: emailHtml,
@@ -224,7 +289,7 @@ const handler = async (req: Request): Promise<Response> => {
       JSON.stringify({ error: error.message }),
       {
         status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
+        headers: { "Content-Type": "application/json", ...getCorsHeaders(req.headers.get("origin")) },
       }
     );
   }
