@@ -1,9 +1,12 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.81.0";
 
+// Stripe webhooks come from Stripe servers, not browsers
+// We use minimal CORS for preflight but validate via signature
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, stripe-signature",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
 // Função para verificar assinatura do webhook
@@ -25,6 +28,14 @@ async function verifyWebhookSignature(
 
     const timestamp = timestampPart.split("=")[1];
     const expectedSignature = signaturePart.split("=")[1];
+
+    // Verify timestamp is not too old (5 minutes tolerance)
+    const timestampNum = parseInt(timestamp, 10);
+    const now = Math.floor(Date.now() / 1000);
+    if (Math.abs(now - timestampNum) > 300) {
+      console.error("Webhook timestamp too old");
+      return false;
+    }
 
     const signedPayload = `${timestamp}.${payload}`;
     const key = await crypto.subtle.importKey(
@@ -65,20 +76,32 @@ serve(async (req) => {
 
     console.log("Webhook recebido");
 
-    // Verificar assinatura se configurada
-    if (webhookSecret && stripeSignature) {
-      const isValid = await verifyWebhookSignature(payload, stripeSignature, webhookSecret);
-      if (!isValid) {
-        console.error("Assinatura do webhook inválida");
-        return new Response(
-          JSON.stringify({ error: "Assinatura inválida" }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-      console.log("Assinatura verificada com sucesso");
-    } else {
-      console.warn("STRIPE_WEBHOOK_SECRET não configurado, pulando verificação de assinatura");
+    // CRITICAL: Verify webhook signature - required for security
+    if (!webhookSecret) {
+      console.error("STRIPE_WEBHOOK_SECRET não configurado - rejeitando webhook");
+      return new Response(
+        JSON.stringify({ error: "Webhook secret not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
+
+    if (!stripeSignature) {
+      console.error("Stripe signature header missing");
+      return new Response(
+        JSON.stringify({ error: "Missing stripe-signature header" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const isValid = await verifyWebhookSignature(payload, stripeSignature, webhookSecret);
+    if (!isValid) {
+      console.error("Assinatura do webhook inválida");
+      return new Response(
+        JSON.stringify({ error: "Assinatura inválida" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    console.log("Assinatura verificada com sucesso");
 
     const event = JSON.parse(payload);
     console.log(`Evento recebido: ${event.type}`);

@@ -1,15 +1,44 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.81.0";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+// Allowed origins for CORS
+const ALLOWED_ORIGINS = [
+  "https://sznckclviajjmmvsgrpp.lovable.app",
+  "https://preview--sznckclviajjmmvsgrpp.lovable.app",
+  "http://localhost:5173",
+  "http://localhost:8080",
+];
+
+function getCorsHeaders(origin: string | null): Record<string, string> {
+  const headers: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+  };
+  
+  if (origin && ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed.replace(/\/$/, '')))) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Credentials"] = "true";
+  }
+  
+  return headers;
+}
 
 serve(async (req) => {
+  const origin = req.headers.get("origin");
+  const corsHeaders = getCorsHeaders(origin);
+
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Validate origin for non-OPTIONS requests
+  if (!origin || !ALLOWED_ORIGINS.some(allowed => origin.startsWith(allowed.replace(/\/$/, '')))) {
+    console.error("Origin not allowed:", origin);
+    return new Response(
+      JSON.stringify({ error: "Origin not allowed" }),
+      { status: 403, headers: { "Content-Type": "application/json" } }
+    );
   }
 
   try {
