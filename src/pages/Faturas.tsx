@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import { 
   Search, 
   FileText, 
@@ -29,6 +31,11 @@ import {
   Loader2,
   Mail,
   Send,
+  Pencil,
+  Percent,
+  DollarSign,
+  Calendar,
+  Calculator,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -39,7 +46,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { format, isAfter, isBefore, addDays } from "date-fns";
+import { format, isAfter, isBefore, addDays, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 
@@ -49,6 +56,8 @@ interface Fatura {
   curso_id: string;
   responsavel_id?: string | null;
   valor: number;
+  valor_original?: number | null;
+  valor_total?: number | null;
   mes_referencia: number;
   ano_referencia: number;
   data_emissao: string;
@@ -56,6 +65,20 @@ interface Fatura {
   status: string;
   payment_url?: string | null;
   stripe_checkout_session_id?: string | null;
+  // Desconto
+  desconto_valor?: number | null;
+  desconto_percentual?: number | null;
+  desconto_motivo?: string | null;
+  valor_desconto_aplicado?: number | null;
+  // Juros e Multa
+  juros?: number | null;
+  multa?: number | null;
+  juros_percentual_diario?: number | null;
+  juros_percentual_mensal?: number | null;
+  dias_atraso?: number | null;
+  valor_juros_aplicado?: number | null;
+  valor_multa_aplicado?: number | null;
+  // Relacionamentos
   alunos?: { nome_completo: string; email_responsavel: string; responsavel_id?: string | null };
   cursos?: { nome: string };
   responsaveis?: { nome: string; email: string | null; telefone: string } | null;
@@ -72,13 +95,15 @@ function StatCard({
   value, 
   total,
   icon: Icon, 
-  variant 
+  variant,
+  valuePrefix,
 }: { 
   title: string; 
-  value: number;
+  value: number | string;
   total?: number;
   icon: React.ElementType; 
   variant: "default" | "success" | "warning" | "destructive";
+  valuePrefix?: string;
 }) {
   const variants = {
     default: {
@@ -119,7 +144,7 @@ function StatCard({
           <div className="space-y-1">
             <p className="text-sm font-medium text-muted-foreground">{title}</p>
             <p className={cn("text-3xl font-bold tracking-tight", style.text)}>
-              {value}
+              {valuePrefix}{value}
             </p>
             {total !== undefined && (
               <p className="text-xs text-muted-foreground">
@@ -166,6 +191,7 @@ const Faturas = () => {
   const [isPaymentLinkOpen, setIsPaymentLinkOpen] = useState(false);
   const [isEmailDialogOpen, setIsEmailDialogOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isEditOpen, setIsEditOpen] = useState(false);
   const [selectedFatura, setSelectedFatura] = useState<Fatura | null>(null);
   const [paymentUrl, setPaymentUrl] = useState<string | null>(null);
   const [isGeneratingLink, setIsGeneratingLink] = useState<string | null>(null);
@@ -174,6 +200,20 @@ const Faturas = () => {
   const [paymentData, setPaymentData] = useState({
     metodo: "",
     referencia: "",
+  });
+
+  // Estado para edição de fatura
+  const [editData, setEditData] = useState({
+    valor_original: 0,
+    data_vencimento: "",
+    status: "",
+    desconto_tipo: "valor" as "valor" | "percentual",
+    desconto_valor: 0,
+    desconto_percentual: 0,
+    desconto_motivo: "",
+    multa: 0,
+    juros_percentual_diario: 0.033,
+    juros_percentual_mensal: 1,
   });
 
   const { data: faturas = [], isLoading } = useQuery({
@@ -232,11 +272,18 @@ const Faturas = () => {
     },
   });
 
+  // Mutation para pagamento manual
   const paymentMutation = useMutation({
     mutationFn: async (data: { fatura: Fatura; metodo: string; referencia: string }) => {
+      const valorFinal = getValorFinal(data.fatura);
+      
       const { error: paymentError } = await supabase.from("pagamentos").insert({
         fatura_id: data.fatura.id,
-        valor: data.fatura.valor,
+        valor: valorFinal,
+        valor_original: data.fatura.valor_original || data.fatura.valor,
+        desconto_aplicado: data.fatura.valor_desconto_aplicado || 0,
+        juros_aplicado: data.fatura.valor_juros_aplicado || 0,
+        multa_aplicada: data.fatura.valor_multa_aplicado || 0,
         metodo: data.metodo,
         referencia: data.referencia || null,
       });
@@ -251,6 +298,7 @@ const Faturas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["faturas"] });
       queryClient.invalidateQueries({ queryKey: ["pagamentos"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       toast.success("Pagamento registrado com sucesso!");
       setIsPaymentOpen(false);
       setPaymentData({ metodo: "", referencia: "" });
@@ -261,6 +309,28 @@ const Faturas = () => {
     },
   });
 
+  // Mutation para editar fatura
+  const editMutation = useMutation({
+    mutationFn: async (data: { id: string; updates: Partial<Fatura> }) => {
+      const { error } = await supabase
+        .from("faturas")
+        .update(data.updates)
+        .eq("id", data.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["faturas"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
+      queryClient.invalidateQueries({ queryKey: ["pagamentos"] });
+      toast.success("Fatura atualizada com sucesso!");
+      setIsEditOpen(false);
+    },
+    onError: (error: Error) => {
+      console.error("Erro ao atualizar fatura:", error);
+      toast.error(`Erro ao atualizar fatura: ${error.message}`);
+    },
+  });
+
   const cancelMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("faturas").update({ status: "Cancelada" }).eq("id", id);
@@ -268,6 +338,7 @@ const Faturas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["faturas"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-stats"] });
       toast.success("Fatura cancelada com sucesso");
     },
     onError: (error: Error) => {
@@ -275,6 +346,37 @@ const Faturas = () => {
       toast.error(`Erro ao cancelar fatura: ${error.message}`);
     },
   });
+
+  // Função para calcular valor final
+  const getValorFinal = (fatura: Fatura): number => {
+    if (fatura.valor_total && fatura.valor_total > 0) {
+      return fatura.valor_total;
+    }
+    
+    const valorBase = fatura.valor_original || fatura.valor;
+    let desconto = 0;
+    
+    if (fatura.desconto_percentual && fatura.desconto_percentual > 0) {
+      desconto = valorBase * (fatura.desconto_percentual / 100);
+    } else if (fatura.desconto_valor && fatura.desconto_valor > 0) {
+      desconto = fatura.desconto_valor;
+    }
+    
+    const juros = fatura.valor_juros_aplicado || fatura.juros || 0;
+    const multa = fatura.valor_multa_aplicado || fatura.multa || 0;
+    
+    return Math.max(0, valorBase - desconto + juros + multa);
+  };
+
+  // Calcular dias de atraso
+  const calcularDiasAtraso = (dataVencimento: string): number => {
+    const hoje = new Date();
+    const vencimento = new Date(dataVencimento);
+    if (hoje > vencimento) {
+      return differenceInDays(hoje, vencimento);
+    }
+    return 0;
+  };
 
   // Função para escapar HTML e prevenir XSS
   const escapeHtml = (text: string | null | undefined): string => {
@@ -285,7 +387,6 @@ const Faturas = () => {
   };
 
   const generateReceipt = (fatura: Fatura) => {
-    // Buscar dados do pagamento relacionado
     supabase
       .from("pagamentos")
       .select("*")
@@ -294,8 +395,8 @@ const Faturas = () => {
       .limit(1)
       .then(({ data: pagamentos }) => {
         const pagamento = pagamentos?.[0];
+        const valorFinal = getValorFinal(fatura);
         
-        // Criar conteúdo do recibo em HTML
         const receiptContent = `
           <!DOCTYPE html>
           <html>
@@ -316,6 +417,8 @@ const Faturas = () => {
               .info-row:last-child { border-bottom: none; }
               .info-label { color: #666; }
               .info-value { font-weight: 600; color: #333; }
+              .info-value.discount { color: #10b981; }
+              .info-value.fee { color: #ef4444; }
               .amount { text-align: center; background: #f0fdf4; padding: 20px; border-radius: 8px; margin: 25px 0; }
               .amount-label { font-size: 14px; color: #666; margin-bottom: 5px; }
               .amount-value { font-size: 32px; font-weight: 700; color: #10b981; }
@@ -361,6 +464,32 @@ const Faturas = () => {
                 </div>
               </div>
 
+              <div class="section">
+                <div class="section-title">Valores</div>
+                <div class="info-row">
+                  <span class="info-label">Valor Original:</span>
+                  <span class="info-value">${formatCurrency(fatura.valor_original || fatura.valor)}</span>
+                </div>
+                ${(fatura.valor_desconto_aplicado || 0) > 0 ? `
+                <div class="info-row">
+                  <span class="info-label">Desconto${fatura.desconto_motivo ? ` (${escapeHtml(fatura.desconto_motivo)})` : ''}:</span>
+                  <span class="info-value discount">- ${formatCurrency(fatura.valor_desconto_aplicado || 0)}</span>
+                </div>
+                ` : ''}
+                ${(fatura.valor_juros_aplicado || 0) > 0 ? `
+                <div class="info-row">
+                  <span class="info-label">Juros (${fatura.dias_atraso} dias):</span>
+                  <span class="info-value fee">+ ${formatCurrency(fatura.valor_juros_aplicado || 0)}</span>
+                </div>
+                ` : ''}
+                ${(fatura.valor_multa_aplicado || 0) > 0 ? `
+                <div class="info-row">
+                  <span class="info-label">Multa:</span>
+                  <span class="info-value fee">+ ${formatCurrency(fatura.valor_multa_aplicado || 0)}</span>
+                </div>
+                ` : ''}
+              </div>
+
               ${pagamento ? `
               <div class="section">
                 <div class="section-title">Dados do Pagamento</div>
@@ -383,7 +512,7 @@ const Faturas = () => {
               
               <div class="amount">
                 <div class="amount-label">Valor Pago</div>
-                <div class="amount-value">${formatCurrency(fatura.valor)}</div>
+                <div class="amount-value">${formatCurrency(valorFinal)}</div>
               </div>
               
               <div class="footer">
@@ -395,27 +524,22 @@ const Faturas = () => {
           </html>
         `;
 
-        // Abrir em nova janela e imprimir/salvar como PDF
         const printWindow = window.open('', '_blank');
         if (printWindow) {
           printWindow.document.write(receiptContent);
           printWindow.document.close();
-          
-          // Aguardar carregamento e abrir diálogo de impressão
           printWindow.onload = () => {
             printWindow.print();
           };
-          
-          toast.success("Recibo gerado! Use 'Salvar como PDF' na janela de impressão.");
+          toast.success("Recibo gerado!");
         } else {
-          toast.error("Não foi possível abrir a janela do recibo. Verifique o bloqueador de pop-ups.");
+          toast.error("Não foi possível abrir a janela do recibo.");
         }
       });
   };
 
   const handleOpenEmailDialog = (fatura: Fatura) => {
     setSelectedFatura(fatura);
-    // Get email from responsavel or aluno
     const email = fatura.responsaveis?.email || fatura.alunos?.email_responsavel || "";
     setEmailToSend(email);
     setIsEmailDialogOpen(true);
@@ -448,9 +572,8 @@ const Faturas = () => {
       setEmailToSend("");
     } catch (error: any) {
       console.error("Erro ao enviar email:", error);
-      // Check for Resend domain verification error
       if (error.message?.includes("non-2xx")) {
-        toast.error("Erro: Você precisa verificar um domínio no Resend para enviar emails para outros destinatários. Acesse resend.com/domains para configurar.");
+        toast.error("Erro: Configure um domínio verificado no Resend.");
       } else {
         toast.error(`Erro ao enviar email: ${error.message}`);
       }
@@ -464,11 +587,84 @@ const Faturas = () => {
     setIsPaymentOpen(true);
   };
 
+  const handleOpenEdit = (fatura: Fatura) => {
+    setSelectedFatura(fatura);
+    setEditData({
+      valor_original: fatura.valor_original || fatura.valor,
+      data_vencimento: fatura.data_vencimento,
+      status: fatura.status,
+      desconto_tipo: (fatura.desconto_percentual && fatura.desconto_percentual > 0) ? "percentual" : "valor",
+      desconto_valor: fatura.desconto_valor || 0,
+      desconto_percentual: fatura.desconto_percentual || 0,
+      desconto_motivo: fatura.desconto_motivo || "",
+      multa: fatura.multa || 0,
+      juros_percentual_diario: fatura.juros_percentual_diario || 0.033,
+      juros_percentual_mensal: fatura.juros_percentual_mensal || 1,
+    });
+    setIsEditOpen(true);
+  };
+
+  const handleSaveEdit = () => {
+    if (!selectedFatura) return;
+
+    const updates: Partial<Fatura> = {
+      valor_original: editData.valor_original,
+      valor: editData.valor_original,
+      data_vencimento: editData.data_vencimento,
+      status: editData.status,
+      desconto_valor: editData.desconto_tipo === "valor" ? editData.desconto_valor : 0,
+      desconto_percentual: editData.desconto_tipo === "percentual" ? editData.desconto_percentual : 0,
+      desconto_motivo: editData.desconto_motivo || null,
+      multa: editData.multa,
+      juros_percentual_diario: editData.juros_percentual_diario,
+      juros_percentual_mensal: editData.juros_percentual_mensal,
+    };
+
+    editMutation.mutate({ id: selectedFatura.id, updates });
+  };
+
+  // Calcular preview do valor final na edição
+  const calcularPreviewValorFinal = useMemo(() => {
+    const valorBase = editData.valor_original;
+    let desconto = 0;
+    
+    if (editData.desconto_tipo === "percentual") {
+      desconto = valorBase * (editData.desconto_percentual / 100);
+    } else {
+      desconto = editData.desconto_valor;
+    }
+    
+    desconto = Math.min(desconto, valorBase);
+    
+    const diasAtraso = calcularDiasAtraso(editData.data_vencimento);
+    let juros = 0;
+    
+    if (diasAtraso > 0 && editData.status !== "Paga" && editData.status !== "Cancelada") {
+      if (editData.juros_percentual_diario > 0) {
+        juros = (valorBase - desconto) * (editData.juros_percentual_diario / 100) * diasAtraso;
+      } else if (editData.juros_percentual_mensal > 0) {
+        juros = (valorBase - desconto) * (editData.juros_percentual_mensal / 100) * (diasAtraso / 30);
+      }
+    }
+    
+    const multa = diasAtraso > 0 && editData.status !== "Paga" && editData.status !== "Cancelada" 
+      ? editData.multa 
+      : 0;
+    
+    return {
+      valorBase,
+      desconto,
+      juros,
+      multa,
+      diasAtraso,
+      total: Math.max(0, valorBase - desconto + juros + multa),
+    };
+  }, [editData]);
+
   const handleGeneratePaymentLink = (fatura: Fatura) => {
     setSelectedFatura(fatura);
     setIsGeneratingLink(fatura.id);
     
-    // Se já tem URL, mostrar direto
     if (fatura.payment_url) {
       setPaymentUrl(fatura.payment_url);
       setIsPaymentLinkOpen(true);
@@ -481,7 +677,7 @@ const Faturas = () => {
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast.success("Link copiado para a área de transferência!");
+    toast.success("Link copiado!");
   };
 
   const handleSubmitPayment = (e: React.FormEvent) => {
@@ -561,7 +757,7 @@ const Faturas = () => {
   };
 
   const valorTotal = faturas.filter(f => f.status === "Aberta" || f.status === "Vencida")
-    .reduce((acc, f) => acc + f.valor, 0);
+    .reduce((acc, f) => acc + getValorFinal(f), 0);
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -574,7 +770,7 @@ const Faturas = () => {
         <div className="animate-fade-in">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">Faturas</h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie as faturas e acompanhe os pagamentos
+            Gerencie faturas com desconto, juros e multa por atraso
           </p>
         </div>
 
@@ -618,7 +814,7 @@ const Faturas = () => {
                     <TrendingUp className="h-5 w-5 text-primary" strokeWidth={1.75} />
                   </div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Total a receber</p>
+                    <p className="text-sm text-muted-foreground">Total a receber (com juros/multa)</p>
                     <p className="text-2xl font-bold text-foreground value-currency">
                       {formatCurrency(valorTotal)}
                     </p>
@@ -698,6 +894,9 @@ const Faturas = () => {
                   {filteredFaturas.map((fatura) => {
                     const statusConfig = getStatusConfig(fatura.status, fatura.data_vencimento);
                     const StatusIcon = statusConfig.icon;
+                    const valorFinal = getValorFinal(fatura);
+                    const valorOriginal = fatura.valor_original || fatura.valor;
+                    const temAlteracao = valorFinal !== valorOriginal;
                     
                     return (
                       <TableRow key={fatura.id} className="hover:bg-muted/30 transition-colors">
@@ -720,12 +919,28 @@ const Faturas = () => {
                           {meses[fatura.mes_referencia - 1]}/{fatura.ano_referencia}
                         </TableCell>
                         <TableCell>
-                          <span className="font-semibold text-foreground value-currency">
-                            {formatCurrency(fatura.valor)}
-                          </span>
+                          <div className="flex flex-col">
+                            <span className="font-semibold text-foreground value-currency">
+                              {formatCurrency(valorFinal)}
+                            </span>
+                            {temAlteracao && (
+                              <span className="text-xs text-muted-foreground line-through">
+                                {formatCurrency(valorOriginal)}
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
-                        <TableCell className="text-muted-foreground">
-                          {format(new Date(fatura.data_vencimento), "dd/MM/yyyy")}
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-muted-foreground">
+                              {format(new Date(fatura.data_vencimento), "dd/MM/yyyy")}
+                            </span>
+                            {fatura.dias_atraso && fatura.dias_atraso > 0 && fatura.status === "Vencida" && (
+                              <span className="text-xs text-destructive">
+                                {fatura.dias_atraso} dias de atraso
+                              </span>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge 
@@ -746,7 +961,7 @@ const Faturas = () => {
                                 <MoreHorizontal className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 rounded-xl">
+                            <DropdownMenuContent align="end" className="w-52 rounded-xl">
                               <DropdownMenuItem 
                                 className="gap-2 cursor-pointer"
                                 onClick={() => {
@@ -757,8 +972,16 @@ const Faturas = () => {
                                 <Eye className="h-4 w-4" />
                                 Ver detalhes
                               </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                className="gap-2 cursor-pointer"
+                                onClick={() => handleOpenEdit(fatura)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                                Editar fatura
+                              </DropdownMenuItem>
                               {(fatura.status === "Aberta" || fatura.status === "Vencida") && (
                                 <>
+                                  <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     className="gap-2 cursor-pointer text-primary focus:text-primary"
                                     onClick={() => handleGeneratePaymentLink(fatura)}
@@ -776,7 +999,7 @@ const Faturas = () => {
                                     onClick={() => handleOpenPayment(fatura)}
                                   >
                                     <CreditCard className="h-4 w-4" />
-                                    Registrar pagamento manual
+                                    Registrar pagamento
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
                                   <DropdownMenuItem 
@@ -790,6 +1013,7 @@ const Faturas = () => {
                               )}
                               {fatura.status === "Paga" && (
                                 <>
+                                  <DropdownMenuSeparator />
                                   <DropdownMenuItem 
                                     className="gap-2 cursor-pointer"
                                     onClick={() => generateReceipt(fatura)}
@@ -818,6 +1042,245 @@ const Faturas = () => {
           </CardContent>
         </Card>
 
+        {/* Edit Dialog */}
+        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+          <DialogContent className="sm:max-w-2xl rounded-2xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+                <Pencil className="h-5 w-5 text-primary" />
+                Editar Fatura
+              </DialogTitle>
+              <DialogDescription>
+                Configure desconto, juros e multa para esta fatura.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {selectedFatura && (
+              <div className="space-y-6">
+                {/* Info do Aluno */}
+                <div className="p-4 rounded-xl bg-muted/50 border">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <span className="text-sm font-bold text-primary">
+                        {selectedFatura.alunos?.nome_completo.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <p className="font-medium">{selectedFatura.alunos?.nome_completo}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {meses[selectedFatura.mes_referencia - 1]}/{selectedFatura.ano_referencia} • {selectedFatura.cursos?.nome}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Tabs defaultValue="geral" className="w-full">
+                  <TabsList className="grid w-full grid-cols-3">
+                    <TabsTrigger value="geral">Geral</TabsTrigger>
+                    <TabsTrigger value="desconto">Desconto</TabsTrigger>
+                    <TabsTrigger value="juros">Juros/Multa</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="geral" className="space-y-4 mt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Valor Base (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editData.valor_original}
+                          onChange={(e) => setEditData({ ...editData, valor_original: parseFloat(e.target.value) || 0 })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Status</Label>
+                        <Select 
+                          value={editData.status} 
+                          onValueChange={(value) => setEditData({ ...editData, status: value })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Aberta">Aberta</SelectItem>
+                            <SelectItem value="Paga">Paga</SelectItem>
+                            <SelectItem value="Vencida">Vencida</SelectItem>
+                            <SelectItem value="Cancelada">Cancelada</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Data de Vencimento</Label>
+                      <Input
+                        type="date"
+                        value={editData.data_vencimento}
+                        onChange={(e) => setEditData({ ...editData, data_vencimento: e.target.value })}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="desconto" className="space-y-4 mt-4">
+                    <div className="space-y-2">
+                      <Label>Tipo de Desconto</Label>
+                      <Select 
+                        value={editData.desconto_tipo} 
+                        onValueChange={(value: "valor" | "percentual") => setEditData({ ...editData, desconto_tipo: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="valor">
+                            <div className="flex items-center gap-2">
+                              <DollarSign className="h-4 w-4" />
+                              Valor Fixo (R$)
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="percentual">
+                            <div className="flex items-center gap-2">
+                              <Percent className="h-4 w-4" />
+                              Percentual (%)
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {editData.desconto_tipo === "valor" ? (
+                      <div className="space-y-2">
+                        <Label>Valor do Desconto (R$)</Label>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          value={editData.desconto_valor}
+                          onChange={(e) => setEditData({ ...editData, desconto_valor: parseFloat(e.target.value) || 0 })}
+                          placeholder="0,00"
+                        />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        <Label>Percentual do Desconto (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          max="100"
+                          value={editData.desconto_percentual}
+                          onChange={(e) => setEditData({ ...editData, desconto_percentual: parseFloat(e.target.value) || 0 })}
+                          placeholder="0"
+                        />
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label>Motivo do Desconto (opcional)</Label>
+                      <Textarea
+                        value={editData.desconto_motivo}
+                        onChange={(e) => setEditData({ ...editData, desconto_motivo: e.target.value })}
+                        placeholder="Ex: Desconto por pontualidade, irmão matriculado, etc."
+                        rows={2}
+                      />
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="juros" className="space-y-4 mt-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Juros Diário (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          min="0"
+                          value={editData.juros_percentual_diario}
+                          onChange={(e) => setEditData({ ...editData, juros_percentual_diario: parseFloat(e.target.value) || 0 })}
+                          placeholder="0,033"
+                        />
+                        <p className="text-xs text-muted-foreground">Aplicado por dia de atraso</p>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Juros Mensal (%)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          min="0"
+                          value={editData.juros_percentual_mensal}
+                          onChange={(e) => setEditData({ ...editData, juros_percentual_mensal: parseFloat(e.target.value) || 0 })}
+                          placeholder="1"
+                        />
+                        <p className="text-xs text-muted-foreground">Usado se juros diário = 0</p>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Multa Fixa por Atraso (R$)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        min="0"
+                        value={editData.multa}
+                        onChange={(e) => setEditData({ ...editData, multa: parseFloat(e.target.value) || 0 })}
+                        placeholder="0,00"
+                      />
+                      <p className="text-xs text-muted-foreground">Cobrada uma única vez após o vencimento</p>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                {/* Preview do Cálculo */}
+                <div className="p-4 rounded-xl border bg-muted/30 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Calculator className="h-4 w-4" />
+                    Preview do Cálculo
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Valor Base:</span>
+                      <span>{formatCurrency(calcularPreviewValorFinal.valorBase)}</span>
+                    </div>
+                    {calcularPreviewValorFinal.desconto > 0 && (
+                      <div className="flex justify-between text-success">
+                        <span>Desconto:</span>
+                        <span>- {formatCurrency(calcularPreviewValorFinal.desconto)}</span>
+                      </div>
+                    )}
+                    {calcularPreviewValorFinal.juros > 0 && (
+                      <div className="flex justify-between text-destructive">
+                        <span>Juros ({calcularPreviewValorFinal.diasAtraso}d):</span>
+                        <span>+ {formatCurrency(calcularPreviewValorFinal.juros)}</span>
+                      </div>
+                    )}
+                    {calcularPreviewValorFinal.multa > 0 && (
+                      <div className="flex justify-between text-destructive">
+                        <span>Multa:</span>
+                        <span>+ {formatCurrency(calcularPreviewValorFinal.multa)}</span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="pt-2 border-t flex justify-between font-semibold">
+                    <span>Valor Final:</span>
+                    <span className="text-primary text-lg">{formatCurrency(calcularPreviewValorFinal.total)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter className="mt-6 gap-2">
+              <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleSaveEdit}
+                disabled={editMutation.isPending}
+              >
+                {editMutation.isPending ? "Salvando..." : "Salvar Alterações"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         {/* Payment Dialog */}
         <Dialog open={isPaymentOpen} onOpenChange={setIsPaymentOpen}>
           <DialogContent className="sm:max-w-md rounded-2xl">
@@ -830,25 +1293,51 @@ const Faturas = () => {
               </DialogHeader>
               
               {selectedFatura && (
-                <div className="my-6 p-4 rounded-xl bg-muted/50 border">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                      <span className="text-sm font-bold text-primary">
-                        {selectedFatura.alunos?.nome_completo.charAt(0).toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="font-medium">{selectedFatura.alunos?.nome_completo}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {meses[selectedFatura.mes_referencia - 1]}/{selectedFatura.ano_referencia}
-                      </p>
+                <div className="my-6 space-y-4">
+                  <div className="p-4 rounded-xl bg-muted/50 border">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                        <span className="text-sm font-bold text-primary">
+                          {selectedFatura.alunos?.nome_completo.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="font-medium">{selectedFatura.alunos?.nome_completo}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {meses[selectedFatura.mes_referencia - 1]}/{selectedFatura.ano_referencia}
+                        </p>
+                      </div>
                     </div>
                   </div>
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <span className="text-sm text-muted-foreground">Valor</span>
-                    <span className="text-xl font-bold text-success value-currency">
-                      {formatCurrency(selectedFatura.valor)}
-                    </span>
+
+                  {/* Breakdown do Valor */}
+                  <div className="p-4 rounded-xl border space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Valor Original:</span>
+                      <span>{formatCurrency(selectedFatura.valor_original || selectedFatura.valor)}</span>
+                    </div>
+                    {(selectedFatura.valor_desconto_aplicado || 0) > 0 && (
+                      <div className="flex justify-between text-success">
+                        <span>Desconto:</span>
+                        <span>- {formatCurrency(selectedFatura.valor_desconto_aplicado || 0)}</span>
+                      </div>
+                    )}
+                    {(selectedFatura.valor_juros_aplicado || 0) > 0 && (
+                      <div className="flex justify-between text-destructive">
+                        <span>Juros ({selectedFatura.dias_atraso}d):</span>
+                        <span>+ {formatCurrency(selectedFatura.valor_juros_aplicado || 0)}</span>
+                      </div>
+                    )}
+                    {(selectedFatura.valor_multa_aplicado || 0) > 0 && (
+                      <div className="flex justify-between text-destructive">
+                        <span>Multa:</span>
+                        <span>+ {formatCurrency(selectedFatura.valor_multa_aplicado || 0)}</span>
+                      </div>
+                    )}
+                    <div className="pt-2 border-t flex justify-between font-semibold">
+                      <span>Valor a Pagar:</span>
+                      <span className="text-xl text-success">{formatCurrency(getValorFinal(selectedFatura))}</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -930,7 +1419,7 @@ const Faturas = () => {
                 <div className="flex items-center justify-between pt-3 border-t">
                   <span className="text-sm text-muted-foreground">Valor</span>
                   <span className="text-xl font-bold text-primary value-currency">
-                    {formatCurrency(selectedFatura.valor)}
+                    {formatCurrency(getValorFinal(selectedFatura))}
                   </span>
                 </div>
               </div>
@@ -1033,9 +1522,35 @@ const Faturas = () => {
                   </div>
                 </div>
 
-                <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 text-center">
-                  <p className="text-sm text-muted-foreground mb-1">Valor da Fatura</p>
-                  <p className="text-2xl font-bold text-primary value-currency">{formatCurrency(selectedFatura.valor)}</p>
+                {/* Breakdown Financeiro */}
+                <div className="p-4 rounded-xl border space-y-2">
+                  <p className="text-sm font-medium mb-3">Composição do Valor</p>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-muted-foreground">Valor Original:</span>
+                    <span>{formatCurrency(selectedFatura.valor_original || selectedFatura.valor)}</span>
+                  </div>
+                  {(selectedFatura.valor_desconto_aplicado || 0) > 0 && (
+                    <div className="flex justify-between text-sm text-success">
+                      <span>Desconto{selectedFatura.desconto_motivo ? ` (${selectedFatura.desconto_motivo})` : ''}:</span>
+                      <span>- {formatCurrency(selectedFatura.valor_desconto_aplicado || 0)}</span>
+                    </div>
+                  )}
+                  {(selectedFatura.valor_juros_aplicado || 0) > 0 && (
+                    <div className="flex justify-between text-sm text-destructive">
+                      <span>Juros ({selectedFatura.dias_atraso} dias):</span>
+                      <span>+ {formatCurrency(selectedFatura.valor_juros_aplicado || 0)}</span>
+                    </div>
+                  )}
+                  {(selectedFatura.valor_multa_aplicado || 0) > 0 && (
+                    <div className="flex justify-between text-sm text-destructive">
+                      <span>Multa:</span>
+                      <span>+ {formatCurrency(selectedFatura.valor_multa_aplicado || 0)}</span>
+                    </div>
+                  )}
+                  <div className="pt-2 border-t flex justify-between font-semibold">
+                    <span>Valor Final:</span>
+                    <span className="text-primary">{formatCurrency(getValorFinal(selectedFatura))}</span>
+                  </div>
                 </div>
 
                 {selectedFatura.responsaveis && (
@@ -1095,7 +1610,7 @@ const Faturas = () => {
                 <div className="flex items-center justify-between pt-3 border-t">
                   <span className="text-sm text-muted-foreground">Valor</span>
                   <span className="text-xl font-bold text-success value-currency">
-                    {formatCurrency(selectedFatura.valor)}
+                    {formatCurrency(getValorFinal(selectedFatura))}
                   </span>
                 </div>
               </div>
@@ -1112,7 +1627,7 @@ const Faturas = () => {
               />
               {!emailToSend && (
                 <p className="text-xs text-destructive">
-                  Nenhum email cadastrado para este responsável/aluno. Digite manualmente.
+                  Nenhum email cadastrado. Digite manualmente.
                 </p>
               )}
             </div>
