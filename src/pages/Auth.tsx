@@ -29,16 +29,24 @@ const Auth = () => {
   }>({});
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const [escolaNome, setEscolaNome] = useState("Escola");
+  const [logoLoaded, setLogoLoaded] = useState(false);
+  const [escolaLoading, setEscolaLoading] = useState(true);
 
   // Fetch escola info
   useEffect(() => {
     const fetchEscola = async () => {
-      const {
-        data
-      } = await supabase.from("escola").select("nome, logo_url").limit(1).maybeSingle();
-      if (data) {
-        setEscolaNome(data.nome);
-        setLogoUrl(data.logo_url);
+      try {
+        const { data } = await supabase
+          .from("escola")
+          .select("nome, logo_url")
+          .limit(1)
+          .maybeSingle();
+        if (data) {
+          setEscolaNome(data.nome);
+          setLogoUrl(data.logo_url);
+        }
+      } finally {
+        setEscolaLoading(false);
       }
     };
     fetchEscola();
@@ -112,9 +120,26 @@ const Auth = () => {
         <div className="relative bg-gradient-to-br from-pink-50/90 via-white/95 to-violet-50/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 p-8 md:p-10">
           {/* Logo */}
           <div className="flex justify-center mb-6">
-            {logoUrl ? <img src={logoUrl} alt={escolaNome} className="h-28 w-28 object-contain rounded-full shadow-lg border-4 border-white" /> : <div className="h-28 w-28 rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg border-4 border-white">
+            {escolaLoading ? (
+              <div className="h-28 w-28 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse border-4 border-white shadow-lg" />
+            ) : logoUrl ? (
+              <div className="relative h-28 w-28">
+                {!logoLoaded && (
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse border-4 border-white" />
+                )}
+                <img 
+                  src={logoUrl} 
+                  alt={escolaNome} 
+                  className={`h-28 w-28 object-contain rounded-full shadow-lg border-4 border-white transition-opacity duration-300 ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  onLoad={() => setLogoLoaded(true)}
+                  loading="eager"
+                />
+              </div>
+            ) : (
+              <div className="h-28 w-28 rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg border-4 border-white">
                 <BookOpen className="h-14 w-14 text-white" />
-              </div>}
+              </div>
+            )}
           </div>
 
           {/* Title */}
