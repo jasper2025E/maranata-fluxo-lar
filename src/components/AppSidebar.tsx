@@ -40,7 +40,7 @@ import {
 
 const menuItems = [
   { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Dashboard Financeiro", url: "/dashboard/financeiro", icon: Wallet },
+  { title: "Financeiro", url: "/dashboard/financeiro", icon: Wallet },
   { title: "Escola", url: "/escola", icon: Building2, roles: ["admin"] },
   { title: "Responsáveis", url: "/responsaveis", icon: UserCheck },
   { title: "Alunos", url: "/alunos", icon: Users },
