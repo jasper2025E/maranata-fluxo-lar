@@ -339,17 +339,25 @@ export function useCreateFatura() {
       itens?: FaturaItem[];
       descontos?: Omit<FaturaDesconto, 'id' | 'fatura_id'>[];
     }) => {
-      const { itens, descontos, ...faturaData } = data;
+      const { itens, descontos, responsavel_id, ...restFaturaData } = data;
       
-      // Criar fatura
+      // Criar fatura - só inclui responsavel_id se existir
+      const faturaInsert = {
+        aluno_id: restFaturaData.aluno_id,
+        curso_id: restFaturaData.curso_id,
+        valor: restFaturaData.valor,
+        data_vencimento: restFaturaData.data_vencimento,
+        mes_referencia: restFaturaData.mes_referencia,
+        ano_referencia: restFaturaData.ano_referencia,
+        valor_original: restFaturaData.valor,
+        valor_bruto: restFaturaData.valor,
+        status: 'Aberta' as const,
+        ...(responsavel_id ? { responsavel_id } : {}),
+      };
+      
       const { data: fatura, error: faturaError } = await supabase
         .from("faturas")
-        .insert({
-          ...faturaData,
-          valor_original: faturaData.valor,
-          valor_bruto: faturaData.valor,
-          status: 'Aberta',
-        })
+        .insert(faturaInsert)
         .select()
         .single();
 
