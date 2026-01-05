@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,10 +28,15 @@ import {
   CheckCircle2,
   Clock,
   Loader2,
+  Download,
+  FileDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
+import { supabase } from "@/integrations/supabase/client";
+import { generateFaturaPDF, generateReciboPDF } from "@/lib/pdfGenerator";
+import { toast } from "sonner";
 import {
   Fatura,
   FaturaItem,
@@ -321,7 +327,7 @@ function DescontosTab({ faturaId, valorBase, isEditable }: { faturaId: string; v
   );
 }
 
-function PagamentosTab({ faturaId, valorTotal }: { faturaId: string; valorTotal: number }) {
+function PagamentosTab({ faturaId, valorTotal, onDownloadRecibo }: { faturaId: string; valorTotal: number; onDownloadRecibo?: (pagamento: Pagamento) => void }) {
   const { data: pagamentos, isLoading } = useFaturaPagamentos(faturaId);
   const registrarPagamento = useRegistrarPagamento();
   const estornar = useEstornarPagamento();
@@ -467,9 +473,22 @@ function PagamentosTab({ faturaId, valorTotal }: { faturaId: string; valorTotal:
                       </p>
                     </div>
                   </div>
-                  <span className={cn("font-semibold", p.tipo === 'estorno' ? "text-destructive" : "text-success")}>
-                    {p.tipo === 'estorno' ? '-' : '+'}{formatCurrency(p.valor)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className={cn("font-semibold", p.tipo === 'estorno' ? "text-destructive" : "text-success")}>
+                      {p.tipo === 'estorno' ? '-' : '+'}{formatCurrency(p.valor)}
+                    </span>
+                    {p.tipo !== 'estorno' && onDownloadRecibo && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        onClick={() => onDownloadRecibo(p)}
+                        title="Baixar recibo"
+                      >
+                        <FileDown className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
                 </div>
                 {p.motivo_estorno && (
                   <p className="text-xs text-destructive mt-1">Motivo: {p.motivo_estorno}</p>
@@ -536,22 +555,83 @@ function HistoricoTab({ faturaId }: { faturaId: string }) {
 }
 
 export function FaturaDetails({ fatura, open, onOpenChange }: FaturaDetailsProps) {
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  
+  const { data: escola } = useQuery({
+    queryKey: ['escola-pdf'],
+    queryFn: async () => {
+      const { data } = await supabase.from('escola').select('*').limit(1).maybeSingle();
+      return data;
+    },
+  });
+
+  const { data: itens } = useFaturaItens(fatura?.id || null);
+  const { data: pagamentos } = useFaturaPagamentos(fatura?.id || null);
+
   if (!fatura) return null;
 
   const valorFinal = getValorFinal(fatura);
   const isEditable = !fatura.bloqueada && fatura.status !== 'Paga' && fatura.status !== 'Cancelada';
 
+  const handleDownloadFatura = async () => {
+    if (!escola) {
+      toast.error("Dados da escola não encontrados");
+      return;
+    }
+    setIsGeneratingPDF(true);
+    try {
+      await generateFaturaPDF(fatura, escola, itens || undefined);
+      toast.success("PDF da fatura gerado!");
+    } catch (error) {
+      toast.error("Erro ao gerar PDF");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  const handleDownloadRecibo = async (pagamento: Pagamento) => {
+    if (!escola) {
+      toast.error("Dados da escola não encontrados");
+      return;
+    }
+    setIsGeneratingPDF(true);
+    try {
+      await generateReciboPDF(fatura, pagamento, escola);
+      toast.success("Recibo gerado!");
+    } catch (error) {
+      toast.error("Erro ao gerar recibo");
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-primary" />
-            {fatura.codigo_sequencial || `Fatura #${fatura.id.slice(0, 8)}`}
-          </DialogTitle>
-          <DialogDescription>
-            {meses[fatura.mes_referencia - 1]} de {fatura.ano_referencia}
-          </DialogDescription>
+        <DialogHeader className="flex-row items-start justify-between space-y-0">
+          <div>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              {fatura.codigo_sequencial || `Fatura #${fatura.id.slice(0, 8)}`}
+            </DialogTitle>
+            <DialogDescription>
+              {meses[fatura.mes_referencia - 1]} de {fatura.ano_referencia}
+            </DialogDescription>
+          </div>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleDownloadFatura}
+            disabled={isGeneratingPDF}
+            className="gap-2"
+          >
+            {isGeneratingPDF ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Download className="h-4 w-4" />
+            )}
+            Baixar PDF
+          </Button>
         </DialogHeader>
 
         <ScrollArea className="flex-1 -mx-6 px-6">
@@ -614,7 +694,7 @@ export function FaturaDetails({ fatura, open, onOpenChange }: FaturaDetailsProps
             </TabsContent>
 
             <TabsContent value="pagamentos" className="mt-4">
-              <PagamentosTab faturaId={fatura.id} valorTotal={valorFinal} />
+              <PagamentosTab faturaId={fatura.id} valorTotal={valorFinal} onDownloadRecibo={handleDownloadRecibo} />
             </TabsContent>
 
             <TabsContent value="historico" className="mt-4">

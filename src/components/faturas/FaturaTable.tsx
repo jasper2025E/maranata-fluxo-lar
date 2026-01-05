@@ -54,6 +54,7 @@ interface FaturaTableProps {
   onCancel: (fatura: Fatura) => void;
   onSendReceipt: (fatura: Fatura) => void;
   onViewHistory: (fatura: Fatura) => void;
+  onDownloadPDF?: (fatura: Fatura) => void;
 }
 
 function getStatusConfig(status: string, dataVencimento: string) {
@@ -94,7 +95,8 @@ function FaturaRow({
   onParcelar, 
   onCancel, 
   onSendReceipt,
-  onViewHistory 
+  onViewHistory,
+  onDownloadPDF,
 }: {
   fatura: Fatura;
   onViewDetails: (fatura: Fatura) => void;
@@ -105,6 +107,7 @@ function FaturaRow({
   onCancel: (fatura: Fatura) => void;
   onSendReceipt: (fatura: Fatura) => void;
   onViewHistory: (fatura: Fatura) => void;
+  onDownloadPDF?: (fatura: Fatura) => void;
 }) {
   const statusConfig = getStatusConfig(fatura.status, fatura.data_vencimento);
   const StatusIcon = statusConfig.icon;
@@ -175,6 +178,11 @@ function FaturaRow({
             <DropdownMenuItem onClick={() => onViewHistory(fatura)}>
               <History className="h-4 w-4 mr-2" />Histórico
             </DropdownMenuItem>
+            {onDownloadPDF && (
+              <DropdownMenuItem onClick={() => onDownloadPDF(fatura)}>
+                <Download className="h-4 w-4 mr-2" />Baixar PDF
+              </DropdownMenuItem>
+            )}
             {!fatura.bloqueada && fatura.status !== 'Paga' && (
               <DropdownMenuItem onClick={() => onEdit(fatura)}>
                 <Pencil className="h-4 w-4 mr-2" />Editar
@@ -229,6 +237,7 @@ export function FaturaTable({
   onCancel,
   onSendReceipt,
   onViewHistory,
+  onDownloadPDF,
 }: FaturaTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -258,7 +267,7 @@ export function FaturaTable({
     );
   }
 
-  const rowProps = { onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, onSendReceipt, onViewHistory };
+  const rowProps = { onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, onSendReceipt, onViewHistory, onDownloadPDF };
 
   // List view
   if (viewMode === "list") {
