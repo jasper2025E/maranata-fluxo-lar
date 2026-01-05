@@ -163,9 +163,9 @@ export function useFatura(faturaId: string | null) {
           responsaveis(nome, email, telefone)
         `)
         .eq("id", faturaId)
-        .single();
+        .maybeSingle();
       if (error) throw error;
-      return data as Fatura;
+      return data as Fatura | null;
     },
     enabled: !!faturaId,
   });
@@ -494,7 +494,7 @@ export function useRegistrarPagamento() {
           .from("faturas")
           .select("saldo_restante, valor_total")
           .eq("id", data.fatura_id)
-          .single();
+          .maybeSingle();
 
         if (fatura) {
           const novoSaldo = (fatura.saldo_restante || fatura.valor_total || 0) - data.valor;
@@ -544,7 +544,7 @@ export function useEstornarPagamento() {
         .from("faturas")
         .select("saldo_restante, valor_total")
         .eq("id", data.fatura_id)
-        .single();
+        .maybeSingle();
 
       if (fatura) {
         await supabase

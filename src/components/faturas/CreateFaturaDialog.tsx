@@ -93,40 +93,47 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
     ? itens.reduce((sum, item) => sum + item.valor_final, 0)
     : data.valor;
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
+    if (!data.aluno_id || !data.curso_id || valorTotal <= 0) {
+      return;
+    }
+
     const aluno = alunos.find(a => a.id === data.aluno_id);
     
-    if (tipo === "recorrente") {
-      // Para faturas recorrentes, criar múltiplas
-      const promises = [];
-      for (let i = 0; i < data.meses_recorrencia; i++) {
-        const date = new Date(data.ano_referencia, data.mes_referencia - 1 + i, 10);
-        createMutation.mutate({
+    try {
+      if (tipo === "recorrente") {
+        // Para faturas recorrentes, criar múltiplas
+        for (let i = 0; i < data.meses_recorrencia; i++) {
+          const date = new Date(data.ano_referencia, data.mes_referencia - 1 + i, 10);
+          await createMutation.mutateAsync({
+            aluno_id: data.aluno_id,
+            curso_id: data.curso_id,
+            responsavel_id: aluno?.responsavel_id || undefined,
+            valor: valorTotal,
+            data_vencimento: format(date, "yyyy-MM-dd"),
+            mes_referencia: date.getMonth() + 1,
+            ano_referencia: date.getFullYear(),
+            itens: mode === "detalhada" ? itens : undefined,
+          });
+        }
+      } else {
+        await createMutation.mutateAsync({
           aluno_id: data.aluno_id,
           curso_id: data.curso_id,
           responsavel_id: aluno?.responsavel_id || undefined,
           valor: valorTotal,
-          data_vencimento: format(date, "yyyy-MM-dd"),
-          mes_referencia: date.getMonth() + 1,
-          ano_referencia: date.getFullYear(),
+          data_vencimento: data.data_vencimento,
+          mes_referencia: data.mes_referencia,
+          ano_referencia: data.ano_referencia,
           itens: mode === "detalhada" ? itens : undefined,
         });
       }
-    } else {
-      createMutation.mutate({
-        aluno_id: data.aluno_id,
-        curso_id: data.curso_id,
-        responsavel_id: aluno?.responsavel_id || undefined,
-        valor: valorTotal,
-        data_vencimento: data.data_vencimento,
-        mes_referencia: data.mes_referencia,
-        ano_referencia: data.ano_referencia,
-        itens: mode === "detalhada" ? itens : undefined,
-      });
+      
+      onOpenChange(false);
+      resetForm();
+    } catch (error) {
+      // Erro já tratado pelo mutation
     }
-    
-    onOpenChange(false);
-    resetForm();
   };
 
   const resetForm = () => {
