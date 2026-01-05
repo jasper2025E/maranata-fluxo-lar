@@ -294,10 +294,17 @@ export type Database = {
           ano_letivo: number
           cnpj: string | null
           created_at: string | null
+          desconto_pontualidade_percentual: number | null
+          dias_carencia_juros: number | null
+          dias_desconto_pontualidade: number | null
           email: string | null
           endereco: string | null
           id: string
+          juros_percentual_diario_padrao: number | null
+          juros_percentual_mensal_padrao: number | null
           logo_url: string | null
+          multa_fixa_padrao: number | null
+          multa_percentual_padrao: number | null
           nome: string
           telefone: string | null
           updated_at: string | null
@@ -306,10 +313,17 @@ export type Database = {
           ano_letivo?: number
           cnpj?: string | null
           created_at?: string | null
+          desconto_pontualidade_percentual?: number | null
+          dias_carencia_juros?: number | null
+          dias_desconto_pontualidade?: number | null
           email?: string | null
           endereco?: string | null
           id?: string
+          juros_percentual_diario_padrao?: number | null
+          juros_percentual_mensal_padrao?: number | null
           logo_url?: string | null
+          multa_fixa_padrao?: number | null
+          multa_percentual_padrao?: number | null
           nome: string
           telefone?: string | null
           updated_at?: string | null
@@ -318,10 +332,17 @@ export type Database = {
           ano_letivo?: number
           cnpj?: string | null
           created_at?: string | null
+          desconto_pontualidade_percentual?: number | null
+          dias_carencia_juros?: number | null
+          dias_desconto_pontualidade?: number | null
           email?: string | null
           endereco?: string | null
           id?: string
+          juros_percentual_diario_padrao?: number | null
+          juros_percentual_mensal_padrao?: number | null
           logo_url?: string | null
+          multa_fixa_padrao?: number | null
+          multa_percentual_padrao?: number | null
           nome?: string
           telefone?: string | null
           updated_at?: string | null
