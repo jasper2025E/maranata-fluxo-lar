@@ -99,12 +99,15 @@ export function AppSidebar() {
               <NavLink
                 to={item.url}
                 className={cn(
-                  "flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200",
-                  "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                  "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5",
+                  "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                  "transition-all duration-200 ease-out",
+                  "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20",
+                  "active:scale-95"
                 )}
-                activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium"
+                activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
               >
-                <item.icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+                <item.icon className="h-5 w-5 shrink-0 transition-transform duration-200" strokeWidth={1.75} />
               </NavLink>
             </SidebarMenuButton>
           </TooltipTrigger>
@@ -117,13 +120,16 @@ export function AppSidebar() {
           <NavLink
             to={item.url}
             className={cn(
-              "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200",
-              "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+              "flex items-center gap-3 rounded-xl px-3 py-2.5",
+              "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+              "transition-all duration-200 ease-out",
+              "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1",
+              "active:scale-[0.98]"
             )}
-            activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px]"
+            activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"
           >
-            <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
-            <span className="text-sm transition-opacity duration-200">{item.title}</span>
+            <item.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.75} />
+            <span className="text-sm">{item.title}</span>
           </NavLink>
         </SidebarMenuButton>
       )}
@@ -244,11 +250,14 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     onClick={handleLogout}
                     className={cn(
-                      "flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 w-full",
-                      "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                      "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full",
+                      "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10",
+                      "transition-all duration-200 ease-out",
+                      "hover:scale-110 hover:shadow-lg hover:shadow-red-500/20",
+                      "active:scale-95"
                     )}
                   >
-                    <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+                    <LogOut className="h-5 w-5 shrink-0 transition-transform duration-200" strokeWidth={1.75} />
                   </SidebarMenuButton>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="font-medium">
@@ -259,11 +268,14 @@ export function AppSidebar() {
               <SidebarMenuButton
                 onClick={handleLogout}
                 className={cn(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 w-full",
-                  "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
+                  "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10",
+                  "transition-all duration-200 ease-out",
+                  "hover:scale-[1.02] hover:shadow-lg hover:shadow-red-500/15 hover:translate-x-1",
+                  "active:scale-[0.98]"
                 )}
               >
-                <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+                <LogOut className="h-[18px] w-[18px] shrink-0 transition-transform duration-200" strokeWidth={1.75} />
                 <span className="text-sm">Sair do Sistema</span>
               </SidebarMenuButton>
             )}
