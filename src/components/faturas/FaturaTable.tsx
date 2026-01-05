@@ -59,13 +59,16 @@ interface FaturaTableProps {
 
 function getStatusConfig(status: string, dataVencimento: string) {
   const hoje = new Date();
+  hoje.setHours(0, 0, 0, 0);
   const vencimento = new Date(dataVencimento);
+  vencimento.setHours(0, 0, 0, 0);
   const vencendoEm7Dias = isAfter(vencimento, hoje) && isBefore(vencimento, addDays(hoje, 7));
 
-  if (status === "Paga") return { label: "Paga", className: "bg-success/10 text-success border-success/20", icon: CheckCircle2 };
-  if (status === "Vencida") return { label: "Vencida", className: "bg-destructive/10 text-destructive border-destructive/20", icon: AlertCircle };
-  if (status === "Cancelada") return { label: "Cancelada", className: "bg-muted text-muted-foreground border-border", icon: XCircle };
-  if (status === "Rascunho") return { label: "Rascunho", className: "bg-muted/50 text-muted-foreground border-border", icon: FileText };
+  const normalizedStatus = status?.toLowerCase() || '';
+  if (normalizedStatus === "paga") return { label: "Paga", className: "bg-success/10 text-success border-success/20", icon: CheckCircle2 };
+  if (normalizedStatus === "vencida") return { label: "Vencida", className: "bg-destructive/10 text-destructive border-destructive/20", icon: AlertCircle };
+  if (normalizedStatus === "cancelada") return { label: "Cancelada", className: "bg-muted text-muted-foreground border-border", icon: XCircle };
+  if (normalizedStatus === "rascunho") return { label: "Rascunho", className: "bg-muted/50 text-muted-foreground border-border", icon: FileText };
   if (vencendoEm7Dias) return { label: "Vencendo", className: "bg-warning/10 text-warning border-warning/20", icon: Clock };
   return { label: "Emitida", className: "bg-primary/10 text-primary border-primary/20", icon: FileText };
 }
@@ -353,7 +356,7 @@ export function FaturaTable({
 
   return (
     <div className="space-y-4">
-      {groups.map(({ key, label, faturas: items, total }) => {
+    {groups.map(({ key, label, faturas: items, total }) => {
         const isExpanded = expandedGroups.has(key) || expandedGroups.size === 0;
         const config = viewMode === "status" ? getStatusConfig(key, new Date().toISOString()) : null;
 

@@ -81,7 +81,7 @@ const Faturas = () => {
         fatura.responsaveis?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         fatura.codigo_sequencial?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         fatura.cursos?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "todas" || fatura.status.toLowerCase() === statusFilter;
+      const matchesStatus = statusFilter === "todas" || fatura.status?.toLowerCase() === statusFilter;
       const matchesAluno = alunoFilter === "todos" || fatura.aluno_id === alunoFilter;
       const matchesCurso = cursoFilter === "todos" || fatura.curso_id === cursoFilter;
       
@@ -120,16 +120,25 @@ const Faturas = () => {
       toast.success("Link copiado!");
     } else {
       toast.info("Gerando link de pagamento...");
-      const response = await supabase.functions.invoke("create-checkout", {
-        body: {
-          faturaId: fatura.id,
-          successUrl: `${window.location.origin}/pagamento/resultado?success=true&fatura_id=${fatura.id}`,
-          cancelUrl: `${window.location.origin}/pagamento/resultado?canceled=true&fatura_id=${fatura.id}`,
-        },
-      });
-      if (response.data?.url) {
-        navigator.clipboard.writeText(response.data.url);
-        toast.success("Link gerado e copiado!");
+      try {
+        const response = await supabase.functions.invoke("create-checkout", {
+          body: {
+            faturaId: fatura.id,
+            successUrl: `${window.location.origin}/pagamento/resultado?success=true&fatura_id=${fatura.id}`,
+            cancelUrl: `${window.location.origin}/pagamento/resultado?canceled=true&fatura_id=${fatura.id}`,
+          },
+        });
+        if (response.error) {
+          throw new Error(response.error.message || "Erro ao gerar link");
+        }
+        if (response.data?.url) {
+          navigator.clipboard.writeText(response.data.url);
+          toast.success("Link gerado e copiado!");
+        } else {
+          toast.error("Não foi possível gerar o link de pagamento");
+        }
+      } catch (error: any) {
+        toast.error(error.message || "Erro ao gerar link de pagamento");
       }
     }
   };
@@ -140,8 +149,9 @@ const Faturas = () => {
   };
 
   const handleCancel = (fatura: Fatura) => {
-    if (confirm("Deseja realmente cancelar esta fatura?")) {
-      cancelMutation.mutate({ id: fatura.id, motivo: "Cancelamento manual" });
+    const motivo = prompt("Informe o motivo do cancelamento:");
+    if (motivo && motivo.trim()) {
+      cancelMutation.mutate({ id: fatura.id, motivo: motivo.trim() });
     }
   };
 
