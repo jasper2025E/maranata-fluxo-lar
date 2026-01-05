@@ -14,8 +14,10 @@ import {
 import { 
   useFaturas, 
   useCancelarFatura, 
+  useFaturaItens,
   Fatura 
 } from "@/hooks/useFaturas";
+import { generateFaturaPDF } from "@/lib/pdfGenerator";
 import { toast } from "sonner";
 
 type ViewMode = "list" | "status" | "aluno" | "mes";
@@ -65,7 +67,13 @@ const Faturas = () => {
 
   const cancelMutation = useCancelarFatura();
 
-  // Filtered data
+  const { data: escola } = useQuery({
+    queryKey: ['escola-info'],
+    queryFn: async () => {
+      const { data } = await supabase.from('escola').select('*').limit(1).maybeSingle();
+      return data;
+    },
+  });
   const filteredFaturas = useMemo(() => {
     return faturas.filter((fatura) => {
       const matchesSearch = !searchTerm || 
@@ -146,6 +154,25 @@ const Faturas = () => {
     setIsDetailsOpen(true);
   };
 
+  const handleDownloadPDF = async (fatura: Fatura) => {
+    if (!escola) {
+      toast.error("Dados da escola não encontrados");
+      return;
+    }
+    try {
+      const { data: itens } = await supabase
+        .from("fatura_itens")
+        .select("*")
+        .eq("fatura_id", fatura.id)
+        .order("ordem");
+      
+      await generateFaturaPDF(fatura, escola, itens || undefined);
+      toast.success("PDF gerado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao gerar PDF");
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -195,6 +222,7 @@ const Faturas = () => {
           onCancel={handleCancel}
           onSendReceipt={handleSendReceipt}
           onViewHistory={handleViewHistory}
+          onDownloadPDF={handleDownloadPDF}
         />
 
         {/* Dialogs */}
