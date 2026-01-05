@@ -336,8 +336,14 @@ export type Database = {
           curso_id: string
           data_emissao: string
           data_vencimento: string
+          desconto_motivo: string | null
+          desconto_percentual: number | null
+          desconto_valor: number | null
+          dias_atraso: number | null
           id: string
           juros: number | null
+          juros_percentual_diario: number | null
+          juros_percentual_mensal: number | null
           mes_referencia: number
           multa: number | null
           payment_url: string | null
@@ -347,6 +353,10 @@ export type Database = {
           stripe_payment_intent_id: string | null
           updated_at: string | null
           valor: number
+          valor_desconto_aplicado: number | null
+          valor_juros_aplicado: number | null
+          valor_multa_aplicado: number | null
+          valor_original: number | null
           valor_total: number | null
         }
         Insert: {
@@ -356,8 +366,14 @@ export type Database = {
           curso_id: string
           data_emissao?: string
           data_vencimento: string
+          desconto_motivo?: string | null
+          desconto_percentual?: number | null
+          desconto_valor?: number | null
+          dias_atraso?: number | null
           id?: string
           juros?: number | null
+          juros_percentual_diario?: number | null
+          juros_percentual_mensal?: number | null
           mes_referencia: number
           multa?: number | null
           payment_url?: string | null
@@ -367,6 +383,10 @@ export type Database = {
           stripe_payment_intent_id?: string | null
           updated_at?: string | null
           valor: number
+          valor_desconto_aplicado?: number | null
+          valor_juros_aplicado?: number | null
+          valor_multa_aplicado?: number | null
+          valor_original?: number | null
           valor_total?: number | null
         }
         Update: {
@@ -376,8 +396,14 @@ export type Database = {
           curso_id?: string
           data_emissao?: string
           data_vencimento?: string
+          desconto_motivo?: string | null
+          desconto_percentual?: number | null
+          desconto_valor?: number | null
+          dias_atraso?: number | null
           id?: string
           juros?: number | null
+          juros_percentual_diario?: number | null
+          juros_percentual_mensal?: number | null
           mes_referencia?: number
           multa?: number | null
           payment_url?: string | null
@@ -387,6 +413,10 @@ export type Database = {
           stripe_payment_intent_id?: string | null
           updated_at?: string | null
           valor?: number
+          valor_desconto_aplicado?: number | null
+          valor_juros_aplicado?: number | null
+          valor_multa_aplicado?: number | null
+          valor_original?: number | null
           valor_total?: number | null
         }
         Relationships: [
@@ -695,40 +725,52 @@ export type Database = {
           comprovante_url: string | null
           created_at: string | null
           data_pagamento: string
+          desconto_aplicado: number | null
           fatura_id: string
           gateway: string | null
           gateway_id: string | null
           gateway_status: string | null
           id: string
+          juros_aplicado: number | null
           metodo: string
+          multa_aplicada: number | null
           referencia: string | null
           valor: number
+          valor_original: number | null
         }
         Insert: {
           comprovante_url?: string | null
           created_at?: string | null
           data_pagamento?: string
+          desconto_aplicado?: number | null
           fatura_id: string
           gateway?: string | null
           gateway_id?: string | null
           gateway_status?: string | null
           id?: string
+          juros_aplicado?: number | null
           metodo: string
+          multa_aplicada?: number | null
           referencia?: string | null
           valor: number
+          valor_original?: number | null
         }
         Update: {
           comprovante_url?: string | null
           created_at?: string | null
           data_pagamento?: string
+          desconto_aplicado?: number | null
           fatura_id?: string
           gateway?: string | null
           gateway_id?: string | null
           gateway_status?: string | null
           id?: string
+          juros_aplicado?: number | null
           metodo?: string
+          multa_aplicada?: number | null
           referencia?: string | null
           valor?: number
+          valor_original?: number | null
         }
         Relationships: [
           {

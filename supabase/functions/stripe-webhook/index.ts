@@ -109,12 +109,23 @@ serve(async (req) => {
             throw faturaError;
           }
 
-          // Registrar pagamento
+          // Buscar dados completos da fatura para registrar valores detalhados
+          const { data: faturaCompleta } = await supabase
+            .from("faturas")
+            .select("valor_original, valor_desconto_aplicado, valor_juros_aplicado, valor_multa_aplicado")
+            .eq("id", faturaId)
+            .single();
+
+          // Registrar pagamento com detalhes de desconto, juros e multa
           const { error: pagamentoError } = await supabase
             .from("pagamentos")
             .insert({
               fatura_id: faturaId,
               valor: session.amount_total / 100,
+              valor_original: faturaCompleta?.valor_original || session.amount_total / 100,
+              desconto_aplicado: faturaCompleta?.valor_desconto_aplicado || 0,
+              juros_aplicado: faturaCompleta?.valor_juros_aplicado || 0,
+              multa_aplicada: faturaCompleta?.valor_multa_aplicado || 0,
               metodo: "Stripe",
               referencia: session.payment_intent,
               gateway: "stripe",

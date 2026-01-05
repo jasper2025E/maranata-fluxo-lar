@@ -120,19 +120,38 @@ serve(async (req) => {
     // Criar Checkout Session no Stripe
     console.log("Criando Checkout Session...");
     
+    // Usar valor_total se disponível (já com desconto, juros e multa calculados)
+    const valorFinal = fatura.valor_total || fatura.valor;
+    
+    // Construir descrição detalhada
+    let descricaoCompleta = descricao;
+    if (fatura.valor_desconto_aplicado && fatura.valor_desconto_aplicado > 0) {
+      descricaoCompleta += ` (Desconto: R$ ${fatura.valor_desconto_aplicado.toFixed(2)})`;
+    }
+    if (fatura.valor_juros_aplicado && fatura.valor_juros_aplicado > 0) {
+      descricaoCompleta += ` (Juros: R$ ${fatura.valor_juros_aplicado.toFixed(2)})`;
+    }
+    if (fatura.valor_multa_aplicado && fatura.valor_multa_aplicado > 0) {
+      descricaoCompleta += ` (Multa: R$ ${fatura.valor_multa_aplicado.toFixed(2)})`;
+    }
+    
     const baseUrl = successUrl?.split("/faturas")[0] || successUrl?.split("?")[0] || "https://example.com";
     const sessionParams = new URLSearchParams({
       "mode": "payment",
       "success_url": successUrl || `${baseUrl}/pagamento/resultado?success=true&fatura_id=${faturaId}`,
       "cancel_url": cancelUrl || `${baseUrl}/pagamento/resultado?canceled=true&fatura_id=${faturaId}`,
       "line_items[0][price_data][currency]": "brl",
-      "line_items[0][price_data][product_data][name]": descricao,
-      "line_items[0][price_data][unit_amount]": Math.round(fatura.valor * 100).toString(),
+      "line_items[0][price_data][product_data][name]": descricaoCompleta,
+      "line_items[0][price_data][unit_amount]": Math.round(valorFinal * 100).toString(),
       "line_items[0][quantity]": "1",
       "payment_method_types[0]": "card",
       "metadata[fatura_id]": faturaId,
       "metadata[aluno_nome]": fatura.alunos?.nome_completo || "",
       "metadata[curso_nome]": fatura.cursos?.nome || "",
+      "metadata[valor_original]": (fatura.valor_original || fatura.valor).toString(),
+      "metadata[desconto]": (fatura.valor_desconto_aplicado || 0).toString(),
+      "metadata[juros]": (fatura.valor_juros_aplicado || 0).toString(),
+      "metadata[multa]": (fatura.valor_multa_aplicado || 0).toString(),
       "locale": "pt-BR",
     });
 

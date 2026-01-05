@@ -131,10 +131,10 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const faturasPagas = faturas.filter(f => f.status === "Paga").length;
   const faturasVencidas = faturas.filter(f => f.status === "Vencida").length;
   
-  // Valor a receber (faturas abertas)
+  // Valor a receber (faturas abertas) - usar valor_total se disponível
   const valorAReceber = faturas
     .filter(f => f.status === "Aberta" || f.status === "Vencida")
-    .reduce((sum, f) => sum + Number(f.valor), 0);
+    .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
   
   // Financeiro
   const totalReceitas = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0);
