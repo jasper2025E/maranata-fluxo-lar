@@ -253,8 +253,10 @@ export function useFaturaKPIs() {
       const hoje = new Date();
 
       const [faturasResult, pagamentosResult, descontosResult] = await Promise.all([
-        supabase.from("faturas").select("id, status, valor, valor_total, data_vencimento, dias_atraso"),
-        supabase.from("pagamentos").select("valor, juros_aplicado, data_pagamento")
+        supabase.from("faturas").select("id, status, valor, valor_total, saldo_restante, data_vencimento, dias_atraso"),
+        supabase
+          .from("pagamentos")
+          .select("valor, tipo, juros_aplicado, data_pagamento")
           .gte("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`),
         supabase.from("fatura_descontos").select("valor_aplicado"),
       ]);
@@ -263,36 +265,45 @@ export function useFaturaKPIs() {
       const pagamentos = pagamentosResult.data || [];
       const descontos = descontosResult.data || [];
 
-      // Faturamento mensal
-      const faturamentoMensal = pagamentos.reduce((sum, p) => sum + Number(p.valor || 0), 0);
+      const totalPagamentos = pagamentos.reduce((sum, p: any) => {
+        const sign = p.tipo === 'estorno' ? -1 : 1;
+        return sum + sign * Number(p.valor || 0);
+      }, 0);
 
-      // Inadimplência
-      const totalFaturas = faturas.filter(f => f.status !== 'Cancelada').length;
-      const faturasVencidas = faturas.filter(f => f.status === 'Vencida').length;
-      const inadimplencia = totalFaturas > 0 ? (faturasVencidas / totalFaturas) * 100 : 0;
+      // Faturamento mensal (líquido de estornos)
+      const faturamentoMensal = totalPagamentos;
 
-      // Ticket médio
-      const ticketMedio = pagamentos.length > 0 
-        ? pagamentos.reduce((sum, p) => sum + Number(p.valor || 0), 0) / pagamentos.length 
+      // Ticket médio (considera apenas pagamentos não-estorno)
+      const pagamentosValidos = pagamentos.filter((p: any) => p.tipo !== 'estorno');
+      const ticketMedio = pagamentosValidos.length > 0
+        ? pagamentosValidos.reduce((sum: number, p: any) => sum + Number(p.valor || 0), 0) / pagamentosValidos.length
         : 0;
 
-      // Descontos concedidos
-      const descontosConcedidos = descontos.reduce((sum, d) => sum + Number(d.valor_aplicado || 0), 0);
+      // Inadimplência
+      const totalFaturas = faturas.filter((f: any) => f.status !== 'Cancelada').length;
+      const faturasVencidas = faturas.filter((f: any) => f.status === 'Vencida').length;
+      const inadimplencia = totalFaturas > 0 ? (faturasVencidas / totalFaturas) * 100 : 0;
 
-      // Juros arrecadados
-      const jurosArrecadados = pagamentos.reduce((sum, p) => sum + Number(p.juros_aplicado || 0), 0);
+      // Descontos concedidos
+      const descontosConcedidos = descontos.reduce((sum, d: any) => sum + Number(d.valor_aplicado || 0), 0);
+
+      // Juros arrecadados (líquido de estornos quando aplicável)
+      const jurosArrecadados = pagamentos.reduce((sum, p: any) => {
+        const sign = p.tipo === 'estorno' ? -1 : 1;
+        return sum + sign * Number(p.juros_aplicado || 0);
+      }, 0);
 
       // Aging
       const aging = {
-        ate30: faturas.filter(f => f.status === 'Vencida' && (f.dias_atraso || 0) <= 30).length,
-        de31a60: faturas.filter(f => f.status === 'Vencida' && (f.dias_atraso || 0) > 30 && (f.dias_atraso || 0) <= 60).length,
-        mais60: faturas.filter(f => f.status === 'Vencida' && (f.dias_atraso || 0) > 60).length,
+        ate30: faturas.filter((f: any) => f.status === 'Vencida' && (f.dias_atraso || 0) <= 30).length,
+        de31a60: faturas.filter((f: any) => f.status === 'Vencida' && (f.dias_atraso || 0) > 30 && (f.dias_atraso || 0) <= 60).length,
+        mais60: faturas.filter((f: any) => f.status === 'Vencida' && (f.dias_atraso || 0) > 60).length,
       };
 
-      // Valor a receber
+      // Valor a receber (considera saldo_restante quando houver)
       const valorAReceber = faturas
-        .filter(f => f.status === 'Aberta' || f.status === 'Vencida')
-        .reduce((sum, f) => sum + Number(f.valor_total || f.valor || 0), 0);
+        .filter((f: any) => f.status === 'Aberta' || f.status === 'Vencida')
+        .reduce((sum: number, f: any) => sum + Number(f.saldo_restante ?? f.valor_total ?? f.valor ?? 0), 0);
 
       return {
         faturamentoMensal,
@@ -303,8 +314,8 @@ export function useFaturaKPIs() {
         aging,
         valorAReceber,
         totalFaturas,
-        faturasAbertas: faturas.filter(f => f.status === 'Aberta').length,
-        faturasPagas: faturas.filter(f => f.status === 'Paga').length,
+        faturasAbertas: faturas.filter((f: any) => f.status === 'Aberta').length,
+        faturasPagas: faturas.filter((f: any) => f.status === 'Paga').length,
         faturasVencidas,
       };
     },

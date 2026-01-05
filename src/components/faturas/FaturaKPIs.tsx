@@ -31,20 +31,18 @@ function KPICard({ title, value, description, icon: Icon, variant = 'default' }:
   };
 
   return (
-    <Card className="border shadow-sm hover:shadow-md transition-shadow">
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1">
+    <Card className="border shadow-sm hover:shadow-md transition-shadow h-full">
+      <CardContent className="p-4 h-full flex flex-col justify-between">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1 min-w-0">
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-            <p className="text-2xl font-bold tracking-tight">{value}</p>
-            {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
-            )}
+            <p className="text-2xl font-bold tracking-tight truncate">{value}</p>
           </div>
-          <div className={cn("h-10 w-10 rounded-xl flex items-center justify-center", variants[variant])}>
+          <div className={cn("h-10 w-10 shrink-0 rounded-xl flex items-center justify-center", variants[variant])}>
             <Icon className="h-5 w-5" />
           </div>
         </div>
+        <p className="text-xs text-muted-foreground min-h-4 mt-2">{description ?? ""}</p>
       </CardContent>
     </Card>
   );
@@ -67,8 +65,8 @@ function AgingCard({ aging }: { aging: { ate30: number; de31a60: number; mais60:
             <p className="text-lg font-bold text-warning">{aging.ate30}</p>
             <p className="text-[10px] text-muted-foreground">0-30d</p>
           </div>
-          <div className="flex-1 text-center p-2 rounded-lg bg-orange-500/10">
-            <p className="text-lg font-bold text-orange-500">{aging.de31a60}</p>
+          <div className="flex-1 text-center p-2 rounded-lg bg-warning/10">
+            <p className="text-lg font-bold text-warning">{aging.de31a60}</p>
             <p className="text-[10px] text-muted-foreground">31-60d</p>
           </div>
           <div className="flex-1 text-center p-2 rounded-lg bg-destructive/10">
@@ -107,7 +105,7 @@ export function FaturaKPIs() {
   if (!kpis) return null;
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
+    <div className="grid auto-rows-fr grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
       <KPICard
         title="Faturamento Mensal"
         value={formatCurrency(kpis.faturamentoMensal)}
