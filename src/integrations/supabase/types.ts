@@ -349,11 +349,210 @@ export type Database = {
         }
         Relationships: []
       }
+      fatura_descontos: {
+        Row: {
+          condicao: string | null
+          created_at: string | null
+          created_by: string | null
+          descricao: string
+          fatura_id: string
+          id: string
+          percentual: number | null
+          tipo: string
+          valor: number | null
+          valor_aplicado: number
+        }
+        Insert: {
+          condicao?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao: string
+          fatura_id: string
+          id?: string
+          percentual?: number | null
+          tipo: string
+          valor?: number | null
+          valor_aplicado: number
+        }
+        Update: {
+          condicao?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          descricao?: string
+          fatura_id?: string
+          id?: string
+          percentual?: number | null
+          tipo?: string
+          valor?: number | null
+          valor_aplicado?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fatura_descontos_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fatura_documentos: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          fatura_id: string
+          id: string
+          nome: string
+          tipo: string
+          url: string
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          fatura_id: string
+          id?: string
+          nome: string
+          tipo: string
+          url: string
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          fatura_id?: string
+          id?: string
+          nome?: string
+          tipo?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fatura_documentos_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fatura_historico: {
+        Row: {
+          acao: string
+          created_at: string | null
+          created_by: string | null
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          fatura_id: string
+          id: string
+          ip_address: string | null
+          motivo: string | null
+          user_agent: string | null
+          versao: number
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          created_by?: string | null
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          fatura_id: string
+          id?: string
+          ip_address?: string | null
+          motivo?: string | null
+          user_agent?: string | null
+          versao: number
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          created_by?: string | null
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          fatura_id?: string
+          id?: string
+          ip_address?: string | null
+          motivo?: string | null
+          user_agent?: string | null
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fatura_historico_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fatura_itens: {
+        Row: {
+          centro_custo: string | null
+          created_at: string | null
+          created_by: string | null
+          desconto_aplicado: number | null
+          desconto_percentual: number | null
+          desconto_valor: number | null
+          descricao: string
+          fatura_id: string
+          id: string
+          ordem: number | null
+          quantidade: number
+          subtotal: number
+          valor_final: number
+          valor_unitario: number
+        }
+        Insert: {
+          centro_custo?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          desconto_aplicado?: number | null
+          desconto_percentual?: number | null
+          desconto_valor?: number | null
+          descricao: string
+          fatura_id: string
+          id?: string
+          ordem?: number | null
+          quantidade?: number
+          subtotal: number
+          valor_final: number
+          valor_unitario: number
+        }
+        Update: {
+          centro_custo?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          desconto_aplicado?: number | null
+          desconto_percentual?: number | null
+          desconto_valor?: number | null
+          descricao?: string
+          fatura_id?: string
+          id?: string
+          ordem?: number | null
+          quantidade?: number
+          subtotal?: number
+          valor_final?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fatura_itens_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       faturas: {
         Row: {
           aluno_id: string
           ano_referencia: number
+          bloqueada: boolean | null
+          cancelada_em: string | null
+          cancelada_por: string | null
+          codigo_sequencial: string | null
           created_at: string | null
+          created_by: string | null
           curso_id: string
           data_emissao: string
           data_vencimento: string
@@ -366,24 +565,35 @@ export type Database = {
           juros_percentual_diario: number | null
           juros_percentual_mensal: number | null
           mes_referencia: number
+          motivo_cancelamento: string | null
           multa: number | null
           payment_url: string | null
           responsavel_id: string | null
+          saldo_restante: number | null
           status: string
           stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
           updated_at: string | null
+          updated_by: string | null
           valor: number
+          valor_bruto: number | null
           valor_desconto_aplicado: number | null
           valor_juros_aplicado: number | null
+          valor_liquido: number | null
           valor_multa_aplicado: number | null
           valor_original: number | null
           valor_total: number | null
+          versao: number | null
         }
         Insert: {
           aluno_id: string
           ano_referencia: number
+          bloqueada?: boolean | null
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          codigo_sequencial?: string | null
           created_at?: string | null
+          created_by?: string | null
           curso_id: string
           data_emissao?: string
           data_vencimento: string
@@ -396,24 +606,35 @@ export type Database = {
           juros_percentual_diario?: number | null
           juros_percentual_mensal?: number | null
           mes_referencia: number
+          motivo_cancelamento?: string | null
           multa?: number | null
           payment_url?: string | null
           responsavel_id?: string | null
+          saldo_restante?: number | null
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string | null
+          updated_by?: string | null
           valor: number
+          valor_bruto?: number | null
           valor_desconto_aplicado?: number | null
           valor_juros_aplicado?: number | null
+          valor_liquido?: number | null
           valor_multa_aplicado?: number | null
           valor_original?: number | null
           valor_total?: number | null
+          versao?: number | null
         }
         Update: {
           aluno_id?: string
           ano_referencia?: number
+          bloqueada?: boolean | null
+          cancelada_em?: string | null
+          cancelada_por?: string | null
+          codigo_sequencial?: string | null
           created_at?: string | null
+          created_by?: string | null
           curso_id?: string
           data_emissao?: string
           data_vencimento?: string
@@ -426,19 +647,25 @@ export type Database = {
           juros_percentual_diario?: number | null
           juros_percentual_mensal?: number | null
           mes_referencia?: number
+          motivo_cancelamento?: string | null
           multa?: number | null
           payment_url?: string | null
           responsavel_id?: string | null
+          saldo_restante?: number | null
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
           updated_at?: string | null
+          updated_by?: string | null
           valor?: number
+          valor_bruto?: number | null
           valor_desconto_aplicado?: number | null
           valor_juros_aplicado?: number | null
+          valor_liquido?: number | null
           valor_multa_aplicado?: number | null
           valor_original?: number | null
           valor_total?: number | null
+          versao?: number | null
         }
         Relationships: [
           {
@@ -747,6 +974,7 @@ export type Database = {
           created_at: string | null
           data_pagamento: string
           desconto_aplicado: number | null
+          estorno_de: string | null
           fatura_id: string
           gateway: string | null
           gateway_id: string | null
@@ -754,8 +982,10 @@ export type Database = {
           id: string
           juros_aplicado: number | null
           metodo: string
+          motivo_estorno: string | null
           multa_aplicada: number | null
           referencia: string | null
+          tipo: string | null
           valor: number
           valor_original: number | null
         }
@@ -764,6 +994,7 @@ export type Database = {
           created_at?: string | null
           data_pagamento?: string
           desconto_aplicado?: number | null
+          estorno_de?: string | null
           fatura_id: string
           gateway?: string | null
           gateway_id?: string | null
@@ -771,8 +1002,10 @@ export type Database = {
           id?: string
           juros_aplicado?: number | null
           metodo: string
+          motivo_estorno?: string | null
           multa_aplicada?: number | null
           referencia?: string | null
+          tipo?: string | null
           valor: number
           valor_original?: number | null
         }
@@ -781,6 +1014,7 @@ export type Database = {
           created_at?: string | null
           data_pagamento?: string
           desconto_aplicado?: number | null
+          estorno_de?: string | null
           fatura_id?: string
           gateway?: string | null
           gateway_id?: string | null
@@ -788,8 +1022,10 @@ export type Database = {
           id?: string
           juros_aplicado?: number | null
           metodo?: string
+          motivo_estorno?: string | null
           multa_aplicada?: number | null
           referencia?: string | null
+          tipo?: string | null
           valor?: number
           valor_original?: number | null
         }
@@ -1113,6 +1349,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      recalcular_fatura: { Args: { p_fatura_id: string }; Returns: undefined }
       registrar_ponto_externo: {
         Args: {
           p_accuracy?: number
