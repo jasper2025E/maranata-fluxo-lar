@@ -99,6 +99,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
     }
 
     const aluno = alunos.find(a => a.id === data.aluno_id);
+    const responsavelId = aluno?.responsavel_id ?? undefined;
     
     try {
       if (tipo === "recorrente") {
@@ -108,7 +109,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
           await createMutation.mutateAsync({
             aluno_id: data.aluno_id,
             curso_id: data.curso_id,
-            responsavel_id: aluno?.responsavel_id || undefined,
+            responsavel_id: responsavelId,
             valor: valorTotal,
             data_vencimento: format(date, "yyyy-MM-dd"),
             mes_referencia: date.getMonth() + 1,
@@ -120,7 +121,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
         await createMutation.mutateAsync({
           aluno_id: data.aluno_id,
           curso_id: data.curso_id,
-          responsavel_id: aluno?.responsavel_id || undefined,
+          responsavel_id: responsavelId,
           valor: valorTotal,
           data_vencimento: data.data_vencimento,
           mes_referencia: data.mes_referencia,
