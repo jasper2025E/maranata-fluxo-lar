@@ -82,7 +82,10 @@ function ItemsTab({ faturaId, isEditable }: { faturaId: string; isEditable: bool
   });
 
   const handleAddItem = () => {
-    if (!newItem.descricao || newItem.valor_unitario <= 0) return;
+    if (!newItem.descricao || newItem.valor_unitario <= 0) {
+      toast.error("Preencha a descrição e o valor unitário");
+      return;
+    }
     
     const subtotal = newItem.quantidade * newItem.valor_unitario;
     addItem.mutate({
@@ -205,11 +208,19 @@ function DescontosTab({ faturaId, valorBase, isEditable }: { faturaId: string; v
   });
 
   const handleAdd = () => {
-    if (!newDesconto.descricao) return;
+    if (!newDesconto.descricao) {
+      toast.error("Preencha a descrição do desconto");
+      return;
+    }
     
     const valorAplicado = newDesconto.isPercentual
       ? valorBase * (newDesconto.percentual / 100)
       : newDesconto.valor;
+
+    if (valorAplicado <= 0) {
+      toast.error("Informe um valor ou percentual válido");
+      return;
+    }
 
     addDesconto.mutate({
       fatura_id: faturaId,
@@ -340,10 +351,20 @@ function PagamentosTab({ faturaId, valorTotal, onDownloadRecibo }: { faturaId: s
   });
 
   const handlePagar = () => {
-    if (!newPagamento.metodo || newPagamento.valor <= 0) return;
+    if (!newPagamento.metodo) {
+      toast.error("Selecione o método de pagamento");
+      return;
+    }
+    if (newPagamento.valor <= 0) {
+      toast.error("Informe o valor do pagamento");
+      return;
+    }
     registrarPagamento.mutate({
       fatura_id: faturaId,
-      ...newPagamento,
+      valor: newPagamento.valor,
+      metodo: newPagamento.metodo,
+      referencia: newPagamento.referencia || undefined,
+      tipo: newPagamento.tipo,
     });
     setNewPagamento({ valor: 0, metodo: "", referencia: "", tipo: "total" });
     setShowForm(false);
