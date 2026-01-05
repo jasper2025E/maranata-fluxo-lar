@@ -27,7 +27,8 @@ import {
   Upload,
   Database,
   AlertTriangle,
-  Trash2
+  Trash2,
+  Receipt,
 } from "lucide-react";
 import {
   AlertDialog,
@@ -44,6 +45,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { ConfiguracoesCobranca } from "@/components/config/ConfiguracoesCobranca";
 
 interface UserPreferences {
   email_notifications: boolean;
@@ -337,6 +339,12 @@ const Configuracoes = () => {
               <Settings className="h-4 w-4" />
               Preferências
             </TabsTrigger>
+            {role === "admin" && (
+              <TabsTrigger value="cobranca" className="gap-2">
+                <Receipt className="h-4 w-4" />
+                Cobrança
+              </TabsTrigger>
+            )}
             {role === "admin" && (
               <TabsTrigger value="sistema" className="gap-2">
                 <Database className="h-4 w-4" />
@@ -738,6 +746,13 @@ const Configuracoes = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Cobrança Tab - Admin Only */}
+          {role === "admin" && (
+            <TabsContent value="cobranca" className="space-y-6">
+              <ConfiguracoesCobranca />
+            </TabsContent>
+          )}
 
           {/* Sistema Tab - Admin Only */}
           {role === "admin" && (
