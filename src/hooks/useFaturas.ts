@@ -453,8 +453,15 @@ export function useRegistrarPagamento() {
       multa_aplicada?: number;
     }) => {
       const { error: paymentError } = await supabase.from("pagamentos").insert({
-        ...data,
+        fatura_id: data.fatura_id,
+        valor: data.valor,
+        metodo: data.metodo,
+        referencia: data.referencia || null,
         tipo: data.tipo || 'total',
+        valor_original: data.valor_original || null,
+        desconto_aplicado: data.desconto_aplicado || null,
+        juros_aplicado: data.juros_aplicado || null,
+        multa_aplicada: data.multa_aplicada || null,
       });
 
       if (paymentError) throw paymentError;
@@ -492,12 +499,14 @@ export function useRegistrarPagamento() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list() });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.pagamentos(variables.fatura_id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(variables.fatura_id) });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast.success("Pagamento registrado!");
     },
     onError: (error: Error) => {
-      toast.error(`Erro: ${error.message}`);
+      toast.error(`Erro ao registrar pagamento: ${error.message}`);
     },
   });
 }
@@ -538,11 +547,13 @@ export function useEstornarPagamento() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list() });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.pagamentos(variables.fatura_id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(variables.fatura_id) });
       toast.success("Estorno registrado!");
     },
     onError: (error: Error) => {
-      toast.error(`Erro: ${error.message}`);
+      toast.error(`Erro ao estornar: ${error.message}`);
     },
   });
 }
@@ -551,17 +562,31 @@ export function useAddFaturaItem() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (data: FaturaItem & { fatura_id: string }) => {
-      const { error } = await supabase.from("fatura_itens").insert(data);
+    mutationFn: async (data: Omit<FaturaItem, 'id'> & { fatura_id: string }) => {
+      const { id, ...insertData } = data as FaturaItem & { fatura_id: string };
+      const { error } = await supabase.from("fatura_itens").insert({
+        fatura_id: data.fatura_id,
+        descricao: data.descricao,
+        quantidade: data.quantidade,
+        valor_unitario: data.valor_unitario,
+        subtotal: data.subtotal,
+        desconto_valor: data.desconto_valor || 0,
+        desconto_percentual: data.desconto_percentual || 0,
+        desconto_aplicado: data.desconto_aplicado || 0,
+        valor_final: data.valor_final,
+        centro_custo: data.centro_custo || null,
+        ordem: data.ordem,
+      });
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.items(variables.fatura_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(variables.fatura_id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
       toast.success("Item adicionado!");
     },
     onError: (error: Error) => {
-      toast.error(`Erro: ${error.message}`);
+      toast.error(`Erro ao adicionar item: ${error.message}`);
     },
   });
 }
@@ -578,10 +603,11 @@ export function useRemoveFaturaItem() {
     onSuccess: (fatura_id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.items(fatura_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(fatura_id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
       toast.success("Item removido!");
     },
     onError: (error: Error) => {
-      toast.error(`Erro: ${error.message}`);
+      toast.error(`Erro ao remover item: ${error.message}`);
     },
   });
 }
@@ -591,16 +617,25 @@ export function useAddFaturaDesconto() {
 
   return useMutation({
     mutationFn: async (data: Omit<FaturaDesconto, 'id'> & { fatura_id: string }) => {
-      const { error } = await supabase.from("fatura_descontos").insert(data);
+      const { error } = await supabase.from("fatura_descontos").insert({
+        fatura_id: data.fatura_id,
+        tipo: data.tipo,
+        descricao: data.descricao,
+        valor: data.valor || 0,
+        percentual: data.percentual || 0,
+        valor_aplicado: data.valor_aplicado,
+        condicao: data.condicao || null,
+      });
       if (error) throw error;
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.descontos(variables.fatura_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(variables.fatura_id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
       toast.success("Desconto adicionado!");
     },
     onError: (error: Error) => {
-      toast.error(`Erro: ${error.message}`);
+      toast.error(`Erro ao adicionar desconto: ${error.message}`);
     },
   });
 }
