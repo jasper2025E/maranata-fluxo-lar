@@ -92,29 +92,51 @@ export function AppSidebar() {
 
   const renderMenuItem = (item: typeof menuItems[0]) => (
     <SidebarMenuItem key={item.title}>
-      <SidebarMenuButton asChild>
-        <NavLink
-          to={item.url}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200",
-            "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
-          )}
-          activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px]"
-        >
-          <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
-          {!isCollapsed && <span className="text-sm">{item.title}</span>}
-        </NavLink>
-      </SidebarMenuButton>
+      {isCollapsed ? (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <SidebarMenuButton asChild>
+              <NavLink
+                to={item.url}
+                className={cn(
+                  "flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200",
+                  "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+                )}
+                activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium"
+              >
+                <item.icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+              </NavLink>
+            </SidebarMenuButton>
+          </TooltipTrigger>
+          <TooltipContent side="right" className="font-medium">
+            {item.title}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <SidebarMenuButton asChild>
+          <NavLink
+            to={item.url}
+            className={cn(
+              "flex items-center gap-3 rounded-lg px-3 py-2.5 transition-all duration-200",
+              "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent"
+            )}
+            activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px]"
+          >
+            <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+            <span className="text-sm transition-opacity duration-200">{item.title}</span>
+          </NavLink>
+        </SidebarMenuButton>
+      )}
     </SidebarMenuItem>
   );
 
   return (
-    <Sidebar className="border-r-0" collapsible="icon">
-      <SidebarContent className="gradient-sidebar">
+    <Sidebar className="border-r-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" collapsible="icon">
+      <SidebarContent className="gradient-sidebar transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
         {/* Logo */}
         <div className={cn(
-          "flex items-center gap-3 px-4 py-6",
-          isCollapsed && "justify-center px-2"
+          "flex items-center gap-3 px-4 py-6 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          isCollapsed && "justify-center px-3"
         )}>
           {isCollapsed ? (
             <Tooltip>
@@ -216,16 +238,35 @@ export function AppSidebar() {
         
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              onClick={handleLogout}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2.5 w-full",
-                "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
-              )}
-            >
-              <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
-              {!isCollapsed && <span className="text-sm">Sair do Sistema</span>}
-            </SidebarMenuButton>
+            {isCollapsed ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <SidebarMenuButton
+                    onClick={handleLogout}
+                    className={cn(
+                      "flex items-center justify-center gap-3 rounded-lg px-3 py-2.5 w-full",
+                      "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                    )}
+                  >
+                    <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.75} />
+                  </SidebarMenuButton>
+                </TooltipTrigger>
+                <TooltipContent side="right" className="font-medium">
+                  Sair do Sistema
+                </TooltipContent>
+              </Tooltip>
+            ) : (
+              <SidebarMenuButton
+                onClick={handleLogout}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 w-full",
+                  "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10 transition-all duration-200"
+                )}
+              >
+                <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+                <span className="text-sm">Sair do Sistema</span>
+              </SidebarMenuButton>
+            )}
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
