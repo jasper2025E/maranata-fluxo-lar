@@ -1,9 +1,15 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { LandingNavbar } from "@/components/landing/LandingNavbar";
 import { LandingHero } from "@/components/landing/LandingHero";
 import { LandingSobre } from "@/components/landing/LandingSobre";
+import { LandingDiferenciais } from "@/components/landing/LandingDiferenciais";
+import { LandingEstrutura } from "@/components/landing/LandingEstrutura";
 import { LandingComoFunciona } from "@/components/landing/LandingComoFunciona";
 import { LandingPlanos } from "@/components/landing/LandingPlanos";
+import { LandingDepoimentos } from "@/components/landing/LandingDepoimentos";
+import { LandingCTA } from "@/components/landing/LandingCTA";
+import { LandingContato } from "@/components/landing/LandingContato";
 import { LandingInscricao } from "@/components/landing/LandingInscricao";
 import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingPixels } from "@/components/landing/LandingPixels";
@@ -73,7 +79,7 @@ const defaultConfig: LandingConfig = {
     cta_secundario: "Ver Planos",
   },
   sobre: {
-    titulo: "Sobre a Plataforma Maranata",
+    titulo: "Sobre Nossa Instituição",
     descricao: "Somos uma instituição comprometida com a excelência educacional, oferecendo um ambiente de aprendizado inovador e acolhedor.",
     cards: [
       {
@@ -206,16 +212,42 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background">
       <LandingPixels utmParams={utmParams} />
       
-      <LandingHero config={config} />
+      {/* Fixed Navbar */}
+      <LandingNavbar config={config} />
       
+      {/* Hero Section */}
+      <div id="hero">
+        <LandingHero config={config} />
+      </div>
+      
+      {/* About Section */}
       <LandingSobre config={config} />
       
+      {/* Differentials Section */}
+      <LandingDiferenciais config={config} />
+      
+      {/* Infrastructure Section */}
+      <LandingEstrutura config={config} />
+      
+      {/* How it Works */}
       <LandingComoFunciona config={config} />
       
+      {/* Plans Section */}
       <LandingPlanos config={config} cursos={cursosPublicos} />
       
+      {/* Testimonials */}
+      <LandingDepoimentos config={config} />
+      
+      {/* CTA Banner */}
+      <LandingCTA config={config} />
+      
+      {/* Contact Section */}
+      <LandingContato config={config} />
+      
+      {/* Enrollment Form */}
       <LandingInscricao config={config} cursos={cursosPublicos} utmParams={utmParams} />
       
+      {/* Footer */}
       <LandingFooter config={config} />
     </div>
   );
