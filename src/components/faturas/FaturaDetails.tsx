@@ -575,8 +575,32 @@ function HistoricoTab({ faturaId }: { faturaId: string }) {
   );
 }
 
-export function FaturaDetails({ fatura, open, onOpenChange }: FaturaDetailsProps) {
+export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: FaturaDetailsProps) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  
+  // Buscar fatura atualizada internamente para refletir mudanças em tempo real
+  const { data: faturaAtualizada } = useQuery({
+    queryKey: ['faturas', 'detail', faturaProp?.id],
+    queryFn: async () => {
+      if (!faturaProp?.id) return null;
+      const { data, error } = await supabase
+        .from("faturas")
+        .select(`
+          *,
+          alunos(nome_completo, email_responsavel, responsavel_id),
+          cursos(nome),
+          responsaveis(nome, email, telefone)
+        `)
+        .eq("id", faturaProp.id)
+        .maybeSingle();
+      if (error) throw error;
+      return data as Fatura | null;
+    },
+    enabled: !!faturaProp?.id && open,
+  });
+
+  // Usar fatura atualizada ou a prop original como fallback
+  const fatura = faturaAtualizada || faturaProp;
   
   const { data: escola } = useQuery({
     queryKey: ['escola-pdf'],
