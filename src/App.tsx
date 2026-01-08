@@ -54,6 +54,8 @@ const App = () => (
               <Routes>
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/auth" element={<Auth />} />
+              {/* Legacy route (marketing removido) */}
+              <Route path="/marketing" element={<Navigate to="/dashboard" replace />} />
               
               {/* Protected Routes */}
               <Route
