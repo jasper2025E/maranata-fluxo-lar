@@ -26,7 +26,7 @@ import Configuracoes from "./pages/Configuracoes";
 import PaymentResult from "./pages/PaymentResult";
 import RH from "./pages/RH";
 import PontoEletronico from "./pages/PontoEletronico";
-import Marketing from "./pages/Marketing";
+
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
@@ -157,14 +157,6 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <RH />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/marketing"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Marketing />
                   </ProtectedRoute>
                 }
               />
