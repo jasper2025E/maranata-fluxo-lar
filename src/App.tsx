@@ -26,6 +26,7 @@ import Configuracoes from "./pages/Configuracoes";
 import PaymentResult from "./pages/PaymentResult";
 import RH from "./pages/RH";
 import PontoEletronico from "./pages/PontoEletronico";
+import Marketing from "./pages/Marketing";
 import NotFound from "./pages/NotFound";
 
 // Query client with optimized defaults
@@ -155,6 +156,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <RH />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/marketing"
+                element={
+                  <ProtectedRoute requiredRole="admin">
+                    <Marketing />
                   </ProtectedRoute>
                 }
               />
