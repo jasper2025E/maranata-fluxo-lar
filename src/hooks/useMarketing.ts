@@ -229,11 +229,11 @@ export function useCreatePixel() {
       const { data, error } = await supabase
         .from('marketing_pixels')
         .insert({
-          nome: pixel.nome,
-          tipo: pixel.tipo,
-          pixel_id: pixel.pixel_id,
-          configuracao: pixel.configuracao || {},
-        })
+          nome: pixel.nome!,
+          tipo: pixel.tipo!,
+          pixel_id: pixel.pixel_id!,
+          configuracao: (pixel.configuracao || {}) as object,
+        } as never)
         .select()
         .single();
       
@@ -255,9 +255,13 @@ export function useUpdatePixel() {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: Partial<MarketingPixel> & { id: string }) => {
+      const updateData = { ...updates } as Record<string, unknown>;
+      if (updateData.configuracao) {
+        updateData.configuracao = updateData.configuracao as object;
+      }
       const { data, error } = await supabase
         .from('marketing_pixels')
-        .update(updates)
+        .update(updateData as never)
         .eq('id', id)
         .select()
         .single();
@@ -323,11 +327,11 @@ export function useCreatePixelEvent() {
       const { data, error } = await supabase
         .from('marketing_pixel_events')
         .insert({
-          pixel_id: event.pixel_id,
-          nome: event.nome,
+          pixel_id: event.pixel_id!,
+          nome: event.nome!,
           tipo: event.tipo || 'custom',
-          parametros: event.parametros || {},
-        })
+          parametros: (event.parametros || {}) as object,
+        } as never)
         .select()
         .single();
       
@@ -409,13 +413,13 @@ export function useCreatePage() {
       const { data, error } = await supabase
         .from('marketing_landing_pages')
         .insert({
-          nome: pageData.nome,
-          slug: pageData.slug,
+          nome: pageData.nome!,
+          slug: pageData.slug!,
           domain_id: pageData.domain_id,
           meta_title: pageData.meta_title,
           meta_description: pageData.meta_description,
-          conteudo: pageData.conteudo || {},
-        })
+          conteudo: (pageData.conteudo || {}) as object,
+        } as never)
         .select()
         .single();
       
@@ -449,12 +453,16 @@ export function useUpdatePage() {
   
   return useMutation({
     mutationFn: async ({ id, pixel_ids, ...updates }: Partial<MarketingLandingPage> & { id: string; pixel_ids?: string[] }) => {
+      const updateData = {
+        ...updates,
+        versao: updates.versao ? updates.versao + 1 : 1,
+      } as Record<string, unknown>;
+      if (updateData.conteudo) {
+        updateData.conteudo = updateData.conteudo as object;
+      }
       const { data, error } = await supabase
         .from('marketing_landing_pages')
-        .update({
-          ...updates,
-          versao: updates.versao ? updates.versao + 1 : 1,
-        })
+        .update(updateData as never)
         .eq('id', id)
         .select()
         .single();
@@ -712,7 +720,7 @@ export function useUpdateConfig() {
     mutationFn: async ({ chave, valor }: { chave: string; valor: unknown }) => {
       const { data, error } = await supabase
         .from('marketing_config')
-        .update({ valor: valor as Record<string, unknown> })
+        .update({ valor: valor as object } as never)
         .eq('chave', chave)
         .select()
         .single();
