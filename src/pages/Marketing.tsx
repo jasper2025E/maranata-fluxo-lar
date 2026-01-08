@@ -7,7 +7,8 @@ import {
   Globe, 
   Settings, 
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  Palette
 } from "lucide-react";
 import { LandingPagesTab } from "@/components/marketing/LandingPagesTab";
 import { PixelsTab } from "@/components/marketing/PixelsTab";
@@ -15,6 +16,7 @@ import { DomainsTab } from "@/components/marketing/DomainsTab";
 import { MarketingConfigTab } from "@/components/marketing/MarketingConfigTab";
 import { MarketingReportsTab } from "@/components/marketing/MarketingReportsTab";
 import { MarketingDashboard } from "@/components/marketing/MarketingDashboard";
+import { LandingPageEditor } from "@/components/marketing/LandingPageEditor";
 
 export default function Marketing() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -35,10 +37,14 @@ export default function Marketing() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-6 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-flex">
             <TabsTrigger value="dashboard" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="editor" className="gap-2">
+              <Palette className="h-4 w-4" />
+              <span className="hidden sm:inline">Editor</span>
             </TabsTrigger>
             <TabsTrigger value="pages" className="gap-2">
               <LayoutTemplate className="h-4 w-4" />
@@ -64,6 +70,10 @@ export default function Marketing() {
 
           <TabsContent value="dashboard" className="space-y-4">
             <MarketingDashboard />
+          </TabsContent>
+
+          <TabsContent value="editor" className="space-y-4">
+            <LandingPageEditor />
           </TabsContent>
 
           <TabsContent value="pages" className="space-y-4">
