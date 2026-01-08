@@ -636,6 +636,7 @@ export function useAddFaturaDesconto() {
 
   return useMutation({
     mutationFn: async (data: Omit<FaturaDesconto, 'id'> & { fatura_id: string }) => {
+      // Inserir o desconto
       const { error } = await supabase.from("fatura_descontos").insert({
         fatura_id: data.fatura_id,
         tipo: data.tipo,
@@ -646,10 +647,42 @@ export function useAddFaturaDesconto() {
         condicao: data.condicao || null,
       });
       if (error) throw error;
+
+      // Buscar fatura atual e todos os descontos para recalcular
+      const { data: fatura } = await supabase
+        .from("faturas")
+        .select("valor, valor_original, valor_bruto, saldo_restante")
+        .eq("id", data.fatura_id)
+        .maybeSingle();
+
+      const { data: todosDescontos } = await supabase
+        .from("fatura_descontos")
+        .select("valor_aplicado")
+        .eq("fatura_id", data.fatura_id);
+
+      if (fatura) {
+        const valorBase = fatura.valor_original || fatura.valor_bruto || fatura.valor;
+        const totalDescontos = (todosDescontos || []).reduce(
+          (sum, d) => sum + Number(d.valor_aplicado || 0), 
+          0
+        );
+        const novoValorTotal = Math.max(0, valorBase - totalDescontos);
+
+        // Atualizar fatura com novo valor total
+        await supabase
+          .from("faturas")
+          .update({ 
+            valor_total: novoValorTotal,
+            valor_desconto_aplicado: totalDescontos,
+            saldo_restante: novoValorTotal,
+          })
+          .eq("id", data.fatura_id);
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.descontos(variables.fatura_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(variables.fatura_id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list() });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
       toast.success("Desconto adicionado!");
     },
