@@ -13,6 +13,7 @@ import {
   UserCheck,
   Wallet,
   Briefcase,
+  TrendingUp,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -47,6 +48,7 @@ const menuItems = [
   { title: "Turmas", url: "/turmas", icon: GraduationCap },
   { title: "Cursos", url: "/cursos", icon: BookOpen },
   { title: "RH", url: "/rh", icon: Briefcase, roles: ["admin", "staff"] },
+  { title: "Marketing", url: "/marketing", icon: TrendingUp, roles: ["admin"] },
 ];
 
 const financeItems = [
