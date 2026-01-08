@@ -30,6 +30,8 @@ serve(async (req) => {
   try {
     const { responsavel, alunos, utm_params } = await req.json() as EnrollmentData;
 
+    console.log("Processing enrollment checkout:", { responsavel: responsavel.email, alunosCount: alunos.length });
+
     // Initialize Supabase admin client
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
@@ -44,15 +46,25 @@ serve(async (req) => {
       .select("id, nome, mensalidade")
       .in("id", cursoIds);
 
-    if (cursosError) throw cursosError;
+    if (cursosError) {
+      console.error("Error fetching courses:", cursosError);
+      throw cursosError;
+    }
 
     const total = alunos.reduce((sum, aluno) => {
       const curso = cursos?.find(c => c.id === aluno.curso_id);
       return sum + (curso?.mensalidade || 0);
     }, 0);
 
+    console.log("Total calculated:", total);
+
     // Initialize Stripe
-    const stripe = new Stripe(Deno.env.get("STRIPE_SECRET_KEY") ?? "", {
+    const stripeKey = Deno.env.get("STRIPE_SECRET_KEY");
+    if (!stripeKey) {
+      throw new Error("Stripe secret key not configured");
+    }
+
+    const stripe = new Stripe(stripeKey, {
       apiVersion: "2023-10-16",
     });
 
@@ -65,6 +77,7 @@ serve(async (req) => {
     let customerId: string;
     if (existingCustomers.data.length > 0) {
       customerId = existingCustomers.data[0].id;
+      console.log("Using existing customer:", customerId);
     } else {
       const customer = await stripe.customers.create({
         email: responsavel.email,
@@ -76,6 +89,7 @@ serve(async (req) => {
         },
       });
       customerId = customer.id;
+      console.log("Created new customer:", customerId);
     }
 
     // Create line items for each student/course
@@ -115,6 +129,8 @@ serve(async (req) => {
       },
       locale: "pt-BR",
     });
+
+    console.log("Checkout session created:", session.id);
 
     return new Response(
       JSON.stringify({ url: session.url, session_id: session.id }),

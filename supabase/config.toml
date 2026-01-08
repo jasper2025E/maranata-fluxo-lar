@@ -8,3 +8,9 @@ verify_jwt = false
 
 [functions.send-receipt-email]
 verify_jwt = true
+
+[functions.create-enrollment-checkout]
+verify_jwt = false
+
+[functions.enrollment-webhook]
+verify_jwt = false
