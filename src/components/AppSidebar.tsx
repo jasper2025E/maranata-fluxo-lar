@@ -98,6 +98,7 @@ export function AppSidebar() {
             <SidebarMenuButton asChild>
               <NavLink
                 to={item.url}
+                end={item.url === "/dashboard"}
                 className={cn(
                   "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5",
                   "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
@@ -119,6 +120,7 @@ export function AppSidebar() {
         <SidebarMenuButton asChild>
           <NavLink
             to={item.url}
+            end={item.url === "/dashboard"}
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5",
               "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
