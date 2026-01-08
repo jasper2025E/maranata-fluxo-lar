@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -19,9 +19,12 @@ import {
   MapPin,
   RotateCcw,
   Loader2,
-  ExternalLink
+  ExternalLink,
+  Smartphone,
+  Monitor
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 
 interface LandingPageConfig {
   hero: {
@@ -115,11 +118,22 @@ const defaultConfig: LandingPageConfig = {
   }
 };
 
+const ICON_OPTIONS = [
+  { value: "GraduationCap", label: "Formatura" },
+  { value: "Users", label: "Usuários" },
+  { value: "Shield", label: "Escudo" },
+  { value: "LineChart", label: "Gráfico" },
+  { value: "BookOpen", label: "Livro" },
+  { value: "Heart", label: "Coração" },
+  { value: "Star", label: "Estrela" },
+  { value: "Trophy", label: "Troféu" },
+];
+
 export function LandingPageEditor() {
   const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("hero");
+  const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
 
-  // Fetch config from database
   const { data: configData, isLoading } = useQuery({
     queryKey: ["landing-page-config"],
     queryFn: async () => {
@@ -136,14 +150,12 @@ export function LandingPageEditor() {
 
   const [config, setConfig] = useState<LandingPageConfig>(defaultConfig);
 
-  // Update local state when data loads
-  useState(() => {
+  useEffect(() => {
     if (configData) {
       setConfig(configData);
     }
-  });
+  }, [configData]);
 
-  // Save mutation
   const saveMutation = useMutation({
     mutationFn: async (newConfig: LandingPageConfig) => {
       const { data: existing } = await supabase
@@ -163,7 +175,7 @@ export function LandingPageEditor() {
           .from("marketing_config")
           .insert({
             chave: "landing_page_config",
-            valor: newConfig as unknown as Record<string, unknown>,
+            valor: JSON.parse(JSON.stringify(newConfig)),
             descricao: "Configurações da Landing Page",
           } as never);
         if (error) throw error;
@@ -171,17 +183,13 @@ export function LandingPageEditor() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["landing-page-config"] });
+      queryClient.invalidateQueries({ queryKey: ["landing-page-config-public"] });
       toast.success("Landing page salva com sucesso!");
     },
     onError: (error: Error) => {
       toast.error("Erro ao salvar: " + error.message);
     },
   });
-
-  // Update config when data loads
-  if (configData && JSON.stringify(configData) !== JSON.stringify(config)) {
-    setConfig(configData);
-  }
 
   const handleSave = () => {
     saveMutation.mutate(config);
@@ -275,293 +283,350 @@ export function LandingPageEditor() {
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Palette className="h-5 w-5" />
-              Editor da Landing Page
-            </CardTitle>
-            <CardDescription>
-              Personalize textos, cores e conteúdo da página de inscrição
-            </CardDescription>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleReset}>
-              <RotateCcw className="h-4 w-4 mr-2" />
-              Restaurar
-            </Button>
-            <Button variant="outline" size="sm" asChild>
-              <a href="/inscricao" target="_blank" rel="noopener noreferrer">
-                <Eye className="h-4 w-4 mr-2" />
-                Visualizar
-                <ExternalLink className="h-3 w-3 ml-1" />
-              </a>
-            </Button>
-            <Button onClick={handleSave} disabled={saveMutation.isPending}>
-              {saveMutation.isPending ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Save className="h-4 w-4 mr-2" />
-              )}
-              Salvar
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid grid-cols-6 w-full">
-            <TabsTrigger value="hero">Hero</TabsTrigger>
-            <TabsTrigger value="sobre">Sobre</TabsTrigger>
-            <TabsTrigger value="passos">Passos</TabsTrigger>
-            <TabsTrigger value="planos">Planos</TabsTrigger>
-            <TabsTrigger value="inscricao">Inscrição</TabsTrigger>
-            <TabsTrigger value="footer">Rodapé</TabsTrigger>
-          </TabsList>
-
-          {/* Hero Section */}
-          <TabsContent value="hero" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="hero-titulo">
-                <Type className="h-4 w-4 inline mr-2" />
-                Título Principal
-              </Label>
-              <Input
-                id="hero-titulo"
-                value={config.hero.titulo}
-                onChange={(e) => updateHero("titulo", e.target.value)}
-                placeholder="Título principal da landing page"
-              />
+    <div className="space-y-4">
+      {/* Header with actions */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Palette className="h-5 w-5" />
+                Editor da Landing Page
+              </CardTitle>
+              <CardDescription>
+                Personalize textos e conteúdo da página de inscrição
+              </CardDescription>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="hero-subtitulo">Subtítulo</Label>
-              <Textarea
-                id="hero-subtitulo"
-                value={config.hero.subtitulo}
-                onChange={(e) => updateHero("subtitulo", e.target.value)}
-                placeholder="Descrição do sistema"
-                rows={3}
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="hero-cta1">Botão Primário</Label>
-                <Input
-                  id="hero-cta1"
-                  value={config.hero.ctaPrimario}
-                  onChange={(e) => updateHero("ctaPrimario", e.target.value)}
-                  placeholder="Texto do botão principal"
-                />
+            <div className="flex flex-wrap gap-2">
+              <div className="flex border rounded-lg overflow-hidden">
+                <Button 
+                  variant={previewMode === "desktop" ? "secondary" : "ghost"} 
+                  size="sm"
+                  onClick={() => setPreviewMode("desktop")}
+                  className="rounded-none"
+                >
+                  <Monitor className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={previewMode === "mobile" ? "secondary" : "ghost"} 
+                  size="sm"
+                  onClick={() => setPreviewMode("mobile")}
+                  className="rounded-none"
+                >
+                  <Smartphone className="h-4 w-4" />
+                </Button>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="hero-cta2">Botão Secundário</Label>
-                <Input
-                  id="hero-cta2"
-                  value={config.hero.ctaSecundario}
-                  onChange={(e) => updateHero("ctaSecundario", e.target.value)}
-                  placeholder="Texto do botão secundário"
-                />
-              </div>
+              <Button variant="outline" size="sm" onClick={handleReset}>
+                <RotateCcw className="h-4 w-4 mr-2" />
+                Restaurar
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <a href="/inscricao" target="_blank" rel="noopener noreferrer">
+                  <Eye className="h-4 w-4 mr-2" />
+                  Visualizar
+                  <ExternalLink className="h-3 w-3 ml-1" />
+                </a>
+              </Button>
+              <Button onClick={handleSave} disabled={saveMutation.isPending}>
+                {saveMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Salvar
+              </Button>
             </div>
+          </div>
+        </CardHeader>
+      </Card>
 
-            <div className="space-y-2">
-              <Label htmlFor="hero-imagem">
-                <Image className="h-4 w-4 inline mr-2" />
-                URL da Imagem (opcional)
-              </Label>
-              <Input
-                id="hero-imagem"
-                value={config.hero.imagemUrl || ""}
-                onChange={(e) => updateHero("imagemUrl", e.target.value)}
-                placeholder="https://exemplo.com/imagem.jpg"
-              />
-            </div>
-          </TabsContent>
+      <div className="grid lg:grid-cols-2 gap-4">
+        {/* Editor Panel */}
+        <Card>
+          <CardContent className="pt-6">
+            <Tabs value={activeTab} onValueChange={setActiveTab}>
+              <TabsList className="grid grid-cols-6 w-full">
+                <TabsTrigger value="hero">Hero</TabsTrigger>
+                <TabsTrigger value="sobre">Sobre</TabsTrigger>
+                <TabsTrigger value="passos">Passos</TabsTrigger>
+                <TabsTrigger value="planos">Planos</TabsTrigger>
+                <TabsTrigger value="inscricao">Form</TabsTrigger>
+                <TabsTrigger value="footer">Rodapé</TabsTrigger>
+              </TabsList>
 
-          {/* Sobre Section */}
-          <TabsContent value="sobre" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="sobre-titulo">Título da Seção</Label>
-              <Input
-                id="sobre-titulo"
-                value={config.sobre.titulo}
-                onChange={(e) => updateSobre("titulo", e.target.value)}
-              />
-            </div>
+              {/* Hero Section */}
+              <TabsContent value="hero" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="hero-titulo">
+                    <Type className="h-4 w-4 inline mr-2" />
+                    Título Principal
+                  </Label>
+                  <Input
+                    id="hero-titulo"
+                    value={config.hero.titulo}
+                    onChange={(e) => updateHero("titulo", e.target.value)}
+                    placeholder="Título principal da landing page"
+                  />
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="sobre-descricao">Descrição</Label>
-              <Textarea
-                id="sobre-descricao"
-                value={config.sobre.descricao}
-                onChange={(e) => updateSobre("descricao", e.target.value)}
-                rows={2}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hero-subtitulo">Subtítulo</Label>
+                  <Textarea
+                    id="hero-subtitulo"
+                    value={config.hero.subtitulo}
+                    onChange={(e) => updateHero("subtitulo", e.target.value)}
+                    placeholder="Descrição do sistema"
+                    rows={3}
+                  />
+                </div>
 
-            <div className="space-y-4">
-              <Label>Cards de Benefícios</Label>
-              {config.sobre.cards.map((card, index) => (
-                <Card key={index} className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        Card {index + 1}
-                      </span>
-                    </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="hero-cta1">Botão Primário</Label>
                     <Input
-                      value={card.titulo}
-                      onChange={(e) => updateSobreCard(index, "titulo", e.target.value)}
-                      placeholder="Título do card"
-                    />
-                    <Textarea
-                      value={card.descricao}
-                      onChange={(e) => updateSobreCard(index, "descricao", e.target.value)}
-                      placeholder="Descrição do card"
-                      rows={2}
+                      id="hero-cta1"
+                      value={config.hero.ctaPrimario}
+                      onChange={(e) => updateHero("ctaPrimario", e.target.value)}
+                      placeholder="Texto do botão principal"
                     />
                   </div>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+                  <div className="space-y-2">
+                    <Label htmlFor="hero-cta2">Botão Secundário</Label>
+                    <Input
+                      id="hero-cta2"
+                      value={config.hero.ctaSecundario}
+                      onChange={(e) => updateHero("ctaSecundario", e.target.value)}
+                      placeholder="Texto do botão secundário"
+                    />
+                  </div>
+                </div>
 
-          {/* Passos Section */}
-          <TabsContent value="passos" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="passos-titulo">Título da Seção</Label>
-              <Input
-                id="passos-titulo"
-                value={config.comoFunciona.titulo}
-                onChange={(e) => updateComoFunciona("titulo", e.target.value)}
-              />
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="hero-imagem">
+                    <Image className="h-4 w-4 inline mr-2" />
+                    URL da Imagem (opcional)
+                  </Label>
+                  <Input
+                    id="hero-imagem"
+                    value={config.hero.imagemUrl || ""}
+                    onChange={(e) => updateHero("imagemUrl", e.target.value)}
+                    placeholder="https://exemplo.com/imagem.jpg"
+                  />
+                </div>
+              </TabsContent>
 
-            <div className="space-y-4">
-              <Label>Passos do Processo</Label>
-              {config.comoFunciona.passos.map((passo, index) => (
-                <Card key={index} className="p-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                        {passo.numero}
+              {/* Sobre Section */}
+              <TabsContent value="sobre" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="sobre-titulo">Título da Seção</Label>
+                  <Input
+                    id="sobre-titulo"
+                    value={config.sobre.titulo}
+                    onChange={(e) => updateSobre("titulo", e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="sobre-descricao">Descrição</Label>
+                  <Textarea
+                    id="sobre-descricao"
+                    value={config.sobre.descricao}
+                    onChange={(e) => updateSobre("descricao", e.target.value)}
+                    rows={2}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <Label>Cards de Benefícios</Label>
+                  {config.sobre.cards.map((card, index) => (
+                    <Card key={index} className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            Card {index + 1}
+                          </span>
+                          <select 
+                            value={card.icone}
+                            onChange={(e) => updateSobreCard(index, "icone", e.target.value)}
+                            className="text-xs border rounded px-2 py-1"
+                          >
+                            {ICON_OPTIONS.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </div>
+                        <Input
+                          value={card.titulo}
+                          onChange={(e) => updateSobreCard(index, "titulo", e.target.value)}
+                          placeholder="Título do card"
+                        />
+                        <Textarea
+                          value={card.descricao}
+                          onChange={(e) => updateSobreCard(index, "descricao", e.target.value)}
+                          placeholder="Descrição do card"
+                          rows={2}
+                        />
                       </div>
-                      <span className="text-sm font-medium">Passo {passo.numero}</span>
-                    </div>
-                    <Input
-                      value={passo.titulo}
-                      onChange={(e) => updatePasso(index, "titulo", e.target.value)}
-                      placeholder="Título do passo"
-                    />
-                    <Textarea
-                      value={passo.descricao}
-                      onChange={(e) => updatePasso(index, "descricao", e.target.value)}
-                      placeholder="Descrição do passo"
-                      rows={2}
-                    />
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
 
-          {/* Planos Section */}
-          <TabsContent value="planos" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="planos-titulo">Título da Seção</Label>
-              <Input
-                id="planos-titulo"
-                value={config.planos.titulo}
-                onChange={(e) => updatePlanos("titulo", e.target.value)}
+              {/* Passos Section */}
+              <TabsContent value="passos" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="passos-titulo">Título da Seção</Label>
+                  <Input
+                    id="passos-titulo"
+                    value={config.comoFunciona.titulo}
+                    onChange={(e) => updateComoFunciona("titulo", e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-4">
+                  <Label>Passos do Processo</Label>
+                  {config.comoFunciona.passos.map((passo, index) => (
+                    <Card key={index} className="p-4">
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
+                            {passo.numero}
+                          </div>
+                          <span className="text-sm font-medium">Passo {passo.numero}</span>
+                        </div>
+                        <Input
+                          value={passo.titulo}
+                          onChange={(e) => updatePasso(index, "titulo", e.target.value)}
+                          placeholder="Título do passo"
+                        />
+                        <Textarea
+                          value={passo.descricao}
+                          onChange={(e) => updatePasso(index, "descricao", e.target.value)}
+                          placeholder="Descrição do passo"
+                          rows={2}
+                        />
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </TabsContent>
+
+              {/* Planos Section */}
+              <TabsContent value="planos" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="planos-titulo">Título da Seção</Label>
+                  <Input
+                    id="planos-titulo"
+                    value={config.planos.titulo}
+                    onChange={(e) => updatePlanos("titulo", e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="planos-subtitulo">Subtítulo</Label>
+                  <Input
+                    id="planos-subtitulo"
+                    value={config.planos.subtitulo}
+                    onChange={(e) => updatePlanos("subtitulo", e.target.value)}
+                  />
+                </div>
+
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    💡 Os cursos e valores são carregados automaticamente do cadastro de cursos.
+                    Para editar, acesse a página de Cursos no menu.
+                  </p>
+                </div>
+              </TabsContent>
+
+              {/* Inscrição Section */}
+              <TabsContent value="inscricao" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="inscricao-titulo">Título da Seção</Label>
+                  <Input
+                    id="inscricao-titulo"
+                    value={config.inscricao.titulo}
+                    onChange={(e) => updateInscricao("titulo", e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="inscricao-subtitulo">Subtítulo</Label>
+                  <Input
+                    id="inscricao-subtitulo"
+                    value={config.inscricao.subtitulo}
+                    onChange={(e) => updateInscricao("subtitulo", e.target.value)}
+                  />
+                </div>
+              </TabsContent>
+
+              {/* Footer Section */}
+              <TabsContent value="footer" className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="footer-telefone">
+                    <Phone className="h-4 w-4 inline mr-2" />
+                    Telefone
+                  </Label>
+                  <Input
+                    id="footer-telefone"
+                    value={config.footer.telefone}
+                    onChange={(e) => updateFooter("telefone", e.target.value)}
+                    placeholder="(00) 00000-0000"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="footer-email">
+                    <Mail className="h-4 w-4 inline mr-2" />
+                    E-mail
+                  </Label>
+                  <Input
+                    id="footer-email"
+                    value={config.footer.email}
+                    onChange={(e) => updateFooter("email", e.target.value)}
+                    placeholder="contato@escola.com.br"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="footer-endereco">
+                    <MapPin className="h-4 w-4 inline mr-2" />
+                    Endereço
+                  </Label>
+                  <Input
+                    id="footer-endereco"
+                    value={config.footer.endereco}
+                    onChange={(e) => updateFooter("endereco", e.target.value)}
+                    placeholder="Rua, número - Bairro"
+                  />
+                </div>
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
+
+        {/* Preview Panel */}
+        <Card className="overflow-hidden">
+          <CardHeader className="border-b bg-muted/30">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Preview
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-0">
+            <div className={cn(
+              "mx-auto transition-all duration-300",
+              previewMode === "mobile" ? "max-w-[375px]" : "w-full"
+            )}>
+              <iframe
+                src="/inscricao"
+                className="w-full h-[600px] border-0"
+                title="Preview da Landing Page"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="planos-subtitulo">Subtítulo</Label>
-              <Input
-                id="planos-subtitulo"
-                value={config.planos.subtitulo}
-                onChange={(e) => updatePlanos("subtitulo", e.target.value)}
-              />
-            </div>
-
-            <div className="p-4 bg-muted/50 rounded-lg">
-              <p className="text-sm text-muted-foreground">
-                Os cursos e valores são carregados automaticamente do cadastro de cursos.
-                Para editar, acesse a página de Cursos.
-              </p>
-            </div>
-          </TabsContent>
-
-          {/* Inscrição Section */}
-          <TabsContent value="inscricao" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="inscricao-titulo">Título da Seção</Label>
-              <Input
-                id="inscricao-titulo"
-                value={config.inscricao.titulo}
-                onChange={(e) => updateInscricao("titulo", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="inscricao-subtitulo">Subtítulo</Label>
-              <Input
-                id="inscricao-subtitulo"
-                value={config.inscricao.subtitulo}
-                onChange={(e) => updateInscricao("subtitulo", e.target.value)}
-              />
-            </div>
-          </TabsContent>
-
-          {/* Footer Section */}
-          <TabsContent value="footer" className="space-y-4 pt-4">
-            <div className="space-y-2">
-              <Label htmlFor="footer-telefone">
-                <Phone className="h-4 w-4 inline mr-2" />
-                Telefone
-              </Label>
-              <Input
-                id="footer-telefone"
-                value={config.footer.telefone}
-                onChange={(e) => updateFooter("telefone", e.target.value)}
-                placeholder="(00) 00000-0000"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="footer-email">
-                <Mail className="h-4 w-4 inline mr-2" />
-                E-mail
-              </Label>
-              <Input
-                id="footer-email"
-                value={config.footer.email}
-                onChange={(e) => updateFooter("email", e.target.value)}
-                placeholder="contato@escola.com.br"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="footer-endereco">
-                <MapPin className="h-4 w-4 inline mr-2" />
-                Endereço
-              </Label>
-              <Input
-                id="footer-endereco"
-                value={config.footer.endereco}
-                onChange={(e) => updateFooter("endereco", e.target.value)}
-                placeholder="Rua, número - Bairro"
-              />
-            </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

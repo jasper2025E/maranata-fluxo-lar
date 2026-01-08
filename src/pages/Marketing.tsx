@@ -8,7 +8,8 @@ import {
   Settings, 
   BarChart3,
   TrendingUp,
-  Palette
+  Palette,
+  Link2
 } from "lucide-react";
 import { LandingPagesTab } from "@/components/marketing/LandingPagesTab";
 import { PixelsTab } from "@/components/marketing/PixelsTab";
@@ -17,6 +18,8 @@ import { MarketingConfigTab } from "@/components/marketing/MarketingConfigTab";
 import { MarketingReportsTab } from "@/components/marketing/MarketingReportsTab";
 import { MarketingDashboard } from "@/components/marketing/MarketingDashboard";
 import { LandingPageEditor } from "@/components/marketing/LandingPageEditor";
+import { UTMBuilder } from "@/components/marketing/UTMBuilder";
+import { QuickActions } from "@/components/marketing/QuickActions";
 
 export default function Marketing() {
   const [activeTab, setActiveTab] = useState("dashboard");
@@ -37,7 +40,7 @@ export default function Marketing() {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-7 lg:w-auto lg:inline-flex">
+          <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 lg:w-auto lg:inline-flex">
             <TabsTrigger value="dashboard" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Dashboard</span>
@@ -45,6 +48,10 @@ export default function Marketing() {
             <TabsTrigger value="editor" className="gap-2">
               <Palette className="h-4 w-4" />
               <span className="hidden sm:inline">Editor</span>
+            </TabsTrigger>
+            <TabsTrigger value="utm" className="gap-2">
+              <Link2 className="h-4 w-4" />
+              <span className="hidden sm:inline">Links UTM</span>
             </TabsTrigger>
             <TabsTrigger value="pages" className="gap-2">
               <LayoutTemplate className="h-4 w-4" />
@@ -64,16 +71,21 @@ export default function Marketing() {
             </TabsTrigger>
             <TabsTrigger value="config" className="gap-2">
               <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Configurações</span>
+              <span className="hidden sm:inline">Config</span>
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="dashboard" className="space-y-4">
+          <TabsContent value="dashboard" className="space-y-6">
+            <QuickActions />
             <MarketingDashboard />
           </TabsContent>
 
           <TabsContent value="editor" className="space-y-4">
             <LandingPageEditor />
+          </TabsContent>
+
+          <TabsContent value="utm" className="space-y-4">
+            <UTMBuilder />
           </TabsContent>
 
           <TabsContent value="pages" className="space-y-4">
