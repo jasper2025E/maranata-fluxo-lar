@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { GraduationCap, Menu, X } from "lucide-react";
-import { Link } from "react-router-dom";
 import type { LandingConfig } from "@/pages/LandingPage";
 
 interface LandingNavbarProps {
@@ -81,13 +80,8 @@ export function LandingNavbar({ config }: LandingNavbarProps) {
             ))}
           </nav>
 
-          {/* CTA Buttons */}
+          {/* CTA Button */}
           <div className="hidden md:flex items-center gap-3">
-            <Link to="/auth">
-              <Button variant="ghost" size="sm">
-                Área do Aluno
-              </Button>
-            </Link>
             <Button size="sm" onClick={() => scrollToSection("inscricao")}>
               Matricule-se
             </Button>
@@ -120,11 +114,6 @@ export function LandingNavbar({ config }: LandingNavbarProps) {
                 </button>
               ))}
               <div className="flex flex-col gap-2 mt-4 px-4">
-                <Link to="/auth">
-                  <Button variant="outline" className="w-full">
-                    Área do Aluno
-                  </Button>
-                </Link>
                 <Button
                   className="w-full"
                   onClick={() => scrollToSection("inscricao")}
