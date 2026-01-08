@@ -225,7 +225,7 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                 </Button>
               </div>
 
-              <ScrollArea className="flex-1 max-h-[280px]">
+              <ScrollArea className="flex-1 h-[320px]">
                 {loadingFaturas ? (
                   <div className="p-4 space-y-2">
                     {[1, 2, 3].map(i => (
