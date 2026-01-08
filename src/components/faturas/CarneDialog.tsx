@@ -167,7 +167,7 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col">
+      <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Printer className="h-5 w-5 text-primary" />
@@ -178,7 +178,7 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 flex-1 overflow-hidden flex flex-col">
+        <div className="space-y-4 flex-1 min-h-0 flex flex-col overflow-auto">
           {/* Seletor de Responsável */}
           <div className="space-y-2">
             <Label htmlFor="responsavel">Responsável Financeiro</Label>
@@ -210,7 +210,7 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
 
           {/* Lista de Faturas */}
           {selectedResponsavel && (
-            <div className="flex-1 overflow-hidden flex flex-col border rounded-lg">
+            <div className="flex-1 min-h-0 flex flex-col border rounded-lg overflow-hidden">
               <div className="flex items-center justify-between p-3 bg-muted/50 border-b">
                 <span className="text-sm font-medium">
                   Faturas ({faturas?.length || 0})
@@ -225,7 +225,7 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                 </Button>
               </div>
 
-              <ScrollArea className="flex-1 h-[320px]">
+              <div className="flex-1 overflow-y-auto max-h-[350px]">
                 {loadingFaturas ? (
                   <div className="p-4 space-y-2">
                     {[1, 2, 3].map(i => (
@@ -280,7 +280,7 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                     <p>Nenhuma fatura encontrada para este responsável</p>
                   </div>
                 )}
-              </ScrollArea>
+              </div>
             </div>
           )}
         </div>
