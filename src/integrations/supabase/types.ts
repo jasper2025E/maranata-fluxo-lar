@@ -935,6 +935,437 @@ export type Database = {
           },
         ]
       }
+      marketing_audit_logs: {
+        Row: {
+          acao: string
+          created_at: string | null
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          id: string
+          ip_address: string | null
+          registro_id: string | null
+          tabela: string
+          user_id: string | null
+        }
+        Insert: {
+          acao: string
+          created_at?: string | null
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          ip_address?: string | null
+          registro_id?: string | null
+          tabela: string
+          user_id?: string | null
+        }
+        Update: {
+          acao?: string
+          created_at?: string | null
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          ip_address?: string | null
+          registro_id?: string | null
+          tabela?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      marketing_config: {
+        Row: {
+          chave: string
+          descricao: string | null
+          id: string
+          updated_at: string | null
+          updated_by: string | null
+          valor: Json
+        }
+        Insert: {
+          chave: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          valor?: Json
+        }
+        Update: {
+          chave?: string
+          descricao?: string | null
+          id?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          valor?: Json
+        }
+        Relationships: []
+      }
+      marketing_conversions: {
+        Row: {
+          created_at: string | null
+          dados: Json | null
+          event_name: string
+          id: string
+          page_id: string
+          pixel_id: string | null
+          valor: number | null
+          visitor_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          dados?: Json | null
+          event_name: string
+          id?: string
+          page_id: string
+          pixel_id?: string | null
+          valor?: number | null
+          visitor_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          dados?: Json | null
+          event_name?: string
+          id?: string
+          page_id?: string
+          pixel_id?: string | null
+          valor?: number | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_conversions_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_conversions_pixel_id_fkey"
+            columns: ["pixel_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_pixels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_domains: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          dominio: string
+          id: string
+          nome: string
+          notas: string | null
+          ssl_ativo: boolean | null
+          status: Database["public"]["Enums"]["domain_status"]
+          updated_at: string | null
+          verificacao_token: string | null
+          verificado: boolean | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          dominio: string
+          id?: string
+          nome: string
+          notas?: string | null
+          ssl_ativo?: boolean | null
+          status?: Database["public"]["Enums"]["domain_status"]
+          updated_at?: string | null
+          verificacao_token?: string | null
+          verificado?: boolean | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          dominio?: string
+          id?: string
+          nome?: string
+          notas?: string | null
+          ssl_ativo?: boolean | null
+          status?: Database["public"]["Enums"]["domain_status"]
+          updated_at?: string | null
+          verificacao_token?: string | null
+          verificado?: boolean | null
+        }
+        Relationships: []
+      }
+      marketing_landing_pages: {
+        Row: {
+          conteudo: Json | null
+          created_at: string | null
+          created_by: string | null
+          domain_id: string | null
+          id: string
+          meta_description: string | null
+          meta_title: string | null
+          nome: string
+          og_image: string | null
+          published_at: string | null
+          slug: string
+          status: Database["public"]["Enums"]["landing_page_status"]
+          updated_at: string | null
+          updated_by: string | null
+          versao: number | null
+        }
+        Insert: {
+          conteudo?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          domain_id?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          nome: string
+          og_image?: string | null
+          published_at?: string | null
+          slug: string
+          status?: Database["public"]["Enums"]["landing_page_status"]
+          updated_at?: string | null
+          updated_by?: string | null
+          versao?: number | null
+        }
+        Update: {
+          conteudo?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          domain_id?: string | null
+          id?: string
+          meta_description?: string | null
+          meta_title?: string | null
+          nome?: string
+          og_image?: string | null
+          published_at?: string | null
+          slug?: string
+          status?: Database["public"]["Enums"]["landing_page_status"]
+          updated_at?: string | null
+          updated_by?: string | null
+          versao?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_landing_pages_domain_id_fkey"
+            columns: ["domain_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_domains"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_page_history: {
+        Row: {
+          acao: string
+          conteudo_anterior: Json | null
+          conteudo_novo: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          page_id: string
+          versao: number
+        }
+        Insert: {
+          acao: string
+          conteudo_anterior?: Json | null
+          conteudo_novo?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          page_id: string
+          versao: number
+        }
+        Update: {
+          acao?: string
+          conteudo_anterior?: Json | null
+          conteudo_novo?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          page_id?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_page_history_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_landing_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_page_pixels: {
+        Row: {
+          created_at: string | null
+          id: string
+          page_id: string
+          pixel_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          page_id: string
+          pixel_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          page_id?: string
+          pixel_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_page_pixels_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_landing_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "marketing_page_pixels_pixel_id_fkey"
+            columns: ["pixel_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_pixels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_page_views: {
+        Row: {
+          browser: string | null
+          city: string | null
+          country: string | null
+          created_at: string | null
+          device_type: string | null
+          id: string
+          ip_address: string | null
+          page_id: string
+          referrer: string | null
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+          visitor_id: string | null
+        }
+        Insert: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          id?: string
+          ip_address?: string | null
+          page_id: string
+          referrer?: string | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          visitor_id?: string | null
+        }
+        Update: {
+          browser?: string | null
+          city?: string | null
+          country?: string | null
+          created_at?: string | null
+          device_type?: string | null
+          id?: string
+          ip_address?: string | null
+          page_id?: string
+          referrer?: string | null
+          user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
+          visitor_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_page_views_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_landing_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_pixel_events: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          id: string
+          nome: string
+          parametros: Json | null
+          pixel_id: string
+          tipo: string
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          id?: string
+          nome: string
+          parametros?: Json | null
+          pixel_id: string
+          tipo?: string
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          id?: string
+          nome?: string
+          parametros?: Json | null
+          pixel_id?: string
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "marketing_pixel_events_pixel_id_fkey"
+            columns: ["pixel_id"]
+            isOneToOne: false
+            referencedRelation: "marketing_pixels"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      marketing_pixels: {
+        Row: {
+          ativo: boolean | null
+          configuracao: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          nome: string
+          pixel_id: string
+          tipo: Database["public"]["Enums"]["pixel_type"]
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          configuracao?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          nome: string
+          pixel_id: string
+          tipo: Database["public"]["Enums"]["pixel_type"]
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          configuracao?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          nome?: string
+          pixel_id?: string
+          tipo?: Database["public"]["Enums"]["pixel_type"]
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
@@ -1385,8 +1816,16 @@ export type Database = {
       aluno_status: "ativo" | "trancado" | "cancelado" | "transferido"
       app_role: "admin" | "staff" | "financeiro" | "secretaria"
       contrato_tipo: "clt" | "pj" | "temporario" | "estagio"
+      domain_status: "pending" | "active" | "error"
       funcionario_status: "ativo" | "inativo" | "afastado" | "ferias"
       funcionario_tipo: "professor" | "administrativo" | "outro"
+      landing_page_status: "draft" | "published" | "archived"
+      pixel_type:
+        | "meta"
+        | "google_ads"
+        | "google_analytics"
+        | "tiktok"
+        | "custom"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1517,8 +1956,17 @@ export const Constants = {
       aluno_status: ["ativo", "trancado", "cancelado", "transferido"],
       app_role: ["admin", "staff", "financeiro", "secretaria"],
       contrato_tipo: ["clt", "pj", "temporario", "estagio"],
+      domain_status: ["pending", "active", "error"],
       funcionario_status: ["ativo", "inativo", "afastado", "ferias"],
       funcionario_tipo: ["professor", "administrativo", "outro"],
+      landing_page_status: ["draft", "published", "archived"],
+      pixel_type: [
+        "meta",
+        "google_ads",
+        "google_analytics",
+        "tiktok",
+        "custom",
+      ],
     },
   },
 } as const
