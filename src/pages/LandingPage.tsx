@@ -9,6 +9,7 @@ import { LandingFooter } from "@/components/landing/LandingFooter";
 import { LandingPixels } from "@/components/landing/LandingPixels";
 import { useEscola } from "@/hooks/useEscola";
 import { useCursos } from "@/hooks/useCursos";
+import { useLandingConfig } from "@/hooks/useLandingConfig";
 
 export interface LandingConfig {
   escola: {
@@ -146,6 +147,7 @@ export default function LandingPage() {
   const [searchParams] = useSearchParams();
   const { data: escola } = useEscola();
   const { data: cursos } = useCursos();
+  const { data: savedConfig } = useLandingConfig();
   const [config, setConfig] = useState<LandingConfig>(defaultConfig);
 
   // UTM params for tracking
@@ -157,6 +159,22 @@ export default function LandingPage() {
     content: searchParams.get("utm_content"),
   };
 
+  // Merge saved config from database
+  useEffect(() => {
+    if (savedConfig) {
+      setConfig(prev => ({
+        ...prev,
+        hero: savedConfig.hero || prev.hero,
+        sobre: savedConfig.sobre || prev.sobre,
+        como_funciona: savedConfig.como_funciona || prev.como_funciona,
+        planos: savedConfig.planos || prev.planos,
+        inscricao: savedConfig.inscricao || prev.inscricao,
+        cores: savedConfig.cores || prev.cores,
+      }));
+    }
+  }, [savedConfig]);
+
+  // Merge escola data
   useEffect(() => {
     if (escola) {
       setConfig(prev => ({
