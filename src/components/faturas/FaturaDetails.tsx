@@ -30,12 +30,14 @@ import {
   Loader2,
   Download,
   FileDown,
+  Printer,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateFaturaPDF, generateReciboPDF } from "@/lib/pdfGenerator";
+import { generateCarneFatura } from "@/lib/carneGenerator";
 import { toast } from "sonner";
 import {
   Fatura,
@@ -577,6 +579,7 @@ function HistoricoTab({ faturaId }: { faturaId: string }) {
 
 export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: FaturaDetailsProps) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
+  const [isGeneratingCarne, setIsGeneratingCarne] = useState(false);
   
   // Buscar fatura atualizada internamente para refletir mudanças em tempo real
   const { data: faturaAtualizada } = useQuery({
@@ -634,6 +637,33 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
     }
   };
 
+  const handleDownloadCarne = async () => {
+    if (!escola) {
+      toast.error("Dados da escola não encontrados");
+      return;
+    }
+    setIsGeneratingCarne(true);
+    try {
+      // Buscar CPF do responsável
+      let responsavelData = null;
+      if (fatura.responsavel_id) {
+        const { data } = await supabase
+          .from("responsaveis")
+          .select("nome, cpf")
+          .eq("id", fatura.responsavel_id)
+          .maybeSingle();
+        responsavelData = data;
+      }
+      
+      await generateCarneFatura(fatura, escola, responsavelData);
+      toast.success("Carnê gerado com sucesso!");
+    } catch (error) {
+      toast.error("Erro ao gerar carnê");
+    } finally {
+      setIsGeneratingCarne(false);
+    }
+  };
+
   const handleDownloadRecibo = async (pagamento: Pagamento) => {
     if (!escola) {
       toast.error("Dados da escola não encontrados");
@@ -663,20 +693,37 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
               {meses[fatura.mes_referencia - 1]} de {fatura.ano_referencia}
             </DialogDescription>
           </div>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={handleDownloadFatura}
-            disabled={isGeneratingPDF}
-            className="gap-2"
-          >
-            {isGeneratingPDF ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : (
-              <Download className="h-4 w-4" />
-            )}
-            Baixar PDF
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleDownloadCarne}
+              disabled={isGeneratingCarne}
+              className="gap-2"
+              title="Imprimir carnê individual (99x210mm)"
+            >
+              {isGeneratingCarne ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Printer className="h-4 w-4" />
+              )}
+              <span className="hidden sm:inline">Imprimir Fatura</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleDownloadFatura}
+              disabled={isGeneratingPDF}
+              className="gap-2"
+            >
+              {isGeneratingPDF ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
+              <span className="hidden sm:inline">Baixar PDF</span>
+            </Button>
+          </div>
         </DialogHeader>
 
         <ScrollArea className="flex-1 -mx-6 px-6">

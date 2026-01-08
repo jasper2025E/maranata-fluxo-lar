@@ -2,14 +2,15 @@ import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Printer } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   FaturaKPIs, 
   FaturaTable, 
   FaturaDetails, 
   FaturaFilters, 
-  CreateFaturaDialog 
+  CreateFaturaDialog,
+  CarneDialog,
 } from "@/components/faturas";
 import { 
   useFaturas, 
@@ -33,6 +34,7 @@ const Faturas = () => {
 
   // Dialog State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCarneOpen, setIsCarneOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [selectedFatura, setSelectedFatura] = useState<Fatura | null>(null);
 
@@ -192,10 +194,16 @@ const Faturas = () => {
             <h1 className="text-2xl font-bold tracking-tight">Faturas</h1>
             <p className="text-muted-foreground text-sm">Sistema enterprise de gestão de faturas e cobrança</p>
           </div>
-          <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
-            <Plus className="h-4 w-4" />
-            Nova Fatura
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={() => setIsCarneOpen(true)} className="gap-2">
+              <Printer className="h-4 w-4" />
+              Imprimir Carnê
+            </Button>
+            <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+              <Plus className="h-4 w-4" />
+              Nova Fatura
+            </Button>
+          </div>
         </div>
 
         {/* KPIs */}
@@ -247,6 +255,11 @@ const Faturas = () => {
           fatura={selectedFatura}
           open={isDetailsOpen}
           onOpenChange={setIsDetailsOpen}
+        />
+
+        <CarneDialog
+          open={isCarneOpen}
+          onOpenChange={setIsCarneOpen}
         />
       </div>
     </DashboardLayout>
