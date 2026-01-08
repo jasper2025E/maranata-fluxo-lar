@@ -57,27 +57,52 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
     enabled: open,
   });
 
-  // Buscar faturas do responsável selecionado
-  const { data: faturas, isLoading: loadingFaturas } = useQuery({
-    queryKey: ["faturas-responsavel-carne", selectedResponsavel],
+  // Buscar alunos vinculados ao responsável
+  const { data: alunosDoResponsavel } = useQuery({
+    queryKey: ["alunos-responsavel-carne", selectedResponsavel],
     queryFn: async () => {
       if (!selectedResponsavel) return [];
       const { data, error } = await supabase
+        .from("alunos")
+        .select("id")
+        .eq("responsavel_id", selectedResponsavel);
+      if (error) throw error;
+      return data.map(a => a.id);
+    },
+    enabled: !!selectedResponsavel,
+  });
+
+  // Buscar faturas do responsável ou dos alunos vinculados
+  const { data: faturas, isLoading: loadingFaturas } = useQuery({
+    queryKey: ["faturas-responsavel-carne", selectedResponsavel, alunosDoResponsavel],
+    queryFn: async () => {
+      if (!selectedResponsavel) return [];
+      
+      // Buscar faturas por responsavel_id OU por aluno vinculado ao responsável
+      let query = supabase
         .from("faturas")
         .select(`
           *,
-          alunos(nome_completo, email_responsavel),
+          alunos(nome_completo, email_responsavel, responsavel_id),
           cursos(nome),
           responsaveis(nome, email, telefone)
         `)
-        .eq("responsavel_id", selectedResponsavel)
         .neq("status", "Cancelada")
         .order("ano_referencia", { ascending: true })
         .order("mes_referencia", { ascending: true });
+      
+      // Se temos alunos vinculados, buscar por aluno_id também
+      if (alunosDoResponsavel && alunosDoResponsavel.length > 0) {
+        query = query.or(`responsavel_id.eq.${selectedResponsavel},aluno_id.in.(${alunosDoResponsavel.join(",")})`);
+      } else {
+        query = query.eq("responsavel_id", selectedResponsavel);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data as Fatura[];
     },
-    enabled: !!selectedResponsavel,
+    enabled: !!selectedResponsavel && alunosDoResponsavel !== undefined,
   });
 
   const handleSelectAll = () => {
