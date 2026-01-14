@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -20,26 +20,32 @@ interface PontoLinkManagerProps {
 
 export function PontoLinkManager({ funcionario, open, onOpenChange }: PontoLinkManagerProps) {
   const [copied, setCopied] = useState(false);
+  const [token, setToken] = useState<string | null>(funcionario.ponto_token ?? null);
   const queryClient = useQueryClient();
 
-  const pontoLink = funcionario.ponto_token 
-    ? `${window.location.origin}/ponto/${funcionario.ponto_token}`
-    : null;
+  // Mantém o modal atualizado mesmo quando o state do funcionário foi capturado antes do refetch
+  useEffect(() => {
+    setToken(funcionario.ponto_token ?? null);
+  }, [funcionario.id, funcionario.ponto_token]);
+
+  const pontoLink = token ? `${window.location.origin}/ponto/${token}` : null;
 
   const generateTokenMutation = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase.rpc('generate_ponto_token', {
-        p_funcionario_id: funcionario.id
+      const { data, error } = await supabase.rpc("generate_ponto_token", {
+        p_funcionario_id: funcionario.id,
       });
       if (error) throw error;
-      return data;
+      return data as string;
     },
-    onSuccess: () => {
+    onSuccess: (newToken) => {
+      setToken(newToken);
       queryClient.invalidateQueries({ queryKey: rhQueryKeys.funcionarios });
-      toast.success('Link gerado com sucesso!');
+      toast.success("Link gerado com sucesso!");
     },
-    onError: () => {
-      toast.error('Erro ao gerar link');
+    onError: (err: any) => {
+      console.error("Erro ao gerar link de ponto:", err);
+      toast.error(err?.message ? `Erro ao gerar link: ${err.message}` : "Erro ao gerar link");
     },
   });
 
