@@ -46,6 +46,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { ConfiguracoesCobranca } from "@/components/config/ConfiguracoesCobranca";
+import { BackupExport } from "@/components/config/BackupExport";
 
 interface UserPreferences {
   email_notifications: boolean;
@@ -757,6 +758,10 @@ const Configuracoes = () => {
           {/* Sistema Tab - Admin Only */}
           {role === "admin" && (
             <TabsContent value="sistema" className="space-y-6">
+              {/* Backup Export Section */}
+              <BackupExport />
+
+              {/* Reset Data Section */}
               <Card className="border shadow-sm border-destructive/20">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2 text-destructive">
