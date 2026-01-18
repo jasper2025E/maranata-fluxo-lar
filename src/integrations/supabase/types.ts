@@ -1342,6 +1342,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      get_escola_public_info: {
+        Args: never
+        Returns: {
+          logo_url: string
+          nome: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
