@@ -6,10 +6,12 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Download,
   Database,
   FileSpreadsheet,
+  FileText,
   Loader2,
   CheckCircle2,
   Users,
@@ -23,6 +25,8 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 interface ExportModule {
   id: string;
@@ -159,6 +163,79 @@ const exportModules: ExportModule[] = [
   },
 ];
 
+// Friendly column names for PDF
+const columnLabels: Record<string, Record<string, string>> = {
+  alunos: {
+    id: "ID",
+    nome_completo: "Nome Completo",
+    data_nascimento: "Data Nasc.",
+    email_responsavel: "Email Resp.",
+    telefone_responsavel: "Telefone",
+    status_matricula: "Status",
+    data_matricula: "Data Matrícula",
+    desconto_percentual: "Desconto %",
+  },
+  responsaveis: {
+    id: "ID",
+    nome: "Nome",
+    cpf: "CPF",
+    telefone: "Telefone",
+    email: "Email",
+    ativo: "Ativo",
+  },
+  faturas: {
+    id: "ID",
+    codigo_sequencial: "Código",
+    valor: "Valor",
+    status: "Status",
+    data_vencimento: "Vencimento",
+    mes_referencia: "Mês",
+    ano_referencia: "Ano",
+  },
+  pagamentos: {
+    id: "ID",
+    valor: "Valor",
+    data_pagamento: "Data Pgto",
+    metodo: "Método",
+    gateway: "Gateway",
+  },
+  funcionarios: {
+    id: "ID",
+    nome_completo: "Nome",
+    cpf: "CPF",
+    email: "Email",
+    telefone: "Telefone",
+    tipo: "Tipo",
+    status: "Status",
+    data_admissao: "Admissão",
+    salario_base: "Salário",
+  },
+  cursos: {
+    id: "ID",
+    nome: "Nome",
+    nivel: "Nível",
+    mensalidade: "Mensalidade",
+    duracao_meses: "Duração (meses)",
+    ativo: "Ativo",
+  },
+  turmas: {
+    id: "ID",
+    nome: "Nome",
+    serie: "Série",
+    turno: "Turno",
+    ano_letivo: "Ano Letivo",
+    ativo: "Ativo",
+  },
+  despesas: {
+    id: "ID",
+    titulo: "Título",
+    categoria: "Categoria",
+    valor: "Valor",
+    data_vencimento: "Vencimento",
+    paga: "Paga",
+  },
+};
+
 // Helper to sanitize data for export (remove sensitive fields)
 const sanitizeForExport = (tableName: string, data: any[]) => {
   return data.map(row => {
@@ -174,8 +251,35 @@ const sanitizeForExport = (tableName: string, data: any[]) => {
   });
 };
 
+// Format value for PDF display
+const formatValue = (value: any): string => {
+  if (value === null || value === undefined) return "-";
+  if (typeof value === "boolean") return value ? "Sim" : "Não";
+  if (typeof value === "number") {
+    if (Number.isInteger(value)) return value.toString();
+    return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  if (typeof value === "string") {
+    // Check if it's a date
+    if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
+      try {
+        const date = new Date(value);
+        return date.toLocaleDateString("pt-BR");
+      } catch {
+        return value;
+      }
+    }
+    // Truncate long strings
+    if (value.length > 50) return value.substring(0, 47) + "...";
+    return value;
+  }
+  if (typeof value === "object") return JSON.stringify(value).substring(0, 30) + "...";
+  return String(value);
+};
+
 export function BackupExport() {
   const [selectedModules, setSelectedModules] = useState<Set<string>>(new Set());
+  const [exportFormat, setExportFormat] = useState<"xlsx" | "pdf">("xlsx");
   const [exporting, setExporting] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentTable, setCurrentTable] = useState("");
@@ -223,7 +327,6 @@ export function BackupExport() {
 
   const fetchTableData = async (tableName: string): Promise<any[]> => {
     try {
-      // Use type assertion to allow dynamic table names
       const { data, error } = await (supabase.from(tableName as any).select("*") as any);
       if (error) {
         console.error(`Error fetching ${tableName}:`, error);
@@ -234,6 +337,132 @@ export function BackupExport() {
       console.error(`Error fetching ${tableName}:`, err);
       return [];
     }
+  };
+
+  const exportToExcel = async (allData: Record<string, any[]>) => {
+    const workbook = XLSX.utils.book_new();
+    
+    for (const [tableName, data] of Object.entries(allData)) {
+      if (data.length > 0) {
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        
+        // Auto-size columns
+        const maxWidth = 50;
+        const cols = Object.keys(data[0]).map(key => ({
+          wch: Math.min(
+            Math.max(
+              key.length,
+              ...data.map(row => String(row[key] || "").length)
+            ),
+            maxWidth
+          )
+        }));
+        worksheet["!cols"] = cols;
+        
+        const sheetName = tableName.substring(0, 31);
+        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+      }
+    }
+
+    const now = new Date();
+    const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, "").replace("T", "_");
+    const filename = `backup_maranata_${timestamp}.xlsx`;
+
+    XLSX.writeFile(workbook, filename);
+    return filename;
+  };
+
+  const exportToPDF = async (allData: Record<string, any[]>) => {
+    const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+    const now = new Date();
+    const timestamp = now.toLocaleString("pt-BR");
+    
+    let isFirstPage = true;
+
+    for (const [tableName, data] of Object.entries(allData)) {
+      if (data.length === 0) continue;
+
+      if (!isFirstPage) {
+        doc.addPage();
+      }
+      isFirstPage = false;
+
+      // Header
+      doc.setFontSize(16);
+      doc.setFont("helvetica", "bold");
+      doc.text(`Relatório: ${tableName.toUpperCase()}`, 14, 15);
+      
+      doc.setFontSize(10);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Exportado em: ${timestamp}`, 14, 22);
+      doc.text(`Total de registros: ${data.length}`, 14, 27);
+
+      // Get columns - prioritize labeled columns, limit to fit page
+      const labels = columnLabels[tableName] || {};
+      let columns: string[];
+      
+      if (Object.keys(labels).length > 0) {
+        columns = Object.keys(labels).filter(col => col in data[0]);
+      } else {
+        columns = Object.keys(data[0]).slice(0, 8); // Limit to 8 columns for readability
+      }
+
+      // Prepare table data
+      const headers = columns.map(col => labels[col] || col);
+      const rows = data.map(row => 
+        columns.map(col => formatValue(row[col]))
+      );
+
+      // Add table
+      autoTable(doc, {
+        head: [headers],
+        body: rows,
+        startY: 32,
+        theme: "striped",
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontSize: 8,
+          fontStyle: "bold",
+        },
+        bodyStyles: {
+          fontSize: 7,
+          textColor: 50,
+        },
+        alternateRowStyles: {
+          fillColor: [245, 245, 245],
+        },
+        margin: { left: 14, right: 14 },
+        tableWidth: "auto",
+        styles: {
+          overflow: "linebreak",
+          cellPadding: 2,
+        },
+        columnStyles: {
+          0: { cellWidth: 25 }, // ID column
+        },
+      });
+
+      // Footer
+      const pageCount = doc.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(8);
+        doc.setTextColor(128);
+        doc.text(
+          `Página ${i} de ${pageCount} - Sistema MARANATA - Backup de Dados`,
+          doc.internal.pageSize.width / 2,
+          doc.internal.pageSize.height - 10,
+          { align: "center" }
+        );
+      }
+    }
+
+    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+    const filename = `relatorio_maranata_${dateStr}.pdf`;
+    
+    doc.save(filename);
+    return filename;
   };
 
   const handleExport = async () => {
@@ -247,8 +476,6 @@ export function BackupExport() {
     setExportComplete(false);
 
     try {
-      const workbook = XLSX.utils.book_new();
-      
       // Get all selected modules and their tables
       const selectedModulesList = exportModules.filter(m => selectedModules.has(m.id));
       const allTables = selectedModulesList.flatMap(m => m.tables);
@@ -256,48 +483,28 @@ export function BackupExport() {
       
       let completed = 0;
       const total = uniqueTables.length;
+      const allData: Record<string, any[]> = {};
 
+      // Fetch all data first
       for (const tableName of uniqueTables) {
         setCurrentTable(tableName);
-        
-        const data = await fetchTableData(tableName);
-        
-        if (data.length > 0) {
-          // Create worksheet from data
-          const worksheet = XLSX.utils.json_to_sheet(data);
-          
-          // Auto-size columns
-          const maxWidth = 50;
-          const cols = Object.keys(data[0]).map(key => ({
-            wch: Math.min(
-              Math.max(
-                key.length,
-                ...data.map(row => String(row[key] || "").length)
-              ),
-              maxWidth
-            )
-          }));
-          worksheet["!cols"] = cols;
-          
-          // Truncate sheet name to 31 chars (Excel limit)
-          const sheetName = tableName.substring(0, 31);
-          XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-        }
-        
+        allData[tableName] = await fetchTableData(tableName);
         completed++;
-        setProgress(Math.round((completed / total) * 100));
+        setProgress(Math.round((completed / total) * 90)); // Leave 10% for file generation
       }
 
-      // Generate filename with timestamp
-      const now = new Date();
-      const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, "").replace("T", "_");
-      const filename = `backup_maranata_${timestamp}.xlsx`;
+      setCurrentTable("Gerando arquivo...");
+      
+      let filename: string;
+      if (exportFormat === "xlsx") {
+        filename = await exportToExcel(allData);
+      } else {
+        filename = await exportToPDF(allData);
+      }
 
-      // Download the file
-      XLSX.writeFile(workbook, filename);
-
+      setProgress(100);
       setExportComplete(true);
-      toast.success("Backup exportado com sucesso!", {
+      toast.success("Exportação concluída!", {
         description: `Arquivo: ${filename}`,
       });
     } catch (error: any) {
@@ -345,7 +552,7 @@ export function BackupExport() {
         </CardTitle>
         <CardDescription>
           Exporte todos os dados do sistema para backup ou migração.
-          Os dados são exportados em formato Excel (.xlsx) com uma aba para cada tabela.
+          Escolha entre Excel (para migração) ou PDF (para conferência).
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -363,6 +570,39 @@ export function BackupExport() {
             </div>
           </div>
         </div>
+
+        {/* Format Selection */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium">Formato de Exportação</Label>
+          <RadioGroup
+            value={exportFormat}
+            onValueChange={(v) => setExportFormat(v as "xlsx" | "pdf")}
+            className="flex gap-4"
+          >
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="xlsx" id="xlsx" />
+              <Label htmlFor="xlsx" className="flex items-center gap-2 cursor-pointer">
+                <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+                <span>Excel (.xlsx)</span>
+                <Badge variant="secondary" className="text-xs">Recomendado</Badge>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2">
+              <RadioGroupItem value="pdf" id="pdf" />
+              <Label htmlFor="pdf" className="flex items-center gap-2 cursor-pointer">
+                <FileText className="h-4 w-4 text-red-600" />
+                <span>PDF (Conferência)</span>
+              </Label>
+            </div>
+          </RadioGroup>
+          <p className="text-xs text-muted-foreground">
+            {exportFormat === "xlsx" 
+              ? "Excel: Ideal para migração. Contém todos os dados estruturados com IDs preservados."
+              : "PDF: Ideal para conferência visual. Relatórios formatados por tabela."}
+          </p>
+        </div>
+
+        <Separator />
 
         {/* Quick Actions */}
         <div className="flex flex-wrap gap-2">
@@ -509,16 +749,21 @@ export function BackupExport() {
           ) : (
             <>
               <Download className="h-4 w-4" />
-              <FileSpreadsheet className="h-4 w-4" />
-              Baixar Backup ({selectedModules.size} {selectedModules.size === 1 ? "módulo" : "módulos"})
+              {exportFormat === "xlsx" ? (
+                <FileSpreadsheet className="h-4 w-4" />
+              ) : (
+                <FileText className="h-4 w-4" />
+              )}
+              Baixar {exportFormat === "xlsx" ? "Backup Excel" : "Relatório PDF"} ({selectedModules.size} {selectedModules.size === 1 ? "módulo" : "módulos"})
             </>
           )}
         </Button>
 
         {/* Info Footer */}
         <p className="text-xs text-muted-foreground text-center">
-          O backup é gerado em formato Excel (.xlsx) com uma aba para cada tabela de dados.
-          IDs são preservados para facilitar a migração para outro sistema.
+          {exportFormat === "xlsx" 
+            ? "O backup Excel contém uma aba para cada tabela com todos os dados estruturados."
+            : "O relatório PDF contém tabelas formatadas para conferência visual dos dados."}
         </p>
       </CardContent>
     </Card>
