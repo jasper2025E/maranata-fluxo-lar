@@ -32,18 +32,14 @@ const Auth = () => {
   const [logoLoaded, setLogoLoaded] = useState(false);
   const [escolaLoading, setEscolaLoading] = useState(true);
 
-  // Fetch escola info
+  // Fetch escola info using secure RPC function
   useEffect(() => {
     const fetchEscola = async () => {
       try {
-        const { data } = await supabase
-          .from("escola")
-          .select("nome, logo_url")
-          .limit(1)
-          .maybeSingle();
-        if (data) {
-          setEscolaNome(data.nome);
-          setLogoUrl(data.logo_url);
+        const { data, error } = await supabase.rpc("get_escola_public_info");
+        if (!error && data && data.length > 0) {
+          setEscolaNome(data[0].nome);
+          setLogoUrl(data[0].logo_url);
         }
       } finally {
         setEscolaLoading(false);
