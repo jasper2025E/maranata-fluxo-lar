@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -21,12 +21,16 @@ import {
   Clock,
   Shield,
   AlertCircle,
+  FolderArchive,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import JSZip from "jszip";
+import { saveAs } from "file-saver";
+import { formatCurrency, formatDate, getMonthName } from "@/lib/formatters";
 
 interface ExportModule {
   id: string;
@@ -34,7 +38,6 @@ interface ExportModule {
   description: string;
   icon: React.ReactNode;
   category: "academico" | "financeiro" | "administrativo";
-  tables: string[];
 }
 
 const exportModules: ExportModule[] = [
@@ -45,15 +48,13 @@ const exportModules: ExportModule[] = [
     description: "Configurações e dados institucionais",
     icon: <Building2 className="h-4 w-4" />,
     category: "academico",
-    tables: ["escola"],
   },
   {
     id: "usuarios",
-    name: "Usuários e Perfis",
+    name: "Usuários",
     description: "Usuários do sistema e permissões",
     icon: <Shield className="h-4 w-4" />,
     category: "academico",
-    tables: ["profiles", "user_roles"],
   },
   {
     id: "alunos",
@@ -61,7 +62,6 @@ const exportModules: ExportModule[] = [
     description: "Cadastro completo de alunos",
     icon: <GraduationCap className="h-4 w-4" />,
     category: "academico",
-    tables: ["alunos"],
   },
   {
     id: "responsaveis",
@@ -69,15 +69,20 @@ const exportModules: ExportModule[] = [
     description: "Cadastro de responsáveis financeiros",
     icon: <Users className="h-4 w-4" />,
     category: "academico",
-    tables: ["responsaveis"],
+  },
+  {
+    id: "cursos",
+    name: "Cursos",
+    description: "Cursos oferecidos",
+    icon: <GraduationCap className="h-4 w-4" />,
+    category: "academico",
   },
   {
     id: "turmas",
-    name: "Turmas e Cursos",
-    description: "Turmas, cursos e disciplinas",
+    name: "Turmas",
+    description: "Turmas e classes",
     icon: <GraduationCap className="h-4 w-4" />,
     category: "academico",
-    tables: ["turmas", "cursos"],
   },
   // Financeiro
   {
@@ -86,15 +91,6 @@ const exportModules: ExportModule[] = [
     description: "Todas as faturas do sistema",
     icon: <DollarSign className="h-4 w-4" />,
     category: "financeiro",
-    tables: ["faturas"],
-  },
-  {
-    id: "fatura_detalhes",
-    name: "Detalhes de Faturas",
-    description: "Itens, descontos e histórico",
-    icon: <DollarSign className="h-4 w-4" />,
-    category: "financeiro",
-    tables: ["fatura_itens", "fatura_descontos", "fatura_historico", "fatura_documentos"],
   },
   {
     id: "pagamentos",
@@ -102,7 +98,6 @@ const exportModules: ExportModule[] = [
     description: "Histórico de pagamentos",
     icon: <DollarSign className="h-4 w-4" />,
     category: "financeiro",
-    tables: ["pagamentos"],
   },
   {
     id: "despesas",
@@ -110,7 +105,6 @@ const exportModules: ExportModule[] = [
     description: "Despesas e custos operacionais",
     icon: <DollarSign className="h-4 w-4" />,
     category: "financeiro",
-    tables: ["despesas"],
   },
   // Administrativo / RH
   {
@@ -119,15 +113,13 @@ const exportModules: ExportModule[] = [
     description: "Cadastro de funcionários e professores",
     icon: <Users className="h-4 w-4" />,
     category: "administrativo",
-    tables: ["funcionarios", "funcionario_documentos", "funcionario_turmas"],
   },
   {
-    id: "cargos_setores",
+    id: "cargos",
     name: "Cargos e Setores",
     description: "Estrutura organizacional",
     icon: <Building2 className="h-4 w-4" />,
     category: "administrativo",
-    tables: ["cargos", "setores"],
   },
   {
     id: "contratos",
@@ -135,154 +127,40 @@ const exportModules: ExportModule[] = [
     description: "Contratos de trabalho",
     icon: <Building2 className="h-4 w-4" />,
     category: "administrativo",
-    tables: ["contratos"],
   },
   {
-    id: "folha",
+    id: "folha_pagamento",
     name: "Folha de Pagamento",
     description: "Histórico de folha de pagamento",
     icon: <DollarSign className="h-4 w-4" />,
     category: "administrativo",
-    tables: ["folha_pagamento"],
   },
   {
     id: "ponto",
     name: "Ponto Eletrônico",
-    description: "Registros de ponto e locais autorizados",
+    description: "Registros de ponto",
     icon: <Clock className="h-4 w-4" />,
     category: "administrativo",
-    tables: ["ponto_registros", "pontos_autorizados"],
-  },
-  {
-    id: "notificacoes",
-    name: "Notificações",
-    description: "Histórico de notificações do sistema",
-    icon: <AlertCircle className="h-4 w-4" />,
-    category: "administrativo",
-    tables: ["notifications"],
   },
 ];
 
-// Friendly column names for PDF
-const columnLabels: Record<string, Record<string, string>> = {
-  alunos: {
-    id: "ID",
-    nome_completo: "Nome Completo",
-    data_nascimento: "Data Nasc.",
-    email_responsavel: "Email Resp.",
-    telefone_responsavel: "Telefone",
-    status_matricula: "Status",
-    data_matricula: "Data Matrícula",
-    desconto_percentual: "Desconto %",
-  },
-  responsaveis: {
-    id: "ID",
-    nome: "Nome",
-    cpf: "CPF",
-    telefone: "Telefone",
-    email: "Email",
-    ativo: "Ativo",
-  },
-  faturas: {
-    id: "ID",
-    codigo_sequencial: "Código",
-    valor: "Valor",
-    status: "Status",
-    data_vencimento: "Vencimento",
-    mes_referencia: "Mês",
-    ano_referencia: "Ano",
-  },
-  pagamentos: {
-    id: "ID",
-    valor: "Valor",
-    data_pagamento: "Data Pgto",
-    metodo: "Método",
-    gateway: "Gateway",
-  },
-  funcionarios: {
-    id: "ID",
-    nome_completo: "Nome",
-    cpf: "CPF",
-    email: "Email",
-    telefone: "Telefone",
-    tipo: "Tipo",
-    status: "Status",
-    data_admissao: "Admissão",
-    salario_base: "Salário",
-  },
-  cursos: {
-    id: "ID",
-    nome: "Nome",
-    nivel: "Nível",
-    mensalidade: "Mensalidade",
-    duracao_meses: "Duração (meses)",
-    ativo: "Ativo",
-  },
-  turmas: {
-    id: "ID",
-    nome: "Nome",
-    serie: "Série",
-    turno: "Turno",
-    ano_letivo: "Ano Letivo",
-    ativo: "Ativo",
-  },
-  despesas: {
-    id: "ID",
-    titulo: "Título",
-    categoria: "Categoria",
-    valor: "Valor",
-    data_vencimento: "Vencimento",
-    paga: "Paga",
-  },
-};
-
-// Helper to sanitize data for export (remove sensitive fields)
-const sanitizeForExport = (tableName: string, data: any[]) => {
-  return data.map(row => {
-    const sanitized = { ...row };
-    // Remove tokens and sensitive credentials
-    if ('ponto_token' in sanitized) delete sanitized.ponto_token;
-    if ('ponto_token_expires_at' in sanitized) delete sanitized.ponto_token_expires_at;
-    if ('stripe_customer_id' in sanitized) delete sanitized.stripe_customer_id;
-    if ('stripe_checkout_session_id' in sanitized) delete sanitized.stripe_checkout_session_id;
-    if ('stripe_payment_intent_id' in sanitized) delete sanitized.stripe_payment_intent_id;
-    if ('payment_url' in sanitized) delete sanitized.payment_url;
-    return sanitized;
-  });
-};
-
-// Format value for PDF display
-const formatValue = (value: any): string => {
-  if (value === null || value === undefined) return "-";
-  if (typeof value === "boolean") return value ? "Sim" : "Não";
-  if (typeof value === "number") {
-    if (Number.isInteger(value)) return value.toString();
-    return value.toLocaleString("pt-BR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  }
-  if (typeof value === "string") {
-    // Check if it's a date
-    if (/^\d{4}-\d{2}-\d{2}/.test(value)) {
-      try {
-        const date = new Date(value);
-        return date.toLocaleDateString("pt-BR");
-      } catch {
-        return value;
-      }
-    }
-    // Truncate long strings
-    if (value.length > 50) return value.substring(0, 47) + "...";
-    return value;
-  }
-  if (typeof value === "object") return JSON.stringify(value).substring(0, 30) + "...";
-  return String(value);
-};
+// Lookup maps for humanizing data
+interface LookupMaps {
+  alunos: Map<string, string>;
+  responsaveis: Map<string, string>;
+  cursos: Map<string, string>;
+  turmas: Map<string, string>;
+  funcionarios: Map<string, string>;
+  cargos: Map<string, string>;
+  setores: Map<string, string>;
+}
 
 export function BackupExport() {
   const [selectedModules, setSelectedModules] = useState<Set<string>>(new Set());
   const [exportFormat, setExportFormat] = useState<"xlsx" | "pdf">("xlsx");
   const [exporting, setExporting] = useState(false);
   const [progress, setProgress] = useState(0);
-  const [currentTable, setCurrentTable] = useState("");
+  const [currentStep, setCurrentStep] = useState("");
   const [exportComplete, setExportComplete] = useState(false);
 
   const allModuleIds = exportModules.map(m => m.id);
@@ -325,95 +203,430 @@ export function BackupExport() {
     setExportComplete(false);
   };
 
-  const fetchTableData = async (tableName: string): Promise<any[]> => {
-    try {
-      const { data, error } = await (supabase.from(tableName as any).select("*") as any);
-      if (error) {
-        console.error(`Error fetching ${tableName}:`, error);
-        return [];
-      }
-      return sanitizeForExport(tableName, data || []);
-    } catch (err) {
-      console.error(`Error fetching ${tableName}:`, err);
-      return [];
-    }
+  // Build lookup maps for humanizing IDs
+  const buildLookupMaps = useCallback(async (): Promise<LookupMaps> => {
+    const maps: LookupMaps = {
+      alunos: new Map(),
+      responsaveis: new Map(),
+      cursos: new Map(),
+      turmas: new Map(),
+      funcionarios: new Map(),
+      cargos: new Map(),
+      setores: new Map(),
+    };
+
+    // Fetch alunos
+    const { data: alunos } = await supabase.from("alunos").select("id, nome_completo");
+    alunos?.forEach(a => maps.alunos.set(a.id, a.nome_completo));
+
+    // Fetch responsaveis
+    const { data: responsaveis } = await supabase.from("responsaveis").select("id, nome");
+    responsaveis?.forEach(r => maps.responsaveis.set(r.id, r.nome));
+
+    // Fetch cursos
+    const { data: cursos } = await supabase.from("cursos").select("id, nome");
+    cursos?.forEach(c => maps.cursos.set(c.id, c.nome));
+
+    // Fetch turmas
+    const { data: turmas } = await supabase.from("turmas").select("id, nome");
+    turmas?.forEach(t => maps.turmas.set(t.id, t.nome));
+
+    // Fetch funcionarios
+    const { data: funcionarios } = await supabase.from("funcionarios").select("id, nome_completo");
+    funcionarios?.forEach(f => maps.funcionarios.set(f.id, f.nome_completo));
+
+    // Fetch cargos
+    const { data: cargos } = await supabase.from("cargos").select("id, nome");
+    cargos?.forEach(c => maps.cargos.set(c.id, c.nome));
+
+    // Fetch setores
+    const { data: setores } = await supabase.from("setores").select("id, nome");
+    setores?.forEach(s => maps.setores.set(s.id, s.nome));
+
+    return maps;
+  }, []);
+
+  // Format status in Portuguese
+  const formatStatus = (status: string | null): string => {
+    if (!status) return "-";
+    const statusMap: Record<string, string> = {
+      ativo: "Ativo",
+      inativo: "Inativo",
+      afastado: "Afastado",
+      ferias: "Férias",
+      trancado: "Trancado",
+      cancelado: "Cancelado",
+      transferido: "Transferido",
+      Aberta: "Em Aberto",
+      Paga: "Pago",
+      Vencida: "Atrasado",
+      Cancelada: "Cancelado",
+    };
+    return statusMap[status] || status;
   };
 
-  const exportToExcel = async (allData: Record<string, any[]>) => {
+  // Format tipo funcionario
+  const formatTipoFuncionario = (tipo: string | null): string => {
+    if (!tipo) return "-";
+    const tipoMap: Record<string, string> = {
+      professor: "Professor",
+      administrativo: "Administrativo",
+      outro: "Outro",
+    };
+    return tipoMap[tipo] || tipo;
+  };
+
+  // Format contrato tipo
+  const formatContratoTipo = (tipo: string | null): string => {
+    if (!tipo) return "-";
+    const tipoMap: Record<string, string> = {
+      clt: "CLT",
+      pj: "PJ",
+      temporario: "Temporário",
+      estagio: "Estágio",
+    };
+    return tipoMap[tipo] || tipo;
+  };
+
+  // Humanize escola data
+  const humanizeEscola = async () => {
+    const { data } = await supabase.from("escola").select("*").limit(1).maybeSingle();
+    if (!data) return [];
+
+    return [{
+      "Nome da Escola": data.nome || "-",
+      "CNPJ": data.cnpj || "-",
+      "Telefone": data.telefone || "-",
+      "Email": data.email || "-",
+      "Endereço": data.endereco || "-",
+      "Ano Letivo": data.ano_letivo || "-",
+      "Multa Padrão (%)": data.multa_percentual_padrao ?? "-",
+      "Juros Diário (%)": data.juros_percentual_diario_padrao ?? "-",
+      "Juros Mensal (%)": data.juros_percentual_mensal_padrao ?? "-",
+      "Dias Carência Juros": data.dias_carencia_juros ?? "-",
+      "Desconto Pontualidade (%)": data.desconto_pontualidade_percentual ?? "-",
+      "Dias Desconto Pontualidade": data.dias_desconto_pontualidade ?? "-",
+    }];
+  };
+
+  // Humanize usuarios data
+  const humanizeUsuarios = async () => {
+    const { data: profiles } = await supabase.from("profiles").select("*");
+    const { data: roles } = await supabase.from("user_roles").select("*");
+
+    const roleMap = new Map<string, string>();
+    roles?.forEach(r => {
+      const roleLabel = r.role === "admin" ? "Administrador" : 
+                       r.role === "staff" ? "Funcionário" :
+                       r.role === "financeiro" ? "Financeiro" :
+                       r.role === "secretaria" ? "Secretaria" : r.role;
+      roleMap.set(r.user_id, roleLabel);
+    });
+
+    return (profiles || []).map(p => ({
+      "Nome": p.nome || "-",
+      "Email": p.email || "-",
+      "Perfil de Acesso": roleMap.get(p.id) || "Sem permissão",
+      "Data de Cadastro": p.created_at ? formatDate(p.created_at) : "-",
+    }));
+  };
+
+  // Humanize alunos data
+  const humanizeAlunos = async (maps: LookupMaps) => {
+    const { data } = await supabase.from("alunos").select("*");
+    
+    return (data || []).map(a => ({
+      "Nome do Aluno": a.nome_completo || "-",
+      "Data de Nascimento": a.data_nascimento ? formatDate(a.data_nascimento) : "-",
+      "Data da Matrícula": a.data_matricula ? formatDate(a.data_matricula) : "-",
+      "Status": formatStatus(a.status_matricula),
+      "Curso": maps.cursos.get(a.curso_id) || "-",
+      "Turma": a.turma_id ? (maps.turmas.get(a.turma_id) || "-") : "Não enturmado",
+      "Responsável Financeiro": a.responsavel_id ? (maps.responsaveis.get(a.responsavel_id) || "-") : "-",
+      "Telefone do Responsável": a.telefone_responsavel || "-",
+      "Email do Responsável": a.email_responsavel || "-",
+      "Endereço": a.endereco || "-",
+      "Desconto (%)": a.desconto_percentual ?? 0,
+      "Observações": a.observacoes || "-",
+    }));
+  };
+
+  // Humanize responsaveis data
+  const humanizeResponsaveis = async (maps: LookupMaps) => {
+    const { data: responsaveis } = await supabase.from("responsaveis").select("*");
+    const { data: alunos } = await supabase.from("alunos").select("id, nome_completo, responsavel_id");
+
+    // Build a map of responsavel -> alunos
+    const alunosDoResp = new Map<string, string[]>();
+    alunos?.forEach(a => {
+      if (a.responsavel_id) {
+        const lista = alunosDoResp.get(a.responsavel_id) || [];
+        lista.push(a.nome_completo);
+        alunosDoResp.set(a.responsavel_id, lista);
+      }
+    });
+
+    return (responsaveis || []).map(r => ({
+      "Nome do Responsável": r.nome || "-",
+      "CPF": r.cpf || "-",
+      "Telefone": r.telefone || "-",
+      "Email": r.email || "-",
+      "Alunos Vinculados": alunosDoResp.get(r.id)?.join(", ") || "-",
+      "Status": r.ativo ? "Ativo" : "Inativo",
+      "Fatura Consolidada": r.fatura_consolidada ? "Sim" : "Não",
+      "Observações": r.observacoes || "-",
+    }));
+  };
+
+  // Humanize cursos data
+  const humanizeCursos = async () => {
+    const { data } = await supabase.from("cursos").select("*");
+    
+    return (data || []).map(c => ({
+      "Nome do Curso": c.nome || "-",
+      "Nível": c.nivel || "-",
+      "Mensalidade": formatCurrency(c.mensalidade || 0),
+      "Duração (meses)": c.duracao_meses || "-",
+      "Status": c.ativo ? "Ativo" : "Inativo",
+    }));
+  };
+
+  // Humanize turmas data
+  const humanizeTurmas = async () => {
+    const { data } = await supabase.from("turmas").select("*");
+    
+    return (data || []).map(t => ({
+      "Nome da Turma": t.nome || "-",
+      "Série": t.serie || "-",
+      "Turno": t.turno || "-",
+      "Ano Letivo": t.ano_letivo || "-",
+      "Status": t.ativo ? "Ativo" : "Inativo",
+    }));
+  };
+
+  // Humanize faturas data
+  const humanizeFaturas = async (maps: LookupMaps) => {
+    const { data } = await supabase.from("faturas").select("*").order("ano_referencia", { ascending: false }).order("mes_referencia", { ascending: false });
+    
+    return (data || []).map(f => ({
+      "Código da Fatura": f.codigo_sequencial || "-",
+      "Aluno": maps.alunos.get(f.aluno_id) || "-",
+      "Responsável": f.responsavel_id ? (maps.responsaveis.get(f.responsavel_id) || "-") : "-",
+      "Curso": maps.cursos.get(f.curso_id) || "-",
+      "Mês/Ano Referência": `${getMonthName(f.mes_referencia)}/${f.ano_referencia}`,
+      "Data de Emissão": f.data_emissao ? formatDate(f.data_emissao) : "-",
+      "Data de Vencimento": f.data_vencimento ? formatDate(f.data_vencimento) : "-",
+      "Valor Original": formatCurrency(f.valor_original || f.valor || 0),
+      "Desconto": formatCurrency(f.valor_desconto_aplicado || 0),
+      "Juros": formatCurrency(f.valor_juros_aplicado || 0),
+      "Multa": formatCurrency(f.valor_multa_aplicado || 0),
+      "Valor Total": formatCurrency(f.valor_total || f.valor || 0),
+      "Status": formatStatus(f.status),
+      "Dias em Atraso": f.dias_atraso || 0,
+    }));
+  };
+
+  // Humanize pagamentos data
+  const humanizePagamentos = async (maps: LookupMaps) => {
+    const { data: pagamentos } = await supabase.from("pagamentos").select("*").order("data_pagamento", { ascending: false });
+    const { data: faturas } = await supabase.from("faturas").select("id, codigo_sequencial, aluno_id, mes_referencia, ano_referencia");
+
+    const faturaMap = new Map<string, { codigo: string; aluno: string; referencia: string }>();
+    faturas?.forEach(f => {
+      faturaMap.set(f.id, {
+        codigo: f.codigo_sequencial || "-",
+        aluno: maps.alunos.get(f.aluno_id) || "-",
+        referencia: `${getMonthName(f.mes_referencia)}/${f.ano_referencia}`,
+      });
+    });
+
+    return (pagamentos || []).map(p => {
+      const fatura = faturaMap.get(p.fatura_id);
+      return {
+        "Código da Fatura": fatura?.codigo || "-",
+        "Aluno": fatura?.aluno || "-",
+        "Referência": fatura?.referencia || "-",
+        "Data do Pagamento": p.data_pagamento ? formatDate(p.data_pagamento) : "-",
+        "Valor Pago": formatCurrency(p.valor || 0),
+        "Método de Pagamento": p.metodo || "-",
+        "Desconto Aplicado": formatCurrency(p.desconto_aplicado || 0),
+        "Juros Aplicado": formatCurrency(p.juros_aplicado || 0),
+        "Multa Aplicada": formatCurrency(p.multa_aplicada || 0),
+        "Tipo": p.tipo === "estorno" ? "Estorno" : "Pagamento",
+      };
+    });
+  };
+
+  // Humanize despesas data
+  const humanizeDespesas = async () => {
+    const { data } = await supabase.from("despesas").select("*").order("data_vencimento", { ascending: false });
+    
+    return (data || []).map(d => ({
+      "Título": d.titulo || "-",
+      "Categoria": d.categoria || "-",
+      "Valor": formatCurrency(d.valor || 0),
+      "Data de Vencimento": d.data_vencimento ? formatDate(d.data_vencimento) : "-",
+      "Data do Pagamento": d.data_pagamento ? formatDate(d.data_pagamento) : "-",
+      "Status": d.paga ? "Pago" : "Pendente",
+      "Recorrente": d.recorrente ? "Sim" : "Não",
+      "Observações": d.observacoes || "-",
+    }));
+  };
+
+  // Humanize funcionarios data
+  const humanizeFuncionarios = async (maps: LookupMaps) => {
+    const { data } = await supabase.from("funcionarios").select("*");
+    
+    return (data || []).map(f => ({
+      "Nome do Funcionário": f.nome_completo || "-",
+      "CPF": f.cpf || "-",
+      "RG": f.rg || "-",
+      "Tipo": formatTipoFuncionario(f.tipo),
+      "Cargo": f.cargo_id ? (maps.cargos.get(f.cargo_id) || "-") : "-",
+      "Data de Admissão": f.data_admissao ? formatDate(f.data_admissao) : "-",
+      "Data de Demissão": f.data_demissao ? formatDate(f.data_demissao) : "-",
+      "Salário Base": formatCurrency(f.salario_base || 0),
+      "Status": formatStatus(f.status),
+      "Telefone": f.telefone || "-",
+      "Email": f.email || "-",
+      "Endereço": f.endereco || "-",
+      "Data de Nascimento": f.data_nascimento ? formatDate(f.data_nascimento) : "-",
+      "Observações": f.observacoes || "-",
+      "Arquivo da Foto": f.foto_url ? `funcionarios/${f.nome_completo?.replace(/\s+/g, "_").toLowerCase()}_foto.jpg` : "-",
+    }));
+  };
+
+  // Humanize cargos e setores
+  const humanizeCargosSetores = async (maps: LookupMaps) => {
+    const { data: cargos } = await supabase.from("cargos").select("*");
+    const { data: setores } = await supabase.from("setores").select("*");
+
+    const cargosData = (cargos || []).map(c => ({
+      "Tipo": "Cargo",
+      "Nome": c.nome || "-",
+      "Descrição": c.descricao || "-",
+      "Salário Base": formatCurrency(c.salario_base || 0),
+      "Setor": c.setor_id ? (maps.setores.get(c.setor_id) || "-") : "-",
+      "Status": c.ativo ? "Ativo" : "Inativo",
+    }));
+
+    const setoresData = (setores || []).map(s => ({
+      "Tipo": "Setor",
+      "Nome": s.nome || "-",
+      "Descrição": s.descricao || "-",
+      "Salário Base": "-",
+      "Setor": "-",
+      "Status": s.ativo ? "Ativo" : "Inativo",
+    }));
+
+    return [...setoresData, ...cargosData];
+  };
+
+  // Humanize contratos
+  const humanizeContratos = async (maps: LookupMaps) => {
+    const { data } = await supabase.from("contratos").select("*");
+    
+    return (data || []).map(c => ({
+      "Funcionário": maps.funcionarios.get(c.funcionario_id) || "-",
+      "Tipo de Contrato": formatContratoTipo(c.tipo),
+      "Data de Início": c.data_inicio ? formatDate(c.data_inicio) : "-",
+      "Data de Término": c.data_fim ? formatDate(c.data_fim) : "-",
+      "Salário": formatCurrency(c.salario || 0),
+      "Carga Horária (h/semana)": c.carga_horaria ?? "-",
+      "Status": c.ativo ? "Ativo" : "Encerrado",
+      "Observações": c.observacoes || "-",
+    }));
+  };
+
+  // Humanize folha de pagamento
+  const humanizeFolhaPagamento = async (maps: LookupMaps) => {
+    const { data } = await supabase.from("folha_pagamento").select("*").order("ano_referencia", { ascending: false }).order("mes_referencia", { ascending: false });
+    
+    return (data || []).map(f => ({
+      "Funcionário": maps.funcionarios.get(f.funcionario_id) || "-",
+      "Mês/Ano": `${getMonthName(f.mes_referencia)}/${f.ano_referencia}`,
+      "Salário Base": formatCurrency(f.salario_base || 0),
+      "Horas Extras": formatCurrency(f.horas_extras_valor || 0),
+      "Bonificações": formatCurrency(f.bonificacoes || 0),
+      "Adicional Noturno": formatCurrency(f.adicional_noturno || 0),
+      "Adicional Periculosidade": formatCurrency(f.adicional_periculosidade || 0),
+      "Outros Adicionais": formatCurrency(f.outros_adicionais || 0),
+      "Total Bruto": formatCurrency(f.total_bruto || 0),
+      "INSS": formatCurrency(f.inss || 0),
+      "IRRF": formatCurrency(f.irrf || 0),
+      "FGTS": formatCurrency(f.fgts || 0),
+      "Faltas/Atrasos": formatCurrency(f.faltas_atrasos || 0),
+      "Outros Descontos": formatCurrency(f.descontos || 0),
+      "Total Líquido": formatCurrency(f.total_liquido || 0),
+      "Status": f.pago ? "Pago" : "Pendente",
+      "Data do Pagamento": f.data_pagamento ? formatDate(f.data_pagamento) : "-",
+    }));
+  };
+
+  // Humanize ponto eletrônico
+  const humanizePonto = async (maps: LookupMaps) => {
+    const { data } = await supabase.from("ponto_registros").select("*").order("data", { ascending: false });
+    
+    return (data || []).map(p => ({
+      "Funcionário": maps.funcionarios.get(p.funcionario_id) || "-",
+      "Data": p.data ? formatDate(p.data) : "-",
+      "Entrada": p.entrada || "-",
+      "Saída Almoço": p.saida_almoco || "-",
+      "Retorno Almoço": p.retorno_almoco || "-",
+      "Saída": p.saida || "-",
+      "Horas Trabalhadas": p.horas_trabalhadas || "-",
+      "Horas Extras": p.horas_extras || "-",
+      "Localização Válida": p.localizacao_valida ? "Sim" : "Não",
+      "Observações": p.observacoes || "-",
+    }));
+  };
+
+  // Create XLSX workbook for a module
+  const createWorkbook = (data: any[], moduleName: string) => {
     const workbook = XLSX.utils.book_new();
     
-    for (const [tableName, data] of Object.entries(allData)) {
-      if (data.length > 0) {
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        
-        // Auto-size columns
-        const maxWidth = 50;
-        const cols = Object.keys(data[0]).map(key => ({
-          wch: Math.min(
-            Math.max(
-              key.length,
-              ...data.map(row => String(row[key] || "").length)
-            ),
-            maxWidth
-          )
-        }));
-        worksheet["!cols"] = cols;
-        
-        const sheetName = tableName.substring(0, 31);
-        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-      }
+    if (data.length > 0) {
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      
+      // Auto-size columns
+      const maxWidth = 50;
+      const cols = Object.keys(data[0]).map(key => ({
+        wch: Math.min(
+          Math.max(
+            key.length + 2,
+            ...data.map(row => String(row[key] || "").length)
+          ),
+          maxWidth
+        )
+      }));
+      worksheet["!cols"] = cols;
+      
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Dados");
     }
-
-    const now = new Date();
-    const timestamp = now.toISOString().slice(0, 19).replace(/[:-]/g, "").replace("T", "_");
-    const filename = `backup_maranata_${timestamp}.xlsx`;
-
-    XLSX.writeFile(workbook, filename);
-    return filename;
+    
+    return workbook;
   };
 
-  const exportToPDF = async (allData: Record<string, any[]>) => {
+  // Create PDF for a module
+  const createPDF = (data: any[], moduleName: string) => {
     const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
     const now = new Date();
     const timestamp = now.toLocaleString("pt-BR");
     
-    let isFirstPage = true;
+    // Header
+    doc.setFontSize(16);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Relatório: ${moduleName}`, 14, 15);
+    
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Exportado em: ${timestamp}`, 14, 22);
+    doc.text(`Total de registros: ${data.length}`, 14, 27);
 
-    for (const [tableName, data] of Object.entries(allData)) {
-      if (data.length === 0) continue;
+    if (data.length > 0) {
+      const headers = Object.keys(data[0]);
+      const rows = data.map(row => headers.map(h => String(row[h] || "-")));
 
-      if (!isFirstPage) {
-        doc.addPage();
-      }
-      isFirstPage = false;
-
-      // Header
-      doc.setFontSize(16);
-      doc.setFont("helvetica", "bold");
-      doc.text(`Relatório: ${tableName.toUpperCase()}`, 14, 15);
-      
-      doc.setFontSize(10);
-      doc.setFont("helvetica", "normal");
-      doc.text(`Exportado em: ${timestamp}`, 14, 22);
-      doc.text(`Total de registros: ${data.length}`, 14, 27);
-
-      // Get columns - prioritize labeled columns, limit to fit page
-      const labels = columnLabels[tableName] || {};
-      let columns: string[];
-      
-      if (Object.keys(labels).length > 0) {
-        columns = Object.keys(labels).filter(col => col in data[0]);
-      } else {
-        columns = Object.keys(data[0]).slice(0, 8); // Limit to 8 columns for readability
-      }
-
-      // Prepare table data
-      const headers = columns.map(col => labels[col] || col);
-      const rows = data.map(row => 
-        columns.map(col => formatValue(row[col]))
-      );
-
-      // Add table
       autoTable(doc, {
         head: [headers],
         body: rows,
@@ -422,49 +635,54 @@ export function BackupExport() {
         headStyles: {
           fillColor: [41, 128, 185],
           textColor: 255,
-          fontSize: 8,
+          fontSize: 7,
           fontStyle: "bold",
         },
         bodyStyles: {
-          fontSize: 7,
+          fontSize: 6,
           textColor: 50,
         },
         alternateRowStyles: {
           fillColor: [245, 245, 245],
         },
-        margin: { left: 14, right: 14 },
+        margin: { left: 10, right: 10 },
         tableWidth: "auto",
         styles: {
           overflow: "linebreak",
-          cellPadding: 2,
-        },
-        columnStyles: {
-          0: { cellWidth: 25 }, // ID column
+          cellPadding: 1.5,
         },
       });
-
-      // Footer
-      const pageCount = doc.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(8);
-        doc.setTextColor(128);
-        doc.text(
-          `Página ${i} de ${pageCount} - Sistema MARANATA - Backup de Dados`,
-          doc.internal.pageSize.width / 2,
-          doc.internal.pageSize.height - 10,
-          { align: "center" }
-        );
-      }
     }
 
-    const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-    const filename = `relatorio_maranata_${dateStr}.pdf`;
-    
-    doc.save(filename);
-    return filename;
+    // Footer
+    const pageCount = doc.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+      doc.setPage(i);
+      doc.setFontSize(8);
+      doc.setTextColor(128);
+      doc.text(
+        `Página ${i} de ${pageCount} - Sistema MARANATA`,
+        doc.internal.pageSize.width / 2,
+        doc.internal.pageSize.height - 10,
+        { align: "center" }
+      );
+    }
+
+    return doc;
   };
 
+  // Download file from Supabase storage
+  const downloadFile = async (url: string): Promise<Blob | null> => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) return null;
+      return await response.blob();
+    } catch {
+      return null;
+    }
+  };
+
+  // Main export function
   const handleExport = async () => {
     if (selectedModules.size === 0) {
       toast.error("Selecione pelo menos um módulo para exportar");
@@ -476,46 +694,166 @@ export function BackupExport() {
     setExportComplete(false);
 
     try {
-      // Get all selected modules and their tables
-      const selectedModulesList = exportModules.filter(m => selectedModules.has(m.id));
-      const allTables = selectedModulesList.flatMap(m => m.tables);
-      const uniqueTables = [...new Set(allTables)];
+      const zip = new JSZip();
+      const planilhasFolder = zip.folder("planilhas");
+      const arquivosFolder = zip.folder("arquivos");
       
+      setCurrentStep("Preparando dados de referência...");
+      const maps = await buildLookupMaps();
+      setProgress(10);
+
+      const selectedList = Array.from(selectedModules);
+      const totalModules = selectedList.length;
       let completed = 0;
-      const total = uniqueTables.length;
-      const allData: Record<string, any[]> = {};
 
-      // Fetch all data first
-      for (const tableName of uniqueTables) {
-        setCurrentTable(tableName);
-        allData[tableName] = await fetchTableData(tableName);
+      // Process each module
+      for (const moduleId of selectedList) {
+        const module = exportModules.find(m => m.id === moduleId);
+        if (!module) continue;
+
+        setCurrentStep(`Processando: ${module.name}...`);
+        
+        let data: any[] = [];
+        let fileName = "";
+
+        switch (moduleId) {
+          case "escola":
+            data = await humanizeEscola();
+            fileName = "escola";
+            break;
+          case "usuarios":
+            data = await humanizeUsuarios();
+            fileName = "usuarios";
+            break;
+          case "alunos":
+            data = await humanizeAlunos(maps);
+            fileName = "alunos";
+            break;
+          case "responsaveis":
+            data = await humanizeResponsaveis(maps);
+            fileName = "responsaveis";
+            break;
+          case "cursos":
+            data = await humanizeCursos();
+            fileName = "cursos";
+            break;
+          case "turmas":
+            data = await humanizeTurmas();
+            fileName = "turmas";
+            break;
+          case "faturas":
+            data = await humanizeFaturas(maps);
+            fileName = "faturas";
+            break;
+          case "pagamentos":
+            data = await humanizePagamentos(maps);
+            fileName = "pagamentos";
+            break;
+          case "despesas":
+            data = await humanizeDespesas();
+            fileName = "despesas";
+            break;
+          case "funcionarios":
+            data = await humanizeFuncionarios(maps);
+            fileName = "funcionarios";
+            // Download fotos
+            const { data: funcionarios } = await supabase.from("funcionarios").select("nome_completo, foto_url");
+            for (const f of funcionarios || []) {
+              if (f.foto_url) {
+                const blob = await downloadFile(f.foto_url);
+                if (blob) {
+                  const safeName = f.nome_completo?.replace(/\s+/g, "_").toLowerCase() || "funcionario";
+                  arquivosFolder?.folder("funcionarios")?.file(`${safeName}_foto.jpg`, blob);
+                }
+              }
+            }
+            break;
+          case "cargos":
+            data = await humanizeCargosSetores(maps);
+            fileName = "cargos_setores";
+            break;
+          case "contratos":
+            data = await humanizeContratos(maps);
+            fileName = "contratos";
+            break;
+          case "folha_pagamento":
+            data = await humanizeFolhaPagamento(maps);
+            fileName = "folha_pagamento";
+            break;
+          case "ponto":
+            data = await humanizePonto(maps);
+            fileName = "ponto_eletronico";
+            break;
+        }
+
+        if (data.length > 0) {
+          if (exportFormat === "xlsx") {
+            const workbook = createWorkbook(data, module.name);
+            const xlsxBuffer = XLSX.write(workbook, { bookType: "xlsx", type: "array" });
+            planilhasFolder?.file(`${fileName}.xlsx`, xlsxBuffer);
+          } else {
+            const pdf = createPDF(data, module.name);
+            const pdfBlob = pdf.output("blob");
+            planilhasFolder?.file(`${fileName}.pdf`, pdfBlob);
+          }
+        }
+
         completed++;
-        setProgress(Math.round((completed / total) * 90)); // Leave 10% for file generation
+        setProgress(10 + Math.round((completed / totalModules) * 80));
       }
 
-      setCurrentTable("Gerando arquivo...");
+      // Add README
+      const readme = `BACKUP DO SISTEMA MARANATA
+========================
+
+Data de Exportação: ${new Date().toLocaleString("pt-BR")}
+Formato: ${exportFormat === "xlsx" ? "Excel (.xlsx)" : "PDF"}
+Módulos Exportados: ${selectedList.length}
+
+ESTRUTURA DO BACKUP:
+- planilhas/ - Arquivos com dados exportados
+- arquivos/ - Fotos e documentos baixados
+
+MÓDULOS INCLUÍDOS:
+${selectedList.map(id => {
+  const m = exportModules.find(mod => mod.id === id);
+  return `- ${m?.name || id}`;
+}).join("\n")}
+
+OBSERVAÇÕES:
+- Os dados estão humanizados para facilitar leitura
+- IDs internos foram substituídos por nomes reais
+- Valores monetários estão formatados em Real (R$)
+- Datas estão no formato brasileiro (DD/MM/AAAA)
+
+Para migração manual, importe as planilhas no novo sistema.
+`;
+      zip.file("README.txt", readme);
+
+      setCurrentStep("Gerando arquivo ZIP...");
+      setProgress(95);
+
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const now = new Date();
+      const timestamp = now.toISOString().slice(0, 10).replace(/-/g, "");
+      const zipFilename = `backup_maranata_${timestamp}.zip`;
       
-      let filename: string;
-      if (exportFormat === "xlsx") {
-        filename = await exportToExcel(allData);
-      } else {
-        filename = await exportToPDF(allData);
-      }
+      saveAs(zipBlob, zipFilename);
 
       setProgress(100);
       setExportComplete(true);
-      toast.success("Exportação concluída!", {
-        description: `Arquivo: ${filename}`,
+      toast.success("Backup gerado com sucesso!", {
+        description: `Arquivo: ${zipFilename}`,
       });
     } catch (error: any) {
       console.error("Export error:", error);
-      toast.error("Erro ao exportar dados", {
+      toast.error("Erro ao gerar backup", {
         description: error.message,
       });
     } finally {
       setExporting(false);
       setProgress(0);
-      setCurrentTable("");
+      setCurrentStep("");
     }
   };
 
@@ -551,21 +889,20 @@ export function BackupExport() {
           Backup do Sistema
         </CardTitle>
         <CardDescription>
-          Exporte todos os dados do sistema para backup ou migração.
-          Escolha entre Excel (para migração) ou PDF (para conferência).
+          Exporte todos os dados do sistema em formato organizado e humanizado, pronto para migração.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         {/* Info Box */}
         <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
           <div className="flex items-start gap-3">
-            <Shield className="h-5 w-5 text-primary mt-0.5" />
+            <FolderArchive className="h-5 w-5 text-primary mt-0.5" />
             <div>
-              <p className="font-medium text-sm">Exportação Segura</p>
+              <p className="font-medium text-sm">Backup Organizado em ZIP</p>
               <p className="text-xs text-muted-foreground mt-1">
-                Os dados exportados preservam todos os IDs para facilitar migração.
-                Tokens de segurança e dados sensíveis são automaticamente removidos.
-                O sistema continua funcionando normalmente durante a exportação.
+                O backup gera um arquivo ZIP contendo: planilhas separadas por módulo, 
+                arquivos/fotos baixados, e um README explicativo. 
+                Dados são humanizados (nomes reais em vez de IDs).
               </p>
             </div>
           </div>
@@ -573,7 +910,7 @@ export function BackupExport() {
 
         {/* Format Selection */}
         <div className="space-y-3">
-          <Label className="text-sm font-medium">Formato de Exportação</Label>
+          <Label className="text-sm font-medium">Formato das Planilhas</Label>
           <RadioGroup
             value={exportFormat}
             onValueChange={(v) => setExportFormat(v as "xlsx" | "pdf")}
@@ -597,8 +934,8 @@ export function BackupExport() {
           </RadioGroup>
           <p className="text-xs text-muted-foreground">
             {exportFormat === "xlsx" 
-              ? "Excel: Ideal para migração. Contém todos os dados estruturados com IDs preservados."
-              : "PDF: Ideal para conferência visual. Relatórios formatados por tabela."}
+              ? "Excel: Ideal para migração. Dados estruturados e prontos para importação."
+              : "PDF: Ideal para conferência visual. Relatórios formatados para impressão."}
           </p>
         </div>
 
@@ -690,9 +1027,6 @@ export function BackupExport() {
                       <p className="text-xs text-muted-foreground mt-0.5 truncate">
                         {module.description}
                       </p>
-                      <p className="text-xs text-muted-foreground/70 mt-1">
-                        Tabelas: {module.tables.join(", ")}
-                      </p>
                     </div>
                   </div>
                 ))}
@@ -711,9 +1045,9 @@ export function BackupExport() {
               <span className="font-medium">{progress}%</span>
             </div>
             <Progress value={progress} className="h-2" />
-            {currentTable && (
+            {currentStep && (
               <p className="text-xs text-muted-foreground">
-                Processando: {currentTable}
+                {currentStep}
               </p>
             )}
           </div>
@@ -725,9 +1059,9 @@ export function BackupExport() {
             <div className="flex items-center gap-3">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
               <div>
-                <p className="font-medium text-sm text-green-700">Exportação Concluída!</p>
+                <p className="font-medium text-sm text-green-700">Backup Gerado com Sucesso!</p>
                 <p className="text-xs text-green-600/80 mt-0.5">
-                  O arquivo foi baixado para sua pasta de downloads.
+                  O arquivo ZIP foi baixado para sua pasta de downloads.
                 </p>
               </div>
             </div>
@@ -744,26 +1078,20 @@ export function BackupExport() {
           {exporting ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" />
-              Exportando... {progress}%
+              Gerando Backup... {progress}%
             </>
           ) : (
             <>
               <Download className="h-4 w-4" />
-              {exportFormat === "xlsx" ? (
-                <FileSpreadsheet className="h-4 w-4" />
-              ) : (
-                <FileText className="h-4 w-4" />
-              )}
-              Baixar {exportFormat === "xlsx" ? "Backup Excel" : "Relatório PDF"} ({selectedModules.size} {selectedModules.size === 1 ? "módulo" : "módulos"})
+              <FolderArchive className="h-4 w-4" />
+              Baixar Backup ZIP ({selectedModules.size} {selectedModules.size === 1 ? "módulo" : "módulos"})
             </>
           )}
         </Button>
 
         {/* Info Footer */}
         <p className="text-xs text-muted-foreground text-center">
-          {exportFormat === "xlsx" 
-            ? "O backup Excel contém uma aba para cada tabela com todos os dados estruturados."
-            : "O relatório PDF contém tabelas formatadas para conferência visual dos dados."}
+          O backup contém planilhas organizadas, arquivos baixados e dados prontos para migração.
         </p>
       </CardContent>
     </Card>
