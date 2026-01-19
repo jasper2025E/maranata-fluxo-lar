@@ -348,8 +348,9 @@ export function useCreateFatura() {
       ano_referencia: number;
       itens?: FaturaItem[];
       descontos?: Omit<FaturaDesconto, 'id' | 'fatura_id'>[];
+      criarCobrancaAsaas?: boolean;
     }) => {
-      const { itens, descontos, responsavel_id, ...restFaturaData } = data;
+      const { itens, descontos, responsavel_id, criarCobrancaAsaas = true, ...restFaturaData } = data;
       
       // Criar fatura - só inclui responsavel_id se existir
       const faturaInsert = {
@@ -400,6 +401,23 @@ export function useCreateFatura() {
           .insert(descontosWithFatura);
 
         if (descontosError) throw descontosError;
+      }
+
+      // Criar cobrança no Asaas automaticamente
+      if (criarCobrancaAsaas) {
+        try {
+          const { error: asaasError } = await supabase.functions.invoke("asaas-create-payment", {
+            body: { faturaId: fatura.id, billingType: "UNDEFINED" },
+          });
+          
+          if (asaasError) {
+            console.warn("Aviso: Não foi possível criar cobrança no Asaas:", asaasError);
+            // Não lançar erro, pois a fatura foi criada com sucesso
+          }
+        } catch (asaasErr) {
+          console.warn("Aviso: Erro ao conectar com Asaas:", asaasErr);
+          // Continuar mesmo com erro do Asaas
+        }
       }
 
       return fatura;
