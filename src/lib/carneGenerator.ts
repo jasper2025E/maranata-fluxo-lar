@@ -390,6 +390,48 @@ function drawAuthenticationArea(doc: jsPDF, y: number): number {
   return y + 16;
 }
 
+// Marca d'água PAGO
+function drawPaidWatermark(doc: jsPDF): void {
+  // Salvar estado atual
+  const currentTextColor = doc.getTextColor();
+  
+  // Configurar marca d'água
+  doc.setTextColor(16, 185, 129); // Verde success com transparência simulada
+  doc.setFontSize(50);
+  doc.setFont("helvetica", "bold");
+  
+  // Rotacionar e posicionar no centro
+  const centerX = CARNE_WIDTH / 2;
+  const centerY = CARNE_HEIGHT / 2;
+  
+  // Desenhar texto rotacionado
+  doc.saveGraphicsState();
+  
+  // Criar efeito de marca d'água com opacidade
+  doc.setGState(doc.GState({ opacity: 0.15 }));
+  
+  // Rotacionar -30 graus
+  const angle = -30 * Math.PI / 180;
+  const text = "PAGO";
+  
+  // Calcular posição rotacionada
+  doc.text(text, centerX, centerY, { 
+    align: "center",
+    angle: -30
+  });
+  
+  doc.restoreGraphicsState();
+  
+  // Adicionar selo circular
+  doc.setGState(doc.GState({ opacity: 0.2 }));
+  doc.setDrawColor(16, 185, 129);
+  doc.setLineWidth(2);
+  doc.circle(centerX, centerY, 28);
+  doc.circle(centerX, centerY, 25);
+  
+  doc.restoreGraphicsState();
+}
+
 // Rodapé moderno
 function drawModernFooter(doc: jsPDF, escola: EscolaInfo): void {
   const footerY = CARNE_HEIGHT - 12;
@@ -498,6 +540,11 @@ async function generateCarnePageModern(
   
   // Área de autenticação
   y = drawAuthenticationArea(doc, y);
+  
+  // Marca d'água PAGO se a fatura estiver paga
+  if (fatura.status.toLowerCase() === "paga") {
+    drawPaidWatermark(doc);
+  }
   
   // Rodapé
   drawModernFooter(doc, escola);
@@ -615,6 +662,11 @@ async function generateCarnePageAsaasModern(
     doc.setTextColor(...PRIMARY_COLOR);
     doc.setFont("helvetica", "bold");
     doc.text("🔗 Acesse: asaas.com/pay", CARNE_WIDTH / 2, y + 2, { align: "center" });
+  }
+  
+  // Marca d'água PAGO se a fatura estiver paga
+  if (fatura.status.toLowerCase() === "paga") {
+    drawPaidWatermark(doc);
   }
   
   // Rodapé
