@@ -243,7 +243,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         {profileName || user?.email?.split("@")[0]}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {role ? roleLabels[role] : "Usuário"}
+                        {role ? roleLabels[role] : "Carregando..."}
                       </p>
                     </div>
                   </Button>
@@ -253,7 +253,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-semibold leading-none">{user?.email}</p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {role ? roleLabels[role] : "Usuário"}
+                        {role ? roleLabels[role] : "Carregando..."}
                       </p>
                     </div>
                   </DropdownMenuLabel>
