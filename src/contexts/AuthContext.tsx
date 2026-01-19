@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useRef, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
@@ -9,8 +9,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   role: AppRole | null;
-  loading: boolean; // auth/session loading only
-  roleLoading: boolean; // role fetch loading
+  loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (requiredRole: AppRole) => boolean;
@@ -23,71 +22,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
-  const [roleLoading, setRoleLoading] = useState(false);
-
-  const authResolvedRef = useRef(false);
 
   useEffect(() => {
-    let mounted = true;
-
-    // Safety timeout: never block the app forever
-    const safetyTimeout = setTimeout(() => {
-      if (!mounted) return;
-      if (!authResolvedRef.current) {
-        setLoading(false);
-      }
-    }, 8000);
-
-    const handleSession = (nextSession: Session | null) => {
-      setSession(nextSession);
-      setUser(nextSession?.user ?? null);
-      authResolvedRef.current = true;
-      setLoading(false);
-
-      if (nextSession?.user) {
-        setRoleLoading(true);
-        // Defer to avoid any potential auth state deadlocks
-        setTimeout(() => {
-          if (mounted) fetchUserRole(nextSession.user.id);
-        }, 0);
-      } else {
-        setRole(null);
-        setRoleLoading(false);
-      }
-    };
-
     // Set up auth state listener FIRST
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!mounted) return;
-      handleSession(nextSession);
-    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Defer role fetch with setTimeout to avoid deadlock
+        if (session?.user) {
+          setTimeout(() => {
+            fetchUserRole(session.user.id);
+          }, 0);
+        } else {
+          setRole(null);
+          setLoading(false);
+        }
+      }
+    );
 
     // THEN check for existing session
-    supabase.auth
-      .getSession()
-      .then(({ data: { session } }) => {
-        if (!mounted) return;
-        handleSession(session);
-      })
-      .catch((error) => {
-        console.error("Error getting session:", error);
-        if (!mounted) return;
-        authResolvedRef.current = true;
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserRole(session.user.id);
+      } else {
         setLoading(false);
-        setRoleLoading(false);
-      });
+      }
+    });
 
-    return () => {
-      mounted = false;
-      clearTimeout(safetyTimeout);
-      subscription.unsubscribe();
-    };
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchUserRole = async (userId: string) => {
-    setRoleLoading(true);
     try {
       const { data, error } = await supabase
         .from("user_roles")
@@ -95,33 +65,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("user_id", userId)
         .maybeSingle();
 
-      if (!error && data?.role) {
-        setRole(data.role);
-        return;
-      }
-
-      if (error) {
-        console.error("Error fetching user role:", error);
-      }
-
-      // Fallback: infer role via RPC (bypasses any select/RLS issues)
-      const rolePriority: AppRole[] = ["admin", "financeiro", "secretaria", "staff"];
-      const results = await Promise.all(
-        rolePriority.map((r) =>
-          supabase.rpc("has_role", {
-            _user_id: userId,
-            _role: r,
-          })
-        )
-      );
-
-      const inferred = rolePriority.find((r, idx) => results[idx].data === true) ?? null;
-      setRole(inferred);
+      if (error) throw error;
+      setRole(data?.role ?? null);
     } catch (error) {
-      console.error("Exception fetching user role:", error);
+      console.error("Error fetching user role:", error);
       setRole(null);
     } finally {
-      setRoleLoading(false);
+      setLoading(false);
     }
   };
 
@@ -142,8 +92,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setRole(null);
-    setRoleLoading(false);
-    setLoading(false);
   };
 
   const hasRole = (requiredRole: AppRole): boolean => {
@@ -160,7 +108,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         role,
         loading,
-        roleLoading,
         signIn,
         signOut,
         hasRole,
@@ -178,4 +125,3 @@ export function useAuth() {
   }
   return context;
 }
-

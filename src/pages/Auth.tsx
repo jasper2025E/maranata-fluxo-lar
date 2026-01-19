@@ -58,11 +58,12 @@ const Auth = () => {
   }, []);
 
   // Redirect if already authenticated
-  useEffect(() => {
-    if (user && !authLoading) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [user, authLoading, navigate]);
+  if (user && !authLoading) {
+    navigate("/dashboard", {
+      replace: true
+    });
+    return null;
+  }
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});

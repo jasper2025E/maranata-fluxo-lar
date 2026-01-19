@@ -53,7 +53,7 @@ export interface DashboardStats {
   variacaoDespesas: number;
 }
 
-async function fetchDashboardStats(signal?: AbortSignal): Promise<DashboardStats> {
+async function fetchDashboardStats(): Promise<DashboardStats> {
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   const today = new Date().toISOString().split("T")[0];
@@ -62,296 +62,229 @@ async function fetchDashboardStats(signal?: AbortSignal): Promise<DashboardStats
   const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
   const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
-  // Hard timeout + cancellation support (prevents infinite loading)
-  const controller = new AbortController();
-  const onAbort = () => controller.abort();
+  // Execute all queries in parallel
+  const [
+    responsaveisResult,
+    alunosResult,
+    faturasResult,
+    faturasVencidasResult,
+    pagamentosResult,
+    pagamentosPrevResult,
+    despesasResult,
+    despesasPrevResult,
+    pagamentosHistoricoResult,
+    despesasHistoricoResult,
+    funcionariosResult,
+    folhaPagamentoResult,
+  ] = await Promise.all([
+    // Responsáveis
+    supabase.from("responsaveis").select("id, ativo"),
+    
+    // Total students
+    supabase.from("alunos").select("id, status_matricula"),
+    
+    // All invoices for current month
+    supabase
+      .from("faturas")
+      .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
+      .eq("mes_referencia", currentMonth)
+      .eq("ano_referencia", currentYear),
+    
+    // All overdue invoices with aging
+    supabase
+      .from("faturas")
+      .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
+      .eq("status", "Vencida"),
+    
+    // Payments for current month
+    supabase
+      .from("pagamentos")
+      .select("valor, data_pagamento")
+      .gte("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`)
+      .lt("data_pagamento", currentMonth === 12 
+        ? `${currentYear + 1}-01-01` 
+        : `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`
+      ),
+    
+    // Payments for previous month (comparison)
+    supabase
+      .from("pagamentos")
+      .select("valor")
+      .gte("data_pagamento", `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`)
+      .lt("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`),
+    
+    // Expenses for current month
+    supabase
+      .from("despesas")
+      .select("valor, paga")
+      .eq("paga", true)
+      .gte("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`)
+      .lt("data_pagamento", currentMonth === 12 
+        ? `${currentYear + 1}-01-01` 
+        : `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`
+      ),
+    
+    // Expenses for previous month (comparison)
+    supabase
+      .from("despesas")
+      .select("valor")
+      .eq("paga", true)
+      .gte("data_pagamento", `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`)
+      .lt("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`),
 
-  if (signal) {
-    if (signal.aborted) {
-      controller.abort();
-    } else {
-      signal.addEventListener("abort", onAbort, { once: true });
-    }
-  }
+    // Last 6 months payments for chart
+    supabase
+      .from("pagamentos")
+      .select("valor, data_pagamento")
+      .gte("data_pagamento", new Date(currentYear, currentMonth - 6, 1).toISOString().split("T")[0]),
 
-  const timeoutId = setTimeout(() => controller.abort(), 12000);
-  const activeSignal = controller.signal;
+    // Last 6 months expenses for chart
+    supabase
+      .from("despesas")
+      .select("valor, data_pagamento")
+      .eq("paga", true)
+      .gte("data_pagamento", new Date(currentYear, currentMonth - 6, 1).toISOString().split("T")[0]),
 
-  try {
-    // Execute all queries in parallel
-    const [
-      responsaveisResult,
-      alunosResult,
-      faturasResult,
-      faturasVencidasResult,
-      pagamentosResult,
-      pagamentosPrevResult,
-      despesasResult,
-      despesasPrevResult,
-      pagamentosHistoricoResult,
-      despesasHistoricoResult,
-      funcionariosResult,
-      folhaPagamentoResult,
-    ] = await Promise.all([
-      // Responsáveis
-      supabase.from("responsaveis").select("id, ativo").abortSignal(activeSignal),
+    // Funcionários
+    supabase.from("funcionarios").select("id, status, salario_base"),
 
-      // Total students
-      supabase.from("alunos").select("id, status_matricula").abortSignal(activeSignal),
+    // Folha de pagamento do mês atual
+    supabase
+      .from("folha_pagamento")
+      .select("total_liquido, pago")
+      .eq("mes_referencia", currentMonth)
+      .eq("ano_referencia", currentYear)
+      .eq("pago", true),
+  ]);
 
-      // All invoices for current month
-      supabase
-        .from("faturas")
-        .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
-        .eq("mes_referencia", currentMonth)
-        .eq("ano_referencia", currentYear)
-        .abortSignal(activeSignal),
+  const responsaveis = responsaveisResult.data || [];
+  const alunos = alunosResult.data || [];
+  const faturas = faturasResult.data || [];
+  const faturasVencidasAll = faturasVencidasResult.data || [];
+  const pagamentos = pagamentosResult.data || [];
+  const pagamentosPrev = pagamentosPrevResult.data || [];
+  const despesas = despesasResult.data || [];
+  const despesasPrev = despesasPrevResult.data || [];
+  const funcionarios = funcionariosResult.data || [];
+  const folhaPagamento = folhaPagamentoResult.data || [];
 
-      // All overdue invoices with aging
-      supabase
-        .from("faturas")
-        .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
-        .eq("status", "Vencida")
-        .abortSignal(activeSignal),
+  // Responsáveis stats
+  const totalResponsaveis = responsaveis.length;
+  const responsaveisAtivos = responsaveis.filter(r => r.ativo).length;
+  const responsaveisComVencidas = new Set(
+    faturasVencidasAll.map(f => f.responsavel_id).filter(Boolean)
+  ).size;
 
-      // Payments for current month
-      supabase
-        .from("pagamentos")
-        .select("valor, data_pagamento")
-        .gte("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`)
-        .lt(
-          "data_pagamento",
-          currentMonth === 12
-            ? `${currentYear + 1}-01-01`
-            : `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`
-        )
-        .abortSignal(activeSignal),
+  // Alunos stats
+  const totalAlunos = alunos.length;
+  const alunosAtivos = alunos.filter(a => a.status_matricula === "ativo").length;
+  
+  // Faturas stats
+  const totalFaturas = faturas.length;
+  const faturasAbertas = faturas.filter(f => f.status === "Aberta").length;
+  const faturasPagas = faturas.filter(f => f.status === "Paga").length;
+  const faturasVencidas = faturas.filter(f => f.status === "Vencida").length;
+  
+  // Valor a receber e vencido
+  const valorAReceber = faturas
+    .filter(f => f.status === "Aberta" || f.status === "Vencida")
+    .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
+  
+  const valorVencido = faturasVencidasAll
+    .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
+  
+  // Financeiro
+  const totalReceitas = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0);
+  const totalDespesas = despesas.reduce((sum, d) => sum + Number(d.valor), 0);
+  const totalReceitasPrev = pagamentosPrev.reduce((sum, p) => sum + Number(p.valor), 0);
+  const totalDespesasPrev = despesasPrev.reduce((sum, d) => sum + Number(d.valor), 0);
 
-      // Payments for previous month (comparison)
-      supabase
-        .from("pagamentos")
-        .select("valor")
-        .gte("data_pagamento", `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`)
-        .lt("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`)
-        .abortSignal(activeSignal),
+  // Variações
+  const variacaoReceitas = totalReceitasPrev > 0 
+    ? ((totalReceitas - totalReceitasPrev) / totalReceitasPrev) * 100 
+    : 0;
+  const variacaoDespesas = totalDespesasPrev > 0 
+    ? ((totalDespesas - totalDespesasPrev) / totalDespesasPrev) * 100 
+    : 0;
 
-      // Expenses for current month
-      supabase
-        .from("despesas")
-        .select("valor, paga")
-        .eq("paga", true)
-        .gte("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`)
-        .lt(
-          "data_pagamento",
-          currentMonth === 12
-            ? `${currentYear + 1}-01-01`
-            : `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`
-        )
-        .abortSignal(activeSignal),
+  // Ticket médio
+  const ticketMedio = faturasPagas > 0 ? totalReceitas / faturasPagas : 0;
 
-      // Expenses for previous month (comparison)
-      supabase
-        .from("despesas")
-        .select("valor")
-        .eq("paga", true)
-        .gte("data_pagamento", `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`)
-        .lt("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`)
-        .abortSignal(activeSignal),
+  // Taxa de arrecadação
+  const valorEsperado = faturas.reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
+  const taxaArrecadacao = valorEsperado > 0 ? (totalReceitas / valorEsperado) * 100 : 0;
 
-      // Last 6 months payments for chart
-      supabase
-        .from("pagamentos")
-        .select("valor, data_pagamento")
-        .gte(
-          "data_pagamento",
-          new Date(currentYear, currentMonth - 6, 1).toISOString().split("T")[0]
-        )
-        .abortSignal(activeSignal),
+  // Calculate inadimplência rate
+  const totalFaturasMes = faturas.length;
+  const inadimplencia = totalFaturasMes > 0 
+    ? Math.round((faturasVencidas / totalFaturasMes) * 100) 
+    : 0;
 
-      // Last 6 months expenses for chart
-      supabase
-        .from("despesas")
-        .select("valor, data_pagamento")
-        .eq("paga", true)
-        .gte(
-          "data_pagamento",
-          new Date(currentYear, currentMonth - 6, 1).toISOString().split("T")[0]
-        )
-        .abortSignal(activeSignal),
+  const inadimplenciaResponsaveis = responsaveisAtivos > 0
+    ? Math.round((responsaveisComVencidas / responsaveisAtivos) * 100)
+    : 0;
 
-      // Funcionários
-      supabase.from("funcionarios").select("id, status, salario_base").abortSignal(activeSignal),
+  // Calculate aging
+  const aging: AgingData = { ate30: 0, de31a60: 0, mais60: 0 };
+  const todayDate = new Date(today);
+  
+  faturasVencidasAll.forEach(f => {
+    const vencimento = new Date(f.data_vencimento);
+    const diasAtraso = Math.floor((todayDate.getTime() - vencimento.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diasAtraso <= 30) aging.ate30++;
+    else if (diasAtraso <= 60) aging.de31a60++;
+    else aging.mais60++;
+  });
 
-      // Folha de pagamento do mês atual
-      supabase
-        .from("folha_pagamento")
-        .select("total_liquido, pago")
-        .eq("mes_referencia", currentMonth)
-        .eq("ano_referencia", currentYear)
-        .eq("pago", true)
-        .abortSignal(activeSignal),
-    ]);
+  // Process historical data for charts
+  const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  
+  // RH Stats
+  const totalFuncionarios = funcionarios.length;
+  const funcionariosAtivos = funcionarios.filter(f => f.status === 'ativo').length;
+  const gastoRHMensal = folhaPagamento.reduce((sum, f) => sum + Number(f.total_liquido || 0), 0);
 
-    // Check for errors in any query
-    const queryErrors = [
-      responsaveisResult.error,
-      alunosResult.error,
-      faturasResult.error,
-      faturasVencidasResult.error,
-      pagamentosResult.error,
-      pagamentosPrevResult.error,
-      despesasResult.error,
-      despesasPrevResult.error,
-      pagamentosHistoricoResult.error,
-      despesasHistoricoResult.error,
-      funcionariosResult.error,
-      folhaPagamentoResult.error,
-    ].filter(Boolean);
+  const receitasMes = processMonthlyData(pagamentosHistoricoResult.data || [], monthNames);
+  const despesasMes = processMonthlyData(despesasHistoricoResult.data || [], monthNames);
+  
+  // Combined data for composed chart
+  const combinedData = receitasMes.map((item, index) => ({
+    mes: item.mes,
+    receitas: item.valor,
+    despesas: despesasMes[index]?.valor || 0,
+    saldo: item.valor - (despesasMes[index]?.valor || 0),
+  }));
 
-    if (queryErrors.length > 0) {
-      console.error("Dashboard query errors:", queryErrors);
-      throw new Error("Failed to fetch dashboard data");
-    }
-
-    const responsaveis = responsaveisResult.data || [];
-    const alunos = alunosResult.data || [];
-    const faturas = faturasResult.data || [];
-    const faturasVencidasAll = faturasVencidasResult.data || [];
-    const pagamentos = pagamentosResult.data || [];
-    const pagamentosPrev = pagamentosPrevResult.data || [];
-    const despesas = despesasResult.data || [];
-    const despesasPrev = despesasPrevResult.data || [];
-    const funcionarios = funcionariosResult.data || [];
-    const folhaPagamento = folhaPagamentoResult.data || [];
-
-    // Responsáveis stats
-    const totalResponsaveis = responsaveis.length;
-    const responsaveisAtivos = responsaveis.filter((r) => r.ativo).length;
-    const responsaveisComVencidas = new Set(
-      faturasVencidasAll.map((f) => f.responsavel_id).filter(Boolean)
-    ).size;
-
-    // Alunos stats
-    const totalAlunos = alunos.length;
-    const alunosAtivos = alunos.filter((a) => a.status_matricula === "ativo").length;
-
-    // Faturas stats
-    const totalFaturas = faturas.length;
-    const faturasAbertas = faturas.filter((f) => f.status === "Aberta").length;
-    const faturasPagas = faturas.filter((f) => f.status === "Paga").length;
-    const faturasVencidas = faturas.filter((f) => f.status === "Vencida").length;
-
-    // Valor a receber e vencido
-    const valorAReceber = faturas
-      .filter((f) => f.status === "Aberta" || f.status === "Vencida")
-      .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
-
-    const valorVencido = faturasVencidasAll.reduce(
-      (sum, f) => sum + Number((f as any).valor_total || f.valor),
-      0
-    );
-
-    // Financeiro
-    const totalReceitas = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0);
-    const totalDespesas = despesas.reduce((sum, d) => sum + Number(d.valor), 0);
-    const totalReceitasPrev = pagamentosPrev.reduce((sum, p) => sum + Number(p.valor), 0);
-    const totalDespesasPrev = despesasPrev.reduce((sum, d) => sum + Number(d.valor), 0);
-
-    // Variações
-    const variacaoReceitas =
-      totalReceitasPrev > 0 ? ((totalReceitas - totalReceitasPrev) / totalReceitasPrev) * 100 : 0;
-    const variacaoDespesas =
-      totalDespesasPrev > 0 ? ((totalDespesas - totalDespesasPrev) / totalDespesasPrev) * 100 : 0;
-
-    // Ticket médio
-    const ticketMedio = faturasPagas > 0 ? totalReceitas / faturasPagas : 0;
-
-    // Taxa de arrecadação
-    const valorEsperado = faturas.reduce(
-      (sum, f) => sum + Number((f as any).valor_total || f.valor),
-      0
-    );
-    const taxaArrecadacao = valorEsperado > 0 ? (totalReceitas / valorEsperado) * 100 : 0;
-
-    // Calculate inadimplência rate
-    const totalFaturasMes = faturas.length;
-    const inadimplencia = totalFaturasMes > 0 ? Math.round((faturasVencidas / totalFaturasMes) * 100) : 0;
-
-    const inadimplenciaResponsaveis =
-      responsaveisAtivos > 0 ? Math.round((responsaveisComVencidas / responsaveisAtivos) * 100) : 0;
-
-    // Calculate aging
-    const aging: AgingData = { ate30: 0, de31a60: 0, mais60: 0 };
-    const todayDate = new Date(today);
-
-    faturasVencidasAll.forEach((f) => {
-      const vencimento = new Date(f.data_vencimento);
-      const diasAtraso = Math.floor(
-        (todayDate.getTime() - vencimento.getTime()) / (1000 * 60 * 60 * 24)
-      );
-
-      if (diasAtraso <= 30) aging.ate30++;
-      else if (diasAtraso <= 60) aging.de31a60++;
-      else aging.mais60++;
-    });
-
-    // Process historical data for charts
-    const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-
-    // RH Stats
-    const totalFuncionarios = funcionarios.length;
-    const funcionariosAtivos = funcionarios.filter((f) => f.status === "ativo").length;
-    const gastoRHMensal = folhaPagamento.reduce((sum, f) => sum + Number(f.total_liquido || 0), 0);
-
-    const receitasMes = processMonthlyData(pagamentosHistoricoResult.data || [], monthNames);
-    const despesasMes = processMonthlyData(despesasHistoricoResult.data || [], monthNames);
-
-    // Combined data for composed chart
-    const combinedData = receitasMes.map((item, index) => ({
-      mes: item.mes,
-      receitas: item.valor,
-      despesas: despesasMes[index]?.valor || 0,
-      saldo: item.valor - (despesasMes[index]?.valor || 0),
-    }));
-
-    return {
-      totalResponsaveis,
-      responsaveisAtivos,
-      responsaveisInadimplentes: responsaveisComVencidas,
-      totalAlunos,
-      alunosAtivos,
-      totalFaturas,
-      faturasAbertas,
-      faturasPagas,
-      faturasVencidas,
-      totalReceitas,
-      totalDespesas,
-      saldoMensal: totalReceitas - totalDespesas,
-      valorAReceber,
-      valorVencido,
-      ticketMedio,
-      receitasMes,
-      despesasMes,
-      combinedData,
-      inadimplencia,
-      inadimplenciaResponsaveis,
-      taxaArrecadacao,
-      aging,
-      totalFuncionarios,
-      funcionariosAtivos,
-      gastoRHMensal,
-      variacaoReceitas,
-      variacaoDespesas,
-    };
-  } catch (err) {
-    if ((err as any)?.name === "AbortError") {
-      throw new Error("Tempo excedido ao carregar dados do dashboard");
-    }
-    throw err;
-  } finally {
-    clearTimeout(timeoutId);
-    if (signal) signal.removeEventListener("abort", onAbort);
-  }
+  return {
+    totalResponsaveis,
+    responsaveisAtivos,
+    responsaveisInadimplentes: responsaveisComVencidas,
+    totalAlunos,
+    alunosAtivos,
+    totalFaturas,
+    faturasAbertas,
+    faturasPagas,
+    faturasVencidas,
+    totalReceitas,
+    totalDespesas,
+    saldoMensal: totalReceitas - totalDespesas,
+    valorAReceber,
+    valorVencido,
+    ticketMedio,
+    receitasMes,
+    despesasMes,
+    combinedData,
+    inadimplencia,
+    inadimplenciaResponsaveis,
+    taxaArrecadacao,
+    aging,
+    totalFuncionarios,
+    funcionariosAtivos,
+    gastoRHMensal,
+    variacaoReceitas,
+    variacaoDespesas,
+  };
 }
 
 function processMonthlyData(
@@ -387,11 +320,10 @@ function processMonthlyData(
 export function useDashboardStats() {
   return useQuery<DashboardStats>({
     queryKey: queryKeys.dashboard.stats(),
-    queryFn: ({ signal }) => fetchDashboardStats(signal),
+    queryFn: fetchDashboardStats,
     staleTime: 1000 * 30,
     gcTime: 1000 * 60 * 5,
     retry: 2,
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }

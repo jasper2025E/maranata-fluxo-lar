@@ -6,6 +6,8 @@ type ThemeProviderProps = ComponentProps<typeof NextThemesProvider>;
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   const [storageKey, setStorageKey] = useState<string>("theme");
+  const [initialTheme, setInitialTheme] = useState<string | undefined>(undefined);
+  const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
     const loadUserTheme = async () => {
@@ -25,17 +27,18 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
             .maybeSingle();
           
           if (prefs?.theme) {
-            // Update localStorage with user-specific key
+            setInitialTheme(prefs.theme);
+            // Also update localStorage with user-specific key
             localStorage.setItem(userStorageKey, prefs.theme);
-            // Force theme change by updating document class
-            document.documentElement.classList.remove("light", "dark");
-            if (prefs.theme !== "system") {
-              document.documentElement.classList.add(prefs.theme);
-            }
           }
+        } else {
+          // No user logged in - use default storage key
+          setStorageKey("theme");
         }
       } catch (error) {
         console.error("Error loading user theme:", error);
+      } finally {
+        setIsReady(true);
       }
     };
 
@@ -55,6 +58,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
           .maybeSingle();
         
         if (prefs?.theme) {
+          setInitialTheme(prefs.theme);
           localStorage.setItem(userStorageKey, prefs.theme);
           // Force theme change by updating document class
           document.documentElement.classList.remove("light", "dark");
@@ -64,6 +68,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
         }
       } else if (event === "SIGNED_OUT") {
         setStorageKey("theme");
+        setInitialTheme("light");
         // Reset to default theme on logout
         document.documentElement.classList.remove("dark");
         document.documentElement.classList.add("light");
@@ -75,10 +80,16 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
     };
   }, []);
 
+  // Wait until we've checked for user theme
+  if (!isReady) {
+    return null;
+  }
+
   return (
     <NextThemesProvider 
       {...props} 
       storageKey={storageKey}
+      defaultTheme={initialTheme || props.defaultTheme}
     >
       {children}
     </NextThemesProvider>
