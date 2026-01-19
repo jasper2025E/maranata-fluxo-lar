@@ -35,6 +35,7 @@ import {
   Calendar as CalendarIcon,
   History,
   Download,
+  QrCode,
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -55,6 +56,7 @@ interface FaturaTableProps {
   onSendReceipt: (fatura: Fatura) => void;
   onViewHistory: (fatura: Fatura) => void;
   onDownloadPDF?: (fatura: Fatura) => void;
+  onAsaasPayment?: (fatura: Fatura) => void;
 }
 
 function getStatusConfig(status: string, dataVencimento: string) {
@@ -100,6 +102,7 @@ function FaturaRow({
   onSendReceipt,
   onViewHistory,
   onDownloadPDF,
+  onAsaasPayment,
 }: {
   fatura: Fatura;
   onViewDetails: (fatura: Fatura) => void;
@@ -111,6 +114,7 @@ function FaturaRow({
   onSendReceipt: (fatura: Fatura) => void;
   onViewHistory: (fatura: Fatura) => void;
   onDownloadPDF?: (fatura: Fatura) => void;
+  onAsaasPayment?: (fatura: Fatura) => void;
 }) {
   const statusConfig = getStatusConfig(fatura.status, fatura.data_vencimento);
   const StatusIcon = statusConfig.icon;
@@ -159,13 +163,20 @@ function FaturaRow({
         </div>
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className={cn("font-medium gap-1 px-2 py-0.5 text-xs", statusConfig.className)}>
-          <StatusIcon className="h-3 w-3" />
-          {statusConfig.label}
-        </Badge>
-        {fatura.versao && fatura.versao > 1 && (
-          <span className="ml-1 text-[10px] text-muted-foreground">v{fatura.versao}</span>
-        )}
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className={cn("font-medium gap-1 px-2 py-0.5 text-xs", statusConfig.className)}>
+            <StatusIcon className="h-3 w-3" />
+            {statusConfig.label}
+          </Badge>
+          {fatura.asaas_payment_id && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+              Asaas
+            </Badge>
+          )}
+          {fatura.versao && fatura.versao > 1 && (
+            <span className="text-[10px] text-muted-foreground">v{fatura.versao}</span>
+          )}
+        </div>
       </TableCell>
       <TableCell className="text-right pr-4">
         <DropdownMenu>
@@ -194,12 +205,18 @@ function FaturaRow({
             {isPendente && (
               <>
                 <DropdownMenuSeparator />
+                {onAsaasPayment && (
+                  <DropdownMenuItem onClick={() => onAsaasPayment(fatura)} className="text-emerald-600">
+                    <QrCode className="h-4 w-4 mr-2" />
+                    {fatura.asaas_payment_id ? "Ver cobrança Asaas" : "Gerar PIX/Boleto"}
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuItem onClick={() => onPaymentLink(fatura)}>
                   <Link className="h-4 w-4 mr-2" />
-                  {fatura.payment_url ? "Ver link de pagamento" : "Gerar link"}
+                  {fatura.payment_url ? "Ver link Stripe" : "Gerar link Stripe"}
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onPayment(fatura)} className="text-success">
-                  <CreditCard className="h-4 w-4 mr-2" />Registrar pagamento
+                  <CreditCard className="h-4 w-4 mr-2" />Registrar pagamento manual
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onParcelar(fatura)}>
                   <SplitSquareVertical className="h-4 w-4 mr-2" />Parcelar
@@ -241,6 +258,7 @@ export function FaturaTable({
   onSendReceipt,
   onViewHistory,
   onDownloadPDF,
+  onAsaasPayment,
 }: FaturaTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -270,7 +288,7 @@ export function FaturaTable({
     );
   }
 
-  const rowProps = { onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, onSendReceipt, onViewHistory, onDownloadPDF };
+  const rowProps = { onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, onSendReceipt, onViewHistory, onDownloadPDF, onAsaasPayment };
 
   // List view
   if (viewMode === "list") {
