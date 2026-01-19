@@ -86,6 +86,16 @@ export interface Fatura {
   motivo_cancelamento?: string | null;
   created_by?: string;
   updated_by?: string;
+  // Campos Asaas
+  asaas_payment_id?: string | null;
+  asaas_invoice_url?: string | null;
+  asaas_pix_qrcode?: string | null;
+  asaas_pix_payload?: string | null;
+  asaas_boleto_url?: string | null;
+  asaas_boleto_barcode?: string | null;
+  asaas_status?: string | null;
+  asaas_due_date?: string | null;
+  asaas_billing_type?: string | null;
   alunos?: { nome_completo: string; email_responsavel: string; responsavel_id?: string | null };
   cursos?: { nome: string };
   responsaveis?: { nome: string; email: string | null; telefone: string } | null;

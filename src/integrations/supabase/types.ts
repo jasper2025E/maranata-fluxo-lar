@@ -547,6 +547,15 @@ export type Database = {
         Row: {
           aluno_id: string
           ano_referencia: number
+          asaas_billing_type: string | null
+          asaas_boleto_barcode: string | null
+          asaas_boleto_url: string | null
+          asaas_due_date: string | null
+          asaas_invoice_url: string | null
+          asaas_payment_id: string | null
+          asaas_pix_payload: string | null
+          asaas_pix_qrcode: string | null
+          asaas_status: string | null
           bloqueada: boolean | null
           cancelada_em: string | null
           cancelada_por: string | null
@@ -588,6 +597,15 @@ export type Database = {
         Insert: {
           aluno_id: string
           ano_referencia: number
+          asaas_billing_type?: string | null
+          asaas_boleto_barcode?: string | null
+          asaas_boleto_url?: string | null
+          asaas_due_date?: string | null
+          asaas_invoice_url?: string | null
+          asaas_payment_id?: string | null
+          asaas_pix_payload?: string | null
+          asaas_pix_qrcode?: string | null
+          asaas_status?: string | null
           bloqueada?: boolean | null
           cancelada_em?: string | null
           cancelada_por?: string | null
@@ -629,6 +647,15 @@ export type Database = {
         Update: {
           aluno_id?: string
           ano_referencia?: number
+          asaas_billing_type?: string | null
+          asaas_boleto_barcode?: string | null
+          asaas_boleto_url?: string | null
+          asaas_due_date?: string | null
+          asaas_invoice_url?: string | null
+          asaas_payment_id?: string | null
+          asaas_pix_payload?: string | null
+          asaas_pix_qrcode?: string | null
+          asaas_status?: string | null
           bloqueada?: boolean | null
           cancelada_em?: string | null
           cancelada_por?: string | null
@@ -1172,6 +1199,7 @@ export type Database = {
       }
       responsaveis: {
         Row: {
+          asaas_customer_id: string | null
           ativo: boolean | null
           cpf: string | null
           created_at: string | null
@@ -1185,6 +1213,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          asaas_customer_id?: string | null
           ativo?: boolean | null
           cpf?: string | null
           created_at?: string | null
@@ -1198,6 +1227,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          asaas_customer_id?: string | null
           ativo?: boolean | null
           cpf?: string | null
           created_at?: string | null
