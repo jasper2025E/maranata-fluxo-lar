@@ -131,12 +131,27 @@ serve(async (req) => {
     const mesReferencia = meses[fatura.mes_referencia - 1];
     const description = `Mensalidade ${mesReferencia}/${fatura.ano_referencia} - ${fatura.alunos?.nome_completo || 'Aluno'} - ${fatura.cursos?.nome || 'Curso'}`;
 
+    // Ajustar data de vencimento - se for no passado, usar hoje ou amanhã
+    let dueDate = fatura.data_vencimento;
+    const hoje = new Date();
+    hoje.setHours(0, 0, 0, 0);
+    const dataVencimento = new Date(fatura.data_vencimento);
+    dataVencimento.setHours(0, 0, 0, 0);
+    
+    if (dataVencimento < hoje) {
+      // Data no passado - usar amanhã para dar tempo de processamento
+      const amanha = new Date(hoje);
+      amanha.setDate(amanha.getDate() + 1);
+      dueDate = amanha.toISOString().split('T')[0];
+      console.log(`Data de vencimento ajustada de ${fatura.data_vencimento} para ${dueDate}`);
+    }
+
     // Criar cobrança no Asaas
     const paymentData: any = {
       customer: customerId,
       billingType: billingType, // UNDEFINED permite PIX, Boleto e Cartão
       value: Number(valorFatura.toFixed(2)),
-      dueDate: fatura.data_vencimento,
+      dueDate: dueDate,
       description: description,
       externalReference: faturaId,
       postalService: false,
