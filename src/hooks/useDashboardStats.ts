@@ -54,6 +54,7 @@ export interface DashboardStats {
 }
 
 async function fetchDashboardStats(): Promise<DashboardStats> {
+  console.log("Fetching dashboard stats...");
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   const today = new Date().toISOString().split("T")[0];
@@ -156,6 +157,26 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .eq("ano_referencia", currentYear)
       .eq("pago", true),
   ]);
+
+  // Check for errors in any query
+  const queryErrors = [
+    responsaveisResult.error,
+    alunosResult.error,
+    faturasResult.error,
+    faturasVencidasResult.error,
+    pagamentosResult.error,
+    pagamentosPrevResult.error,
+    despesasResult.error,
+    despesasPrevResult.error,
+    pagamentosHistoricoResult.error,
+    despesasHistoricoResult.error,
+    funcionariosResult.error,
+    folhaPagamentoResult.error,
+  ].filter(Boolean);
+
+  if (queryErrors.length > 0) {
+    console.error("Dashboard query errors:", queryErrors);
+  }
 
   const responsaveis = responsaveisResult.data || [];
   const alunos = alunosResult.data || [];
@@ -323,7 +344,8 @@ export function useDashboardStats() {
     queryFn: fetchDashboardStats,
     staleTime: 1000 * 30,
     gcTime: 1000 * 60 * 5,
-    retry: 2,
+    retry: 3,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 10000),
     refetchOnWindowFocus: true,
   });
 }

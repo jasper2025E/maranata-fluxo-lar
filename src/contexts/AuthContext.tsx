@@ -89,23 +89,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserRole = async (userId: string) => {
     setRoleLoading(true);
     try {
-      // Timeout to avoid any hung request
-      const timeoutPromise = new Promise((_, reject) =>
-        setTimeout(() => reject(new Error("Timeout")), 5000)
-      );
-
-      const queryPromise = supabase
+      console.log("Fetching role for user:", userId);
+      
+      const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId)
         .maybeSingle();
 
-      const { data, error } = (await Promise.race([queryPromise, timeoutPromise])) as any;
+      console.log("Role fetch result:", { data, error });
 
-      if (error) throw error;
-      setRole(data?.role ?? null);
+      if (error) {
+        console.error("Error fetching user role:", error);
+        setRole(null);
+      } else {
+        setRole(data?.role ?? null);
+      }
     } catch (error) {
-      console.error("Error fetching user role:", error);
+      console.error("Exception fetching user role:", error);
       setRole(null);
     } finally {
       setRoleLoading(false);
