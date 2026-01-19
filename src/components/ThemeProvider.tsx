@@ -1,10 +1,13 @@
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
-import { type ComponentProps, useEffect, useMemo, useState } from "react";
+import { type ComponentProps, useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type ThemeProviderProps = ComponentProps<typeof NextThemesProvider>;
 
 type ThemeValue = "light" | "dark" | "system";
+
+// Cache to avoid repeated DB calls
+const themeCache = new Map<string, ThemeValue>();
 
 function ThemeBootstrap({
   userId,
@@ -14,18 +17,32 @@ function ThemeBootstrap({
   defaultTheme: ThemeValue;
 }) {
   const { setTheme } = useTheme();
+  const lastFetchedUserId = useRef<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
 
     const run = async () => {
-      // Sem usuário: aplica o tema default do app (não bloqueia render).
       if (!userId) {
         setTheme(defaultTheme);
         return;
       }
 
-      // Com usuário: tenta buscar a preferência no banco.
+      // Skip if already fetched for this user
+      if (lastFetchedUserId.current === userId) {
+        const cached = themeCache.get(userId);
+        if (cached) setTheme(cached);
+        return;
+      }
+
+      // Check cache first
+      const cached = themeCache.get(userId);
+      if (cached) {
+        lastFetchedUserId.current = userId;
+        setTheme(cached);
+        return;
+      }
+
       try {
         const { data: prefs } = await supabase
           .from("user_preferences")
@@ -35,6 +52,8 @@ function ThemeBootstrap({
 
         const theme = (prefs?.theme as ThemeValue | null) ?? null;
         if (!cancelled && theme) {
+          themeCache.set(userId, theme);
+          lastFetchedUserId.current = userId;
           setTheme(theme);
         }
       } catch (error) {
@@ -54,8 +73,8 @@ function ThemeBootstrap({
 
 export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   const [userId, setUserId] = useState<string | null>(null);
+  const hasInitialized = useRef(false);
 
-  // Se não vier, usamos light (mantém consistência com App.tsx)
   const defaultTheme = (props.defaultTheme ?? "light") as ThemeValue;
 
   const storageKey = useMemo(() => {
@@ -63,7 +82,9 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
   }, [userId]);
 
   useEffect(() => {
-    // Carrega sessão atual (rápido: vem do cache local)
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
     supabase.auth
       .getSession()
       .then(({ data }) => {
@@ -74,11 +95,15 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
         setUserId(null);
       });
 
-    // Mantém em sync quando o usuário entra/sai
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id ?? null);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT') {
+        setUserId(session?.user?.id ?? null);
+        if (!session?.user?.id) {
+          themeCache.clear();
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -95,5 +120,10 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
       {children}
     </NextThemesProvider>
   );
+}
+
+// Export function to update cache when user changes theme
+export function updateThemeCache(userId: string, theme: ThemeValue) {
+  themeCache.set(userId, theme);
 }
 
