@@ -17,11 +17,10 @@ import {
   CheckCircle2,
   XCircle,
   RefreshCw,
-  Send,
   Download,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { DashboardCard } from "@/components/DashboardCard";
+import { FinancialKPICard } from "@/components/dashboard";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { useNavigate } from "react-router-dom";
@@ -235,10 +234,10 @@ const ResponsavelDashboard = () => {
         {/* Header with Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">
               Dashboard Financeiro
             </h2>
-            <p className="text-gray-500 mt-1">
+            <p className="text-muted-foreground mt-1">
               Gestão de responsáveis e cobranças
             </p>
           </div>
@@ -262,45 +261,45 @@ const ResponsavelDashboard = () => {
           </div>
         </div>
 
-        {/* Main KPIs */}
+        {/* Main KPIs - Premium Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <DashboardCard
+          <FinancialKPICard
             title="Responsáveis Ativos"
             value={stats.responsaveisAtivos}
             subtitle={`de ${stats.totalResponsaveis} cadastrados`}
             icon={UserCheck}
-            color="blue"
+            variant="info"
           />
-          <DashboardCard
+          <FinancialKPICard
             title="Valor a Receber"
             value={formatCurrency(stats.valorAReceber)}
             subtitle={`${stats.faturasAbertas + stats.faturasVencidas} faturas pendentes`}
             icon={Wallet}
-            color="yellow"
+            variant="warning"
           />
-          <DashboardCard
+          <FinancialKPICard
             title="Recebido no Mês"
             value={formatCurrency(stats.valorRecebidoMes)}
             subtitle={`${stats.faturasPagas} faturas pagas`}
             icon={TrendingUp}
-            color="green"
+            variant="success"
           />
-          <DashboardCard
+          <FinancialKPICard
             title="Inadimplência"
             value={`${inadimplenciaRate}%`}
             subtitle={`${stats.responsaveisInadimplentes} responsáveis`}
             icon={AlertCircle}
-            color={inadimplenciaRate > 20 ? "red" : inadimplenciaRate > 10 ? "yellow" : "blue"}
+            variant={inadimplenciaRate > 20 ? "danger" : inadimplenciaRate > 10 ? "warning" : "info"}
           />
         </div>
 
         {/* Quick Actions */}
-        <Card className="border-gray-100/80 shadow-sm rounded-2xl overflow-hidden">
+        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden bg-card">
           <CardHeader className="pb-3">
-            <CardTitle className="text-lg font-semibold text-gray-900">
+            <CardTitle className="text-lg font-semibold text-foreground">
               Ações Rápidas
             </CardTitle>
-            <CardDescription className="text-gray-500">
+            <CardDescription className="text-muted-foreground">
               Acesse as principais funcionalidades
             </CardDescription>
           </CardHeader>
@@ -308,34 +307,34 @@ const ResponsavelDashboard = () => {
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Button
                 variant="outline"
-                className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-blue-50 hover:border-blue-200"
+                className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-primary/5 hover:border-primary/30 transition-all duration-200"
                 onClick={() => navigate("/responsaveis")}
               >
-                <Users className="h-5 w-5 text-blue-600" />
+                <Users className="h-5 w-5 text-primary" />
                 <span className="text-sm font-medium">Gerenciar Responsáveis</span>
               </Button>
               <Button
                 variant="outline"
-                className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-amber-50 hover:border-amber-200"
+                className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-warning/5 hover:border-warning/30 transition-all duration-200"
                 onClick={() => navigate("/faturas")}
               >
-                <FileText className="h-5 w-5 text-amber-600" />
+                <FileText className="h-5 w-5 text-warning" />
                 <span className="text-sm font-medium">Ver Faturas</span>
               </Button>
               <Button
                 variant="outline"
-                className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-emerald-50 hover:border-emerald-200"
+                className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-success/5 hover:border-success/30 transition-all duration-200"
                 onClick={() => navigate("/pagamentos")}
               >
-                <CreditCard className="h-5 w-5 text-emerald-600" />
+                <CreditCard className="h-5 w-5 text-success" />
                 <span className="text-sm font-medium">Registrar Pagamento</span>
               </Button>
               <Button
                 variant="outline"
-                className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-violet-50 hover:border-violet-200"
+                className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-info/5 hover:border-info/30 transition-all duration-200"
                 onClick={() => navigate("/relatorios")}
               >
-                <Download className="h-5 w-5 text-violet-600" />
+                <Download className="h-5 w-5 text-info" />
                 <span className="text-sm font-medium">Exportar Dados</span>
               </Button>
             </div>
@@ -345,12 +344,12 @@ const ResponsavelDashboard = () => {
         {/* Two Column Layout */}
         <div className="grid gap-5 lg:grid-cols-2">
           {/* Faturas Status Chart */}
-          <Card className="border-gray-100/80 shadow-sm rounded-2xl overflow-hidden">
+          <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden bg-card">
             <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold text-gray-900">
+              <CardTitle className="text-lg font-semibold text-foreground">
                 Status das Faturas
               </CardTitle>
-              <CardDescription className="text-gray-500">
+              <CardDescription className="text-muted-foreground">
                 Distribuição do mês atual
               </CardDescription>
             </CardHeader>
@@ -376,10 +375,11 @@ const ResponsavelDashboard = () => {
                       </Pie>
                       <Tooltip 
                         contentStyle={{
-                          backgroundColor: "#fff",
-                          border: "1px solid #e2e8f0",
+                          backgroundColor: "hsl(var(--card))",
+                          border: "1px solid hsl(var(--border))",
                           borderRadius: "12px",
                           boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+                          color: "hsl(var(--foreground))",
                         }}
                       />
                       <Legend />
@@ -388,46 +388,46 @@ const ResponsavelDashboard = () => {
                 </div>
               ) : (
                 <div className="h-64 flex items-center justify-center">
-                  <p className="text-gray-500">Nenhuma fatura no mês</p>
+                  <p className="text-muted-foreground">Nenhuma fatura no mês</p>
                 </div>
               )}
 
               {/* Summary stats below chart */}
-              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-100">
+              <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-border/50">
                 <div className="text-center">
-                  <div className="flex items-center justify-center gap-1.5 text-emerald-600">
+                  <div className="flex items-center justify-center gap-1.5 text-success">
                     <CheckCircle2 className="h-4 w-4" />
                     <span className="text-lg font-bold">{stats.faturasPagas}</span>
                   </div>
-                  <p className="text-xs text-gray-500">Pagas</p>
+                  <p className="text-xs text-muted-foreground">Pagas</p>
                 </div>
                 <div className="text-center">
-                  <div className="flex items-center justify-center gap-1.5 text-amber-600">
+                  <div className="flex items-center justify-center gap-1.5 text-warning">
                     <Clock className="h-4 w-4" />
                     <span className="text-lg font-bold">{stats.faturasAbertas}</span>
                   </div>
-                  <p className="text-xs text-gray-500">Abertas</p>
+                  <p className="text-xs text-muted-foreground">Abertas</p>
                 </div>
                 <div className="text-center">
-                  <div className="flex items-center justify-center gap-1.5 text-rose-600">
+                  <div className="flex items-center justify-center gap-1.5 text-destructive">
                     <XCircle className="h-4 w-4" />
                     <span className="text-lg font-bold">{stats.faturasVencidas}</span>
                   </div>
-                  <p className="text-xs text-gray-500">Vencidas</p>
+                  <p className="text-xs text-muted-foreground">Vencidas</p>
                 </div>
               </div>
             </CardContent>
           </Card>
 
           {/* Inadimplentes List */}
-          <Card className="border-gray-100/80 shadow-sm rounded-2xl overflow-hidden">
+          <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden bg-card">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg font-semibold text-gray-900">
+                  <CardTitle className="text-lg font-semibold text-foreground">
                     Responsáveis Inadimplentes
                   </CardTitle>
-                  <CardDescription className="text-gray-500">
+                  <CardDescription className="text-muted-foreground">
                     Top 10 com maior valor pendente
                   </CardDescription>
                 </div>
@@ -448,13 +448,13 @@ const ResponsavelDashboard = () => {
                   {inadimplentes.map((resp) => (
                     <div
                       key={resp.id}
-                      className="flex items-center justify-between p-3 rounded-xl bg-gray-50/80 hover:bg-gray-100/80 transition-colors"
+                      className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors"
                     >
                       <div className="min-w-0 flex-1">
-                        <p className="font-medium text-gray-900 truncate">
+                        <p className="font-medium text-foreground truncate">
                           {resp.nome}
                         </p>
-                        <p className="text-sm text-gray-500 truncate">
+                        <p className="text-sm text-muted-foreground truncate">
                           {resp.telefone}
                         </p>
                       </div>
@@ -462,7 +462,7 @@ const ResponsavelDashboard = () => {
                         <Badge variant="destructive" className="whitespace-nowrap">
                           {resp.faturas_vencidas} {resp.faturas_vencidas === 1 ? "fatura" : "faturas"}
                         </Badge>
-                        <span className="font-semibold text-rose-600 whitespace-nowrap">
+                        <span className="font-semibold text-destructive whitespace-nowrap">
                           {formatCurrency(resp.valor_pendente)}
                         </span>
                       </div>
@@ -470,9 +470,9 @@ const ResponsavelDashboard = () => {
                   ))}
                 </div>
               ) : (
-                <div className="h-64 flex flex-col items-center justify-center text-gray-500">
-                  <CheckCircle2 className="h-12 w-12 text-emerald-500 mb-3" />
-                  <p className="font-medium text-gray-900">Nenhum inadimplente!</p>
+                <div className="h-64 flex flex-col items-center justify-center text-muted-foreground">
+                  <CheckCircle2 className="h-12 w-12 text-success mb-3" />
+                  <p className="font-medium text-foreground">Nenhum inadimplente!</p>
                   <p className="text-sm">Todos os pagamentos estão em dia</p>
                 </div>
               )}
@@ -481,58 +481,58 @@ const ResponsavelDashboard = () => {
         </div>
 
         {/* Financial Summary */}
-        <Card className="border-gray-100/80 shadow-sm rounded-2xl overflow-hidden">
+        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden bg-card">
           <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold text-gray-900">
+            <CardTitle className="text-lg font-semibold text-foreground">
               Resumo Financeiro
             </CardTitle>
-            <CardDescription className="text-gray-500">
+            <CardDescription className="text-muted-foreground">
               Indicadores do mês atual
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-50/40 border border-blue-100/50">
-                <div className="h-11 w-11 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-blue-600" strokeWidth={1.75} />
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+                <div className="h-11 w-11 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Users className="h-5 w-5 text-primary" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-gray-900">{stats.totalAlunos}</p>
-                  <p className="text-sm text-gray-500">Alunos Ativos</p>
+                  <p className="text-xl font-bold text-foreground">{stats.totalAlunos}</p>
+                  <p className="text-sm text-muted-foreground">Alunos Ativos</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-emerald-50/80 to-emerald-50/40 border border-emerald-100/50">
-                <div className="h-11 w-11 rounded-xl bg-emerald-100 flex items-center justify-center">
-                  <CreditCard className="h-5 w-5 text-emerald-600" strokeWidth={1.75} />
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-success/10 to-success/5 border border-success/20">
+                <div className="h-11 w-11 rounded-xl bg-success/20 flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-success" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-gray-900">{formatCurrency(stats.ticketMedio)}</p>
-                  <p className="text-sm text-gray-500">Ticket Médio</p>
+                  <p className="text-xl font-bold text-foreground">{formatCurrency(stats.ticketMedio)}</p>
+                  <p className="text-sm text-muted-foreground">Ticket Médio</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-amber-50/80 to-amber-50/40 border border-amber-100/50">
-                <div className="h-11 w-11 rounded-xl bg-amber-100 flex items-center justify-center">
-                  <Clock className="h-5 w-5 text-amber-600" strokeWidth={1.75} />
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-warning/10 to-warning/5 border border-warning/20">
+                <div className="h-11 w-11 rounded-xl bg-warning/20 flex items-center justify-center">
+                  <Clock className="h-5 w-5 text-warning" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-gray-900">{stats.faturasAbertas + stats.faturasVencidas}</p>
-                  <p className="text-sm text-gray-500">Faturas Pendentes</p>
+                  <p className="text-xl font-bold text-foreground">{stats.faturasAbertas + stats.faturasVencidas}</p>
+                  <p className="text-sm text-muted-foreground">Faturas Pendentes</p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-violet-50/80 to-violet-50/40 border border-violet-100/50">
-                <div className="h-11 w-11 rounded-xl bg-violet-100 flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-violet-600" strokeWidth={1.75} />
+              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-info/10 to-info/5 border border-info/20">
+                <div className="h-11 w-11 rounded-xl bg-info/20 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5 text-info" strokeWidth={1.75} />
                 </div>
                 <div>
-                  <p className="text-xl font-bold text-gray-900">
+                  <p className="text-xl font-bold text-foreground">
                     {stats.faturasPagas + stats.faturasAbertas + stats.faturasVencidas > 0
                       ? Math.round((stats.faturasPagas / (stats.faturasPagas + stats.faturasAbertas + stats.faturasVencidas)) * 100)
                       : 0}%
                   </p>
-                  <p className="text-sm text-gray-500">Taxa de Pagamento</p>
+                  <p className="text-sm text-muted-foreground">Taxa de Pagamento</p>
                 </div>
               </div>
             </div>
