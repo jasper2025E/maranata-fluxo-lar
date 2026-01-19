@@ -56,12 +56,12 @@ const Dashboard = () => {
   }
 
   const quickStats = [
-    { label: "Responsáveis", value: stats.totalResponsaveis, icon: UserCheck, variant: "blue" as const },
-    { label: "Alunos Ativos", value: stats.alunosAtivos, icon: GraduationCap, variant: "violet" as const },
-    { label: "Faturas do Mês", value: stats.totalFaturas, icon: FileText, variant: "cyan" as const },
-    { label: "Pagas no Mês", value: stats.faturasPagas, icon: BadgeCheck, variant: "emerald" as const },
-    { label: "Funcionários", value: stats.funcionariosAtivos, icon: Briefcase, variant: "amber" as const },
-    { label: "Inadimplentes", value: stats.responsaveisInadimplentes, icon: AlertCircle, variant: "rose" as const },
+    { label: "Responsáveis", value: stats.totalResponsaveis ?? 0, icon: UserCheck, variant: "blue" as const },
+    { label: "Alunos Ativos", value: stats.alunosAtivos ?? 0, icon: GraduationCap, variant: "violet" as const },
+    { label: "Faturas do Mês", value: stats.totalFaturas ?? 0, icon: FileText, variant: "cyan" as const },
+    { label: "Pagas no Mês", value: stats.faturasPagas ?? 0, icon: BadgeCheck, variant: "emerald" as const },
+    { label: "Funcionários", value: stats.funcionariosAtivos ?? 0, icon: Briefcase, variant: "amber" as const },
+    { label: "Inadimplentes", value: stats.responsaveisInadimplentes ?? 0, icon: AlertCircle, variant: "rose" as const },
   ];
 
   return (
@@ -88,37 +88,37 @@ const Dashboard = () => {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FinancialKPICard
             title="Receitas do Mês"
-            value={formatCurrency(stats.totalReceitas)}
+            value={formatCurrency(stats.totalReceitas ?? 0)}
             icon={TrendingUp}
             variant="success"
-            trend={stats.variacaoReceitas !== 0 ? {
-              value: stats.variacaoReceitas,
-              isPositive: stats.variacaoReceitas > 0,
+            trend={(stats.variacaoReceitas ?? 0) !== 0 ? {
+              value: stats.variacaoReceitas ?? 0,
+              isPositive: (stats.variacaoReceitas ?? 0) > 0,
             } : undefined}
             index={0}
           />
           <FinancialKPICard
             title="Despesas do Mês"
-            value={formatCurrency(stats.totalDespesas)}
+            value={formatCurrency(stats.totalDespesas ?? 0)}
             icon={TrendingDown}
             variant="danger"
-            trend={stats.variacaoDespesas !== 0 ? {
-              value: stats.variacaoDespesas,
-              isPositive: stats.variacaoDespesas < 0,
+            trend={(stats.variacaoDespesas ?? 0) !== 0 ? {
+              value: stats.variacaoDespesas ?? 0,
+              isPositive: (stats.variacaoDespesas ?? 0) < 0,
             } : undefined}
             index={1}
           />
           <FinancialKPICard
             title="Valor a Receber"
-            value={formatCurrency(stats.valorAReceber)}
-            subtitle={`${stats.faturasAbertas + stats.faturasVencidas} faturas pendentes`}
+            value={formatCurrency(stats.valorAReceber ?? 0)}
+            subtitle={`${(stats.faturasAbertas ?? 0) + (stats.faturasVencidas ?? 0)} faturas pendentes`}
             icon={Receipt}
             variant="info"
             index={2}
           />
           <FinancialKPICard
             title="Ticket Médio"
-            value={formatCurrency(stats.ticketMedio)}
+            value={formatCurrency(stats.ticketMedio ?? 0)}
             subtitle="Por fatura paga"
             icon={Calculator}
             variant="default"
@@ -130,35 +130,35 @@ const Dashboard = () => {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FinancialKPICard
             title="Saldo Mensal"
-            value={formatCurrency(stats.saldoMensal)}
-            subtitle={stats.saldoMensal >= 0 ? "Superávit" : "Déficit"}
+            value={formatCurrency(stats.saldoMensal ?? 0)}
+            subtitle={(stats.saldoMensal ?? 0) >= 0 ? "Superávit" : "Déficit"}
             icon={Wallet}
-            variant={stats.saldoMensal >= 0 ? "success" : "danger"}
+            variant={(stats.saldoMensal ?? 0) >= 0 ? "success" : "danger"}
             size="sm"
             index={4}
           />
           <FinancialKPICard
             title="Taxa de Arrecadação"
-            value={`${stats.taxaArrecadacao.toFixed(1)}%`}
+            value={`${(stats.taxaArrecadacao ?? 0).toFixed(1)}%`}
             subtitle="Do valor esperado"
             icon={Target}
-            variant={stats.taxaArrecadacao >= 80 ? "success" : stats.taxaArrecadacao >= 50 ? "warning" : "danger"}
+            variant={(stats.taxaArrecadacao ?? 0) >= 80 ? "success" : (stats.taxaArrecadacao ?? 0) >= 50 ? "warning" : "danger"}
             size="sm"
             index={5}
           />
           <FinancialKPICard
             title="Total em Atraso"
-            value={formatCurrency(stats.valorVencido)}
-            subtitle={`${stats.faturasVencidas} faturas vencidas`}
+            value={formatCurrency(stats.valorVencido ?? 0)}
+            subtitle={`${stats.faturasVencidas ?? 0} faturas vencidas`}
             icon={AlertCircle}
-            variant={stats.valorVencido > 0 ? "warning" : "success"}
+            variant={(stats.valorVencido ?? 0) > 0 ? "warning" : "success"}
             size="sm"
             index={6}
           />
           <FinancialKPICard
             title="Folha RH Mensal"
-            value={formatCurrency(stats.gastoRHMensal)}
-            subtitle={`${stats.funcionariosAtivos} funcionários ativos`}
+            value={formatCurrency(stats.gastoRHMensal ?? 0)}
+            subtitle={`${stats.funcionariosAtivos ?? 0} funcionários ativos`}
             icon={Briefcase}
             variant="default"
             size="sm"
@@ -172,7 +172,7 @@ const Dashboard = () => {
           <FinancialChart
             title="Evolução Financeira"
             description="Receitas, despesas e saldo dos últimos 6 meses"
-            data={stats.combinedData}
+            data={stats.combinedData ?? []}
             type="composed"
             height={320}
             className="lg:col-span-2"
@@ -180,11 +180,11 @@ const Dashboard = () => {
 
           {/* Inadimplência Card */}
           <InadimplenciaCard
-            taxa={stats.inadimplenciaResponsaveis}
-            valorTotal={stats.valorVencido}
-            faturasVencidas={stats.faturasVencidas}
-            responsaveisInadimplentes={stats.responsaveisInadimplentes}
-            aging={stats.aging}
+            taxa={stats.inadimplenciaResponsaveis ?? 0}
+            valorTotal={stats.valorVencido ?? 0}
+            faturasVencidas={stats.faturasVencidas ?? 0}
+            responsaveisInadimplentes={stats.responsaveisInadimplentes ?? 0}
+            aging={stats.aging ?? { ate30: 0, de31a60: 0, mais60: 0 }}
           />
         </div>
 
@@ -193,14 +193,14 @@ const Dashboard = () => {
           <FinancialChart
             title="Receitas vs Despesas"
             description="Comparativo mensal"
-            data={stats.combinedData}
+            data={stats.combinedData ?? []}
             type="comparison"
             height={280}
           />
           <FinancialSummaryCard
-            receitas={stats.totalReceitas}
-            despesas={stats.totalDespesas}
-            saldo={stats.saldoMensal}
+            receitas={stats.totalReceitas ?? 0}
+            despesas={stats.totalDespesas ?? 0}
+            saldo={stats.saldoMensal ?? 0}
           />
         </div>
 
@@ -208,7 +208,7 @@ const Dashboard = () => {
         <FinancialChart
           title="Tendência de Receitas"
           description="Evolução da arrecadação nos últimos 6 meses"
-          data={stats.receitasMes}
+          data={stats.receitasMes ?? []}
           type="area"
           height={250}
         />
