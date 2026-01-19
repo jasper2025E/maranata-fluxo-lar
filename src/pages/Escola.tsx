@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Upload, Save } from "lucide-react";
+import { Building2, Upload, Save, MapPin, Phone, Mail, Calendar } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -30,7 +30,7 @@ interface Escola {
   email: string | null;
 }
 
-const Escola = () => {
+const EscolaPage = () => {
   const queryClient = useQueryClient();
   const [uploading, setUploading] = useState(false);
   const [formData, setFormData] = useState({
@@ -167,26 +167,28 @@ const Escola = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dados da Escola</h2>
-          <p className="text-muted-foreground mt-1">Configure as informações institucionais</p>
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="animate-fade-in">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">Dados da Escola</h2>
+          <p className="text-muted-foreground mt-1.5">Configure as informações institucionais</p>
         </div>
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-6 md:grid-cols-2">
-            <Card className="md:col-span-2">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Building2 className="h-5 w-5" />
+            {/* Main Info Card */}
+            <Card className="md:col-span-2 border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
+              <CardHeader className="border-b border-border/50 bg-muted/30">
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Building2 className="h-5 w-5 text-primary" />
                   Informações Básicas
                 </CardTitle>
                 <CardDescription>Dados principais da instituição</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-6 space-y-4">
                 <div className="flex items-start gap-6">
                   <div className="flex flex-col items-center gap-2">
-                    <div className="w-32 h-32 border-2 border-dashed rounded-lg flex items-center justify-center bg-muted overflow-hidden">
+                    <div className="w-32 h-32 border-2 border-dashed border-border rounded-xl flex items-center justify-center bg-muted/50 overflow-hidden">
                       {logoUrl ? (
                         <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
                       ) : (
@@ -245,11 +247,15 @@ const Escola = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Endereço</CardTitle>
+            {/* Address Card */}
+            <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
+              <CardHeader className="border-b border-border/50 bg-muted/30">
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <MapPin className="h-5 w-5 text-primary" />
+                  Endereço
+                </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-6">
                 <div className="grid gap-2">
                   <Label htmlFor="endereco">Endereço Completo</Label>
                   <Input
@@ -262,11 +268,15 @@ const Escola = () => {
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Contato</CardTitle>
+            {/* Contact Card */}
+            <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
+              <CardHeader className="border-b border-border/50 bg-muted/30">
+                <CardTitle className="flex items-center gap-2 text-foreground">
+                  <Phone className="h-5 w-5 text-primary" />
+                  Contato
+                </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-6 space-y-4">
                 <div className="grid gap-2">
                   <Label htmlFor="telefone">Telefone</Label>
                   <Input
@@ -291,7 +301,11 @@ const Escola = () => {
           </div>
 
           <div className="flex justify-end mt-6">
-            <Button type="submit" disabled={saveMutation.isPending} className="min-w-32">
+            <Button 
+              type="submit" 
+              disabled={saveMutation.isPending} 
+              className="min-w-32 bg-blue-600 hover:bg-blue-700 text-white"
+            >
               <Save className="mr-2 h-4 w-4" />
               {saveMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
@@ -302,4 +316,4 @@ const Escola = () => {
   );
 };
 
-export default Escola;
+export default EscolaPage;
