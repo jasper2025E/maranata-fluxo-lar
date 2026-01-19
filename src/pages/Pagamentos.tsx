@@ -5,10 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText } from "lucide-react";
+import { Search, FileText, Receipt, DollarSign } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
+import { FinancialKPICard } from "@/components/dashboard";
 
 interface Pagamento {
   id: string;
@@ -57,47 +58,49 @@ const Pagamentos = () => {
   const getMetodoBadge = (metodo: string) => {
     switch (metodo) {
       case "PIX":
-        return <Badge className="bg-green-500 hover:bg-green-600">PIX</Badge>;
+        return <Badge className="bg-success hover:bg-success/90">PIX</Badge>;
       case "Cartão":
-        return <Badge className="bg-blue-500 hover:bg-blue-600">Cartão</Badge>;
+        return <Badge className="bg-info hover:bg-info/90">Cartão</Badge>;
       default:
         return <Badge variant="outline">Dinheiro</Badge>;
     }
   };
 
+  const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">Pagamentos</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">Pagamentos</h2>
           <p className="text-muted-foreground mt-1">
             Histórico de pagamentos recebidos
           </p>
         </div>
 
+        {/* Stats Cards - Premium Design */}
         <div className="grid gap-4 md:grid-cols-2">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total de Pagamentos</CardDescription>
-              <CardTitle className="text-2xl">{pagamentos.length}</CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total Recebido</CardDescription>
-              <CardTitle className="text-2xl text-green-600">
-                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalRecebido)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
+          <FinancialKPICard
+            title="Total de Pagamentos"
+            value={pagamentos.length}
+            icon={Receipt}
+            variant="info"
+          />
+          <FinancialKPICard
+            title="Total Recebido"
+            value={formatCurrency(totalRecebido)}
+            icon={DollarSign}
+            variant="success"
+          />
         </div>
 
-        <Card>
+        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden bg-card">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Histórico de Pagamentos</CardTitle>
-                <CardDescription>{filteredPagamentos.length} pagamento(s)</CardDescription>
+                <CardTitle className="text-foreground">Histórico de Pagamentos</CardTitle>
+                <CardDescription className="text-muted-foreground">{filteredPagamentos.length} pagamento(s)</CardDescription>
               </div>
               <div className="relative w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -118,7 +121,7 @@ const Pagamentos = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-muted/50">
                     <TableHead>Data</TableHead>
                     <TableHead>Aluno</TableHead>
                     <TableHead>Referência</TableHead>
@@ -130,14 +133,14 @@ const Pagamentos = () => {
                 </TableHeader>
                 <TableBody>
                   {filteredPagamentos.map((pagamento) => (
-                    <TableRow key={pagamento.id}>
+                    <TableRow key={pagamento.id} className="hover:bg-muted/30">
                       <TableCell>{format(new Date(pagamento.data_pagamento), "dd/MM/yyyy")}</TableCell>
                       <TableCell className="font-medium">{pagamento.faturas?.alunos?.nome_completo}</TableCell>
                       <TableCell>
                         {pagamento.faturas && meses[pagamento.faturas.mes_referencia - 1]}/{pagamento.faturas?.ano_referencia}
                       </TableCell>
-                      <TableCell>
-                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(pagamento.valor)}
+                      <TableCell className="font-semibold text-success">
+                        {formatCurrency(pagamento.valor)}
                       </TableCell>
                       <TableCell>{getMetodoBadge(pagamento.metodo)}</TableCell>
                       <TableCell className="text-muted-foreground">{pagamento.referencia || "-"}</TableCell>

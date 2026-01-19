@@ -1,8 +1,7 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   TrendingUp, 
-  TrendingDown, 
   DollarSign, 
   Receipt, 
   Percent, 
@@ -11,48 +10,13 @@ import {
   CheckCircle2 
 } from "lucide-react";
 import { useFaturaKPIs, formatCurrency } from "@/hooks/useFaturas";
-import { cn } from "@/lib/utils";
-
-interface KPICardProps {
-  title: string;
-  value: string | number;
-  description?: string;
-  icon: React.ElementType;
-  trend?: 'up' | 'down' | 'neutral';
-  variant?: 'default' | 'success' | 'warning' | 'destructive';
-}
-
-function KPICard({ title, value, description, icon: Icon, variant = 'default' }: KPICardProps) {
-  const variants = {
-    default: "text-primary bg-primary/10 border-primary/20",
-    success: "text-success bg-success/10 border-success/20",
-    warning: "text-warning bg-warning/10 border-warning/20",
-    destructive: "text-destructive bg-destructive/10 border-destructive/20",
-  };
-
-  return (
-    <Card className="border shadow-sm hover:shadow-md transition-shadow h-full">
-      <CardContent className="p-4 h-full flex flex-col justify-between">
-        <div className="flex items-start justify-between gap-3">
-          <div className="space-y-1 min-w-0">
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{title}</p>
-            <p className="text-2xl font-bold tracking-tight truncate">{value}</p>
-          </div>
-          <div className={cn("h-10 w-10 shrink-0 rounded-xl flex items-center justify-center", variants[variant])}>
-            <Icon className="h-5 w-5" />
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground min-h-4 mt-2">{description ?? ""}</p>
-      </CardContent>
-    </Card>
-  );
-}
+import { FinancialKPICard } from "@/components/dashboard";
 
 function AgingCard({ aging }: { aging: { ate30: number; de31a60: number; mais60: number } }) {
   const total = aging.ate30 + aging.de31a60 + aging.mais60;
   
   return (
-    <Card className="border shadow-sm">
+    <Card className="border-border/50 shadow-sm bg-card">
       <CardHeader className="pb-2 px-4 pt-4">
         <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center gap-2">
           <Clock className="h-4 w-4" />
@@ -106,49 +70,56 @@ export function FaturaKPIs() {
 
   return (
     <div className="grid auto-rows-fr grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-8 gap-3">
-      <KPICard
+      <FinancialKPICard
         title="Faturamento Mensal"
         value={formatCurrency(kpis.faturamentoMensal)}
         icon={DollarSign}
         variant="success"
+        size="sm"
       />
-      <KPICard
+      <FinancialKPICard
         title="A Receber"
         value={formatCurrency(kpis.valorAReceber)}
-        description={`${kpis.faturasAbertas + kpis.faturasVencidas} pendentes`}
+        subtitle={`${kpis.faturasAbertas + kpis.faturasVencidas} pendentes`}
         icon={Receipt}
         variant="default"
+        size="sm"
       />
-      <KPICard
+      <FinancialKPICard
         title="Ticket Médio"
         value={formatCurrency(kpis.ticketMedio)}
         icon={TrendingUp}
-        variant="default"
+        variant="info"
+        size="sm"
       />
-      <KPICard
+      <FinancialKPICard
         title="Inadimplência"
         value={`${kpis.inadimplencia}%`}
-        description={`${kpis.faturasVencidas} vencidas`}
+        subtitle={`${kpis.faturasVencidas} vencidas`}
         icon={AlertTriangle}
-        variant={kpis.inadimplencia > 10 ? "destructive" : kpis.inadimplencia > 5 ? "warning" : "success"}
+        variant={kpis.inadimplencia > 10 ? "danger" : kpis.inadimplencia > 5 ? "warning" : "success"}
+        size="sm"
       />
-      <KPICard
+      <FinancialKPICard
         title="Total Faturas"
         value={kpis.totalFaturas}
         icon={Receipt}
         variant="default"
+        size="sm"
       />
-      <KPICard
+      <FinancialKPICard
         title="Faturas Pagas"
         value={kpis.faturasPagas}
         icon={CheckCircle2}
         variant="success"
+        size="sm"
       />
-      <KPICard
+      <FinancialKPICard
         title="Descontos"
         value={formatCurrency(kpis.descontosConcedidos)}
         icon={Percent}
         variant="warning"
+        size="sm"
       />
       <AgingCard aging={kpis.aging} />
     </div>

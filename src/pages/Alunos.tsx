@@ -18,6 +18,7 @@ import { format } from "date-fns";
 import { alunoSchema } from "@/lib/validations";
 import { cn } from "@/lib/utils";
 import { useEnturmar } from "@/hooks/useEnturmacao";
+import { FinancialKPICard } from "@/components/dashboard";
 
 interface Aluno {
   id: string;
@@ -54,44 +55,6 @@ interface Turma {
   id: string;
   nome: string;
   serie: string;
-}
-
-// Premium stat card component
-function StatCardMini({ 
-  title, 
-  value, 
-  icon: Icon, 
-  color 
-}: { 
-  title: string; 
-  value: number | string; 
-  icon: React.ElementType; 
-  color: "blue" | "green" | "amber" | "red" 
-}) {
-  const colorConfig = {
-    blue: { bg: "bg-blue-50", icon: "text-blue-600", border: "border-blue-100" },
-    green: { bg: "bg-emerald-50", icon: "text-emerald-600", border: "border-emerald-100" },
-    amber: { bg: "bg-amber-50", icon: "text-amber-600", border: "border-amber-100" },
-    red: { bg: "bg-rose-50", icon: "text-rose-600", border: "border-rose-100" },
-  };
-
-  const colors = colorConfig[color];
-
-  return (
-    <div className={cn(
-      "flex items-center gap-4 p-4 rounded-xl bg-white border shadow-sm",
-      "hover:shadow-md transition-all duration-300",
-      colors.border
-    )}>
-      <div className={cn("h-11 w-11 rounded-xl flex items-center justify-center", colors.bg)}>
-        <Icon className={cn("h-5 w-5", colors.icon)} strokeWidth={1.75} />
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        <p className="text-sm text-gray-500">{title}</p>
-      </div>
-    </div>
-  );
 }
 
 // Loading skeleton for table
@@ -375,8 +338,8 @@ const Alunos = () => {
         {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">Alunos</h2>
-            <p className="text-gray-500 mt-1.5">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">Alunos</h2>
+            <p className="text-muted-foreground mt-1.5">
               Gerencie os alunos matriculados na escola
             </p>
           </div>
@@ -551,23 +514,23 @@ const Alunos = () => {
           </Dialog>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Premium Design */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-          <StatCardMini title="Total de Alunos" value={totalAlunos} icon={Users} color="blue" />
-          <StatCardMini title="Alunos Ativos" value={alunosAtivos} icon={UserCheck} color="green" />
-          <StatCardMini title="Trancados" value={alunosTrancados} icon={Users} color="amber" />
-          <StatCardMini title="Sem Turma" value={alunosSemTurma} icon={BookOpen} color="red" />
+          <FinancialKPICard title="Total de Alunos" value={totalAlunos} icon={Users} variant="info" size="sm" />
+          <FinancialKPICard title="Alunos Ativos" value={alunosAtivos} icon={UserCheck} variant="success" size="sm" />
+          <FinancialKPICard title="Trancados" value={alunosTrancados} icon={Users} variant="warning" size="sm" />
+          <FinancialKPICard title="Sem Turma" value={alunosSemTurma} icon={BookOpen} variant="danger" size="sm" />
         </div>
 
         {/* Table Card */}
-        <Card className="border-gray-100/80 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
-          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
+        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in bg-card">
+          <CardHeader className="border-b border-border/50 bg-muted/30">
             <div className="flex items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-lg font-semibold text-gray-900">
+                <CardTitle className="text-lg font-semibold text-foreground">
                   Lista de Alunos
                 </CardTitle>
-                <CardDescription className="text-gray-500">
+                <CardDescription className="text-muted-foreground">
                   {filteredAlunos.length} aluno(s) encontrado(s)
                   {filterSemTurma && " • Filtro: sem turma"}
                 </CardDescription>
@@ -579,19 +542,19 @@ const Alunos = () => {
                   onClick={() => setFilterSemTurma(!filterSemTurma)}
                   className={cn(
                     "h-10",
-                    filterSemTurma && "bg-rose-600 hover:bg-rose-700"
+                    filterSemTurma && "bg-destructive hover:bg-destructive/90"
                   )}
                 >
                   <BookOpen className="h-4 w-4 mr-2" />
                   Sem Turma ({alunosSemTurma})
                 </Button>
                 <div className="relative w-72">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder="Buscar por nome ou email..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 h-10 bg-white"
+                    className="pl-9 h-10"
                   />
                 </div>
               </div>
