@@ -14,3 +14,18 @@ verify_jwt = false
 
 [functions.enrollment-webhook]
 verify_jwt = false
+
+[functions.asaas-create-customer]
+verify_jwt = true
+
+[functions.asaas-create-payment]
+verify_jwt = true
+
+[functions.asaas-webhook]
+verify_jwt = false
+
+[functions.asaas-get-payment]
+verify_jwt = true
+
+[functions.asaas-cancel-payment]
+verify_jwt = true
