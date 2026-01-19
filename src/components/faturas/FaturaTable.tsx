@@ -57,6 +57,7 @@ interface FaturaTableProps {
   onViewHistory: (fatura: Fatura) => void;
   onDownloadPDF?: (fatura: Fatura) => void;
   onAsaasPayment?: (fatura: Fatura) => void;
+  onDownloadReceipt?: (fatura: Fatura) => void;
 }
 
 function getStatusConfig(status: string, dataVencimento: string) {
@@ -103,6 +104,7 @@ function FaturaRow({
   onViewHistory,
   onDownloadPDF,
   onAsaasPayment,
+  onDownloadReceipt,
 }: {
   fatura: Fatura;
   onViewDetails: (fatura: Fatura) => void;
@@ -115,6 +117,7 @@ function FaturaRow({
   onViewHistory: (fatura: Fatura) => void;
   onDownloadPDF?: (fatura: Fatura) => void;
   onAsaasPayment?: (fatura: Fatura) => void;
+  onDownloadReceipt?: (fatura: Fatura) => void;
 }) {
   const statusConfig = getStatusConfig(fatura.status, fatura.data_vencimento);
   const StatusIcon = statusConfig.icon;
@@ -233,9 +236,11 @@ function FaturaRow({
                 <DropdownMenuItem onClick={() => onSendReceipt(fatura)}>
                   <Mail className="h-4 w-4 mr-2" />Enviar recibo
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Download className="h-4 w-4 mr-2" />Baixar recibo
-                </DropdownMenuItem>
+                {onDownloadReceipt && (
+                  <DropdownMenuItem onClick={() => onDownloadReceipt(fatura)}>
+                    <Download className="h-4 w-4 mr-2" />Baixar recibo
+                  </DropdownMenuItem>
+                )}
               </>
             )}
           </DropdownMenuContent>
@@ -259,6 +264,7 @@ export function FaturaTable({
   onViewHistory,
   onDownloadPDF,
   onAsaasPayment,
+  onDownloadReceipt,
 }: FaturaTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -288,7 +294,7 @@ export function FaturaTable({
     );
   }
 
-  const rowProps = { onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, onSendReceipt, onViewHistory, onDownloadPDF, onAsaasPayment };
+  const rowProps = { onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, onSendReceipt, onViewHistory, onDownloadPDF, onAsaasPayment, onDownloadReceipt };
 
   // List view
   if (viewMode === "list") {

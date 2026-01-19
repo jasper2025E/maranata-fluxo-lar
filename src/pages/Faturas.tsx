@@ -20,7 +20,7 @@ import {
   queryKeys,
   Fatura 
 } from "@/hooks/useFaturas";
-import { generateFaturaPDF } from "@/lib/pdfGenerator";
+import { generateFaturaPDF, generateReciboPDF } from "@/lib/pdfGenerator";
 import { toast } from "sonner";
 
 type ViewMode = "list" | "status" | "aluno" | "mes";
@@ -199,6 +199,39 @@ const Faturas = () => {
     setIsAsaasOpen(true);
   };
 
+  const handleDownloadReceipt = async (fatura: Fatura) => {
+    if (!escola) {
+      toast.error("Dados da escola não encontrados");
+      return;
+    }
+    if (fatura.status.toLowerCase() !== "paga") {
+      toast.error("Só é possível baixar recibo de faturas pagas");
+      return;
+    }
+    try {
+      // Buscar pagamento mais recente da fatura
+      const { data: pagamentos, error } = await supabase
+        .from("pagamentos")
+        .select("*")
+        .eq("fatura_id", fatura.id)
+        .order("data_pagamento", { ascending: false })
+        .limit(1);
+      
+      if (error) throw error;
+      
+      if (!pagamentos || pagamentos.length === 0) {
+        toast.error("Nenhum pagamento encontrado para esta fatura");
+        return;
+      }
+      
+      await generateReciboPDF(fatura, pagamentos[0], escola);
+      toast.success("Recibo gerado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao gerar recibo:", error);
+      toast.error("Erro ao gerar recibo");
+    }
+  };
+
   const handleAsaasSuccess = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
   };
@@ -260,6 +293,7 @@ const Faturas = () => {
           onViewHistory={handleViewHistory}
           onDownloadPDF={handleDownloadPDF}
           onAsaasPayment={handleAsaasPayment}
+          onDownloadReceipt={handleDownloadReceipt}
         />
 
         {/* Dialogs */}
