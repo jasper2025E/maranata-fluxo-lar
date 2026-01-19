@@ -14,33 +14,33 @@ interface RHDashboardCardProps {
 const colorVariants = {
   blue: {
     bg: "bg-blue-500/10",
-    icon: "text-blue-600",
-    border: "border-blue-200/50",
+    icon: "text-blue-500",
+    border: "border-blue-500/20",
   },
   green: {
     bg: "bg-emerald-500/10",
-    icon: "text-emerald-600",
-    border: "border-emerald-200/50",
+    icon: "text-emerald-500",
+    border: "border-emerald-500/20",
   },
   red: {
-    bg: "bg-red-500/10",
-    icon: "text-red-600",
-    border: "border-red-200/50",
+    bg: "bg-rose-500/10",
+    icon: "text-rose-500",
+    border: "border-rose-500/20",
   },
   yellow: {
     bg: "bg-amber-500/10",
-    icon: "text-amber-600",
-    border: "border-amber-200/50",
+    icon: "text-amber-500",
+    border: "border-amber-500/20",
   },
   purple: {
     bg: "bg-purple-500/10",
-    icon: "text-purple-600",
-    border: "border-purple-200/50",
+    icon: "text-purple-500",
+    border: "border-purple-500/20",
   },
   indigo: {
     bg: "bg-indigo-500/10",
-    icon: "text-indigo-600",
-    border: "border-indigo-200/50",
+    icon: "text-indigo-500",
+    border: "border-indigo-500/20",
   },
 };
 

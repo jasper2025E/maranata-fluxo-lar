@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
+import { FinancialKPICard } from "@/components/dashboard";
 
 const turmaSchema = z.object({
   nome: z.string().trim().min(1, "Nome é obrigatório").max(100),
@@ -31,44 +32,6 @@ interface Turma {
   ano_letivo: number;
   ativo: boolean;
   alunos_count?: number;
-}
-
-// Premium stat card component
-function StatCardMini({ 
-  title, 
-  value, 
-  icon: Icon, 
-  color 
-}: { 
-  title: string; 
-  value: number | string; 
-  icon: React.ElementType; 
-  color: "blue" | "green" | "amber" | "purple" 
-}) {
-  const colorConfig = {
-    blue: { bg: "bg-blue-50", icon: "text-blue-600", border: "border-blue-100" },
-    green: { bg: "bg-emerald-50", icon: "text-emerald-600", border: "border-emerald-100" },
-    amber: { bg: "bg-amber-50", icon: "text-amber-600", border: "border-amber-100" },
-    purple: { bg: "bg-violet-50", icon: "text-violet-600", border: "border-violet-100" },
-  };
-
-  const colors = colorConfig[color];
-
-  return (
-    <div className={cn(
-      "flex items-center gap-4 p-4 rounded-xl bg-white border shadow-sm",
-      "hover:shadow-md transition-all duration-300",
-      colors.border
-    )}>
-      <div className={cn("h-11 w-11 rounded-xl flex items-center justify-center", colors.bg)}>
-        <Icon className={cn("h-5 w-5", colors.icon)} strokeWidth={1.75} />
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        <p className="text-sm text-gray-500">{title}</p>
-      </div>
-    </div>
-  );
 }
 
 // Loading skeleton for table
@@ -245,8 +208,8 @@ const Turmas = () => {
         {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-gray-900">Turmas</h2>
-            <p className="text-gray-500 mt-1.5">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">Turmas</h2>
+            <p className="text-muted-foreground mt-1.5">
               Gerencie as turmas e séries da escola
             </p>
           </div>
@@ -263,13 +226,13 @@ const Turmas = () => {
                   <DialogTitle className="text-xl font-semibold">
                     {editingTurma ? "Editar Turma" : "Nova Turma"}
                   </DialogTitle>
-                  <DialogDescription className="text-gray-500">
+                  <DialogDescription>
                     Preencha os dados da turma
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-5 py-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="nome" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="nome">
                       Nome da Turma
                     </Label>
                     <Input
@@ -283,7 +246,7 @@ const Turmas = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="serie" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="serie">
                         Série
                       </Label>
                       <Select value={formData.serie} onValueChange={(value) => setFormData({ ...formData, serie: value })}>
@@ -307,7 +270,7 @@ const Turmas = () => {
                       </Select>
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="turno" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="turno">
                         Turno
                       </Label>
                       <Select value={formData.turno} onValueChange={(value) => setFormData({ ...formData, turno: value })}>
@@ -323,7 +286,7 @@ const Turmas = () => {
                     </div>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="ano" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="ano">
                       Ano Letivo
                     </Label>
                     <Input
@@ -355,21 +318,21 @@ const Turmas = () => {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-          <StatCardMini title="Total de Turmas" value={totalTurmas} icon={GraduationCap} color="blue" />
-          <StatCardMini title="Turmas Ativas" value={turmasAtivas} icon={Users} color="green" />
-          <StatCardMini title="Ano Atual" value={turmasAnoAtual} icon={Calendar} color="amber" />
-          <StatCardMini title="Alunos Vinculados" value={totalAlunos} icon={Users} color="purple" />
+          <FinancialKPICard title="Total de Turmas" value={totalTurmas} icon={GraduationCap} variant="info" size="sm" index={0} />
+          <FinancialKPICard title="Turmas Ativas" value={turmasAtivas} icon={Users} variant="success" size="sm" index={1} />
+          <FinancialKPICard title="Ano Atual" value={turmasAnoAtual} icon={Calendar} variant="warning" size="sm" index={2} />
+          <FinancialKPICard title="Alunos Vinculados" value={totalAlunos} icon={Users} variant="premium" size="sm" index={3} />
         </div>
 
         {/* Table Card */}
-        <Card className="border-gray-100/80 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
-          <CardHeader className="border-b border-gray-100 bg-gray-50/50">
+        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
+          <CardHeader className="border-b border-border/50 bg-muted/30">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg font-semibold text-gray-900">
+                <CardTitle className="text-lg font-semibold text-foreground">
                   Lista de Turmas
                 </CardTitle>
-                <CardDescription className="text-gray-500">
+                <CardDescription>
                   {turmas.length} turma(s) cadastrada(s)
                 </CardDescription>
               </div>
@@ -380,46 +343,46 @@ const Turmas = () => {
               <TableSkeleton />
             ) : turmas.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="h-16 w-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-                  <GraduationCap className="h-8 w-8 text-gray-400" />
+                <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                  <GraduationCap className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-1">
+                <h3 className="text-lg font-medium text-foreground mb-1">
                   Nenhuma turma cadastrada
                 </h3>
-                <p className="text-sm text-gray-500 max-w-sm">
+                <p className="text-sm text-muted-foreground max-w-sm">
                   Clique no botão "Nova Turma" para começar a cadastrar as turmas da escola.
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-                    <TableHead className="font-semibold text-gray-700">Nome</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Série</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Turno</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Ano Letivo</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Alunos</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Status</TableHead>
-                    <TableHead className="text-right font-semibold text-gray-700">Ações</TableHead>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold text-foreground">Nome</TableHead>
+                    <TableHead className="font-semibold text-foreground">Série</TableHead>
+                    <TableHead className="font-semibold text-foreground">Turno</TableHead>
+                    <TableHead className="font-semibold text-foreground">Ano Letivo</TableHead>
+                    <TableHead className="font-semibold text-foreground">Alunos</TableHead>
+                    <TableHead className="font-semibold text-foreground">Status</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {turmas.map((turma) => (
                     <TableRow 
                       key={turma.id}
-                      className="hover:bg-gray-50/50 transition-colors"
+                      className="hover:bg-muted/50 transition-colors"
                     >
-                      <TableCell className="font-medium text-gray-900">{turma.nome}</TableCell>
-                      <TableCell className="text-gray-600">{turma.serie}</TableCell>
+                      <TableCell className="font-medium text-foreground">{turma.nome}</TableCell>
+                      <TableCell className="text-muted-foreground">{turma.serie}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1.5 text-gray-600">
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
                           <Clock className="h-3.5 w-3.5" />
                           {turma.turno}
                         </div>
                       </TableCell>
-                      <TableCell className="text-gray-600">{turma.ano_letivo}</TableCell>
+                      <TableCell className="text-muted-foreground">{turma.ano_letivo}</TableCell>
                       <TableCell>
-                        <span className="inline-flex items-center gap-1 text-gray-600">
+                        <span className="inline-flex items-center gap-1 text-muted-foreground">
                           <Users className="h-3.5 w-3.5" />
                           {alunosCounts[turma.id] || 0}
                         </span>
@@ -430,8 +393,8 @@ const Turmas = () => {
                           className={cn(
                             "font-medium",
                             turma.ativo 
-                              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100" 
-                              : "bg-gray-100 text-gray-600 hover:bg-gray-100"
+                              ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" 
+                              : "bg-muted text-muted-foreground hover:bg-muted"
                           )}
                         >
                           {turma.ativo ? "Ativa" : "Inativa"}
@@ -442,7 +405,7 @@ const Turmas = () => {
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                             onClick={() => handleEdit(turma)}
                           >
                             <Pencil className="h-4 w-4" />
@@ -450,7 +413,7 @@ const Turmas = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-gray-500 hover:text-amber-600 hover:bg-amber-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
                             onClick={() => toggleActiveMutation.mutate({ id: turma.id, ativo: !turma.ativo })}
                             disabled={toggleActiveMutation.isPending}
                           >
@@ -459,7 +422,7 @@ const Turmas = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             onClick={() => {
                               if (confirm("Tem certeza que deseja remover esta turma?")) {
                                 deleteMutation.mutate(turma.id);
