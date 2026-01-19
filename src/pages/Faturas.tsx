@@ -12,6 +12,7 @@ import {
   CreateFaturaDialog,
   CarneDialog,
   AsaasPaymentDialog,
+  SendReceiptDialog,
 } from "@/components/faturas";
 import { 
   useFaturas, 
@@ -38,6 +39,7 @@ const Faturas = () => {
   const [isCarneOpen, setIsCarneOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAsaasOpen, setIsAsaasOpen] = useState(false);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [selectedFatura, setSelectedFatura] = useState<Fatura | null>(null);
 
   // Queries
@@ -160,7 +162,12 @@ const Faturas = () => {
   };
 
   const handleSendReceipt = (fatura: Fatura) => {
-    toast.info("Funcionalidade de envio de recibo em desenvolvimento");
+    if (fatura.status.toLowerCase() !== "paga") {
+      toast.error("Só é possível enviar recibo de faturas pagas");
+      return;
+    }
+    setSelectedFatura(fatura);
+    setIsReceiptOpen(true);
   };
 
   const handleViewHistory = (fatura: Fatura) => {
@@ -279,6 +286,12 @@ const Faturas = () => {
           onOpenChange={setIsAsaasOpen}
           fatura={selectedFatura}
           onSuccess={handleAsaasSuccess}
+        />
+
+        <SendReceiptDialog
+          open={isReceiptOpen}
+          onOpenChange={setIsReceiptOpen}
+          fatura={selectedFatura}
         />
       </div>
     </DashboardLayout>
