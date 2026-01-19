@@ -20,12 +20,17 @@ export function useNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
 
   const fetchNotifications = async () => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     try {
+      setLoading(true);
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
+        .or(`user_id.eq.${user.id},user_id.is.null`)
         .order("created_at", { ascending: false })
         .limit(20);
 
@@ -34,6 +39,7 @@ export function useNotifications() {
       const typedData = (data || []).map((n) => ({
         ...n,
         type: n.type as "info" | "success" | "warning" | "error",
+        read: n.read ?? false,
       }));
 
       setNotifications(typedData);
