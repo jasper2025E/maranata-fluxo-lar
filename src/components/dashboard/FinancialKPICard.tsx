@@ -12,7 +12,7 @@ interface FinancialKPICardProps {
     isPositive: boolean;
     label?: string;
   };
-  variant?: "default" | "success" | "warning" | "danger" | "info";
+  variant?: "default" | "success" | "warning" | "danger" | "info" | "premium";
   size?: "sm" | "md" | "lg";
   className?: string;
   index?: number;
@@ -20,46 +20,53 @@ interface FinancialKPICardProps {
 
 const variantConfig = {
   default: {
-    iconBg: "bg-primary/10",
+    gradient: "from-slate-500/10 via-slate-500/5 to-transparent",
+    iconBg: "bg-gradient-to-br from-primary/20 to-primary/5",
     iconColor: "text-primary",
-    accentBorder: "hover:border-primary/30",
-    trendPositive: "text-success",
-    trendNegative: "text-destructive",
+    accentLine: "from-primary/60 to-primary/20",
+    glow: "group-hover:shadow-primary/10",
   },
   success: {
-    iconBg: "bg-success/10",
-    iconColor: "text-success",
-    accentBorder: "hover:border-success/30",
-    trendPositive: "text-success",
-    trendNegative: "text-destructive",
+    gradient: "from-emerald-500/10 via-emerald-500/5 to-transparent",
+    iconBg: "bg-gradient-to-br from-emerald-500/20 to-emerald-500/5",
+    iconColor: "text-emerald-600 dark:text-emerald-400",
+    accentLine: "from-emerald-500/60 to-emerald-500/20",
+    glow: "group-hover:shadow-emerald-500/10",
   },
   warning: {
-    iconBg: "bg-warning/10",
-    iconColor: "text-warning",
-    accentBorder: "hover:border-warning/30",
-    trendPositive: "text-success",
-    trendNegative: "text-destructive",
+    gradient: "from-amber-500/10 via-amber-500/5 to-transparent",
+    iconBg: "bg-gradient-to-br from-amber-500/20 to-amber-500/5",
+    iconColor: "text-amber-600 dark:text-amber-400",
+    accentLine: "from-amber-500/60 to-amber-500/20",
+    glow: "group-hover:shadow-amber-500/10",
   },
   danger: {
-    iconBg: "bg-destructive/10",
-    iconColor: "text-destructive",
-    accentBorder: "hover:border-destructive/30",
-    trendPositive: "text-success",
-    trendNegative: "text-destructive",
+    gradient: "from-rose-500/10 via-rose-500/5 to-transparent",
+    iconBg: "bg-gradient-to-br from-rose-500/20 to-rose-500/5",
+    iconColor: "text-rose-600 dark:text-rose-400",
+    accentLine: "from-rose-500/60 to-rose-500/20",
+    glow: "group-hover:shadow-rose-500/10",
   },
   info: {
-    iconBg: "bg-blue-500/10",
-    iconColor: "text-blue-600",
-    accentBorder: "hover:border-blue-300/50",
-    trendPositive: "text-success",
-    trendNegative: "text-destructive",
+    gradient: "from-blue-500/10 via-blue-500/5 to-transparent",
+    iconBg: "bg-gradient-to-br from-blue-500/20 to-blue-500/5",
+    iconColor: "text-blue-600 dark:text-blue-400",
+    accentLine: "from-blue-500/60 to-blue-500/20",
+    glow: "group-hover:shadow-blue-500/10",
+  },
+  premium: {
+    gradient: "from-violet-500/10 via-fuchsia-500/5 to-transparent",
+    iconBg: "bg-gradient-to-br from-violet-500/20 via-fuchsia-500/15 to-violet-500/5",
+    iconColor: "text-violet-600 dark:text-violet-400",
+    accentLine: "from-violet-500/60 via-fuchsia-500/40 to-violet-500/20",
+    glow: "group-hover:shadow-violet-500/10",
   },
 };
 
 const sizeConfig = {
   sm: {
     padding: "p-4",
-    iconSize: "h-10 w-10",
+    iconSize: "h-11 w-11",
     iconInner: "h-5 w-5",
     titleSize: "text-xs",
     valueSize: "text-xl",
@@ -67,9 +74,9 @@ const sizeConfig = {
   },
   md: {
     padding: "p-5",
-    iconSize: "h-12 w-12",
+    iconSize: "h-13 w-13",
     iconInner: "h-6 w-6",
-    titleSize: "text-sm",
+    titleSize: "text-xs",
     valueSize: "text-2xl",
     subtitleSize: "text-xs",
   },
@@ -99,66 +106,120 @@ export function FinancialKPICard({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{
-        duration: 0.5,
-        delay: index * 0.06,
+        duration: 0.4,
+        delay: index * 0.08,
         ease: [0.25, 0.46, 0.45, 0.94],
       }}
       whileHover={{
-        y: -3,
+        y: -4,
+        scale: 1.01,
         transition: { duration: 0.2, ease: "easeOut" },
       }}
       className={cn(
-        "group relative bg-card rounded-2xl",
+        "group relative overflow-hidden",
+        "bg-card/80 backdrop-blur-sm rounded-2xl",
         sizes.padding,
-        "border border-border/50",
-        "shadow-sm hover:shadow-lg",
-        colors.accentBorder,
+        "border border-border/40",
+        "shadow-sm hover:shadow-xl",
+        colors.glow,
         "transition-all duration-300 ease-out",
         className
       )}
     >
-      <div className="flex items-start justify-between gap-4">
+      {/* Gradient Background */}
+      <div className={cn(
+        "absolute inset-0 bg-gradient-to-br opacity-60",
+        colors.gradient
+      )} />
+      
+      {/* Accent Line */}
+      <div className={cn(
+        "absolute top-0 left-0 right-0 h-[2px]",
+        "bg-gradient-to-r",
+        colors.accentLine,
+        "opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+      )} />
+
+      {/* Subtle Pattern */}
+      <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
+        style={{
+          backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+          backgroundSize: '24px 24px'
+        }}
+      />
+
+      <div className="relative flex items-start justify-between gap-4">
         <div className="flex-1 min-w-0 space-y-2">
-          <p className={cn(sizes.titleSize, "font-medium text-muted-foreground uppercase tracking-wider")}>
+          <p className={cn(
+            sizes.titleSize,
+            "font-semibold text-muted-foreground/80 uppercase tracking-wider"
+          )}>
             {title}
           </p>
 
-          <p className={cn(sizes.valueSize, "font-bold text-foreground tracking-tight leading-none")}>
+          <motion.p 
+            className={cn(
+              sizes.valueSize, 
+              "font-bold text-foreground tracking-tight leading-none"
+            )}
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: index * 0.08 + 0.2, duration: 0.3 }}
+          >
             {value}
-          </p>
+          </motion.p>
 
           {trend ? (
-            <div className="flex items-center gap-1.5 pt-1">
+            <motion.div 
+              className="flex items-center gap-2 pt-1"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: index * 0.08 + 0.3 }}
+            >
               <span
                 className={cn(
-                  "inline-flex items-center text-xs font-semibold",
-                  trend.isPositive ? colors.trendPositive : colors.trendNegative
+                  "inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full",
+                  trend.isPositive 
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" 
+                    : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
                 )}
               >
-                {trend.isPositive ? "↑" : "↓"} {Math.abs(trend.value).toFixed(1)}%
+                <motion.span
+                  initial={{ rotate: trend.isPositive ? 45 : -45 }}
+                  animate={{ rotate: 0 }}
+                  transition={{ type: "spring", stiffness: 200 }}
+                >
+                  {trend.isPositive ? "↑" : "↓"}
+                </motion.span>
+                {Math.abs(trend.value).toFixed(1)}%
               </span>
-              <span className="text-xs text-muted-foreground">
+              <span className="text-xs text-muted-foreground/70">
                 {trend.label || "vs. mês anterior"}
               </span>
-            </div>
+            </motion.div>
           ) : subtitle ? (
-            <p className={cn(sizes.subtitleSize, "text-muted-foreground pt-1")}>
+            <p className={cn(
+              sizes.subtitleSize, 
+              "text-muted-foreground/70 pt-1"
+            )}>
               {subtitle}
             </p>
           ) : null}
         </div>
 
         <motion.div
-          whileHover={{ scale: 1.08, rotate: 5 }}
-          transition={{ duration: 0.2 }}
+          whileHover={{ scale: 1.1, rotate: 8 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ type: "spring", stiffness: 400, damping: 17 }}
           className={cn(
             "flex-shrink-0 rounded-xl",
             sizes.iconSize,
             colors.iconBg,
             "flex items-center justify-center",
+            "shadow-inner",
             "transition-all duration-300"
           )}
         >
@@ -168,6 +229,14 @@ export function FinancialKPICard({
           />
         </motion.div>
       </div>
+
+      {/* Bottom Glow Effect */}
+      <div className={cn(
+        "absolute -bottom-4 -right-4 w-24 h-24 rounded-full blur-2xl",
+        "bg-gradient-to-br",
+        colors.gradient,
+        "opacity-0 group-hover:opacity-40 transition-opacity duration-500"
+      )} />
     </motion.div>
   );
 }
