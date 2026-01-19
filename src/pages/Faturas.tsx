@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Plus, Printer } from "lucide-react";
@@ -11,11 +11,12 @@ import {
   FaturaFilters, 
   CreateFaturaDialog,
   CarneDialog,
+  AsaasPaymentDialog,
 } from "@/components/faturas";
 import { 
   useFaturas, 
   useCancelarFatura, 
-  useFaturaItens,
+  queryKeys,
   Fatura 
 } from "@/hooks/useFaturas";
 import { generateFaturaPDF } from "@/lib/pdfGenerator";
@@ -36,6 +37,7 @@ const Faturas = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCarneOpen, setIsCarneOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isAsaasOpen, setIsAsaasOpen] = useState(false);
   const [selectedFatura, setSelectedFatura] = useState<Fatura | null>(null);
 
   // Queries
@@ -68,7 +70,7 @@ const Faturas = () => {
   });
 
   const cancelMutation = useCancelarFatura();
-
+  const queryClient = useQueryClient();
   const { data: escola } = useQuery({
     queryKey: ['escola-info'],
     queryFn: async () => {
@@ -185,6 +187,15 @@ const Faturas = () => {
     }
   };
 
+  const handleAsaasPayment = (fatura: Fatura) => {
+    setSelectedFatura(fatura);
+    setIsAsaasOpen(true);
+  };
+
+  const handleAsaasSuccess = () => {
+    queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -241,6 +252,7 @@ const Faturas = () => {
           onSendReceipt={handleSendReceipt}
           onViewHistory={handleViewHistory}
           onDownloadPDF={handleDownloadPDF}
+          onAsaasPayment={handleAsaasPayment}
         />
 
         {/* Dialogs */}
@@ -260,6 +272,13 @@ const Faturas = () => {
         <CarneDialog
           open={isCarneOpen}
           onOpenChange={setIsCarneOpen}
+        />
+
+        <AsaasPaymentDialog
+          open={isAsaasOpen}
+          onOpenChange={setIsAsaasOpen}
+          fatura={selectedFatura}
+          onSuccess={handleAsaasSuccess}
         />
       </div>
     </DashboardLayout>
