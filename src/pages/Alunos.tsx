@@ -565,13 +565,13 @@ const Alunos = () => {
               <TableSkeleton />
             ) : filteredAlunos.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="h-16 w-16 rounded-2xl bg-gray-100 flex items-center justify-center mb-4">
-                  <Users className="h-8 w-8 text-gray-400" />
+                <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                  <Users className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-1">
+                <h3 className="text-lg font-medium text-foreground mb-1">
                   {searchTerm ? "Nenhum aluno encontrado" : "Nenhum aluno cadastrado"}
                 </h3>
-                <p className="text-sm text-gray-500 max-w-sm">
+                <p className="text-sm text-muted-foreground max-w-sm">
                   {searchTerm 
                     ? "Tente buscar com outros termos." 
                     : "Clique no botão \"Novo Aluno\" para começar a cadastrar os alunos da escola."}
@@ -580,20 +580,20 @@ const Alunos = () => {
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-                    <TableHead className="font-semibold text-gray-700">Nome</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Turma</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Curso</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Contato</TableHead>
-                    <TableHead className="font-semibold text-gray-700">Status</TableHead>
-                    <TableHead className="text-right font-semibold text-gray-700">Ações</TableHead>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold text-foreground">Nome</TableHead>
+                    <TableHead className="font-semibold text-foreground">Turma</TableHead>
+                    <TableHead className="font-semibold text-foreground">Curso</TableHead>
+                    <TableHead className="font-semibold text-foreground">Contato</TableHead>
+                    <TableHead className="font-semibold text-foreground">Status</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredAlunos.map((aluno) => (
                     <TableRow 
                       key={aluno.id}
-                      className="hover:bg-gray-50/50 transition-colors"
+                      className="hover:bg-muted/50 transition-colors"
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
@@ -605,14 +605,14 @@ const Alunos = () => {
                           <span className="font-medium text-foreground">{aluno.nome_completo}</span>
                         </div>
                       </TableCell>
-                      <TableCell className="text-gray-600">
+                      <TableCell className="text-muted-foreground">
                         {aluno.turmas ? `${aluno.turmas.nome} - ${aluno.turmas.serie}` : "-"}
                       </TableCell>
-                      <TableCell className="text-gray-600">
+                      <TableCell className="text-muted-foreground">
                         {aluno.cursos?.nome || "-"}
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1.5 text-gray-600 text-sm">
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
                           <Phone className="h-3.5 w-3.5" />
                           {aluno.telefone_responsavel}
                         </div>
@@ -621,7 +621,7 @@ const Alunos = () => {
                         <Badge 
                           className={cn(
                             "font-medium",
-                            statusConfig[aluno.status_matricula]?.color || "bg-gray-100 text-gray-700"
+                            statusConfig[aluno.status_matricula]?.color || "bg-muted text-muted-foreground"
                           )}
                         >
                           {statusConfig[aluno.status_matricula]?.label || aluno.status_matricula}
@@ -632,7 +632,7 @@ const Alunos = () => {
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            className="h-8 w-8 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
                             onClick={() => handleEnturmar(aluno)}
                             title="Enturmar"
                           >
@@ -641,7 +641,7 @@ const Alunos = () => {
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            className="h-8 w-8 text-gray-500 hover:text-blue-600 hover:bg-blue-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                             onClick={() => handleView(aluno)}
                           >
                             <Eye className="h-4 w-4" />
@@ -649,7 +649,7 @@ const Alunos = () => {
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            className="h-8 w-8 text-gray-500 hover:text-amber-600 hover:bg-amber-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
                             onClick={() => handleEdit(aluno)}
                           >
                             <Pencil className="h-4 w-4" />
@@ -657,7 +657,7 @@ const Alunos = () => {
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-gray-500 hover:text-red-600 hover:bg-red-50"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             onClick={() => {
                               if (confirm("Tem certeza que deseja remover este aluno?")) {
                                 deleteMutation.mutate(aluno.id);
