@@ -40,22 +40,31 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify the requesting user is an admin
+    // Verify the requesting user using getClaims
     const token = authHeader.replace("Bearer ", "");
-    const { data: { user: requestingUser }, error: authError } = await supabaseAdmin.auth.getUser(token);
     
-    if (authError || !requestingUser) {
+    // Create a client with the user's token for validation
+    const supabaseUser = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    
+    const { data: claimsData, error: authError } = await supabaseUser.auth.getClaims(token);
+    
+    if (authError || !claimsData?.claims?.sub) {
+      console.error("Auth error:", authError);
       return new Response(
         JSON.stringify({ error: "Invalid token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    const requestingUserId = claimsData.claims.sub;
 
     // Check if requesting user is admin
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", requestingUser.id)
+      .eq("user_id", requestingUserId)
       .single();
 
     if (roleError || roleData?.role !== "admin") {
@@ -219,7 +228,7 @@ Deno.serve(async (req) => {
       }
 
       // Prevent self-deletion
-      if (userId === requestingUser.id) {
+      if (userId === requestingUserId) {
         return new Response(
           JSON.stringify({ error: "Cannot delete your own account" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
