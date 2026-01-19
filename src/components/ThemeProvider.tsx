@@ -1,97 +1,99 @@
-import { ThemeProvider as NextThemesProvider } from "next-themes";
-import { type ComponentProps, useEffect, useState } from "react";
+import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
+import { type ComponentProps, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 type ThemeProviderProps = ComponentProps<typeof NextThemesProvider>;
 
-export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
-  const [storageKey, setStorageKey] = useState<string>("theme");
-  const [initialTheme, setInitialTheme] = useState<string | undefined>(undefined);
-  const [isReady, setIsReady] = useState(false);
+type ThemeValue = "light" | "dark" | "system";
+
+function ThemeBootstrap({
+  userId,
+  defaultTheme,
+}: {
+  userId: string | null;
+  defaultTheme: ThemeValue;
+}) {
+  const { setTheme } = useTheme();
 
   useEffect(() => {
-    const loadUserTheme = async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        
-        if (user) {
-          // Set user-specific storage key
-          const userStorageKey = `theme-${user.id}`;
-          setStorageKey(userStorageKey);
-          
-          // Load theme from database
-          const { data: prefs } = await supabase
-            .from("user_preferences")
-            .select("theme")
-            .eq("user_id", user.id)
-            .maybeSingle();
-          
-          if (prefs?.theme) {
-            setInitialTheme(prefs.theme);
-            // Also update localStorage with user-specific key
-            localStorage.setItem(userStorageKey, prefs.theme);
-          }
-        } else {
-          // No user logged in - use default storage key
-          setStorageKey("theme");
-        }
-      } catch (error) {
-        console.error("Error loading user theme:", error);
-      } finally {
-        setIsReady(true);
+    let cancelled = false;
+
+    const run = async () => {
+      // Sem usuário: aplica o tema default do app (não bloqueia render).
+      if (!userId) {
+        setTheme(defaultTheme);
+        return;
       }
-    };
 
-    loadUserTheme();
-
-    // Listen for auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === "SIGNED_IN" && session?.user) {
-        const userStorageKey = `theme-${session.user.id}`;
-        setStorageKey(userStorageKey);
-        
-        // Load theme from database for the new user
+      // Com usuário: tenta buscar a preferência no banco.
+      try {
         const { data: prefs } = await supabase
           .from("user_preferences")
           .select("theme")
-          .eq("user_id", session.user.id)
+          .eq("user_id", userId)
           .maybeSingle();
-        
-        if (prefs?.theme) {
-          setInitialTheme(prefs.theme);
-          localStorage.setItem(userStorageKey, prefs.theme);
-          // Force theme change by updating document class
-          document.documentElement.classList.remove("light", "dark");
-          if (prefs.theme !== "system") {
-            document.documentElement.classList.add(prefs.theme);
-          }
+
+        const theme = (prefs?.theme as ThemeValue | null) ?? null;
+        if (!cancelled && theme) {
+          setTheme(theme);
         }
-      } else if (event === "SIGNED_OUT") {
-        setStorageKey("theme");
-        setInitialTheme("light");
-        // Reset to default theme on logout
-        document.documentElement.classList.remove("dark");
-        document.documentElement.classList.add("light");
+      } catch (error) {
+        console.error("Error loading user theme:", error);
       }
-    });
+    };
+
+    run();
 
     return () => {
-      subscription.unsubscribe();
+      cancelled = true;
     };
+  }, [userId, defaultTheme, setTheme]);
+
+  return null;
+}
+
+export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
+  const [userId, setUserId] = useState<string | null>(null);
+
+  // Se não vier, usamos light (mantém consistência com App.tsx)
+  const defaultTheme = (props.defaultTheme ?? "light") as ThemeValue;
+
+  const storageKey = useMemo(() => {
+    return userId ? `theme-${userId}` : "theme";
+  }, [userId]);
+
+  useEffect(() => {
+    // Carrega sessão atual (rápido: vem do cache local)
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        setUserId(data.session?.user?.id ?? null);
+      })
+      .catch((error) => {
+        console.error("Error reading session:", error);
+        setUserId(null);
+      });
+
+    // Mantém em sync quando o usuário entra/sai
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserId(session?.user?.id ?? null);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  // Wait until we've checked for user theme
-  if (!isReady) {
-    return null;
-  }
-
   return (
-    <NextThemesProvider 
-      {...props} 
+    <NextThemesProvider
+      key={storageKey}
+      {...props}
       storageKey={storageKey}
-      defaultTheme={initialTheme || props.defaultTheme}
+      defaultTheme={defaultTheme}
     >
+      <ThemeBootstrap userId={userId} defaultTheme={defaultTheme} />
       {children}
     </NextThemesProvider>
   );
 }
+
