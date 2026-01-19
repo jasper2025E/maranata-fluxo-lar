@@ -13,7 +13,6 @@ import {
   CheckCircle2,
   Loader2,
   AlertTriangle,
-  Smartphone,
   Key,
   History,
 } from "lucide-react";
@@ -21,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { motion } from "framer-motion";
+import { TwoFactorSetup } from "./TwoFactorSetup";
 
 const passwordSchema = z.object({
   currentPassword: z.string().min(6, "Senha atual deve ter no mínimo 6 caracteres"),
@@ -36,6 +36,7 @@ export function SecurityTab() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [mfaEnabled, setMfaEnabled] = useState(false);
   
   const [passwordData, setPasswordData] = useState({
     currentPassword: "",
@@ -109,18 +110,22 @@ export function SecurityTab() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-8">
             <div className="relative">
               <div className="h-24 w-24 rounded-full border-4 border-primary/20 flex items-center justify-center">
-                <span className="text-3xl font-bold text-primary">75</span>
+                <span className="text-3xl font-bold text-primary">{mfaEnabled ? 95 : 75}</span>
               </div>
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2">
-                <Badge variant="secondary" className="text-xs">Bom</Badge>
+                <Badge variant="secondary" className="text-xs">
+                  {mfaEnabled ? "Excelente" : "Bom"}
+                </Badge>
               </div>
             </div>
             <div className="flex-1 space-y-2">
               <h3 className="text-lg font-semibold">Pontuação de Segurança</h3>
               <p className="text-sm text-muted-foreground">
-                Sua conta tem um bom nível de segurança. Ative a autenticação de dois fatores para aumentar ainda mais.
+                {mfaEnabled 
+                  ? "Sua conta está muito bem protegida com autenticação em dois fatores ativa."
+                  : "Sua conta tem um bom nível de segurança. Ative a autenticação de dois fatores para aumentar ainda mais."}
               </p>
-              <Progress value={75} className="h-2" />
+              <Progress value={mfaEnabled ? 95 : 75} className="h-2" />
             </div>
           </div>
         </CardContent>
@@ -291,18 +296,8 @@ export function SecurityTab() {
             <Badge variant="outline" className="text-success border-success/30 bg-success/10">Ativo</Badge>
           </div>
 
-          <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-muted">
-                <Smartphone className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">Autenticação em dois fatores (2FA)</p>
-                <p className="text-xs text-muted-foreground">Adicione uma camada extra de segurança</p>
-              </div>
-            </div>
-            <Badge variant="secondary">Em breve</Badge>
-          </div>
+          {/* 2FA Component */}
+          <TwoFactorSetup onStatusChange={setMfaEnabled} />
 
           <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50 border">
             <div className="flex items-center gap-3">
