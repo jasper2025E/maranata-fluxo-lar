@@ -10,6 +10,7 @@ import {
   Settings, 
   Receipt,
   Database,
+  Users,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
@@ -18,7 +19,8 @@ import {
   SecurityTab, 
   PreferencesTab, 
   SystemTab, 
-  ConfiguracoesCobranca 
+  ConfiguracoesCobranca,
+  UserManagementTab,
 } from "@/components/config";
 
 interface UserPreferences {
@@ -146,6 +148,12 @@ const Configuracoes = () => {
                 </TabsTrigger>
               )}
               {role === "admin" && (
+                <TabsTrigger value="usuarios" className="gap-2 data-[state=active]:bg-background">
+                  <Users className="h-4 w-4" />
+                  <span className="hidden sm:inline">Usuários</span>
+                </TabsTrigger>
+              )}
+              {role === "admin" && (
                 <TabsTrigger value="sistema" className="gap-2 data-[state=active]:bg-background">
                   <Database className="h-4 w-4" />
                   <span className="hidden sm:inline">Sistema</span>
@@ -191,6 +199,13 @@ const Configuracoes = () => {
               >
                 <ConfiguracoesCobranca />
               </motion.div>
+            </TabsContent>
+          )}
+
+          {/* Usuários Tab - Admin Only */}
+          {role === "admin" && (
+            <TabsContent value="usuarios">
+              <UserManagementTab />
             </TabsContent>
           )}
 

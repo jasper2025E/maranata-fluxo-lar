@@ -5,3 +5,4 @@ export { SecurityTab } from "./SecurityTab";
 export { PreferencesTab } from "./PreferencesTab";
 export { SystemTab } from "./SystemTab";
 export { AsaasWebhookConfig } from "./AsaasWebhookConfig";
+export { UserManagementTab } from "./UserManagementTab";
