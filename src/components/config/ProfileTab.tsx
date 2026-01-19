@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User } from "@supabase/supabase-js";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,8 @@ import {
   Mail,
   Calendar,
   BadgeCheck,
+  Save,
+  Pencil,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -45,6 +47,57 @@ const roleColors: Record<string, string> = {
 
 export function ProfileTab({ user, role, avatarUrl, setAvatarUrl }: ProfileTabProps) {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const [profileName, setProfileName] = useState("");
+  const [profileEmail, setProfileEmail] = useState("");
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editName, setEditName] = useState("");
+  const [savingName, setSavingName] = useState(false);
+
+  // Fetch profile data
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from("profiles")
+        .select("nome, email")
+        .eq("id", user.id)
+        .maybeSingle();
+      
+      if (!error && data) {
+        setProfileName(data.nome || user.email?.split("@")[0] || "");
+        setProfileEmail(data.email || user.email || "");
+      } else {
+        setProfileName(user.email?.split("@")[0] || "");
+        setProfileEmail(user.email || "");
+      }
+    };
+    
+    fetchProfile();
+  }, [user]);
+
+  const handleSaveName = async () => {
+    if (!user || !editName.trim()) return;
+    
+    setSavingName(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ nome: editName.trim() })
+        .eq("id", user.id);
+      
+      if (error) throw error;
+      
+      setProfileName(editName.trim());
+      setIsEditingName(false);
+      toast.success("Nome atualizado com sucesso!");
+    } catch (error: any) {
+      console.error("Error updating name:", error);
+      toast.error("Erro ao atualizar nome");
+    } finally {
+      setSavingName(false);
+    }
+  };
 
   const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -110,7 +163,7 @@ export function ProfileTab({ user, role, avatarUrl, setAvatarUrl }: ProfileTabPr
               <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
                 <AvatarImage src={avatarUrl || undefined} alt="Foto de perfil" />
                 <AvatarFallback className="text-2xl font-bold bg-primary/10 text-primary">
-                  {user?.email?.substring(0, 2).toUpperCase()}
+                  {profileName?.substring(0, 2).toUpperCase() || user?.email?.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <label 
@@ -133,8 +186,47 @@ export function ProfileTab({ user, role, avatarUrl, setAvatarUrl }: ProfileTabPr
               />
             </div>
             <div className="flex-1 pb-2">
-              <h3 className="text-xl font-semibold">{user?.email?.split("@")[0]}</h3>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
+              <div className="flex items-center gap-2">
+                {isEditingName ? (
+                  <div className="flex items-center gap-2">
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      className="h-8 w-48"
+                      autoFocus
+                    />
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-8 w-8"
+                      onClick={handleSaveName}
+                      disabled={savingName}
+                    >
+                      {savingName ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Save className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                ) : (
+                  <>
+                    <h3 className="text-xl font-semibold">{profileName}</h3>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      className="h-6 w-6"
+                      onClick={() => {
+                        setEditName(profileName);
+                        setIsEditingName(true);
+                      }}
+                    >
+                      <Pencil className="h-3 w-3" />
+                    </Button>
+                  </>
+                )}
+              </div>
+              <p className="text-sm text-muted-foreground">{profileEmail}</p>
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Badge variant="outline" className={role ? roleColors[role] : ""}>
                   <Shield className="h-3 w-3 mr-1" />
@@ -191,12 +283,24 @@ export function ProfileTab({ user, role, avatarUrl, setAvatarUrl }: ProfileTabPr
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                <UserIcon className="h-4 w-4" />
+                Nome
+              </Label>
+              <Input 
+                value={profileName} 
+                disabled 
+                className="bg-muted/50"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                 <Mail className="h-4 w-4" />
                 E-mail
               </Label>
               <div className="flex items-center gap-2">
                 <Input 
-                  value={user?.email || ""} 
+                  value={profileEmail} 
                   disabled 
                   className="bg-muted/50"
                 />
