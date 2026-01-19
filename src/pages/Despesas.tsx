@@ -11,11 +11,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Plus, Pencil, Trash2, Search, CheckCircle } from "lucide-react";
+import { Plus, Pencil, Trash2, Search, CheckCircle, Wallet, TrendingDown, Clock } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { despesaSchema } from "@/lib/validations";
+import { FinancialKPICard } from "@/components/dashboard";
 
 interface Despesa {
   id: string;
@@ -184,6 +185,10 @@ const Despesas = () => {
       despesa.categoria.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+  };
+
   const totalDespesas = despesas.reduce((sum, d) => sum + d.valor, 0);
   const totalPagas = despesas.filter((d) => d.paga).reduce((sum, d) => sum + d.valor, 0);
   const totalPendentes = despesas.filter((d) => !d.paga).reduce((sum, d) => sum + d.valor, 0);
@@ -191,7 +196,7 @@ const Despesas = () => {
   const getCategoryBadge = (categoria: string) => {
     switch (categoria) {
       case "Fixa":
-        return <Badge>Fixa</Badge>;
+        return <Badge className="bg-primary/10 text-primary hover:bg-primary/20">Fixa</Badge>;
       case "Variável":
         return <Badge variant="secondary">Variável</Badge>;
       case "Única":
@@ -203,17 +208,18 @@ const Despesas = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
+      <div className="space-y-8">
+        {/* Header */}
+        <div className="flex items-center justify-between animate-fade-in">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Despesas</h2>
-            <p className="text-muted-foreground mt-1">
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">Despesas</h2>
+            <p className="text-muted-foreground mt-1.5">
               Controle as despesas da escola
             </p>
           </div>
           <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsOpen(open); }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
                 <Plus className="mr-2 h-4 w-4" />
                 Nova Despesa
               </Button>
@@ -304,38 +310,40 @@ const Despesas = () => {
           </Dialog>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Total de Despesas</CardDescription>
-              <CardTitle className="text-2xl">
-                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalDespesas)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Pagas</CardDescription>
-              <CardTitle className="text-2xl text-green-600">
-                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalPagas)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardDescription>Pendentes</CardDescription>
-              <CardTitle className="text-2xl text-destructive">
-                {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(totalPendentes)}
-              </CardTitle>
-            </CardHeader>
-          </Card>
+        {/* Stats Cards */}
+        <div className="grid gap-4 sm:grid-cols-3 animate-fade-in">
+          <FinancialKPICard 
+            title="Total de Despesas" 
+            value={formatCurrency(totalDespesas)} 
+            icon={Wallet} 
+            variant="info" 
+            size="sm" 
+            index={0} 
+          />
+          <FinancialKPICard 
+            title="Pagas" 
+            value={formatCurrency(totalPagas)} 
+            icon={CheckCircle} 
+            variant="success" 
+            size="sm" 
+            index={1} 
+          />
+          <FinancialKPICard 
+            title="Pendentes" 
+            value={formatCurrency(totalPendentes)} 
+            icon={Clock} 
+            variant="danger" 
+            size="sm" 
+            index={2} 
+          />
         </div>
 
-        <Card>
-          <CardHeader>
+        {/* Table Card */}
+        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
+          <CardHeader className="border-b border-border/50 bg-muted/30">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle>Lista de Despesas</CardTitle>
+                <CardTitle className="text-lg font-semibold text-foreground">Lista de Despesas</CardTitle>
                 <CardDescription>{filteredDespesas.length} despesa(s)</CardDescription>
               </div>
               <div className="relative w-64">
@@ -349,62 +357,86 @@ const Despesas = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {isLoading ? (
-              <p className="text-muted-foreground">Carregando...</p>
+              <p className="text-muted-foreground p-6">Carregando...</p>
             ) : filteredDespesas.length === 0 ? (
-              <p className="text-muted-foreground">Nenhuma despesa encontrada</p>
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                  <TrendingDown className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium text-foreground mb-1">
+                  Nenhuma despesa encontrada
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  Clique no botão "Nova Despesa" para cadastrar.
+                </p>
+              </div>
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Título</TableHead>
-                    <TableHead>Categoria</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Vencimento</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold text-foreground">Título</TableHead>
+                    <TableHead className="font-semibold text-foreground">Categoria</TableHead>
+                    <TableHead className="font-semibold text-foreground">Valor</TableHead>
+                    <TableHead className="font-semibold text-foreground">Vencimento</TableHead>
+                    <TableHead className="font-semibold text-foreground">Status</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredDespesas.map((despesa) => (
-                    <TableRow key={despesa.id}>
-                      <TableCell className="font-medium">
+                    <TableRow key={despesa.id} className="hover:bg-muted/50 transition-colors">
+                      <TableCell className="font-medium text-foreground">
                         {despesa.titulo}
                         {despesa.recorrente && <span className="ml-2 text-xs text-muted-foreground">(Recorrente)</span>}
                       </TableCell>
                       <TableCell>{getCategoryBadge(despesa.categoria)}</TableCell>
-                      <TableCell>
-                        {new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(despesa.valor)}
+                      <TableCell className="text-muted-foreground">
+                        {formatCurrency(despesa.valor)}
                       </TableCell>
-                      <TableCell>{format(new Date(despesa.data_vencimento), "dd/MM/yyyy")}</TableCell>
+                      <TableCell className="text-muted-foreground">{format(new Date(despesa.data_vencimento), "dd/MM/yyyy")}</TableCell>
                       <TableCell>
-                        <Badge variant={despesa.paga ? "default" : "destructive"}>
+                        <Badge 
+                          className={despesa.paga 
+                            ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" 
+                            : "bg-destructive/10 text-destructive hover:bg-destructive/20"
+                          }
+                        >
                           {despesa.paga ? "Paga" : "Pendente"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
-                        {!despesa.paga && (
+                        <div className="flex items-center justify-end gap-1">
+                          {!despesa.paga && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
+                              onClick={() => markAsPaidMutation.mutate(despesa.id)}
+                              title="Marcar como paga"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                            onClick={() => handleEdit(despesa)}
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => markAsPaidMutation.mutate(despesa.id)}
-                            title="Marcar como paga"
+                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={() => deleteMutation.mutate(despesa.id)}
+                            disabled={deleteMutation.isPending}
                           >
-                            <CheckCircle className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" />
                           </Button>
-                        )}
-                        <Button variant="ghost" size="icon" onClick={() => handleEdit(despesa)}>
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => deleteMutation.mutate(despesa.id)}
-                          disabled={deleteMutation.isPending}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
