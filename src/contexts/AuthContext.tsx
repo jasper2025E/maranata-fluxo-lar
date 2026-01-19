@@ -95,12 +95,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         .eq("user_id", userId)
         .maybeSingle();
 
+      if (!error && data?.role) {
+        setRole(data.role);
+        return;
+      }
+
       if (error) {
         console.error("Error fetching user role:", error);
-        setRole(null);
-      } else {
-        setRole(data?.role ?? null);
       }
+
+      // Fallback: infer role via RPC (bypasses any select/RLS issues)
+      const rolePriority: AppRole[] = ["admin", "financeiro", "secretaria", "staff"];
+      const results = await Promise.all(
+        rolePriority.map((r) =>
+          supabase.rpc("has_role", {
+            _user_id: userId,
+            _role: r,
+          })
+        )
+      );
+
+      const inferred = rolePriority.find((r, idx) => results[idx].data === true) ?? null;
+      setRole(inferred);
     } catch (error) {
       console.error("Exception fetching user role:", error);
       setRole(null);
