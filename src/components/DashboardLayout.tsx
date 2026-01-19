@@ -30,6 +30,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profileName, setProfileName] = useState<string | null>(null);
   const { notifications, unreadCount, markAsRead, markAllAsRead, loading: loadingNotifications } = useNotifications();
 
   const getNotificationIcon = (type: Notification["type"]) => {
@@ -59,21 +60,24 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   useEffect(() => {
-    const loadAvatar = async () => {
+    const loadProfile = async () => {
       if (!user) return;
       
       const { data } = await supabase
         .from("profiles")
-        .select("avatar_url")
+        .select("avatar_url, nome")
         .eq("id", user.id)
         .maybeSingle();
       
       if (data?.avatar_url) {
         setAvatarUrl(data.avatar_url);
       }
+      if (data?.nome) {
+        setProfileName(data.nome);
+      }
     };
 
-    loadAvatar();
+    loadProfile();
   }, [user]);
 
   const handleSignOut = async () => {
@@ -95,8 +99,15 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     secretaria: "bg-warning",
   };
 
-  const getInitials = (email: string) => {
-    return email.substring(0, 2).toUpperCase();
+  const getInitials = (name?: string | null, email?: string | null) => {
+    if (name) {
+      const parts = name.trim().split(" ");
+      if (parts.length >= 2) {
+        return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+      }
+      return name.substring(0, 2).toUpperCase();
+    }
+    return email?.substring(0, 2).toUpperCase() || "U";
   };
 
   return (
@@ -224,12 +235,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     <Avatar className="h-8 w-8 ring-2 ring-border">
                       <AvatarImage src={avatarUrl || undefined} alt="Foto de perfil" />
                       <AvatarFallback className={`${roleColors[role || 'staff']} text-white text-xs font-semibold`}>
-                        {user?.email ? getInitials(user.email) : "U"}
+                        {getInitials(profileName, user?.email)}
                       </AvatarFallback>
                     </Avatar>
                     <div className="hidden lg:block text-left">
                       <p className="text-sm font-medium leading-none text-foreground">
-                        {user?.email?.split("@")[0]}
+                        {profileName || user?.email?.split("@")[0]}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
                         {role ? roleLabels[role] : "Usuário"}
