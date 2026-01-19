@@ -1,5 +1,4 @@
 import { useDashboardStats } from "@/hooks/useDashboardStats";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
   Users, 
   FileText, 
@@ -9,35 +8,28 @@ import {
   TrendingDown, 
   Wallet,
   UserCheck,
-  Percent,
+  Receipt,
   Banknote,
+  Calculator,
+  Target,
+  Briefcase,
+  GraduationCap,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
-import { DashboardCard } from "@/components/DashboardCard";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
+import { formatCurrency } from "@/lib/formatters";
 import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  BarChart,
-  Bar,
-  Legend,
-} from "recharts";
+  FinancialKPICard,
+  FinancialChart,
+  QuickStatsGrid,
+  FinancialSummaryCard,
+  InadimplenciaCard,
+} from "@/components/dashboard";
+import { motion } from "framer-motion";
 
 const Dashboard = () => {
   const { data: stats, isLoading, error } = useDashboardStats();
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", {
-      style: "currency",
-      currency: "BRL",
-    }).format(value);
-  };
 
   if (isLoading) {
     return (
@@ -63,276 +55,163 @@ const Dashboard = () => {
     );
   }
 
-  // Combine data for comparison chart
-  const combinedChartData = stats.receitasMes.map((item, index) => ({
-    mes: item.mes,
-    receitas: item.valor,
-    despesas: stats.despesasMes[index]?.valor || 0,
-  }));
+  const quickStats = [
+    { label: "Responsáveis", value: stats.totalResponsaveis, icon: UserCheck, variant: "blue" as const },
+    { label: "Alunos Ativos", value: stats.alunosAtivos, icon: GraduationCap, variant: "violet" as const },
+    { label: "Faturas do Mês", value: stats.totalFaturas, icon: FileText, variant: "cyan" as const },
+    { label: "Pagas no Mês", value: stats.faturasPagas, icon: BadgeCheck, variant: "emerald" as const },
+    { label: "Funcionários", value: stats.funcionariosAtivos, icon: Briefcase, variant: "amber" as const },
+    { label: "Inadimplentes", value: stats.responsaveisInadimplentes, icon: AlertCircle, variant: "rose" as const },
+  ];
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="space-y-6">
         {/* Header */}
-        <div className="animate-fade-in">
-          <h2 className="text-3xl font-bold tracking-tight text-gray-900">
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4 }}
+        >
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">
             Dashboard Financeiro
           </h2>
-          <p className="text-gray-500 mt-1.5">
-            Visão geral centrada nos responsáveis financeiros
+          <p className="text-muted-foreground mt-1">
+            Visão geral do fluxo financeiro e indicadores da escola
           </p>
-        </div>
+        </motion.div>
 
-        {/* Main Stats Grid - Responsáveis Focused */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          <DashboardCard
-            title="Responsáveis Ativos"
-            value={stats.responsaveisAtivos}
-            subtitle={`de ${stats.totalResponsaveis} cadastrados`}
-            icon={UserCheck}
-            color="blue"
+        {/* Quick Stats Row */}
+        <QuickStatsGrid stats={quickStats} />
+
+        {/* Main KPIs Grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <FinancialKPICard
+            title="Receitas do Mês"
+            value={formatCurrency(stats.totalReceitas)}
+            icon={TrendingUp}
+            variant="success"
+            trend={stats.variacaoReceitas !== 0 ? {
+              value: stats.variacaoReceitas,
+              isPositive: stats.variacaoReceitas > 0,
+            } : undefined}
             index={0}
           />
-          <DashboardCard
-            title="Mensalidades Abertas"
-            value={stats.faturasAbertas}
-            subtitle="Aguardando pagamento"
-            icon={FileText}
-            color="yellow"
+          <FinancialKPICard
+            title="Despesas do Mês"
+            value={formatCurrency(stats.totalDespesas)}
+            icon={TrendingDown}
+            variant="danger"
+            trend={stats.variacaoDespesas !== 0 ? {
+              value: stats.variacaoDespesas,
+              isPositive: stats.variacaoDespesas < 0,
+            } : undefined}
             index={1}
           />
-          <DashboardCard
+          <FinancialKPICard
             title="Valor a Receber"
             value={formatCurrency(stats.valorAReceber)}
-            subtitle="Faturas em aberto"
-            icon={Banknote}
-            color="green"
+            subtitle={`${stats.faturasAbertas + stats.faturasVencidas} faturas pendentes`}
+            icon={Receipt}
+            variant="info"
             index={2}
           />
-          <DashboardCard
-            title="Inadimplência"
-            value={`${stats.inadimplenciaResponsaveis}%`}
-            subtitle={`${stats.faturasVencidas} faturas vencidas`}
-            icon={AlertCircle}
-            color={stats.inadimplenciaResponsaveis > 20 ? "red" : stats.inadimplenciaResponsaveis > 10 ? "yellow" : "blue"}
+          <FinancialKPICard
+            title="Ticket Médio"
+            value={formatCurrency(stats.ticketMedio)}
+            subtitle="Por fatura paga"
+            icon={Calculator}
+            variant="default"
             index={3}
           />
         </div>
 
-        {/* Financial Stats */}
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          <DashboardCard
-            title="Receitas do Mês"
-            value={formatCurrency(stats.totalReceitas)}
-            subtitle="Total de entradas"
-            icon={TrendingUp}
-            color="green"
-            index={4}
-          />
-          <DashboardCard
-            title="Despesas do Mês"
-            value={formatCurrency(stats.totalDespesas)}
-            subtitle="Total de saídas"
-            icon={TrendingDown}
-            color="red"
-            index={5}
-          />
-          <DashboardCard
+        {/* Secondary KPIs */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <FinancialKPICard
             title="Saldo Mensal"
             value={formatCurrency(stats.saldoMensal)}
-            subtitle="Receitas - Despesas"
+            subtitle={stats.saldoMensal >= 0 ? "Superávit" : "Déficit"}
             icon={Wallet}
-            color={stats.saldoMensal >= 0 ? "green" : "red"}
+            variant={stats.saldoMensal >= 0 ? "success" : "danger"}
+            size="sm"
+            index={4}
+          />
+          <FinancialKPICard
+            title="Taxa de Arrecadação"
+            value={`${stats.taxaArrecadacao.toFixed(1)}%`}
+            subtitle="Do valor esperado"
+            icon={Target}
+            variant={stats.taxaArrecadacao >= 80 ? "success" : stats.taxaArrecadacao >= 50 ? "warning" : "danger"}
+            size="sm"
+            index={5}
+          />
+          <FinancialKPICard
+            title="Total em Atraso"
+            value={formatCurrency(stats.valorVencido)}
+            subtitle={`${stats.faturasVencidas} faturas vencidas`}
+            icon={AlertCircle}
+            variant={stats.valorVencido > 0 ? "warning" : "success"}
+            size="sm"
             index={6}
+          />
+          <FinancialKPICard
+            title="Folha RH Mensal"
+            value={formatCurrency(stats.gastoRHMensal)}
+            subtitle={`${stats.funcionariosAtivos} funcionários ativos`}
+            icon={Briefcase}
+            variant="default"
+            size="sm"
+            index={7}
           />
         </div>
 
-        {/* Charts */}
-        <div className="grid gap-5 lg:grid-cols-2">
-          {/* Revenue vs Expenses Chart */}
-          <Card className="border-gray-100/80 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Receitas vs Despesas
-              </CardTitle>
-              <CardDescription className="text-gray-500">
-                Comparativo dos últimos 6 meses
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={combinedChartData} barGap={8}>
-                    <CartesianGrid 
-                      strokeDasharray="3 3" 
-                      stroke="#f1f5f9" 
-                      vertical={false}
-                    />
-                    <XAxis 
-                      dataKey="mes" 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#94a3b8", fontSize: 12 }}
-                    />
-                    <YAxis 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#94a3b8", fontSize: 12 }}
-                      tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#fff",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "12px",
-                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                      }}
-                      formatter={(value: number) => formatCurrency(value)}
-                      cursor={{ fill: "rgba(148, 163, 184, 0.1)" }}
-                    />
-                    <Legend 
-                      iconType="circle"
-                      wrapperStyle={{ paddingTop: "16px" }}
-                    />
-                    <Bar 
-                      dataKey="receitas" 
-                      name="Receitas"
-                      fill="#10b981" 
-                      radius={[6, 6, 0, 0]}
-                      maxBarSize={40}
-                    />
-                    <Bar 
-                      dataKey="despesas" 
-                      name="Despesas"
-                      fill="#f43f5e" 
-                      radius={[6, 6, 0, 0]}
-                      maxBarSize={40}
-                    />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+        {/* Charts Section */}
+        <div className="grid gap-5 lg:grid-cols-3">
+          {/* Main Composed Chart */}
+          <FinancialChart
+            title="Evolução Financeira"
+            description="Receitas, despesas e saldo dos últimos 6 meses"
+            data={stats.combinedData}
+            type="composed"
+            height={320}
+            className="lg:col-span-2"
+          />
 
-          {/* Revenue Trend Chart */}
-          <Card className="border-gray-100/80 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl overflow-hidden">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold text-gray-900">
-                Evolução das Receitas
-              </CardTitle>
-              <CardDescription className="text-gray-500">
-                Tendência dos últimos 6 meses
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="h-72">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={stats.receitasMes}>
-                    <defs>
-                      <linearGradient id="colorReceitas" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="0%" stopColor="#3b82f6" stopOpacity={0.25} />
-                        <stop offset="100%" stopColor="#3b82f6" stopOpacity={0} />
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid 
-                      strokeDasharray="3 3" 
-                      stroke="#f1f5f9" 
-                      vertical={false}
-                    />
-                    <XAxis 
-                      dataKey="mes" 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#94a3b8", fontSize: 12 }}
-                    />
-                    <YAxis 
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fill: "#94a3b8", fontSize: 12 }}
-                      tickFormatter={(value) => `R$${(value / 1000).toFixed(0)}k`}
-                    />
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: "#fff",
-                        border: "1px solid #e2e8f0",
-                        borderRadius: "12px",
-                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                      }}
-                      formatter={(value: number) => formatCurrency(value)}
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="valor"
-                      name="Receitas"
-                      stroke="#3b82f6"
-                      strokeWidth={2.5}
-                      fill="url(#colorReceitas)"
-                    />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+          {/* Inadimplência Card */}
+          <InadimplenciaCard
+            taxa={stats.inadimplenciaResponsaveis}
+            valorTotal={stats.valorVencido}
+            faturasVencidas={stats.faturasVencidas}
+            responsaveisInadimplentes={stats.responsaveisInadimplentes}
+            aging={stats.aging}
+          />
         </div>
 
-        {/* Quick Stats Summary */}
-        <Card className="border-gray-100/80 shadow-sm hover:shadow-md transition-shadow duration-300 rounded-2xl overflow-hidden">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-lg font-semibold text-gray-900">
-              Resumo Rápido
-            </CardTitle>
-            <CardDescription className="text-gray-500">
-              Status atual do sistema
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {/* Total Responsáveis */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-blue-50/80 to-blue-50/40 border border-blue-100/50">
-                <div className="h-11 w-11 rounded-xl bg-blue-100 flex items-center justify-center">
-                  <UserCheck className="h-5 w-5 text-blue-600" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{stats.totalResponsaveis}</p>
-                  <p className="text-sm text-gray-500">Responsáveis</p>
-                </div>
-              </div>
+        {/* Secondary Charts */}
+        <div className="grid gap-5 lg:grid-cols-2">
+          <FinancialChart
+            title="Receitas vs Despesas"
+            description="Comparativo mensal"
+            data={stats.combinedData}
+            type="comparison"
+            height={280}
+          />
+          <FinancialSummaryCard
+            receitas={stats.totalReceitas}
+            despesas={stats.totalDespesas}
+            saldo={stats.saldoMensal}
+          />
+        </div>
 
-              {/* Total Alunos */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-violet-50/80 to-violet-50/40 border border-violet-100/50">
-                <div className="h-11 w-11 rounded-xl bg-violet-100 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-violet-600" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{stats.alunosAtivos}</p>
-                  <p className="text-sm text-gray-500">Alunos Ativos</p>
-                </div>
-              </div>
-
-              {/* Paid Invoices */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-emerald-50/80 to-emerald-50/40 border border-emerald-100/50">
-                <div className="h-11 w-11 rounded-xl bg-emerald-100 flex items-center justify-center">
-                  <BadgeCheck className="h-5 w-5 text-emerald-600" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{stats.faturasPagas}</p>
-                  <p className="text-sm text-gray-500">Pagas no Mês</p>
-                </div>
-              </div>
-
-              {/* Default Rate */}
-              <div className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-br from-rose-50/80 to-rose-50/40 border border-rose-100/50">
-                <div className="h-11 w-11 rounded-xl bg-rose-100 flex items-center justify-center">
-                  <Percent className="h-5 w-5 text-rose-600" strokeWidth={1.75} />
-                </div>
-                <div>
-                  <p className="text-xl font-bold text-gray-900">{stats.inadimplenciaResponsaveis}%</p>
-                  <p className="text-sm text-gray-500">Inadimplência</p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Revenue Trend */}
+        <FinancialChart
+          title="Tendência de Receitas"
+          description="Evolução da arrecadação nos últimos 6 meses"
+          data={stats.receitasMes}
+          type="area"
+          height={250}
+        />
       </div>
     </DashboardLayout>
   );

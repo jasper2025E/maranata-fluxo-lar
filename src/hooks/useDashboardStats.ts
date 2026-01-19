@@ -2,16 +2,24 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { queryKeys } from "./useQueryConfig";
 
+export interface AgingData {
+  ate30: number;
+  de31a60: number;
+  mais60: number;
+}
+
 export interface DashboardStats {
   // Responsáveis
   totalResponsaveis: number;
   responsaveisAtivos: number;
+  responsaveisInadimplentes: number;
   
   // Alunos
   totalAlunos: number;
   alunosAtivos: number;
   
   // Faturas
+  totalFaturas: number;
   faturasAbertas: number;
   faturasPagas: number;
   faturasVencidas: number;
@@ -21,32 +29,49 @@ export interface DashboardStats {
   totalDespesas: number;
   saldoMensal: number;
   valorAReceber: number;
+  valorVencido: number;
+  ticketMedio: number;
   
   // Gráficos
   receitasMes: { mes: string; valor: number }[];
   despesasMes: { mes: string; valor: number }[];
+  combinedData: { mes: string; receitas: number; despesas: number; saldo: number }[];
   
   // Indicadores
   inadimplencia: number;
   inadimplenciaResponsaveis: number;
+  taxaArrecadacao: number;
+  aging: AgingData;
   
   // RH
   totalFuncionarios: number;
   funcionariosAtivos: number;
   gastoRHMensal: number;
+  
+  // Comparativos
+  variacaoReceitas: number;
+  variacaoDespesas: number;
 }
 
 async function fetchDashboardStats(): Promise<DashboardStats> {
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
+  const today = new Date().toISOString().split("T")[0];
+
+  // Calculate previous month for comparison
+  const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
+  const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
 
   // Execute all queries in parallel
   const [
     responsaveisResult,
     alunosResult,
     faturasResult,
+    faturasVencidasResult,
     pagamentosResult,
+    pagamentosPrevResult,
     despesasResult,
+    despesasPrevResult,
     pagamentosHistoricoResult,
     despesasHistoricoResult,
     funcionariosResult,
@@ -58,12 +83,18 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     // Total students
     supabase.from("alunos").select("id, status_matricula"),
     
-    // Invoices for current month
+    // All invoices for current month
     supabase
       .from("faturas")
-      .select("id, status, valor, responsavel_id")
+      .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
       .eq("mes_referencia", currentMonth)
       .eq("ano_referencia", currentYear),
+    
+    // All overdue invoices with aging
+    supabase
+      .from("faturas")
+      .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
+      .eq("status", "Vencida"),
     
     // Payments for current month
     supabase
@@ -75,6 +106,13 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
         : `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`
       ),
     
+    // Payments for previous month (comparison)
+    supabase
+      .from("pagamentos")
+      .select("valor")
+      .gte("data_pagamento", `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`)
+      .lt("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`),
+    
     // Expenses for current month
     supabase
       .from("despesas")
@@ -85,6 +123,14 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
         ? `${currentYear + 1}-01-01` 
         : `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`
       ),
+    
+    // Expenses for previous month (comparison)
+    supabase
+      .from("despesas")
+      .select("valor")
+      .eq("paga", true)
+      .gte("data_pagamento", `${prevYear}-${String(prevMonth).padStart(2, "0")}-01`)
+      .lt("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`),
 
     // Last 6 months payments for chart
     supabase
@@ -114,48 +160,86 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const responsaveis = responsaveisResult.data || [];
   const alunos = alunosResult.data || [];
   const faturas = faturasResult.data || [];
+  const faturasVencidasAll = faturasVencidasResult.data || [];
   const pagamentos = pagamentosResult.data || [];
+  const pagamentosPrev = pagamentosPrevResult.data || [];
   const despesas = despesasResult.data || [];
+  const despesasPrev = despesasPrevResult.data || [];
   const funcionarios = funcionariosResult.data || [];
   const folhaPagamento = folhaPagamentoResult.data || [];
+
   // Responsáveis stats
   const totalResponsaveis = responsaveis.length;
   const responsaveisAtivos = responsaveis.filter(r => r.ativo).length;
+  const responsaveisComVencidas = new Set(
+    faturasVencidasAll.map(f => f.responsavel_id).filter(Boolean)
+  ).size;
 
   // Alunos stats
   const totalAlunos = alunos.length;
   const alunosAtivos = alunos.filter(a => a.status_matricula === "ativo").length;
   
   // Faturas stats
+  const totalFaturas = faturas.length;
   const faturasAbertas = faturas.filter(f => f.status === "Aberta").length;
   const faturasPagas = faturas.filter(f => f.status === "Paga").length;
   const faturasVencidas = faturas.filter(f => f.status === "Vencida").length;
   
-  // Valor a receber (faturas abertas) - usar valor_total se disponível
+  // Valor a receber e vencido
   const valorAReceber = faturas
     .filter(f => f.status === "Aberta" || f.status === "Vencida")
+    .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
+  
+  const valorVencido = faturasVencidasAll
     .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
   
   // Financeiro
   const totalReceitas = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0);
   const totalDespesas = despesas.reduce((sum, d) => sum + Number(d.valor), 0);
+  const totalReceitasPrev = pagamentosPrev.reduce((sum, p) => sum + Number(p.valor), 0);
+  const totalDespesasPrev = despesasPrev.reduce((sum, d) => sum + Number(d.valor), 0);
 
-  // Calculate inadimplência rate (faturas)
+  // Variações
+  const variacaoReceitas = totalReceitasPrev > 0 
+    ? ((totalReceitas - totalReceitasPrev) / totalReceitasPrev) * 100 
+    : 0;
+  const variacaoDespesas = totalDespesasPrev > 0 
+    ? ((totalDespesas - totalDespesasPrev) / totalDespesasPrev) * 100 
+    : 0;
+
+  // Ticket médio
+  const ticketMedio = faturasPagas > 0 ? totalReceitas / faturasPagas : 0;
+
+  // Taxa de arrecadação
+  const valorEsperado = faturas.reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
+  const taxaArrecadacao = valorEsperado > 0 ? (totalReceitas / valorEsperado) * 100 : 0;
+
+  // Calculate inadimplência rate
   const totalFaturasMes = faturas.length;
   const inadimplencia = totalFaturasMes > 0 
     ? Math.round((faturasVencidas / totalFaturasMes) * 100) 
     : 0;
 
-  // Inadimplência por responsável
-  const responsaveisComVencidas = new Set(
-    faturas.filter(f => f.status === "Vencida").map(f => f.responsavel_id)
-  ).size;
   const inadimplenciaResponsaveis = responsaveisAtivos > 0
     ? Math.round((responsaveisComVencidas / responsaveisAtivos) * 100)
     : 0;
 
+  // Calculate aging
+  const aging: AgingData = { ate30: 0, de31a60: 0, mais60: 0 };
+  const todayDate = new Date(today);
+  
+  faturasVencidasAll.forEach(f => {
+    const vencimento = new Date(f.data_vencimento);
+    const diasAtraso = Math.floor((todayDate.getTime() - vencimento.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diasAtraso <= 30) aging.ate30++;
+    else if (diasAtraso <= 60) aging.de31a60++;
+    else aging.mais60++;
+  });
+
   // Process historical data for charts
   const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+  
   // RH Stats
   const totalFuncionarios = funcionarios.length;
   const funcionariosAtivos = funcionarios.filter(f => f.status === 'ativo').length;
@@ -163,12 +247,22 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
 
   const receitasMes = processMonthlyData(pagamentosHistoricoResult.data || [], monthNames);
   const despesasMes = processMonthlyData(despesasHistoricoResult.data || [], monthNames);
+  
+  // Combined data for composed chart
+  const combinedData = receitasMes.map((item, index) => ({
+    mes: item.mes,
+    receitas: item.valor,
+    despesas: despesasMes[index]?.valor || 0,
+    saldo: item.valor - (despesasMes[index]?.valor || 0),
+  }));
 
   return {
     totalResponsaveis,
     responsaveisAtivos,
+    responsaveisInadimplentes: responsaveisComVencidas,
     totalAlunos,
     alunosAtivos,
+    totalFaturas,
     faturasAbertas,
     faturasPagas,
     faturasVencidas,
@@ -176,13 +270,20 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     totalDespesas,
     saldoMensal: totalReceitas - totalDespesas,
     valorAReceber,
+    valorVencido,
+    ticketMedio,
     receitasMes,
     despesasMes,
+    combinedData,
     inadimplencia,
     inadimplenciaResponsaveis,
+    taxaArrecadacao,
+    aging,
     totalFuncionarios,
     funcionariosAtivos,
     gastoRHMensal,
+    variacaoReceitas,
+    variacaoDespesas,
   };
 }
 
