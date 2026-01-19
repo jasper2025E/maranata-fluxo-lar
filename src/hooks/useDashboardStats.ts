@@ -54,7 +54,6 @@ export interface DashboardStats {
 }
 
 async function fetchDashboardStats(): Promise<DashboardStats> {
-  console.log("Fetching dashboard stats...");
   const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
   const today = new Date().toISOString().split("T")[0];
@@ -176,6 +175,7 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
 
   if (queryErrors.length > 0) {
     console.error("Dashboard query errors:", queryErrors);
+    throw new Error("Failed to fetch dashboard data");
   }
 
   const responsaveis = responsaveisResult.data || [];
