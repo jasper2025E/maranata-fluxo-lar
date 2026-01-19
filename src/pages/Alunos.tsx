@@ -597,12 +597,12 @@ const Alunos = () => {
                     >
                       <TableCell>
                         <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center">
-                            <span className="text-sm font-semibold text-blue-600">
+                          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="text-sm font-semibold text-primary">
                               {aluno.nome_completo.charAt(0).toUpperCase()}
                             </span>
                           </div>
-                          <span className="font-medium text-gray-900">{aluno.nome_completo}</span>
+                          <span className="font-medium text-foreground">{aluno.nome_completo}</span>
                         </div>
                       </TableCell>
                       <TableCell className="text-gray-600">
