@@ -40,17 +40,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify the requesting user using getClaims
+    // Verify the requesting user using admin client getUser
     const token = authHeader.replace("Bearer ", "");
     
-    // Create a client with the user's token for validation
-    const supabaseUser = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    const { data: userData, error: authError } = await supabaseAdmin.auth.getUser(token);
     
-    const { data: claimsData, error: authError } = await supabaseUser.auth.getClaims(token);
-    
-    if (authError || !claimsData?.claims?.sub) {
+    if (authError || !userData?.user) {
       console.error("Auth error:", authError);
       return new Response(
         JSON.stringify({ error: "Invalid token" }),
@@ -58,7 +53,7 @@ Deno.serve(async (req) => {
       );
     }
     
-    const requestingUserId = claimsData.claims.sub;
+    const requestingUserId = userData.user.id;
 
     // Check if requesting user is admin
     const { data: roleData, error: roleError } = await supabaseAdmin
