@@ -226,7 +226,7 @@ export function ProfileTab({ user, role, avatarUrl, setAvatarUrl }: ProfileTabPr
                   </>
                 )}
               </div>
-              <p className="text-sm text-muted-foreground">{profileEmail}</p>
+              <p className="text-sm font-medium text-foreground">{profileEmail}</p>
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 <Badge variant="outline" className={role ? roleColors[role] : ""}>
                   <Shield className="h-3 w-3 mr-1" />
