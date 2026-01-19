@@ -49,6 +49,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { formatPhone } from "@/lib/formatters";
+import { FinancialKPICard } from "@/components/dashboard";
 
 interface Responsavel {
   id: string;
@@ -78,38 +79,6 @@ interface AlunoSemResponsavel {
   nome_completo: string;
   curso?: { nome: string } | null;
 }
-
-// Stats Card Component
-const StatCardMini = ({ 
-  icon: Icon, 
-  label, 
-  value, 
-  color 
-}: { 
-  icon: any; 
-  label: string; 
-  value: string | number; 
-  color: string;
-}) => {
-  const colorClasses: Record<string, string> = {
-    blue: "bg-blue-50 text-blue-600 border-blue-100",
-    green: "bg-emerald-50 text-emerald-600 border-emerald-100",
-    yellow: "bg-amber-50 text-amber-600 border-amber-100",
-    red: "bg-rose-50 text-rose-600 border-rose-100",
-  };
-
-  return (
-    <div className={`flex items-center gap-3 p-4 rounded-xl border ${colorClasses[color]}`}>
-      <div className="h-10 w-10 rounded-lg bg-white/80 flex items-center justify-center shadow-sm">
-        <Icon className="h-5 w-5" strokeWidth={1.75} />
-      </div>
-      <div>
-        <p className="text-2xl font-bold text-gray-900">{value}</p>
-        <p className="text-sm text-gray-600">{label}</p>
-      </div>
-    </div>
-  );
-};
 
 // Table Skeleton
 const TableSkeleton = () => (
@@ -333,8 +302,8 @@ export default function Responsaveis() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Responsáveis Financeiros</h1>
-            <p className="text-gray-500 mt-1">Gerencie os responsáveis e suas mensalidades</p>
+            <h1 className="text-2xl font-bold text-foreground">Responsáveis Financeiros</h1>
+            <p className="text-muted-foreground mt-1">Gerencie os responsáveis e suas mensalidades</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -484,41 +453,45 @@ export default function Responsaveis() {
           </Dialog>
         </div>
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Premium Design */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCardMini
+          <FinancialKPICard
             icon={Users}
-            label="Responsáveis Ativos"
+            title="Responsáveis Ativos"
             value={stats?.ativos || 0}
-            color="blue"
+            variant="info"
+            size="sm"
           />
-          <StatCardMini
+          <FinancialKPICard
             icon={FileText}
-            label="Mensalidades Abertas"
+            title="Mensalidades Abertas"
             value={formatCurrency(stats?.valorReceber || 0)}
-            color="yellow"
+            variant="warning"
+            size="sm"
           />
-          <StatCardMini
+          <FinancialKPICard
             icon={Wallet}
-            label="Valor a Receber"
+            title="Valor a Receber"
             value={formatCurrency(stats?.valorReceber || 0)}
-            color="green"
+            variant="success"
+            size="sm"
           />
-          <StatCardMini
+          <FinancialKPICard
             icon={AlertCircle}
-            label="Inadimplência"
+            title="Inadimplência"
             value={`${stats?.inadimplencia || 0}%`}
-            color="red"
+            variant={(stats?.inadimplencia || 0) > 20 ? "danger" : (stats?.inadimplencia || 0) > 10 ? "warning" : "info"}
+            size="sm"
           />
         </div>
 
         {/* Search and Table */}
-        <Card className="border-gray-100 shadow-sm rounded-2xl overflow-hidden">
+        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden bg-card">
           <CardHeader className="pb-4">
             <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <CardTitle className="text-lg font-semibold">Lista de Responsáveis</CardTitle>
+              <CardTitle className="text-lg font-semibold text-foreground">Lista de Responsáveis</CardTitle>
               <div className="relative flex-1 sm:max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Buscar por nome ou telefone..."
                   value={searchTerm}
@@ -534,7 +507,7 @@ export default function Responsaveis() {
             ) : filteredResponsaveis && filteredResponsaveis.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-gray-50/80">
+                  <TableRow className="bg-muted/50">
                     <TableHead className="font-semibold">Responsável</TableHead>
                     <TableHead className="font-semibold">Contato</TableHead>
                     <TableHead className="font-semibold text-center">Alunos</TableHead>
