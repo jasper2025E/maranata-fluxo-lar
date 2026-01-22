@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useSecrets } from "@/hooks/useSecrets";
+import { useWebhookLogs, useApiRequestLogs } from "@/hooks/useLogs";
 import { 
   Key, 
   Shield, 
@@ -30,28 +31,33 @@ import {
   AlertTriangle,
   Info,
   Loader2,
+  Search,
+  Filter,
 } from "lucide-react";
-
-interface WebhookLog {
-  id: string;
-  event: string;
-  status: "success" | "error";
-  timestamp: string;
-  payload?: string;
-}
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export function IntegrationsTab() {
   const [showAsaasKey, setShowAsaasKey] = useState(false);
   const [showStripeKey, setShowStripeKey] = useState(false);
   const [testingSecret, setTestingSecret] = useState<string | null>(null);
+  const [webhookSearch, setWebhookSearch] = useState("");
+  const [webhookSourceFilter, setWebhookSourceFilter] = useState<string>("all");
+  const [webhookStatusFilter, setWebhookStatusFilter] = useState<string>("all");
+  const [apiSearch, setApiSearch] = useState("");
 
   const { secrets, isLoading, error, refetch, testConnection } = useSecrets();
   
-  const webhookLogs: WebhookLog[] = [
-    { id: "1", event: "PAYMENT_RECEIVED", status: "success", timestamp: new Date().toISOString() },
-    { id: "2", event: "PAYMENT_CREATED", status: "success", timestamp: new Date(Date.now() - 300000).toISOString() },
-    { id: "3", event: "PAYMENT_OVERDUE", status: "error", timestamp: new Date(Date.now() - 600000).toISOString() },
-  ];
+  const { data: webhookLogs, isLoading: webhooksLoading, refetch: refetchWebhooks } = useWebhookLogs({
+    search: webhookSearch || undefined,
+    source: webhookSourceFilter !== "all" ? webhookSourceFilter : undefined,
+    status: webhookStatusFilter !== "all" ? webhookStatusFilter : undefined,
+    limit: 50,
+  });
+  
+  const { data: apiLogs, isLoading: apiLogsLoading, refetch: refetchApiLogs } = useApiRequestLogs({
+    search: apiSearch || undefined,
+    limit: 50,
+  });
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -652,74 +658,94 @@ export function IntegrationsTab() {
             <TabsContent value="logs-requisicoes" className="mt-6 space-y-6">
               <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle className="text-base">Histórico de Requisições</CardTitle>
-                  <CardDescription>Últimas requisições feitas às APIs externas</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base">Histórico de Requisições</CardTitle>
+                      <CardDescription>Últimas requisições feitas às APIs externas</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => refetchApiLogs()} disabled={apiLogsLoading}>
+                      <RefreshCw className={`h-4 w-4 mr-2 ${apiLogsLoading ? "animate-spin" : ""}`} />
+                      Atualizar
+                    </Button>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Serviço</TableHead>
-                        <TableHead>Endpoint</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Tempo</TableHead>
-                        <TableHead>Data</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      <TableRow>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600">Asaas</Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">/payments</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            200
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">245ms</TableCell>
-                        <TableCell className="text-muted-foreground text-xs">
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          Agora
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600">Asaas</Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">/customers</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            200
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">189ms</TableCell>
-                        <TableCell className="text-muted-foreground text-xs">
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          2 min
-                        </TableCell>
-                      </TableRow>
-                      <TableRow>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-violet-500/10 text-violet-600">Stripe</Badge>
-                        </TableCell>
-                        <TableCell className="font-mono text-xs">/checkout/sessions</TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="bg-red-500/10 text-red-600">
-                            <XCircle className="h-3 w-3 mr-1" />
-                            401
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="text-muted-foreground">89ms</TableCell>
-                        <TableCell className="text-muted-foreground text-xs">
-                          <Clock className="h-3 w-3 inline mr-1" />
-                          5 min
-                        </TableCell>
-                      </TableRow>
-                    </TableBody>
-                  </Table>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por endpoint ou método..."
+                        value={apiSearch}
+                        onChange={(e) => setApiSearch(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                  </div>
+                  
+                  {apiLogsLoading ? (
+                    <div className="space-y-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
+                      ))}
+                    </div>
+                  ) : !apiLogs || apiLogs.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>Nenhuma requisição registrada ainda.</p>
+                      <p className="text-sm">As requisições às APIs externas aparecerão aqui.</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Método</TableHead>
+                          <TableHead>Endpoint</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Tempo</TableHead>
+                          <TableHead>Data</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {apiLogs.map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell>
+                              <Badge variant="outline" className={
+                                log.method === "GET" ? "bg-blue-500/10 text-blue-600" :
+                                log.method === "POST" ? "bg-emerald-500/10 text-emerald-600" :
+                                log.method === "PUT" ? "bg-amber-500/10 text-amber-600" :
+                                "bg-red-500/10 text-red-600"
+                              }>
+                                {log.method}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="font-mono text-xs max-w-[200px] truncate">
+                              {log.endpoint}
+                            </TableCell>
+                            <TableCell>
+                              {log.status_code && log.status_code >= 200 && log.status_code < 300 ? (
+                                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  {log.status_code}
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-red-500/10 text-red-600">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  {log.status_code || "Erro"}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {log.duration_ms ? `${log.duration_ms}ms` : "-"}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-xs">
+                              <Clock className="h-3 w-3 inline mr-1" />
+                              {new Date(log.created_at).toLocaleString("pt-BR")}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -728,50 +754,121 @@ export function IntegrationsTab() {
             <TabsContent value="logs-webhooks" className="mt-6 space-y-6">
               <Card className="border-border/50">
                 <CardHeader>
-                  <CardTitle className="text-base">Webhooks Recebidos</CardTitle>
-                  <CardDescription>Eventos recebidos dos serviços externos</CardDescription>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <CardTitle className="text-base">Webhooks Recebidos</CardTitle>
+                      <CardDescription>Eventos recebidos dos serviços externos</CardDescription>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => refetchWebhooks()} disabled={webhooksLoading}>
+                      <RefreshCw className={`h-4 w-4 mr-2 ${webhooksLoading ? "animate-spin" : ""}`} />
+                      Atualizar
+                    </Button>
+                  </div>
                 </CardHeader>
-                <CardContent>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Evento</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Data/Hora</TableHead>
-                        <TableHead>Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {webhookLogs.map((log) => (
-                        <TableRow key={log.id}>
-                          <TableCell>
-                            <Badge variant="outline">{log.event}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            {log.status === "success" ? (
-                              <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600">
-                                <CheckCircle className="h-3 w-3 mr-1" />
-                                Sucesso
-                              </Badge>
-                            ) : (
-                              <Badge variant="outline" className="bg-red-500/10 text-red-600">
-                                <XCircle className="h-3 w-3 mr-1" />
-                                Erro
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-xs">
-                            {new Date(log.timestamp).toLocaleString("pt-BR")}
-                          </TableCell>
-                          <TableCell>
-                            <Button variant="ghost" size="sm">
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
+                <CardContent className="space-y-4">
+                  <div className="flex gap-2 flex-wrap">
+                    <div className="relative flex-1 min-w-[200px]">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar por evento..."
+                        value={webhookSearch}
+                        onChange={(e) => setWebhookSearch(e.target.value)}
+                        className="pl-9"
+                      />
+                    </div>
+                    <Select value={webhookSourceFilter} onValueChange={setWebhookSourceFilter}>
+                      <SelectTrigger className="w-[140px]">
+                        <Filter className="h-4 w-4 mr-2" />
+                        <SelectValue placeholder="Fonte" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todas fontes</SelectItem>
+                        <SelectItem value="asaas">Asaas</SelectItem>
+                        <SelectItem value="stripe">Stripe</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Select value={webhookStatusFilter} onValueChange={setWebhookStatusFilter}>
+                      <SelectTrigger className="w-[140px]">
+                        <SelectValue placeholder="Status" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Todos status</SelectItem>
+                        <SelectItem value="processed">Processado</SelectItem>
+                        <SelectItem value="received">Recebido</SelectItem>
+                        <SelectItem value="failed">Falhou</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  {webhooksLoading ? (
+                    <div className="space-y-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Skeleton key={i} className="h-12 w-full" />
                       ))}
-                    </TableBody>
-                  </Table>
+                    </div>
+                  ) : !webhookLogs || webhookLogs.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Webhook className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>Nenhum webhook recebido ainda.</p>
+                      <p className="text-sm">Os eventos dos gateways de pagamento aparecerão aqui.</p>
+                    </div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Fonte</TableHead>
+                          <TableHead>Evento</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead>Tempo</TableHead>
+                          <TableHead>Data/Hora</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {webhookLogs.map((log) => (
+                          <TableRow key={log.id}>
+                            <TableCell>
+                              <Badge variant="outline" className={
+                                log.source === "asaas" ? "bg-emerald-500/10 text-emerald-600" :
+                                log.source === "stripe" ? "bg-violet-500/10 text-violet-600" :
+                                "bg-blue-500/10 text-blue-600"
+                              }>
+                                {log.source.charAt(0).toUpperCase() + log.source.slice(1)}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant="outline" className="font-mono text-xs">
+                                {log.event_type}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {log.status === "processed" ? (
+                                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600">
+                                  <CheckCircle className="h-3 w-3 mr-1" />
+                                  Processado
+                                </Badge>
+                              ) : log.status === "received" ? (
+                                <Badge variant="outline" className="bg-blue-500/10 text-blue-600">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  Recebido
+                                </Badge>
+                              ) : (
+                                <Badge variant="outline" className="bg-red-500/10 text-red-600">
+                                  <XCircle className="h-3 w-3 mr-1" />
+                                  Falhou
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {log.processing_time_ms ? `${log.processing_time_ms}ms` : "-"}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground text-xs">
+                              {new Date(log.created_at).toLocaleString("pt-BR")}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
                 </CardContent>
               </Card>
             </TabsContent>

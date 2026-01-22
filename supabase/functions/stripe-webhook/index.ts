@@ -64,15 +64,26 @@ async function verifyWebhookSignature(
 }
 
 serve(async (req) => {
+  const startTime = Date.now();
+  
   // Handle CORS preflight requests
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+  let eventType = '';
+  let payload: any = null;
+  let logStatus = 'received';
+  let errorMessage: string | null = null;
+
   try {
     const webhookSecret = Deno.env.get("STRIPE_WEBHOOK_SECRET");
     const stripeSignature = req.headers.get("stripe-signature");
-    const payload = await req.text();
+    const payloadText = await req.text();
 
     console.log("Webhook recebido");
 
@@ -93,7 +104,7 @@ serve(async (req) => {
       );
     }
 
-    const isValid = await verifyWebhookSignature(payload, stripeSignature, webhookSecret);
+    const isValid = await verifyWebhookSignature(payloadText, stripeSignature, webhookSecret);
     if (!isValid) {
       console.error("Assinatura do webhook inválida");
       return new Response(
@@ -103,12 +114,10 @@ serve(async (req) => {
     }
     console.log("Assinatura verificada com sucesso");
 
-    const event = JSON.parse(payload);
+    const event = JSON.parse(payloadText);
+    payload = event;
+    eventType = event.type || 'unknown';
     console.log(`Evento recebido: ${event.type}`);
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     switch (event.type) {
       case "checkout.session.completed": {
@@ -243,13 +252,38 @@ serve(async (req) => {
         console.log(`Evento não tratado: ${event.type}`);
     }
 
+    logStatus = 'processed';
+
+    // Log webhook event
+    await supabase.from("webhook_logs").insert({
+      source: "stripe",
+      event_type: eventType,
+      payload,
+      status: logStatus,
+      processing_time_ms: Date.now() - startTime,
+      ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+    });
+
     return new Response(
       JSON.stringify({ received: true }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: unknown) {
-    const errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+    errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
     console.error("Erro no webhook:", error);
+    logStatus = 'failed';
+
+    // Log failed webhook event
+    await supabase.from("webhook_logs").insert({
+      source: "stripe",
+      event_type: eventType || 'unknown',
+      payload: payload || {},
+      status: logStatus,
+      error_message: errorMessage,
+      processing_time_ms: Date.now() - startTime,
+      ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+    });
+
     return new Response(
       JSON.stringify({ error: errorMessage }),
       { 

@@ -90,6 +90,51 @@ export type Database = {
           },
         ]
       }
+      api_request_logs: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          endpoint: string
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          method: string
+          request_body: Json | null
+          response_body: Json | null
+          status_code: number | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          endpoint: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          method: string
+          request_body?: Json | null
+          response_body?: Json | null
+          status_code?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          endpoint?: string
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          method?: string
+          request_body?: Json | null
+          response_body?: Json | null
+          status_code?: number | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           acao: string
@@ -1350,6 +1395,42 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      webhook_logs: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          event_type: string
+          id: string
+          ip_address: string | null
+          payload: Json
+          processing_time_ms: number | null
+          source: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          payload: Json
+          processing_time_ms?: number | null
+          source: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          payload?: Json
+          processing_time_ms?: number | null
+          source?: string
+          status?: string
         }
         Relationships: []
       }
