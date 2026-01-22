@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { 
   Users, 
@@ -29,6 +30,7 @@ import {
 import { motion } from "framer-motion";
 
 const Dashboard = () => {
+  const { t } = useTranslation();
   const { data: stats, isLoading, error } = useDashboardStats();
 
   if (isLoading) {
@@ -44,10 +46,10 @@ const Dashboard = () => {
       <DashboardLayout>
         <EmptyState
           icon={AlertCircle}
-          title="Erro ao carregar dados"
-          description="Não foi possível carregar os dados do dashboard. Tente novamente."
+          title={t("dashboard.loadError")}
+          description={t("dashboard.loadErrorDesc")}
           action={{
-            label: "Recarregar",
+            label: t("dashboard.reload"),
             onClick: () => window.location.reload(),
           }}
         />
@@ -56,12 +58,12 @@ const Dashboard = () => {
   }
 
   const quickStats = [
-    { label: "Responsáveis", value: stats.totalResponsaveis ?? 0, icon: UserCheck, variant: "blue" as const },
-    { label: "Alunos Ativos", value: stats.alunosAtivos ?? 0, icon: GraduationCap, variant: "violet" as const },
-    { label: "Faturas do Mês", value: stats.totalFaturas ?? 0, icon: FileText, variant: "cyan" as const },
-    { label: "Pagas no Mês", value: stats.faturasPagas ?? 0, icon: BadgeCheck, variant: "emerald" as const },
-    { label: "Funcionários", value: stats.funcionariosAtivos ?? 0, icon: Briefcase, variant: "amber" as const },
-    { label: "Inadimplentes", value: stats.responsaveisInadimplentes ?? 0, icon: AlertCircle, variant: "rose" as const },
+    { label: t("dashboard.guardians"), value: stats.totalResponsaveis ?? 0, icon: UserCheck, variant: "blue" as const },
+    { label: t("dashboard.activeStudentsLabel"), value: stats.alunosAtivos ?? 0, icon: GraduationCap, variant: "violet" as const },
+    { label: t("dashboard.monthInvoices"), value: stats.totalFaturas ?? 0, icon: FileText, variant: "cyan" as const },
+    { label: t("dashboard.paidThisMonth"), value: stats.faturasPagas ?? 0, icon: BadgeCheck, variant: "emerald" as const },
+    { label: t("dashboard.employees"), value: stats.funcionariosAtivos ?? 0, icon: Briefcase, variant: "amber" as const },
+    { label: t("dashboard.defaulters"), value: stats.responsaveisInadimplentes ?? 0, icon: AlertCircle, variant: "rose" as const },
   ];
 
   return (
@@ -74,10 +76,10 @@ const Dashboard = () => {
           transition={{ duration: 0.4 }}
         >
           <h2 className="text-2xl font-bold tracking-tight text-foreground">
-            Dashboard Financeiro
+            {t("dashboard.title")}
           </h2>
           <p className="text-muted-foreground mt-1">
-            Visão geral do fluxo financeiro e indicadores da escola
+            {t("dashboard.subtitle")}
           </p>
         </motion.div>
 
@@ -87,39 +89,41 @@ const Dashboard = () => {
         {/* Main KPIs Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FinancialKPICard
-            title="Receitas do Mês"
+            title={t("dashboard.monthlyRevenues")}
             value={formatCurrency(stats.totalReceitas ?? 0)}
             icon={TrendingUp}
             variant="success"
             trend={(stats.variacaoReceitas ?? 0) !== 0 ? {
               value: stats.variacaoReceitas ?? 0,
               isPositive: (stats.variacaoReceitas ?? 0) > 0,
+              label: t("dashboard.vsLastMonth"),
             } : undefined}
             index={0}
           />
           <FinancialKPICard
-            title="Despesas do Mês"
+            title={t("dashboard.monthlyExpenses")}
             value={formatCurrency(stats.totalDespesas ?? 0)}
             icon={TrendingDown}
             variant="danger"
             trend={(stats.variacaoDespesas ?? 0) !== 0 ? {
               value: stats.variacaoDespesas ?? 0,
               isPositive: (stats.variacaoDespesas ?? 0) < 0,
+              label: t("dashboard.vsLastMonth"),
             } : undefined}
             index={1}
           />
           <FinancialKPICard
-            title="Valor a Receber"
+            title={t("dashboard.receivable")}
             value={formatCurrency(stats.valorAReceber ?? 0)}
-            subtitle={`${(stats.faturasAbertas ?? 0) + (stats.faturasVencidas ?? 0)} faturas pendentes`}
+            subtitle={t("dashboard.pendingInvoicesCount", { count: (stats.faturasAbertas ?? 0) + (stats.faturasVencidas ?? 0) })}
             icon={Receipt}
             variant="info"
             index={2}
           />
           <FinancialKPICard
-            title="Ticket Médio"
+            title={t("dashboard.averageTicket")}
             value={formatCurrency(stats.ticketMedio ?? 0)}
-            subtitle="Por fatura paga"
+            subtitle={t("dashboard.perPaidInvoice")}
             icon={Calculator}
             variant="default"
             index={3}
@@ -129,36 +133,36 @@ const Dashboard = () => {
         {/* Secondary KPIs */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FinancialKPICard
-            title="Saldo Mensal"
+            title={t("dashboard.monthlyBalance")}
             value={formatCurrency(stats.saldoMensal ?? 0)}
-            subtitle={(stats.saldoMensal ?? 0) >= 0 ? "Superávit" : "Déficit"}
+            subtitle={(stats.saldoMensal ?? 0) >= 0 ? t("dashboard.surplus") : t("dashboard.deficit")}
             icon={Wallet}
             variant={(stats.saldoMensal ?? 0) >= 0 ? "success" : "danger"}
             size="sm"
             index={4}
           />
           <FinancialKPICard
-            title="Taxa de Arrecadação"
+            title={t("dashboard.collectionRate")}
             value={`${(stats.taxaArrecadacao ?? 0).toFixed(1)}%`}
-            subtitle="Do valor esperado"
+            subtitle={t("dashboard.ofExpected")}
             icon={Target}
             variant={(stats.taxaArrecadacao ?? 0) >= 80 ? "success" : (stats.taxaArrecadacao ?? 0) >= 50 ? "warning" : "danger"}
             size="sm"
             index={5}
           />
           <FinancialKPICard
-            title="Total em Atraso"
+            title={t("dashboard.totalOverdue")}
             value={formatCurrency(stats.valorVencido ?? 0)}
-            subtitle={`${stats.faturasVencidas ?? 0} faturas vencidas`}
+            subtitle={t("dashboard.overdueInvoicesCount", { count: stats.faturasVencidas ?? 0 })}
             icon={AlertCircle}
             variant={(stats.valorVencido ?? 0) > 0 ? "warning" : "success"}
             size="sm"
             index={6}
           />
           <FinancialKPICard
-            title="Folha RH Mensal"
+            title={t("dashboard.monthlyPayroll")}
             value={formatCurrency(stats.gastoRHMensal ?? 0)}
-            subtitle={`${stats.funcionariosAtivos ?? 0} funcionários ativos`}
+            subtitle={t("dashboard.activeEmployees", { count: stats.funcionariosAtivos ?? 0 })}
             icon={Briefcase}
             variant="default"
             size="sm"
@@ -170,8 +174,8 @@ const Dashboard = () => {
         <div className="grid gap-5 lg:grid-cols-3">
           {/* Main Composed Chart */}
           <FinancialChart
-            title="Evolução Financeira"
-            description="Receitas, despesas e saldo dos últimos 6 meses"
+            title={t("dashboard.financialEvolution")}
+            description={t("dashboard.financialEvolutionDesc")}
             data={stats.combinedData ?? []}
             type="composed"
             height={320}
@@ -191,8 +195,8 @@ const Dashboard = () => {
         {/* Secondary Charts */}
         <div className="grid gap-5 lg:grid-cols-2">
           <FinancialChart
-            title="Receitas vs Despesas"
-            description="Comparativo mensal"
+            title={t("dashboard.revenueVsExpenses")}
+            description={t("dashboard.monthlyComparison")}
             data={stats.combinedData ?? []}
             type="comparison"
             height={280}
@@ -206,8 +210,8 @@ const Dashboard = () => {
 
         {/* Revenue Trend */}
         <FinancialChart
-          title="Tendência de Receitas"
-          description="Evolução da arrecadação nos últimos 6 meses"
+          title={t("dashboard.revenueTrend")}
+          description={t("dashboard.revenueTrendDesc")}
           data={stats.receitasMes ?? []}
           type="area"
           height={250}
