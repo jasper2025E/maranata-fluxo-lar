@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,11 +31,13 @@ interface UserPreferences {
   browser_notifications: boolean;
   weekly_report: boolean;
   theme: string;
+  language: string;
 }
 
 const Configuracoes = () => {
   const { user, role } = useAuth();
   const { theme, setTheme } = useTheme();
+  const { i18n } = useTranslation();
   const [loadingPrefs, setLoadingPrefs] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   
@@ -43,6 +46,7 @@ const Configuracoes = () => {
     browser_notifications: false,
     weekly_report: true,
     theme: "light",
+    language: "pt-BR",
   });
 
   // Load user preferences and profile on mount
@@ -66,9 +70,13 @@ const Configuracoes = () => {
             browser_notifications: prefsData.browser_notifications ?? false,
             weekly_report: prefsData.weekly_report ?? true,
             theme: prefsData.theme ?? "light",
+            language: prefsData.language ?? "pt-BR",
           });
           if (prefsData.theme) {
             setTheme(prefsData.theme);
+          }
+          if (prefsData.language && prefsData.language !== i18n.language) {
+            i18n.changeLanguage(prefsData.language);
           }
         }
 
