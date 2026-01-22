@@ -2,13 +2,17 @@ import { z } from "zod";
 
 export const alunoSchema = z.object({
   nome_completo: z.string().trim().min(1, "Nome é obrigatório").max(200, "Máximo 200 caracteres"),
-  data_nascimento: z.string().min(1, "Data de nascimento é obrigatória"),
+  data_nascimento: z.string().optional().or(z.literal("")),
   curso_id: z.string().uuid("Selecione um curso válido"),
-  turma_id: z.string().optional(),
-  telefone_responsavel: z.string().trim().min(8, "Telefone inválido").max(20, "Máximo 20 caracteres"),
-  email_responsavel: z.string().trim().email("E-mail inválido").max(255, "Máximo 255 caracteres"),
-  endereco: z.string().trim().min(1, "Endereço é obrigatório").max(500, "Máximo 500 caracteres"),
-  observacoes: z.string().max(1000, "Máximo 1000 caracteres").optional(),
+  turma_id: z.string().optional().or(z.literal("")),
+  responsavel_id: z.string().optional().or(z.literal("")),
+  telefone_responsavel: z.string().trim().max(20, "Máximo 20 caracteres").optional().or(z.literal("")),
+  email_responsavel: z.string().trim().max(255, "Máximo 255 caracteres").optional().or(z.literal("")).refine(
+    (val) => !val || val === "" || z.string().email().safeParse(val).success,
+    "E-mail inválido"
+  ),
+  endereco: z.string().trim().max(500, "Máximo 500 caracteres").optional().or(z.literal("")),
+  observacoes: z.string().max(1000, "Máximo 1000 caracteres").optional().or(z.literal("")),
 });
 
 export const cursoSchema = z.object({
