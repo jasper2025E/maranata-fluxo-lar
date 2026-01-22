@@ -11,6 +11,7 @@ import {
   Receipt,
   Database,
   Users,
+  RefreshCw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
@@ -21,6 +22,7 @@ import {
   SystemTab, 
   ConfiguracoesCobranca,
   UserManagementTab,
+  IntegrationsTab,
 } from "@/components/config";
 
 interface UserPreferences {
@@ -154,6 +156,12 @@ const Configuracoes = () => {
                 </TabsTrigger>
               )}
               {role === "admin" && (
+                <TabsTrigger value="integracoes" className="gap-2 data-[state=active]:bg-background">
+                  <RefreshCw className="h-4 w-4" />
+                  <span className="hidden sm:inline">Integrações</span>
+                </TabsTrigger>
+              )}
+              {role === "admin" && (
                 <TabsTrigger value="sistema" className="gap-2 data-[state=active]:bg-background">
                   <Database className="h-4 w-4" />
                   <span className="hidden sm:inline">Sistema</span>
@@ -206,6 +214,13 @@ const Configuracoes = () => {
           {role === "admin" && (
             <TabsContent value="usuarios">
               <UserManagementTab />
+            </TabsContent>
+          )}
+
+          {/* Integrações Tab - Admin Only */}
+          {role === "admin" && (
+            <TabsContent value="integracoes">
+              <IntegrationsTab />
             </TabsContent>
           )}
 

@@ -7,3 +7,4 @@ export { SystemTab } from "./SystemTab";
 export { AsaasWebhookConfig } from "./AsaasWebhookConfig";
 export { UserManagementTab } from "./UserManagementTab";
 export { TwoFactorSetup } from "./TwoFactorSetup";
+export { IntegrationsTab } from "./IntegrationsTab";
