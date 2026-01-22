@@ -9,17 +9,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Printer, Loader2, FileText, User, Calendar, Zap, QrCode, AlertCircle, Eye, ArrowLeft, LayoutGrid, FileStack, Filter } from "lucide-react";
+import { Printer, Loader2, FileText, User, Calendar, Zap, QrCode, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { generateCarneCompleto, generateCarneCompletoAsaas } from "@/lib/carneGenerator";
 import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
 import { Fatura, formatCurrency, meses } from "@/hooks/useFaturas";
 import { useAsaas } from "@/hooks/useAsaas";
 import { toast } from "sonner";
 import { format } from "date-fns";
-import { CarnePreview } from "./CarnePreview";
-
-export type CarneLayout = "individual" | "compacto";
 
 interface CarneDialogProps {
   open: boolean;
@@ -33,10 +29,6 @@ interface Responsavel {
   telefone: string;
 }
 
-// Anos disponíveis para filtro
-const currentYear = new Date().getFullYear();
-const anos = [currentYear - 1, currentYear, currentYear + 1];
-
 export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
   const [selectedResponsavel, setSelectedResponsavel] = useState<string>("");
   const [selectedFaturas, setSelectedFaturas] = useState<Set<string>>(new Set());
@@ -44,14 +36,6 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
   const [integrarAsaas, setIntegrarAsaas] = useState(true);
   const [progressMessage, setProgressMessage] = useState("");
   const [progressValue, setProgressValue] = useState(0);
-  const [showPreview, setShowPreview] = useState(false);
-  const [carneLayout, setCarneLayout] = useState<CarneLayout>("individual");
-  
-  // Filtros de período
-  const [mesInicial, setMesInicial] = useState<string>("");
-  const [anoInicial, setAnoInicial] = useState<string>(currentYear.toString());
-  const [mesFinal, setMesFinal] = useState<string>("");
-  const [anoFinal, setAnoFinal] = useState<string>(currentYear.toString());
   const { createPayment } = useAsaas();
 
   // Buscar responsáveis
@@ -100,7 +84,6 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
     queryFn: async () => {
       if (!selectedResponsavel) return [];
       
-      // Buscar faturas por responsavel_id OU por aluno vinculado ao responsável
       let query = supabase
         .from("faturas")
         .select(`
@@ -113,7 +96,6 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
         .order("ano_referencia", { ascending: true })
         .order("mes_referencia", { ascending: true });
       
-      // Se temos alunos vinculados, buscar por aluno_id também
       if (alunosDoResponsavel && alunosDoResponsavel.length > 0) {
         query = query.or(`responsavel_id.eq.${selectedResponsavel},aluno_id.in.(${alunosDoResponsavel.join(",")})`);
       } else {
@@ -127,40 +109,16 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
     enabled: !!selectedResponsavel && alunosDoResponsavel !== undefined,
   });
 
-  // Filtrar faturas por período
-  const faturasFiltradas = faturas?.filter(f => {
-    if (!mesInicial && !mesFinal) return true;
-    
-    const faturaDate = f.ano_referencia * 100 + f.mes_referencia;
-    const inicioDate = mesInicial ? parseInt(anoInicial) * 100 + parseInt(mesInicial) : 0;
-    const fimDate = mesFinal ? parseInt(anoFinal) * 100 + parseInt(mesFinal) : 999999;
-    
-    return faturaDate >= inicioDate && faturaDate <= fimDate;
-  }) || [];
-
   const handleSelectAll = () => {
-    if (faturasFiltradas.length > 0) {
-      const allSelected = faturasFiltradas.every(f => selectedFaturas.has(f.id));
+    if (faturas && faturas.length > 0) {
+      const allSelected = faturas.every(f => selectedFaturas.has(f.id));
       if (allSelected) {
-        // Desmarcar apenas as filtradas
-        const newSelected = new Set(selectedFaturas);
-        faturasFiltradas.forEach(f => newSelected.delete(f.id));
-        setSelectedFaturas(newSelected);
+        setSelectedFaturas(new Set());
       } else {
-        // Marcar todas as filtradas
-        const newSelected = new Set(selectedFaturas);
-        faturasFiltradas.forEach(f => newSelected.add(f.id));
+        const newSelected = new Set<string>();
+        faturas.forEach(f => newSelected.add(f.id));
         setSelectedFaturas(newSelected);
       }
-    }
-  };
-
-  const handleSelectPeriodo = () => {
-    if (faturasFiltradas.length > 0) {
-      const newSelected = new Set<string>();
-      faturasFiltradas.forEach(f => newSelected.add(f.id));
-      setSelectedFaturas(newSelected);
-      toast.success(`${faturasFiltradas.length} faturas do período selecionadas`);
     }
   };
 
@@ -237,26 +195,14 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
         setProgressMessage("Gerando carnê com QR Codes...");
         setProgressValue(80);
 
-        if (carneLayout === "compacto") {
-          await generateCarneCompacto(
-            (faturasAtualizadas as Fatura[]) || faturasParaImprimir,
-            escola,
-            responsavel
-          );
-        } else {
-          await generateCarneCompletoAsaas(
-            (faturasAtualizadas as Fatura[]) || faturasParaImprimir,
-            escola,
-            responsavel
-          );
-        }
+        await generateCarneCompacto(
+          (faturasAtualizadas as Fatura[]) || faturasParaImprimir,
+          escola,
+          responsavel
+        );
       } else {
         // Gerar carnê simples sem Asaas
-        if (carneLayout === "compacto") {
-          await generateCarneCompacto(faturasParaImprimir, escola, responsavel);
-        } else {
-          await generateCarneCompleto(faturasParaImprimir, escola, responsavel);
-        }
+        await generateCarneCompacto(faturasParaImprimir, escola, responsavel);
       }
 
       setProgressValue(100);
@@ -290,65 +236,20 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
     f => selectedFaturas.has(f.id) && f.status !== "Paga" && !f.asaas_payment_id
   ).length || 0;
 
-  const faturasParaPreview = faturas?.filter(f => selectedFaturas.has(f.id)) || [];
-  const responsavelSelecionado = responsaveis?.find(r => r.id === selectedResponsavel) || null;
-
-  const handleShowPreview = () => {
-    if (selectedFaturas.size === 0) {
-      toast.error("Selecione ao menos uma fatura");
-      return;
-    }
-    setShowPreview(true);
-  };
-
-  const handleBackFromPreview = () => {
-    setShowPreview(false);
-  };
-
   return (
-    <Dialog open={open} onOpenChange={(isOpen) => {
-      if (!isOpen) {
-        setShowPreview(false);
-      }
-      onOpenChange(isOpen);
-    }}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {showPreview ? (
-              <>
-                <Eye className="h-5 w-5 text-primary" />
-                Preview do Carnê
-              </>
-            ) : (
-              <>
-                <Printer className="h-5 w-5 text-primary" />
-                Imprimir Carnê Completo
-              </>
-            )}
+            <Printer className="h-5 w-5 text-primary" />
+            Imprimir Carnê
           </DialogTitle>
           <DialogDescription>
-            {showPreview 
-              ? "Confirme os dados antes de gerar o PDF."
-              : "Gere um carnê com todas as mensalidades no formato 99x210mm, pronto para impressão."
-            }
+            Gere um carnê com as mensalidades selecionadas (3 por página A4).
           </DialogDescription>
         </DialogHeader>
 
-        {showPreview ? (
-          /* Tela de Preview */
-          <div className="flex-1 min-h-0 overflow-auto">
-            <CarnePreview
-              faturas={faturasParaPreview}
-              escola={escola}
-              responsavel={responsavelSelecionado}
-              integrarAsaas={integrarAsaas}
-              carneLayout={carneLayout}
-            />
-          </div>
-        ) : (
-          /* Tela de Seleção */
-          <div className="space-y-4 flex-1 min-h-0 flex flex-col overflow-auto">
+        <div className="space-y-4 flex-1 min-h-0 flex flex-col overflow-auto">
           <div className="space-y-2">
             <Label htmlFor="responsavel">Responsável Financeiro</Label>
             {loadingResponsaveis ? (
@@ -375,43 +276,6 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                 </SelectContent>
               </Select>
             )}
-          </div>
-
-          {/* Layout do Carnê */}
-          <div className="space-y-2">
-            <Label>Layout de Impressão</Label>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                type="button"
-                onClick={() => setCarneLayout("individual")}
-                className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
-                  carneLayout === "individual" 
-                    ? "border-primary bg-primary/5 ring-1 ring-primary" 
-                    : "border-muted-foreground/20 hover:border-muted-foreground/40"
-                }`}
-              >
-                <FileStack className={`h-6 w-6 ${carneLayout === "individual" ? "text-primary" : "text-muted-foreground"}`} />
-                <div className="text-center">
-                  <p className={`text-sm font-medium ${carneLayout === "individual" ? "text-primary" : ""}`}>Individual</p>
-                  <p className="text-xs text-muted-foreground">1 por página</p>
-                </div>
-              </button>
-              <button
-                type="button"
-                onClick={() => setCarneLayout("compacto")}
-                className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
-                  carneLayout === "compacto" 
-                    ? "border-primary bg-primary/5 ring-1 ring-primary" 
-                    : "border-muted-foreground/20 hover:border-muted-foreground/40"
-                }`}
-              >
-                <LayoutGrid className={`h-6 w-6 ${carneLayout === "compacto" ? "text-primary" : "text-muted-foreground"}`} />
-                <div className="text-center">
-                  <p className={`text-sm font-medium ${carneLayout === "compacto" ? "text-primary" : ""}`}>Econômico</p>
-                  <p className="text-xs text-muted-foreground">3 por página A4</p>
-                </div>
-              </button>
-            </div>
           </div>
 
           {/* Integração Asaas */}
@@ -443,94 +307,12 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
             </div>
           )}
 
-          {/* Filtro de Período */}
-          {selectedResponsavel && (
-            <div className="space-y-2 p-3 rounded-lg border bg-muted/20">
-              <div className="flex items-center gap-2 mb-2">
-                <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">Filtrar por Período</span>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">De</Label>
-                  <div className="flex gap-1">
-                    <Select value={mesInicial || "all"} onValueChange={(v) => setMesInicial(v === "all" ? "" : v)}>
-                      <SelectTrigger className="h-8 text-xs flex-1">
-                        <SelectValue placeholder="Mês" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        {meses.map((mes, idx) => (
-                          <SelectItem key={idx} value={(idx + 1).toString()}>
-                            {mes.substring(0, 3)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={anoInicial} onValueChange={setAnoInicial}>
-                      <SelectTrigger className="h-8 text-xs w-20">
-                        <SelectValue placeholder="Ano" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {anos.map(ano => (
-                          <SelectItem key={ano} value={ano.toString()}>
-                            {ano}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">Até</Label>
-                  <div className="flex gap-1">
-                    <Select value={mesFinal || "all"} onValueChange={(v) => setMesFinal(v === "all" ? "" : v)}>
-                      <SelectTrigger className="h-8 text-xs flex-1">
-                        <SelectValue placeholder="Mês" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">Todos</SelectItem>
-                        {meses.map((mes, idx) => (
-                          <SelectItem key={idx} value={(idx + 1).toString()}>
-                            {mes.substring(0, 3)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select value={anoFinal} onValueChange={setAnoFinal}>
-                      <SelectTrigger className="h-8 text-xs w-20">
-                        <SelectValue placeholder="Ano" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {anos.map(ano => (
-                          <SelectItem key={ano} value={ano.toString()}>
-                            {ano}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-              {(mesInicial || mesFinal) && faturasFiltradas.length > 0 && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleSelectPeriodo}
-                  className="w-full mt-2 text-xs"
-                >
-                  Selecionar {faturasFiltradas.length} faturas do período
-                </Button>
-              )}
-            </div>
-          )}
-
           {/* Lista de Faturas */}
           {selectedResponsavel && (
             <div className="flex-1 min-h-0 flex flex-col border rounded-lg overflow-hidden">
               <div className="flex items-center justify-between p-3 bg-muted/50 border-b">
                 <span className="text-sm font-medium">
-                  Faturas ({faturasFiltradas.length}{faturas && faturasFiltradas.length !== faturas.length ? ` de ${faturas.length}` : ''})
+                  Faturas ({faturas?.length || 0})
                 </span>
                 <Button
                   variant="ghost"
@@ -538,22 +320,22 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                   onClick={handleSelectAll}
                   className="text-xs"
                 >
-                  {faturasFiltradas.every(f => selectedFaturas.has(f.id)) && faturasFiltradas.length > 0 
-                    ? "Desmarcar filtradas" 
-                    : "Selecionar filtradas"}
+                  {faturas?.every(f => selectedFaturas.has(f.id)) && faturas.length > 0 
+                    ? "Desmarcar todas" 
+                    : "Selecionar todas"}
                 </Button>
               </div>
 
-              <div className="flex-1 overflow-y-auto max-h-[220px]">
+              <div className="flex-1 overflow-y-auto max-h-[300px]">
                 {loadingFaturas ? (
                   <div className="p-4 space-y-2">
                     {[1, 2, 3].map(i => (
                       <Skeleton key={i} className="h-16 w-full" />
                     ))}
                   </div>
-                ) : faturasFiltradas.length > 0 ? (
+                ) : faturas && faturas.length > 0 ? (
                   <div className="p-2 space-y-1">
-                    {faturasFiltradas.map((fatura) => (
+                    {faturas.map((fatura) => (
                       <div
                         key={fatura.id}
                         onClick={() => handleToggleFatura(fatura.id)}
@@ -599,12 +381,6 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                       </div>
                     ))}
                   </div>
-                ) : faturas && faturas.length > 0 ? (
-                  <div className="p-8 text-center text-muted-foreground">
-                    <Filter className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                    <p>Nenhuma fatura no período selecionado</p>
-                    <p className="text-xs mt-1">Ajuste os filtros ou limpe-os para ver todas</p>
-                  </div>
                 ) : (
                   <div className="p-8 text-center text-muted-foreground">
                     <FileText className="h-10 w-10 mx-auto mb-2 opacity-50" />
@@ -626,48 +402,28 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
             </div>
           )}
         </div>
-        )}
 
         <DialogFooter className="gap-2 sm:gap-0">
-          {showPreview ? (
-            <>
-              <Button variant="outline" onClick={handleBackFromPreview} disabled={isGenerating}>
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Voltar
-              </Button>
-              <Button
-                onClick={handleGenerateCarne}
-                disabled={isGenerating}
-                className="gap-2"
-              >
-                {isGenerating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : integrarAsaas ? (
-                  <QrCode className="h-4 w-4" />
-                ) : (
-                  <Printer className="h-4 w-4" />
-                )}
-                {isGenerating 
-                  ? "Gerando..." 
-                  : "Gerar PDF"
-                }
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleShowPreview}
-                disabled={selectedFaturas.size === 0}
-                className="gap-2"
-              >
-                <Eye className="h-4 w-4" />
-                Visualizar ({selectedFaturas.size})
-              </Button>
-            </>
-          )}
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleGenerateCarne}
+            disabled={selectedFaturas.size === 0 || isGenerating}
+            className="gap-2"
+          >
+            {isGenerating ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : integrarAsaas ? (
+              <QrCode className="h-4 w-4" />
+            ) : (
+              <Printer className="h-4 w-4" />
+            )}
+            {isGenerating 
+              ? "Gerando..." 
+              : `Gerar Carnê (${selectedFaturas.size})`
+            }
+          </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
