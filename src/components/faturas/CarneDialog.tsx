@@ -9,14 +9,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Printer, Loader2, FileText, User, Calendar, Zap, QrCode, AlertCircle, Eye, ArrowLeft } from "lucide-react";
+import { Printer, Loader2, FileText, User, Calendar, Zap, QrCode, AlertCircle, Eye, ArrowLeft, LayoutGrid, FileStack } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCarneCompleto, generateCarneCompletoAsaas } from "@/lib/carneGenerator";
+import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
 import { Fatura, formatCurrency, meses } from "@/hooks/useFaturas";
 import { useAsaas } from "@/hooks/useAsaas";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { CarnePreview } from "./CarnePreview";
+
+export type CarneLayout = "individual" | "compacto";
 
 interface CarneDialogProps {
   open: boolean;
@@ -38,6 +41,7 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
   const [progressMessage, setProgressMessage] = useState("");
   const [progressValue, setProgressValue] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
+  const [carneLayout, setCarneLayout] = useState<CarneLayout>("individual");
 
   const { createPayment } = useAsaas();
 
@@ -197,14 +201,26 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
         setProgressMessage("Gerando carnê com QR Codes...");
         setProgressValue(80);
 
-        await generateCarneCompletoAsaas(
-          (faturasAtualizadas as Fatura[]) || faturasParaImprimir,
-          escola,
-          responsavel
-        );
+        if (carneLayout === "compacto") {
+          await generateCarneCompacto(
+            (faturasAtualizadas as Fatura[]) || faturasParaImprimir,
+            escola,
+            responsavel
+          );
+        } else {
+          await generateCarneCompletoAsaas(
+            (faturasAtualizadas as Fatura[]) || faturasParaImprimir,
+            escola,
+            responsavel
+          );
+        }
       } else {
         // Gerar carnê simples sem Asaas
-        await generateCarneCompleto(faturasParaImprimir, escola, responsavel);
+        if (carneLayout === "compacto") {
+          await generateCarneCompacto(faturasParaImprimir, escola, responsavel);
+        } else {
+          await generateCarneCompleto(faturasParaImprimir, escola, responsavel);
+        }
       }
 
       setProgressValue(100);
@@ -291,6 +307,7 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
               escola={escola}
               responsavel={responsavelSelecionado}
               integrarAsaas={integrarAsaas}
+              carneLayout={carneLayout}
             />
           </div>
         ) : (
@@ -322,6 +339,43 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                 </SelectContent>
               </Select>
             )}
+          </div>
+
+          {/* Layout do Carnê */}
+          <div className="space-y-2">
+            <Label>Layout de Impressão</Label>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setCarneLayout("individual")}
+                className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
+                  carneLayout === "individual" 
+                    ? "border-primary bg-primary/5 ring-1 ring-primary" 
+                    : "border-muted-foreground/20 hover:border-muted-foreground/40"
+                }`}
+              >
+                <FileStack className={`h-6 w-6 ${carneLayout === "individual" ? "text-primary" : "text-muted-foreground"}`} />
+                <div className="text-center">
+                  <p className={`text-sm font-medium ${carneLayout === "individual" ? "text-primary" : ""}`}>Individual</p>
+                  <p className="text-xs text-muted-foreground">1 por página</p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCarneLayout("compacto")}
+                className={`flex flex-col items-center gap-2 p-3 rounded-lg border transition-all ${
+                  carneLayout === "compacto" 
+                    ? "border-primary bg-primary/5 ring-1 ring-primary" 
+                    : "border-muted-foreground/20 hover:border-muted-foreground/40"
+                }`}
+              >
+                <LayoutGrid className={`h-6 w-6 ${carneLayout === "compacto" ? "text-primary" : "text-muted-foreground"}`} />
+                <div className="text-center">
+                  <p className={`text-sm font-medium ${carneLayout === "compacto" ? "text-primary" : ""}`}>Econômico</p>
+                  <p className="text-xs text-muted-foreground">3 por página A4</p>
+                </div>
+              </button>
+            </div>
           </div>
 
           {/* Integração Asaas */}

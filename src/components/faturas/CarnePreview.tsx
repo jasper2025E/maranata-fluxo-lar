@@ -4,7 +4,6 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Fatura, formatCurrency, meses } from "@/hooks/useFaturas";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { 
   Building2, 
   User, 
@@ -14,8 +13,11 @@ import {
   FileText,
   CheckCircle2,
   AlertCircle,
-  Clock
+  Clock,
+  FileStack,
+  LayoutGrid
 } from "lucide-react";
+import type { CarneLayout } from "./CarneDialog";
 
 interface EscolaInfo {
   nome: string;
@@ -37,9 +39,10 @@ interface CarnePreviewProps {
   escola: EscolaInfo | null;
   responsavel: Responsavel | null;
   integrarAsaas: boolean;
+  carneLayout: CarneLayout;
 }
 
-export function CarnePreview({ faturas, escola, responsavel, integrarAsaas }: CarnePreviewProps) {
+export function CarnePreview({ faturas, escola, responsavel, integrarAsaas, carneLayout }: CarnePreviewProps) {
   const getStatusConfig = (status: string) => {
     switch (status.toLowerCase()) {
       case "paga":
@@ -67,23 +70,52 @@ export function CarnePreview({ faturas, escola, responsavel, integrarAsaas }: Ca
   const faturasPagas = faturas.filter(f => f.status.toLowerCase() === "paga").length;
   const faturasAbertas = faturas.filter(f => f.status.toLowerCase() !== "paga").length;
 
+  const paginasNecessarias = carneLayout === "compacto" 
+    ? Math.ceil(faturas.length / 3) 
+    : faturas.length;
+
   return (
     <div className="space-y-4">
       {/* Resumo */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-4 gap-2">
         <Card className="p-3 text-center bg-muted/30">
           <p className="text-2xl font-bold text-primary">{faturas.length}</p>
           <p className="text-xs text-muted-foreground">Faturas</p>
         </Card>
-        <Card className="p-3 text-center bg-green-50 dark:bg-green-900/20">
-          <p className="text-2xl font-bold text-green-600 dark:text-green-400">{faturasPagas}</p>
+        <Card className="p-3 text-center bg-success/10">
+          <p className="text-2xl font-bold text-success">{faturasPagas}</p>
           <p className="text-xs text-muted-foreground">Pagas</p>
         </Card>
-        <Card className="p-3 text-center bg-yellow-50 dark:bg-yellow-900/20">
-          <p className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{faturasAbertas}</p>
+        <Card className="p-3 text-center bg-warning/10">
+          <p className="text-2xl font-bold text-warning">{faturasAbertas}</p>
           <p className="text-xs text-muted-foreground">Abertas</p>
         </Card>
+        <Card className="p-3 text-center bg-secondary/10">
+          <p className="text-2xl font-bold text-secondary-foreground">{paginasNecessarias}</p>
+          <p className="text-xs text-muted-foreground">Páginas</p>
+        </Card>
       </div>
+
+      {/* Layout Info */}
+      <Card className="p-3 flex items-center gap-3 border-dashed">
+        {carneLayout === "compacto" ? (
+          <>
+            <LayoutGrid className="h-5 w-5 text-primary" />
+            <div>
+              <p className="text-sm font-medium">Layout Econômico</p>
+              <p className="text-xs text-muted-foreground">3 carnês por página A4 • Economia de {Math.max(0, faturas.length - paginasNecessarias)} páginas</p>
+            </div>
+          </>
+        ) : (
+          <>
+            <FileStack className="h-5 w-5 text-primary" />
+            <div>
+              <p className="text-sm font-medium">Layout Individual</p>
+              <p className="text-xs text-muted-foreground">1 carnê por página (105x210mm)</p>
+            </div>
+          </>
+        )}
+      </Card>
 
       {/* Header - Escola */}
       <Card className="p-4 border-primary/20 bg-gradient-to-r from-primary/5 to-transparent">
