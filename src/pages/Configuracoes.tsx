@@ -31,7 +31,6 @@ interface UserPreferences {
   browser_notifications: boolean;
   weekly_report: boolean;
   theme: string;
-  language: string;
 }
 
 const Configuracoes = () => {
@@ -46,7 +45,6 @@ const Configuracoes = () => {
     browser_notifications: false,
     weekly_report: true,
     theme: "light",
-    language: "pt-BR",
   });
 
   // Load user preferences and profile on mount
@@ -70,7 +68,6 @@ const Configuracoes = () => {
             browser_notifications: prefsData.browser_notifications ?? false,
             weekly_report: prefsData.weekly_report ?? true,
             theme: prefsData.theme ?? "light",
-            language: prefsData.language ?? "pt-BR",
           });
           if (prefsData.theme) {
             setTheme(prefsData.theme);
