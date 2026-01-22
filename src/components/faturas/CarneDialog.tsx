@@ -9,7 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Printer, Loader2, FileText, User, Calendar, Zap, QrCode, AlertCircle, Eye, ArrowLeft, LayoutGrid, FileStack } from "lucide-react";
+import { Printer, Loader2, FileText, User, Calendar, Zap, QrCode, AlertCircle, Eye, ArrowLeft, LayoutGrid, FileStack, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCarneCompleto, generateCarneCompletoAsaas } from "@/lib/carneGenerator";
 import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
@@ -33,6 +33,10 @@ interface Responsavel {
   telefone: string;
 }
 
+// Anos disponíveis para filtro
+const currentYear = new Date().getFullYear();
+const anos = [currentYear - 1, currentYear, currentYear + 1];
+
 export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
   const [selectedResponsavel, setSelectedResponsavel] = useState<string>("");
   const [selectedFaturas, setSelectedFaturas] = useState<Set<string>>(new Set());
@@ -42,7 +46,12 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
   const [progressValue, setProgressValue] = useState(0);
   const [showPreview, setShowPreview] = useState(false);
   const [carneLayout, setCarneLayout] = useState<CarneLayout>("individual");
-
+  
+  // Filtros de período
+  const [mesInicial, setMesInicial] = useState<string>("");
+  const [anoInicial, setAnoInicial] = useState<string>(currentYear.toString());
+  const [mesFinal, setMesFinal] = useState<string>("");
+  const [anoFinal, setAnoFinal] = useState<string>(currentYear.toString());
   const { createPayment } = useAsaas();
 
   // Buscar responsáveis
@@ -118,13 +127,40 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
     enabled: !!selectedResponsavel && alunosDoResponsavel !== undefined,
   });
 
+  // Filtrar faturas por período
+  const faturasFiltradas = faturas?.filter(f => {
+    if (!mesInicial && !mesFinal) return true;
+    
+    const faturaDate = f.ano_referencia * 100 + f.mes_referencia;
+    const inicioDate = mesInicial ? parseInt(anoInicial) * 100 + parseInt(mesInicial) : 0;
+    const fimDate = mesFinal ? parseInt(anoFinal) * 100 + parseInt(mesFinal) : 999999;
+    
+    return faturaDate >= inicioDate && faturaDate <= fimDate;
+  }) || [];
+
   const handleSelectAll = () => {
-    if (faturas) {
-      if (selectedFaturas.size === faturas.length) {
-        setSelectedFaturas(new Set());
+    if (faturasFiltradas.length > 0) {
+      const allSelected = faturasFiltradas.every(f => selectedFaturas.has(f.id));
+      if (allSelected) {
+        // Desmarcar apenas as filtradas
+        const newSelected = new Set(selectedFaturas);
+        faturasFiltradas.forEach(f => newSelected.delete(f.id));
+        setSelectedFaturas(newSelected);
       } else {
-        setSelectedFaturas(new Set(faturas.map(f => f.id)));
+        // Marcar todas as filtradas
+        const newSelected = new Set(selectedFaturas);
+        faturasFiltradas.forEach(f => newSelected.add(f.id));
+        setSelectedFaturas(newSelected);
       }
+    }
+  };
+
+  const handleSelectPeriodo = () => {
+    if (faturasFiltradas.length > 0) {
+      const newSelected = new Set<string>();
+      faturasFiltradas.forEach(f => newSelected.add(f.id));
+      setSelectedFaturas(newSelected);
+      toast.success(`${faturasFiltradas.length} faturas do período selecionadas`);
     }
   };
 
@@ -407,12 +443,94 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
             </div>
           )}
 
+          {/* Filtro de Período */}
+          {selectedResponsavel && (
+            <div className="space-y-2 p-3 rounded-lg border bg-muted/20">
+              <div className="flex items-center gap-2 mb-2">
+                <Filter className="h-4 w-4 text-muted-foreground" />
+                <span className="text-sm font-medium">Filtrar por Período</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">De</Label>
+                  <div className="flex gap-1">
+                    <Select value={mesInicial} onValueChange={setMesInicial}>
+                      <SelectTrigger className="h-8 text-xs flex-1">
+                        <SelectValue placeholder="Mês" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Todos</SelectItem>
+                        {meses.map((mes, idx) => (
+                          <SelectItem key={idx} value={(idx + 1).toString()}>
+                            {mes.substring(0, 3)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={anoInicial} onValueChange={setAnoInicial}>
+                      <SelectTrigger className="h-8 text-xs w-20">
+                        <SelectValue placeholder="Ano" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {anos.map(ano => (
+                          <SelectItem key={ano} value={ano.toString()}>
+                            {ano}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs text-muted-foreground">Até</Label>
+                  <div className="flex gap-1">
+                    <Select value={mesFinal} onValueChange={setMesFinal}>
+                      <SelectTrigger className="h-8 text-xs flex-1">
+                        <SelectValue placeholder="Mês" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="">Todos</SelectItem>
+                        {meses.map((mes, idx) => (
+                          <SelectItem key={idx} value={(idx + 1).toString()}>
+                            {mes.substring(0, 3)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select value={anoFinal} onValueChange={setAnoFinal}>
+                      <SelectTrigger className="h-8 text-xs w-20">
+                        <SelectValue placeholder="Ano" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {anos.map(ano => (
+                          <SelectItem key={ano} value={ano.toString()}>
+                            {ano}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+              {(mesInicial || mesFinal) && faturasFiltradas.length > 0 && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleSelectPeriodo}
+                  className="w-full mt-2 text-xs"
+                >
+                  Selecionar {faturasFiltradas.length} faturas do período
+                </Button>
+              )}
+            </div>
+          )}
+
           {/* Lista de Faturas */}
           {selectedResponsavel && (
             <div className="flex-1 min-h-0 flex flex-col border rounded-lg overflow-hidden">
               <div className="flex items-center justify-between p-3 bg-muted/50 border-b">
                 <span className="text-sm font-medium">
-                  Faturas ({faturas?.length || 0})
+                  Faturas ({faturasFiltradas.length}{faturas && faturasFiltradas.length !== faturas.length ? ` de ${faturas.length}` : ''})
                 </span>
                 <Button
                   variant="ghost"
@@ -420,20 +538,22 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                   onClick={handleSelectAll}
                   className="text-xs"
                 >
-                  {selectedFaturas.size === (faturas?.length || 0) ? "Desmarcar todas" : "Selecionar todas"}
+                  {faturasFiltradas.every(f => selectedFaturas.has(f.id)) && faturasFiltradas.length > 0 
+                    ? "Desmarcar filtradas" 
+                    : "Selecionar filtradas"}
                 </Button>
               </div>
 
-              <div className="flex-1 overflow-y-auto max-h-[300px]">
+              <div className="flex-1 overflow-y-auto max-h-[220px]">
                 {loadingFaturas ? (
                   <div className="p-4 space-y-2">
                     {[1, 2, 3].map(i => (
                       <Skeleton key={i} className="h-16 w-full" />
                     ))}
                   </div>
-                ) : faturas && faturas.length > 0 ? (
+                ) : faturasFiltradas.length > 0 ? (
                   <div className="p-2 space-y-1">
-                    {faturas.map((fatura) => (
+                    {faturasFiltradas.map((fatura) => (
                       <div
                         key={fatura.id}
                         onClick={() => handleToggleFatura(fatura.id)}
@@ -478,6 +598,12 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                         </span>
                       </div>
                     ))}
+                  </div>
+                ) : faturas && faturas.length > 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    <Filter className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                    <p>Nenhuma fatura no período selecionado</p>
+                    <p className="text-xs mt-1">Ajuste os filtros ou limpe-os para ver todas</p>
                   </div>
                 ) : (
                   <div className="p-8 text-center text-muted-foreground">
