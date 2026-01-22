@@ -7,6 +7,7 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { useContentProtection } from "@/hooks/useContentProtection";
 
 // Pages
 import Index from "./pages/Index";
@@ -30,6 +31,145 @@ import PontoEletronico from "./pages/PontoEletronico";
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
+// Componente interno que usa o hook de proteção
+function AppContent() {
+  // Ativar proteção de conteúdo (não afeta inputs/formulários)
+  useContentProtection({ enabled: true, allowInputs: true });
+
+  return (
+    <>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/auth" element={<Auth />} />
+          {/* Legacy route (marketing removido) */}
+          <Route path="/marketing" element={<Navigate to="/dashboard" replace />} />
+          
+          {/* Protected Routes */}
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/financeiro"
+            element={
+              <ProtectedRoute>
+                <ResponsavelDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/responsaveis"
+            element={
+              <ProtectedRoute>
+                <Responsaveis />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/alunos"
+            element={
+              <ProtectedRoute>
+                <Alunos />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/cursos"
+            element={
+              <ProtectedRoute>
+                <Cursos />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/turmas"
+            element={
+              <ProtectedRoute>
+                <Turmas />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/escola"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <Escola />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/faturas"
+            element={
+              <ProtectedRoute>
+                <Faturas />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pagamentos"
+            element={
+              <ProtectedRoute>
+                <Pagamentos />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/despesas"
+            element={
+              <ProtectedRoute>
+                <Despesas />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/relatorios"
+            element={
+              <ProtectedRoute>
+                <Relatorios />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/configuracoes"
+            element={
+              <ProtectedRoute>
+                <Configuracoes />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/rh"
+            element={
+              <ProtectedRoute>
+                <RH />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Public Payment Result Page */}
+          <Route path="/pagamento/resultado" element={<PaymentResult />} />
+          
+          {/* Public Ponto Eletrônico Page */}
+          <Route path="/ponto/:token" element={<PontoEletronico />} />
+          
+          {/* Public Landing Page */}
+          <Route path="/inscricao" element={<LandingPage />} />
+          
+          {/* Catch-all */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+}
+
 // Query client with optimized defaults
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -48,139 +188,12 @@ const App = () => (
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
         <AuthProvider>
           <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
-              <Route path="/auth" element={<Auth />} />
-              {/* Legacy route (marketing removido) */}
-              <Route path="/marketing" element={<Navigate to="/dashboard" replace />} />
-              
-              {/* Protected Routes */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/dashboard/financeiro"
-                element={
-                  <ProtectedRoute>
-                    <ResponsavelDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/responsaveis"
-                element={
-                  <ProtectedRoute>
-                    <Responsaveis />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/alunos"
-                element={
-                  <ProtectedRoute>
-                    <Alunos />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/cursos"
-                element={
-                  <ProtectedRoute>
-                    <Cursos />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/turmas"
-                element={
-                  <ProtectedRoute>
-                    <Turmas />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/escola"
-                element={
-                  <ProtectedRoute requiredRole="admin">
-                    <Escola />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/faturas"
-                element={
-                  <ProtectedRoute>
-                    <Faturas />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/pagamentos"
-                element={
-                  <ProtectedRoute>
-                    <Pagamentos />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/despesas"
-                element={
-                  <ProtectedRoute>
-                    <Despesas />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/relatorios"
-                element={
-                  <ProtectedRoute>
-                    <Relatorios />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/configuracoes"
-                element={
-                  <ProtectedRoute>
-                    <Configuracoes />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/rh"
-                element={
-                  <ProtectedRoute>
-                    <RH />
-                  </ProtectedRoute>
-                }
-              />
-              
-              {/* Public Payment Result Page */}
-              <Route path="/pagamento/resultado" element={<PaymentResult />} />
-              
-              {/* Public Ponto Eletrônico Page */}
-              <Route path="/ponto/:token" element={<PontoEletronico />} />
-              
-              {/* Public Landing Page */}
-              <Route path="/inscricao" element={<LandingPage />} />
-              
-              {/* Catch-all */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </ThemeProvider>
-  </QueryClientProvider>
-</ErrorBoundary>
+            <AppContent />
+          </TooltipProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </QueryClientProvider>
+  </ErrorBoundary>
 );
 
 export default App;
