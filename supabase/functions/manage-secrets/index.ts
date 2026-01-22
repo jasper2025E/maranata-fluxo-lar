@@ -209,6 +209,14 @@ serve(async (req) => {
 });
 
 function maskSecret(secret: string): string {
-  if (!secret || secret.length <= 8) return "••••••••";
-  return secret.substring(0, 8) + "•".repeat(Math.min(20, secret.length - 12)) + secret.slice(-4);
+  if (!secret) return "••••••••";
+  if (secret.length <= 8) return "••••••••";
+  if (secret.length <= 16) {
+    // For secrets between 9-16 chars, show first 4, mask middle, show last 4
+    const middleLength = Math.max(0, secret.length - 8);
+    return secret.substring(0, 4) + "•".repeat(middleLength) + secret.slice(-4);
+  }
+  // For longer secrets, show first 8, mask middle (max 20), show last 4
+  const repeatCount = Math.max(0, Math.min(20, secret.length - 12));
+  return secret.substring(0, 8) + "•".repeat(repeatCount) + secret.slice(-4);
 }
