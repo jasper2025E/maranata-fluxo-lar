@@ -92,16 +92,86 @@ serve(async (req) => {
       throw new Error("Responsável não encontrado. Vincule um responsável ao aluno.");
     }
 
+    // Função para validar CPF
+    const isValidCPF = (cpf: string): boolean => {
+      const cleanCpf = cpf.replace(/\D/g, '');
+      if (cleanCpf.length !== 11) return false;
+      if (/^(\d)\1+$/.test(cleanCpf)) return false; // Todos dígitos iguais
+      
+      let sum = 0;
+      for (let i = 0; i < 9; i++) {
+        sum += parseInt(cleanCpf.charAt(i)) * (10 - i);
+      }
+      let digit = 11 - (sum % 11);
+      if (digit > 9) digit = 0;
+      if (digit !== parseInt(cleanCpf.charAt(9))) return false;
+      
+      sum = 0;
+      for (let i = 0; i < 10; i++) {
+        sum += parseInt(cleanCpf.charAt(i)) * (11 - i);
+      }
+      digit = 11 - (sum % 11);
+      if (digit > 9) digit = 0;
+      if (digit !== parseInt(cleanCpf.charAt(10))) return false;
+      
+      return true;
+    };
+
+    // Função para validar CNPJ
+    const isValidCNPJ = (cnpj: string): boolean => {
+      const cleanCnpj = cnpj.replace(/\D/g, '');
+      if (cleanCnpj.length !== 14) return false;
+      if (/^(\d)\1+$/.test(cleanCnpj)) return false;
+      
+      const weights1 = [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+      const weights2 = [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+      
+      let sum = 0;
+      for (let i = 0; i < 12; i++) {
+        sum += parseInt(cleanCnpj.charAt(i)) * weights1[i];
+      }
+      let digit = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+      if (digit !== parseInt(cleanCnpj.charAt(12))) return false;
+      
+      sum = 0;
+      for (let i = 0; i < 13; i++) {
+        sum += parseInt(cleanCnpj.charAt(i)) * weights2[i];
+      }
+      digit = sum % 11 < 2 ? 0 : 11 - (sum % 11);
+      if (digit !== parseInt(cleanCnpj.charAt(13))) return false;
+      
+      return true;
+    };
+
     // Criar cliente no Asaas se não existir
     let customerId = responsavel.asaas_customer_id;
     if (!customerId) {
-      const customerData = {
+      // Validar e formatar CPF/CNPJ
+      const rawCpfCnpj = responsavel.cpf?.replace(/\D/g, '') || '';
+      let validCpfCnpj: string | null = null;
+      
+      if (rawCpfCnpj.length === 11 && isValidCPF(rawCpfCnpj)) {
+        validCpfCnpj = rawCpfCnpj;
+      } else if (rawCpfCnpj.length === 14 && isValidCNPJ(rawCpfCnpj)) {
+        validCpfCnpj = rawCpfCnpj;
+      } else if (rawCpfCnpj.length > 0) {
+        console.warn(`CPF/CNPJ inválido para responsável ${responsavel.nome}: ${rawCpfCnpj}`);
+        // Continuar sem CPF - Asaas permite criar cliente sem CPF
+      }
+
+      const customerData: Record<string, unknown> = {
         name: responsavel.nome,
-        cpfCnpj: responsavel.cpf?.replace(/\D/g, '') || null,
         email: responsavel.email || null,
         mobilePhone: responsavel.telefone?.replace(/\D/g, '') || null,
         notificationDisabled: false,
       };
+      
+      // Só incluir cpfCnpj se for válido
+      if (validCpfCnpj) {
+        customerData.cpfCnpj = validCpfCnpj;
+      }
+
+      console.log("Criando cliente Asaas:", JSON.stringify({ ...customerData, cpfCnpj: validCpfCnpj ? '***' : null }));
 
       const customerResponse = await fetch(`${ASAAS_API_URL}/customers`, {
         method: "POST",
@@ -115,6 +185,7 @@ serve(async (req) => {
       const customerResult = await customerResponse.json();
       
       if (!customerResponse.ok) {
+        console.error("Erro Asaas Customer:", customerResult);
         throw new Error(customerResult.errors?.[0]?.description || "Erro ao criar cliente no Asaas");
       }
 
