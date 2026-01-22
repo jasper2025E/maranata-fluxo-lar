@@ -169,49 +169,64 @@ const Alunos = () => {
         .single();
       if (error) throw error;
 
-      // Gerar faturas automáticas
-      const curso = cursos.find((c) => c.id === data.curso_id);
-      if (curso && newAluno) {
-        await supabase.rpc("gerar_faturas_aluno", {
-          p_aluno_id: newAluno.id,
-          p_curso_id: data.curso_id,
-          p_valor: curso.mensalidade,
-          p_data_inicio: new Date().toISOString().split("T")[0],
-        });
-
-        // Criar cobranças Asaas em background (não bloqueia a criação do aluno)
-        // Processamos apenas as 3 primeiras faturas imediatamente, as demais serão criadas via carnê
-        const { data: faturasGeradas } = await supabase
-          .from("faturas")
-          .select("id")
-          .eq("aluno_id", newAluno.id)
-          .eq("status", "Aberta")
-          .is("asaas_payment_id", null)
-          .order("data_vencimento", { ascending: true })
-          .limit(3);
-
-        if (faturasGeradas && faturasGeradas.length > 0) {
-          // Processa uma fatura por vez para evitar sobrecarga
-          for (const fatura of faturasGeradas) {
-            try {
-              await supabase.functions.invoke("asaas-create-payment", {
-                body: { faturaId: fatura.id, billingType: "UNDEFINED" },
-              });
-              // Delay entre requisições
-              await new Promise(r => setTimeout(r, 800));
-            } catch (err) {
-              console.warn(`Aviso: Cobrança Asaas pendente para fatura ${fatura.id}`);
-            }
-          }
-        }
-      }
+      // Importante: não bloquear o cadastro do aluno com geração de faturas/cobranças.
+      // A geração será disparada em background no onSuccess.
+      return newAluno;
     },
-    onSuccess: () => {
+    onSuccess: (newAluno, variables) => {
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
       queryClient.invalidateQueries({ queryKey: ["faturas"] });
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
-      toast.success("Aluno cadastrado com sucesso! Cobranças serão geradas em breve.");
+      toast.success("Aluno cadastrado com sucesso! Gerando faturas e cobranças em segundo plano.");
       resetForm();
+
+      // Dispara a geração em background para manter o botão responsivo.
+      void (async () => {
+        try {
+          if (!newAluno) return;
+          const curso = cursos.find((c) => c.id === variables.curso_id);
+          if (!curso) return;
+
+          await supabase.rpc("gerar_faturas_aluno", {
+            p_aluno_id: (newAluno as any).id,
+            p_curso_id: variables.curso_id,
+            p_valor: curso.mensalidade,
+            p_data_inicio: new Date().toISOString().split("T")[0],
+          });
+
+          // Para evitar sobrecarga, cria cobrança Asaas apenas para as próximas 3 faturas
+          // e com timeout para não travar o fluxo.
+          const responsavelId = variables.responsavel_id || null;
+          if (!responsavelId) return;
+
+          const { data: faturasGeradas } = await supabase
+            .from("faturas")
+            .select("id")
+            .eq("aluno_id", (newAluno as any).id)
+            .eq("status", "Aberta")
+            .is("asaas_payment_id", null)
+            .order("data_vencimento", { ascending: true })
+            .limit(3);
+
+          for (const fatura of faturasGeradas || []) {
+            const invoke = supabase.functions.invoke("asaas-create-payment", {
+              body: { faturaId: fatura.id, billingType: "UNDEFINED" },
+            });
+
+            // Timeout de 12s por fatura para evitar travamento caso a função fique instável
+            await Promise.race([
+              invoke,
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("timeout_asaas")), 12_000)
+              ),
+            ]).catch(() => {
+              // Silencioso: cobrança pode ser gerada depois (carnê / tentativa manual)
+            });
+          }
+        } catch (err) {
+          console.warn("Falha ao gerar faturas/cobranças em background:", err);
+        }
+      })();
     },
     onError: (error) => {
       console.error(error);
