@@ -9,13 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
-import { Printer, Loader2, FileText, User, Calendar, Zap, QrCode, AlertCircle } from "lucide-react";
+import { Printer, Loader2, FileText, User, Calendar, Zap, QrCode, AlertCircle, Eye, ArrowLeft } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCarneCompleto, generateCarneCompletoAsaas } from "@/lib/carneGenerator";
 import { Fatura, formatCurrency, meses } from "@/hooks/useFaturas";
 import { useAsaas } from "@/hooks/useAsaas";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { CarnePreview } from "./CarnePreview";
 
 interface CarneDialogProps {
   open: boolean;
@@ -36,6 +37,7 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
   const [integrarAsaas, setIntegrarAsaas] = useState(true);
   const [progressMessage, setProgressMessage] = useState("");
   const [progressValue, setProgressValue] = useState(0);
+  const [showPreview, setShowPreview] = useState(false);
 
   const { createPayment } = useAsaas();
 
@@ -236,21 +238,64 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
     f => selectedFaturas.has(f.id) && f.status !== "Paga" && !f.asaas_payment_id
   ).length || 0;
 
+  const faturasParaPreview = faturas?.filter(f => selectedFaturas.has(f.id)) || [];
+  const responsavelSelecionado = responsaveis?.find(r => r.id === selectedResponsavel) || null;
+
+  const handleShowPreview = () => {
+    if (selectedFaturas.size === 0) {
+      toast.error("Selecione ao menos uma fatura");
+      return;
+    }
+    setShowPreview(true);
+  };
+
+  const handleBackFromPreview = () => {
+    setShowPreview(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(isOpen) => {
+      if (!isOpen) {
+        setShowPreview(false);
+      }
+      onOpenChange(isOpen);
+    }}>
       <DialogContent className="sm:max-w-lg max-h-[90vh] flex flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Printer className="h-5 w-5 text-primary" />
-            Imprimir Carnê Completo
+            {showPreview ? (
+              <>
+                <Eye className="h-5 w-5 text-primary" />
+                Preview do Carnê
+              </>
+            ) : (
+              <>
+                <Printer className="h-5 w-5 text-primary" />
+                Imprimir Carnê Completo
+              </>
+            )}
           </DialogTitle>
           <DialogDescription>
-            Gere um carnê com todas as mensalidades no formato 99x210mm, pronto para impressão.
+            {showPreview 
+              ? "Confirme os dados antes de gerar o PDF."
+              : "Gere um carnê com todas as mensalidades no formato 99x210mm, pronto para impressão."
+            }
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 flex-1 min-h-0 flex flex-col overflow-auto">
-          {/* Seletor de Responsável */}
+        {showPreview ? (
+          /* Tela de Preview */
+          <div className="flex-1 min-h-0 overflow-auto">
+            <CarnePreview
+              faturas={faturasParaPreview}
+              escola={escola}
+              responsavel={responsavelSelecionado}
+              integrarAsaas={integrarAsaas}
+            />
+          </div>
+        ) : (
+          /* Tela de Seleção */
+          <div className="space-y-4 flex-1 min-h-0 flex flex-col overflow-auto">
           <div className="space-y-2">
             <Label htmlFor="responsavel">Responsável Financeiro</Label>
             {loadingResponsaveis ? (
@@ -401,30 +446,48 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
             </div>
           )}
         </div>
+        )}
 
         <DialogFooter className="gap-2 sm:gap-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleGenerateCarne}
-            disabled={isGenerating || selectedFaturas.size === 0}
-            className="gap-2"
-          >
-            {isGenerating ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
-            ) : integrarAsaas ? (
-              <QrCode className="h-4 w-4" />
-            ) : (
-              <Printer className="h-4 w-4" />
-            )}
-            {isGenerating 
-              ? "Gerando..." 
-              : integrarAsaas 
-                ? `Carnê com PIX (${selectedFaturas.size})`
-                : `Imprimir Carnê (${selectedFaturas.size})`
-            }
-          </Button>
+          {showPreview ? (
+            <>
+              <Button variant="outline" onClick={handleBackFromPreview} disabled={isGenerating}>
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Voltar
+              </Button>
+              <Button
+                onClick={handleGenerateCarne}
+                disabled={isGenerating}
+                className="gap-2"
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : integrarAsaas ? (
+                  <QrCode className="h-4 w-4" />
+                ) : (
+                  <Printer className="h-4 w-4" />
+                )}
+                {isGenerating 
+                  ? "Gerando..." 
+                  : "Gerar PDF"
+                }
+              </Button>
+            </>
+          ) : (
+            <>
+              <Button variant="outline" onClick={() => onOpenChange(false)} disabled={isGenerating}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleShowPreview}
+                disabled={selectedFaturas.size === 0}
+                className="gap-2"
+              >
+                <Eye className="h-4 w-4" />
+                Visualizar ({selectedFaturas.size})
+              </Button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
