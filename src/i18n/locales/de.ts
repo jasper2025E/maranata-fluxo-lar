@@ -32,11 +32,21 @@ const de = {
       refresh: "Aktualisieren",
       copy: "Kopieren",
       copied: "Kopiert!",
+      searchPlaceholder: "Schüler, Rechnungen suchen...",
+      notifications: "Benachrichtigungen",
+      noNotifications: "Keine Benachrichtigungen",
+      notificationsInfo: "Sie werden über wichtige Updates benachrichtigt",
+      markAll: "Alle markieren",
+      viewAll: "Alle Benachrichtigungen anzeigen",
+      unreadNotifications: "Sie haben {{count}} ungelesene Benachrichtigung",
+      unreadNotificationsPlural: "Sie haben {{count}} ungelesene Benachrichtigungen",
+      noUnreadNotifications: "Keine ungelesenen Benachrichtigungen",
     },
 
     // Navigation
     nav: {
       dashboard: "Dashboard",
+      financial: "Finanzen",
       students: "Schüler",
       guardians: "Erziehungsberechtigte",
       courses: "Kurse",
@@ -49,6 +59,11 @@ const de = {
       hr: "Personal",
       school: "Schule",
       logout: "Abmelden",
+      main: "Hauptmenü",
+      finance: "Finanzen",
+      system: "System",
+      exitSystem: "System verlassen",
+      financialSystem: "Finanzsystem",
     },
 
     // Auth
@@ -67,7 +82,8 @@ const de = {
 
     // Dashboard
     dashboard: {
-      title: "Dashboard",
+      title: "Finanz-Dashboard",
+      subtitle: "Überblick über Finanzfluss und Schulindikatoren",
       welcome: "Willkommen",
       totalStudents: "Gesamtschüler",
       activeStudents: "Aktive Schüler",
@@ -76,6 +92,40 @@ const de = {
       overdueInvoices: "Überfällige Rechnungen",
       recentPayments: "Letzte Zahlungen",
       financialSummary: "Finanzübersicht",
+      // KPIs
+      monthlyRevenues: "Monatseinnahmen",
+      monthlyExpenses: "Monatsausgaben",
+      receivable: "Forderungen",
+      averageTicket: "Durchschnittsbetrag",
+      perPaidInvoice: "Pro bezahlter Rechnung",
+      monthlyBalance: "Monatssaldo",
+      surplus: "Überschuss",
+      deficit: "Defizit",
+      collectionRate: "Inkassoquote",
+      ofExpected: "Vom erwarteten Wert",
+      totalOverdue: "Gesamt überfällig",
+      overdueInvoicesCount: "{{count}} überfällige Rechnungen",
+      monthlyPayroll: "Monatliche Lohnkosten",
+      activeEmployees: "{{count}} aktive Mitarbeiter",
+      pendingInvoicesCount: "{{count}} ausstehende Rechnungen",
+      // Quick Stats
+      guardians: "Erziehungsberechtigte",
+      activeStudentsLabel: "Aktive Schüler",
+      monthInvoices: "Monatsrechnungen",
+      paidThisMonth: "Diesen Monat bezahlt",
+      employees: "Mitarbeiter",
+      defaulters: "Säumige",
+      // Charts
+      financialEvolution: "Finanzentwicklung",
+      financialEvolutionDesc: "Einnahmen, Ausgaben und Saldo der letzten 6 Monate",
+      revenueVsExpenses: "Einnahmen vs Ausgaben",
+      monthlyComparison: "Monatlicher Vergleich",
+      revenueTrend: "Einnahmentrend",
+      revenueTrendDesc: "Entwicklung der Einnahmen in den letzten 6 Monaten",
+      // Errors
+      loadError: "Fehler beim Laden",
+      loadErrorDesc: "Dashboard-Daten konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+      reload: "Neu laden",
     },
 
     // Students
@@ -85,12 +135,12 @@ const de = {
       editStudent: "Schüler bearbeiten",
       studentName: "Schülername",
       birthDate: "Geburtsdatum",
-      enrollmentDate: "Einschreibungsdatum",
-      enrollmentStatus: "Einschreibungsstatus",
+      enrollmentDate: "Anmeldedatum",
+      enrollmentStatus: "Anmeldestatus",
       active: "Aktiv",
       inactive: "Inaktiv",
-      suspended: "Suspendiert",
-      transferred: "Versetzt",
+      suspended: "Gesperrt",
+      transferred: "Übertragen",
       graduated: "Abgeschlossen",
     },
 
@@ -100,11 +150,11 @@ const de = {
       addGuardian: "Erziehungsberechtigten hinzufügen",
       editGuardian: "Erziehungsberechtigten bearbeiten",
       guardianName: "Name des Erziehungsberechtigten",
-      cpf: "Steuer-ID",
+      cpf: "Ausweisnummer",
       phone: "Telefon",
       email: "E-Mail",
       address: "Adresse",
-      relationship: "Verwandtschaft",
+      relationship: "Beziehung",
     },
 
     // Invoices
@@ -136,7 +186,7 @@ const de = {
       paymentMethod: "Zahlungsmethode",
       methods: {
         pix: "PIX",
-        boleto: "Banküberweisung",
+        boleto: "Bankbeleg",
         creditCard: "Kreditkarte",
         debitCard: "Debitkarte",
         cash: "Bargeld",
@@ -151,7 +201,7 @@ const de = {
       title: "Einstellungen",
       profile: "Profil",
       security: "Sicherheit",
-      preferences: "Einstellungen",
+      preferences: "Präferenzen",
       billing: "Abrechnung",
       users: "Benutzer",
       integrations: "Integrationen",
@@ -165,6 +215,15 @@ const de = {
       emailNotifications: "E-Mail-Benachrichtigungen",
       browserNotifications: "Browser-Benachrichtigungen",
       weeklyReport: "Wöchentlicher Bericht",
+    },
+
+    // Roles
+    roles: {
+      admin: "Administrator",
+      staff: "Mitarbeiter",
+      financeiro: "Finanzwesen",
+      secretaria: "Sekretariat",
+      user: "Benutzer",
     },
 
     // Languages
@@ -191,7 +250,9 @@ const de = {
       deleted: "Erfolgreich gelöscht!",
       updated: "Erfolgreich aktualisiert!",
       created: "Erfolgreich erstellt!",
-      copied: "In die Zwischenablage kopiert!",
+      copied: "In Zwischenablage kopiert!",
+      logout: "Erfolgreich abgemeldet",
+      languageChanged: "Sprache geändert zu {{language}}",
     },
   },
 };

@@ -32,11 +32,21 @@ const en = {
       refresh: "Refresh",
       copy: "Copy",
       copied: "Copied!",
+      searchPlaceholder: "Search students, invoices...",
+      notifications: "Notifications",
+      noNotifications: "No notifications",
+      notificationsInfo: "You will be notified of important updates",
+      markAll: "Mark all",
+      viewAll: "View all notifications",
+      unreadNotifications: "You have {{count}} unread notification",
+      unreadNotificationsPlural: "You have {{count}} unread notifications",
+      noUnreadNotifications: "No unread notifications",
     },
 
     // Navigation
     nav: {
       dashboard: "Dashboard",
+      financial: "Financial",
       students: "Students",
       guardians: "Guardians",
       courses: "Courses",
@@ -49,6 +59,11 @@ const en = {
       hr: "HR",
       school: "School",
       logout: "Logout",
+      main: "Main",
+      finance: "Finance",
+      system: "System",
+      exitSystem: "Exit System",
+      financialSystem: "Financial System",
     },
 
     // Auth
@@ -67,7 +82,8 @@ const en = {
 
     // Dashboard
     dashboard: {
-      title: "Dashboard",
+      title: "Financial Dashboard",
+      subtitle: "Financial flow overview and school indicators",
       welcome: "Welcome",
       totalStudents: "Total Students",
       activeStudents: "Active Students",
@@ -76,6 +92,40 @@ const en = {
       overdueInvoices: "Overdue Invoices",
       recentPayments: "Recent Payments",
       financialSummary: "Financial Summary",
+      // KPIs
+      monthlyRevenues: "Monthly Revenue",
+      monthlyExpenses: "Monthly Expenses",
+      receivable: "Receivable",
+      averageTicket: "Average Ticket",
+      perPaidInvoice: "Per paid invoice",
+      monthlyBalance: "Monthly Balance",
+      surplus: "Surplus",
+      deficit: "Deficit",
+      collectionRate: "Collection Rate",
+      ofExpected: "Of expected value",
+      totalOverdue: "Total Overdue",
+      overdueInvoicesCount: "{{count}} overdue invoices",
+      monthlyPayroll: "Monthly Payroll",
+      activeEmployees: "{{count}} active employees",
+      pendingInvoicesCount: "{{count}} pending invoices",
+      // Quick Stats
+      guardians: "Guardians",
+      activeStudentsLabel: "Active Students",
+      monthInvoices: "Month Invoices",
+      paidThisMonth: "Paid This Month",
+      employees: "Employees",
+      defaulters: "Defaulters",
+      // Charts
+      financialEvolution: "Financial Evolution",
+      financialEvolutionDesc: "Revenue, expenses and balance for the last 6 months",
+      revenueVsExpenses: "Revenue vs Expenses",
+      monthlyComparison: "Monthly comparison",
+      revenueTrend: "Revenue Trend",
+      revenueTrendDesc: "Collection evolution over the last 6 months",
+      // Errors
+      loadError: "Error loading data",
+      loadErrorDesc: "Could not load dashboard data. Please try again.",
+      reload: "Reload",
     },
 
     // Students
@@ -167,6 +217,15 @@ const en = {
       weeklyReport: "Weekly Report",
     },
 
+    // Roles
+    roles: {
+      admin: "Administrator",
+      staff: "Staff",
+      financeiro: "Financial",
+      secretaria: "Secretary",
+      user: "User",
+    },
+
     // Languages
     languages: {
       pt: "Português",
@@ -192,6 +251,8 @@ const en = {
       updated: "Updated successfully!",
       created: "Created successfully!",
       copied: "Copied to clipboard!",
+      logout: "Logged out successfully",
+      languageChanged: "Language changed to {{language}}",
     },
   },
 };

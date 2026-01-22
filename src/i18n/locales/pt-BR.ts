@@ -32,11 +32,21 @@ const ptBR = {
       refresh: "Atualizar",
       copy: "Copiar",
       copied: "Copiado!",
+      searchPlaceholder: "Buscar alunos, faturas...",
+      notifications: "Notificações",
+      noNotifications: "Nenhuma notificação",
+      notificationsInfo: "Você será notificado sobre atualizações importantes",
+      markAll: "Marcar todas",
+      viewAll: "Ver todas as notificações",
+      unreadNotifications: "Você tem {{count}} notificação não lida",
+      unreadNotificationsPlural: "Você tem {{count}} notificações não lidas",
+      noUnreadNotifications: "Nenhuma notificação não lida",
     },
 
     // Navigation
     nav: {
       dashboard: "Dashboard",
+      financial: "Financeiro",
       students: "Alunos",
       guardians: "Responsáveis",
       courses: "Cursos",
@@ -49,6 +59,11 @@ const ptBR = {
       hr: "RH",
       school: "Escola",
       logout: "Sair",
+      main: "Principal",
+      finance: "Financeiro",
+      system: "Sistema",
+      exitSystem: "Sair do Sistema",
+      financialSystem: "Sistema Financeiro",
     },
 
     // Auth
@@ -67,7 +82,8 @@ const ptBR = {
 
     // Dashboard
     dashboard: {
-      title: "Dashboard",
+      title: "Dashboard Financeiro",
+      subtitle: "Visão geral do fluxo financeiro e indicadores da escola",
       welcome: "Bem-vindo",
       totalStudents: "Total de Alunos",
       activeStudents: "Alunos Ativos",
@@ -76,6 +92,40 @@ const ptBR = {
       overdueInvoices: "Faturas Vencidas",
       recentPayments: "Pagamentos Recentes",
       financialSummary: "Resumo Financeiro",
+      // KPIs
+      monthlyRevenues: "Receitas do Mês",
+      monthlyExpenses: "Despesas do Mês",
+      receivable: "Valor a Receber",
+      averageTicket: "Ticket Médio",
+      perPaidInvoice: "Por fatura paga",
+      monthlyBalance: "Saldo Mensal",
+      surplus: "Superávit",
+      deficit: "Déficit",
+      collectionRate: "Taxa de Arrecadação",
+      ofExpected: "Do valor esperado",
+      totalOverdue: "Total em Atraso",
+      overdueInvoicesCount: "{{count}} faturas vencidas",
+      monthlyPayroll: "Folha RH Mensal",
+      activeEmployees: "{{count}} funcionários ativos",
+      pendingInvoicesCount: "{{count}} faturas pendentes",
+      // Quick Stats
+      guardians: "Responsáveis",
+      activeStudentsLabel: "Alunos Ativos",
+      monthInvoices: "Faturas do Mês",
+      paidThisMonth: "Pagas no Mês",
+      employees: "Funcionários",
+      defaulters: "Inadimplentes",
+      // Charts
+      financialEvolution: "Evolução Financeira",
+      financialEvolutionDesc: "Receitas, despesas e saldo dos últimos 6 meses",
+      revenueVsExpenses: "Receitas vs Despesas",
+      monthlyComparison: "Comparativo mensal",
+      revenueTrend: "Tendência de Receitas",
+      revenueTrendDesc: "Evolução da arrecadação nos últimos 6 meses",
+      // Errors
+      loadError: "Erro ao carregar dados",
+      loadErrorDesc: "Não foi possível carregar os dados do dashboard. Tente novamente.",
+      reload: "Recarregar",
     },
 
     // Students
@@ -167,6 +217,15 @@ const ptBR = {
       weeklyReport: "Relatório Semanal",
     },
 
+    // Roles
+    roles: {
+      admin: "Administrador",
+      staff: "Funcionário",
+      financeiro: "Financeiro",
+      secretaria: "Secretaria",
+      user: "Usuário",
+    },
+
     // Languages
     languages: {
       pt: "Português",
@@ -192,6 +251,8 @@ const ptBR = {
       updated: "Atualizado com sucesso!",
       created: "Criado com sucesso!",
       copied: "Copiado para a área de transferência!",
+      logout: "Logout realizado com sucesso",
+      languageChanged: "Idioma alterado para {{language}}",
     },
   },
 };

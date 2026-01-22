@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useEscola } from "@/hooks/useEscola";
+import { useTranslation } from "react-i18next";
 import {
   Sidebar,
   SidebarContent,
@@ -39,25 +40,25 @@ import {
 } from "@/components/ui/tooltip";
 
 const menuItems = [
-  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Financeiro", url: "/dashboard/financeiro", icon: Wallet },
-  { title: "Escola", url: "/escola", icon: Building2, roles: ["admin"] },
-  { title: "Responsáveis", url: "/responsaveis", icon: UserCheck },
-  { title: "Alunos", url: "/alunos", icon: Users },
-  { title: "Turmas", url: "/turmas", icon: GraduationCap },
-  { title: "Cursos", url: "/cursos", icon: BookOpen },
-  { title: "RH", url: "/rh", icon: Briefcase, roles: ["admin", "staff"] },
+  { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: Wallet },
+  { titleKey: "nav.school", url: "/escola", icon: Building2, roles: ["admin"] },
+  { titleKey: "nav.guardians", url: "/responsaveis", icon: UserCheck },
+  { titleKey: "nav.students", url: "/alunos", icon: Users },
+  { titleKey: "nav.classes", url: "/turmas", icon: GraduationCap },
+  { titleKey: "nav.courses", url: "/cursos", icon: BookOpen },
+  { titleKey: "nav.hr", url: "/rh", icon: Briefcase, roles: ["admin", "staff"] },
 ];
 
 const financeItems = [
-  { title: "Faturas", url: "/faturas", icon: FileText },
-  { title: "Pagamentos", url: "/pagamentos", icon: CreditCard },
-  { title: "Despesas", url: "/despesas", icon: Receipt },
-  { title: "Relatórios", url: "/relatorios", icon: BarChart3 },
+  { titleKey: "nav.invoices", url: "/faturas", icon: FileText },
+  { titleKey: "nav.payments", url: "/pagamentos", icon: CreditCard },
+  { titleKey: "nav.expenses", url: "/despesas", icon: Receipt },
+  { titleKey: "nav.reports", url: "/relatorios", icon: BarChart3 },
 ];
 
 const settingsItems = [
-  { title: "Configurações", url: "/configuracoes", icon: Settings, roles: ["admin"] },
+  { titleKey: "nav.settings", url: "/configuracoes", icon: Settings, roles: ["admin"] },
 ];
 
 export function AppSidebar() {
@@ -65,6 +66,7 @@ export function AppSidebar() {
   const { signOut, hasRole } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
+  const { t } = useTranslation();
   
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
@@ -76,10 +78,10 @@ export function AppSidebar() {
   const handleLogout = async () => {
     try {
       await signOut();
-      toast.success("Logout realizado com sucesso");
+      toast.success(t("success.logout"));
       navigate("/auth");
     } catch (error) {
-      toast.error("Erro ao fazer logout");
+      toast.error(t("errors.generic"));
     }
   };
 
@@ -91,7 +93,7 @@ export function AppSidebar() {
   };
 
   const renderMenuItem = (item: typeof menuItems[0]) => (
-    <SidebarMenuItem key={item.title}>
+    <SidebarMenuItem key={item.titleKey}>
       {isCollapsed ? (
         <Tooltip>
           <TooltipTrigger asChild>
@@ -113,7 +115,7 @@ export function AppSidebar() {
             </SidebarMenuButton>
           </TooltipTrigger>
           <TooltipContent side="right" className="font-medium">
-            {item.title}
+            {t(item.titleKey)}
           </TooltipContent>
         </Tooltip>
       ) : (
@@ -131,7 +133,7 @@ export function AppSidebar() {
             activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"
           >
             <item.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.75} />
-            <span className="text-sm">{item.title}</span>
+            <span className="text-sm">{t(item.titleKey)}</span>
           </NavLink>
         </SidebarMenuButton>
       )}
@@ -163,7 +165,7 @@ export function AppSidebar() {
               </TooltipTrigger>
               <TooltipContent side="right" className="font-medium">
                 <p>{escolaNome}</p>
-                <p className="text-xs text-muted-foreground">Sistema Financeiro</p>
+                <p className="text-xs text-muted-foreground">{t("nav.financialSystem")}</p>
               </TooltipContent>
             </Tooltip>
           ) : (
@@ -181,17 +183,16 @@ export function AppSidebar() {
               )}
               <div>
                 <h2 className="font-bold text-sidebar-foreground text-lg tracking-tight leading-tight">{escolaNome}</h2>
-                <p className="text-xs text-sidebar-foreground/50 font-medium">Sistema Financeiro</p>
+                <p className="text-xs text-sidebar-foreground/50 font-medium">{t("nav.financialSystem")}</p>
               </div>
             </>
           )}
         </div>
 
-        {/* Main Menu */}
         <SidebarGroup className="px-3 mt-2">
           {!isCollapsed && (
             <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
-              Principal
+              {t("nav.main")}
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
@@ -201,11 +202,10 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Finance Menu */}
         <SidebarGroup className="px-3 mt-6">
           {!isCollapsed && (
             <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
-              Financeiro
+              {t("nav.finance")}
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
@@ -215,11 +215,10 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Settings Menu */}
         <SidebarGroup className="px-3 mt-6">
           {!isCollapsed && (
             <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
-              Sistema
+              {t("nav.system")}
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
@@ -263,7 +262,7 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="font-medium">
-                  Sair do Sistema
+                  {t("nav.exitSystem")}
                 </TooltipContent>
               </Tooltip>
             ) : (
@@ -278,7 +277,7 @@ export function AppSidebar() {
                 )}
               >
                 <LogOut className="h-[18px] w-[18px] shrink-0 transition-transform duration-200" strokeWidth={1.75} />
-                <span className="text-sm">Sair do Sistema</span>
+                <span className="text-sm">{t("nav.exitSystem")}</span>
               </SidebarMenuButton>
             )}
           </SidebarMenuItem>
