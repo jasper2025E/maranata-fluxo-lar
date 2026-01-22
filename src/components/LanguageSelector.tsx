@@ -8,6 +8,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Globe } from "lucide-react";
 import { languages } from "@/i18n";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface LanguageSelectorProps {
   variant?: "default" | "compact";
@@ -19,8 +21,26 @@ export function LanguageSelector({ variant = "default", showLabel = true }: Lang
 
   const currentLanguage = languages.find((lang) => lang.code === i18n.language) || languages[0];
 
-  const handleLanguageChange = (langCode: string) => {
+  const handleLanguageChange = async (langCode: string) => {
     i18n.changeLanguage(langCode);
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (user) {
+        await supabase
+          .from("user_preferences")
+          .upsert({
+            user_id: user.id,
+            language: langCode,
+          }, { onConflict: "user_id" });
+      }
+      
+      const langName = languages.find(l => l.code === langCode)?.name || langCode;
+      toast.success(`Idioma alterado para ${langName}`);
+    } catch (error) {
+      console.error("Error saving language preference:", error);
+    }
   };
 
   if (variant === "compact") {
