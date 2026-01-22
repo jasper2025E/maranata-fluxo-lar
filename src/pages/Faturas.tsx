@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Plus, Printer } from "lucide-react";
@@ -27,6 +28,8 @@ import { toast } from "sonner";
 type ViewMode = "list" | "status" | "aluno" | "mes";
 
 const Faturas = () => {
+  const { t } = useTranslation();
+  
   // View & Filter State
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [searchTerm, setSearchTerm] = useState("");
@@ -84,6 +87,7 @@ const Faturas = () => {
       return data;
     },
   });
+  
   const filteredFaturas = useMemo(() => {
     return faturas.filter((fatura) => {
       const matchesSearch = !searchTerm || 
@@ -127,9 +131,9 @@ const Faturas = () => {
   const handlePaymentLink = async (fatura: Fatura) => {
     if (fatura.payment_url) {
       navigator.clipboard.writeText(fatura.payment_url);
-      toast.success("Link copiado!");
+      toast.success(t("invoices.linkCopied"));
     } else {
-      toast.info("Gerando link de pagamento...");
+      toast.info(t("invoices.generatingLink"));
       try {
         const response = await supabase.functions.invoke("create-checkout", {
           body: {
@@ -139,16 +143,16 @@ const Faturas = () => {
           },
         });
         if (response.error) {
-          throw new Error(response.error.message || "Erro ao gerar link");
+          throw new Error(response.error.message || t("invoices.linkError"));
         }
         if (response.data?.url) {
           navigator.clipboard.writeText(response.data.url);
-          toast.success("Link gerado e copiado!");
+          toast.success(t("invoices.linkGenerated"));
         } else {
-          toast.error("Não foi possível gerar o link de pagamento");
+          toast.error(t("invoices.linkError"));
         }
       } catch (error: any) {
-        toast.error(error.message || "Erro ao gerar link de pagamento");
+        toast.error(error.message || t("invoices.linkError"));
       }
     }
   };
@@ -159,7 +163,7 @@ const Faturas = () => {
   };
 
   const handleCancel = (fatura: Fatura) => {
-    const motivo = prompt("Informe o motivo do cancelamento:");
+    const motivo = prompt(t("invoices.cancelReason"));
     if (motivo && motivo.trim()) {
       cancelMutation.mutate({ id: fatura.id, motivo: motivo.trim() });
     }
@@ -167,7 +171,7 @@ const Faturas = () => {
 
   const handleSendReceipt = (fatura: Fatura) => {
     if (fatura.status.toLowerCase() !== "paga") {
-      toast.error("Só é possível enviar recibo de faturas pagas");
+      toast.error(t("invoices.receiptOnlyPaid"));
       return;
     }
     setSelectedFatura(fatura);
@@ -181,7 +185,7 @@ const Faturas = () => {
 
   const handleDownloadPDF = async (fatura: Fatura) => {
     if (!escola) {
-      toast.error("Dados da escola não encontrados");
+      toast.error(t("invoices.schoolNotFound"));
       return;
     }
     try {
@@ -192,9 +196,9 @@ const Faturas = () => {
         .order("ordem");
       
       await generateFaturaPDF(fatura, escola, itens || undefined);
-      toast.success("PDF gerado com sucesso!");
+      toast.success(t("invoices.pdfGenerated"));
     } catch (error) {
-      toast.error("Erro ao gerar PDF");
+      toast.error(t("invoices.pdfError"));
     }
   };
 
@@ -205,15 +209,14 @@ const Faturas = () => {
 
   const handleDownloadReceipt = async (fatura: Fatura) => {
     if (!escola) {
-      toast.error("Dados da escola não encontrados");
+      toast.error(t("invoices.schoolNotFound"));
       return;
     }
     if (fatura.status.toLowerCase() !== "paga") {
-      toast.error("Só é possível baixar recibo de faturas pagas");
+      toast.error(t("invoices.receiptOnlyPaid"));
       return;
     }
     try {
-      // Buscar pagamento mais recente da fatura
       const { data: pagamentos, error } = await supabase
         .from("pagamentos")
         .select("*")
@@ -224,15 +227,15 @@ const Faturas = () => {
       if (error) throw error;
       
       if (!pagamentos || pagamentos.length === 0) {
-        toast.error("Nenhum pagamento encontrado para esta fatura");
+        toast.error(t("invoices.paymentNotFound"));
         return;
       }
       
       await generateReciboPDF(fatura, pagamentos[0], escola);
-      toast.success("Recibo gerado com sucesso!");
+      toast.success(t("invoices.receiptGenerated"));
     } catch (error) {
       console.error("Erro ao gerar recibo:", error);
-      toast.error("Erro ao gerar recibo");
+      toast.error(t("invoices.receiptError"));
     }
   };
 
@@ -246,17 +249,17 @@ const Faturas = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Faturas</h1>
-            <p className="text-muted-foreground text-sm">Sistema enterprise de gestão de faturas e cobrança</p>
+            <h1 className="text-2xl font-bold tracking-tight">{t("invoices.title")}</h1>
+            <p className="text-muted-foreground text-sm">{t("invoices.description")}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => setIsCarneOpen(true)} className="gap-2">
               <Printer className="h-4 w-4" />
-              Imprimir Carnê
+              {t("invoices.printCarne")}
             </Button>
             <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
-              Nova Fatura
+              {t("invoices.newInvoice")}
             </Button>
           </div>
         </div>

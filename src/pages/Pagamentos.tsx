@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,14 +32,16 @@ interface Pagamento {
   };
 }
 
-const meses = [
-  "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
-  "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"
-];
-
 const Pagamentos = () => {
+  const { t } = useTranslation();
   const [searchTerm, setSearchTerm] = useState("");
   const [gatewayFilter, setGatewayFilter] = useState("todos");
+
+  const meses = [
+    t("common.january"), t("common.february"), t("common.march"), t("common.april"),
+    t("common.may"), t("common.june"), t("common.july"), t("common.august"),
+    t("common.september"), t("common.october"), t("common.november"), t("common.december")
+  ];
 
   const { data: pagamentos = [], isLoading } = useQuery({
     queryKey: ["pagamentos"],
@@ -77,7 +80,7 @@ const Pagamentos = () => {
     if (gateway === "asaas") {
       if (metodo === "PIX") return <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20">PIX Asaas</Badge>;
       if (metodo === "Boleto") return <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20">Boleto Asaas</Badge>;
-      if (metodo === "Cartão") return <Badge className="bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 border-purple-500/20">Cartão Asaas</Badge>;
+      if (metodo === "Cartão") return <Badge className="bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 border-purple-500/20">{t("payments.card")} Asaas</Badge>;
       return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">{metodo} Asaas</Badge>;
     }
     if (gateway === "stripe") {
@@ -87,11 +90,11 @@ const Pagamentos = () => {
       case "PIX":
         return <Badge className="bg-success/10 text-success hover:bg-success/20">PIX</Badge>;
       case "Cartão":
-        return <Badge className="bg-info/10 text-info hover:bg-info/20">Cartão</Badge>;
+        return <Badge className="bg-info/10 text-info hover:bg-info/20">{t("payments.card")}</Badge>;
       case "Boleto":
         return <Badge className="bg-warning/10 text-warning hover:bg-warning/20">Boleto</Badge>;
       default:
-        return <Badge variant="outline">Dinheiro</Badge>;
+        return <Badge variant="outline">{t("payments.cash")}</Badge>;
     }
   };
 
@@ -102,34 +105,34 @@ const Pagamentos = () => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Pagamentos</h2>
+          <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("payments.title")}</h2>
           <p className="text-muted-foreground mt-1">
-            Histórico de pagamentos recebidos via Asaas, Stripe e manual
+            {t("payments.description")}
           </p>
         </div>
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
           <FinancialKPICard
-            title="Total de Pagamentos"
+            title={t("payments.totalPayments")}
             value={pagamentos.length}
             icon={Receipt}
             variant="info"
           />
           <FinancialKPICard
-            title="Total Recebido"
+            title={t("payments.totalReceived")}
             value={formatCurrency(totalRecebido)}
             icon={DollarSign}
             variant="success"
           />
           <FinancialKPICard
-            title="Via Asaas"
+            title={t("payments.viaAsaas")}
             value={pagamentosAsaas.length}
             icon={QrCode}
             variant="default"
           />
           <FinancialKPICard
-            title="Manuais"
+            title={t("payments.manual")}
             value={pagamentosManuais.length}
             icon={FileBarChart}
             variant="warning"
@@ -140,22 +143,22 @@ const Pagamentos = () => {
           <CardHeader>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-foreground">Histórico de Pagamentos</CardTitle>
-                <CardDescription className="text-muted-foreground">{filteredPagamentos.length} pagamento(s)</CardDescription>
+                <CardTitle className="text-foreground">{t("payments.history")}</CardTitle>
+                <CardDescription className="text-muted-foreground">{filteredPagamentos.length} {t("payments.paymentsCount")}</CardDescription>
               </div>
               <div className="flex gap-2">
                 <Tabs value={gatewayFilter} onValueChange={setGatewayFilter} className="w-auto">
                   <TabsList className="h-9">
-                    <TabsTrigger value="todos" className="text-xs">Todos</TabsTrigger>
+                    <TabsTrigger value="todos" className="text-xs">{t("common.all")}</TabsTrigger>
                     <TabsTrigger value="asaas" className="text-xs">Asaas</TabsTrigger>
                     <TabsTrigger value="stripe" className="text-xs">Stripe</TabsTrigger>
-                    <TabsTrigger value="manual" className="text-xs">Manual</TabsTrigger>
+                    <TabsTrigger value="manual" className="text-xs">{t("payments.manual")}</TabsTrigger>
                   </TabsList>
                 </Tabs>
                 <div className="relative w-64">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar..."
+                    placeholder={t("common.search")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="pl-8"
@@ -166,20 +169,20 @@ const Pagamentos = () => {
           </CardHeader>
           <CardContent>
             {isLoading ? (
-              <p className="text-muted-foreground">Carregando...</p>
+              <p className="text-muted-foreground">{t("common.loading")}</p>
             ) : filteredPagamentos.length === 0 ? (
-              <p className="text-muted-foreground">Nenhum pagamento encontrado</p>
+              <p className="text-muted-foreground">{t("payments.noPaymentsFound")}</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50">
-                    <TableHead>Data</TableHead>
-                    <TableHead>Aluno</TableHead>
-                    <TableHead>Referência</TableHead>
-                    <TableHead>Valor</TableHead>
-                    <TableHead>Método</TableHead>
-                    <TableHead>Gateway</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
+                    <TableHead>{t("payments.date")}</TableHead>
+                    <TableHead>{t("payments.student")}</TableHead>
+                    <TableHead>{t("payments.reference")}</TableHead>
+                    <TableHead>{t("payments.value")}</TableHead>
+                    <TableHead>{t("payments.method")}</TableHead>
+                    <TableHead>{t("payments.gateway")}</TableHead>
+                    <TableHead className="text-right">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -202,13 +205,13 @@ const Pagamentos = () => {
                             {pagamento.gateway_id?.slice(0, 12)}...
                           </Badge>
                         ) : (
-                          <span className="text-muted-foreground text-xs">Manual</span>
+                          <span className="text-muted-foreground text-xs">{t("payments.manual")}</span>
                         )}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button variant="ghost" size="sm">
                           <FileText className="mr-1 h-4 w-4" />
-                          Recibo
+                          {t("payments.receipt")}
                         </Button>
                       </TableCell>
                     </TableRow>

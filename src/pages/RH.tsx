@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RHDashboardCard } from "@/components/rh/RHDashboardCard";
@@ -26,6 +27,7 @@ import { ContratosTab } from "@/components/rh/ContratosTab";
 import { LoadingState } from "@/components/LoadingState";
 
 export default function RH() {
+  const { t } = useTranslation();
   const [activeTab, setActiveTab] = useState("dashboard");
   const { data: stats, isLoading } = useRHStats();
 
@@ -41,58 +43,58 @@ export default function RH() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Recursos Humanos</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("hr.title")}</h1>
           <p className="text-muted-foreground">
-            Gerencie funcionários, contratos, ponto e folha de pagamento
+            {t("hr.description")}
           </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <TabsList className="bg-muted/50 p-1 flex-wrap">
-            <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-            <TabsTrigger value="funcionarios">Funcionários</TabsTrigger>
-            <TabsTrigger value="cargos">Cargos e Setores</TabsTrigger>
-            <TabsTrigger value="ponto">Ponto</TabsTrigger>
+            <TabsTrigger value="dashboard">{t("hr.dashboard")}</TabsTrigger>
+            <TabsTrigger value="funcionarios">{t("hr.employees")}</TabsTrigger>
+            <TabsTrigger value="cargos">{t("hr.positions")}</TabsTrigger>
+            <TabsTrigger value="ponto">{t("hr.timeTracking")}</TabsTrigger>
             <TabsTrigger value="locais">
               <MapPinned className="h-4 w-4 mr-1" />
-              Locais
+              {t("hr.locations")}
             </TabsTrigger>
             <TabsTrigger value="relatorios">
               <BarChart className="h-4 w-4 mr-1" />
-              Relatórios
+              {t("hr.reports")}
             </TabsTrigger>
-            <TabsTrigger value="folha">Folha</TabsTrigger>
-            <TabsTrigger value="contratos">Contratos</TabsTrigger>
+            <TabsTrigger value="folha">{t("hr.payroll")}</TabsTrigger>
+            <TabsTrigger value="contratos">{t("hr.contracts")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <RHDashboardCard
-                title="Total de Funcionários"
+                title={t("hr.totalEmployees")}
                 value={stats?.totalFuncionarios || 0}
-                subtitle={`${stats?.funcionariosAtivos || 0} ativos`}
+                subtitle={`${stats?.funcionariosAtivos || 0} ${t("hr.active")}`}
                 icon={Users}
                 color="blue"
                 index={0}
               />
               <RHDashboardCard
-                title="Professores"
+                title={t("hr.teachers")}
                 value={stats?.professores || 0}
                 icon={GraduationCap}
                 color="purple"
                 index={1}
               />
               <RHDashboardCard
-                title="Administrativos"
+                title={t("hr.administrative")}
                 value={stats?.administrativos || 0}
                 icon={Building2}
                 color="indigo"
                 index={2}
               />
               <RHDashboardCard
-                title="Folha Mensal"
+                title={t("hr.monthlyPayroll")}
                 value={formatCurrency(stats?.totalSalarios || 0)}
-                subtitle="Total em salários"
+                subtitle={t("hr.totalSalaries")}
                 icon={Wallet}
                 color="green"
                 index={3}
@@ -101,33 +103,33 @@ export default function RH() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <RHDashboardCard
-                title="Folhas Pagas"
+                title={t("hr.paidPayrolls")}
                 value={stats?.folhasPagas || 0}
-                subtitle="Este mês"
+                subtitle={t("hr.thisMonth")}
                 icon={CheckCircle}
                 color="green"
                 index={4}
               />
               <RHDashboardCard
-                title="Folhas Pendentes"
+                title={t("hr.pendingPayrolls")}
                 value={stats?.folhasPendentes || 0}
-                subtitle="Este mês"
+                subtitle={t("hr.thisMonth")}
                 icon={Clock}
                 color="yellow"
                 index={5}
               />
               <RHDashboardCard
-                title="Gasto com RH"
+                title={t("hr.hrExpenses")}
                 value={formatCurrency(stats?.gastoMesAtual || 0)}
-                subtitle="Mês atual"
+                subtitle={t("hr.currentMonth")}
                 icon={Briefcase}
                 color="red"
                 index={6}
               />
               <RHDashboardCard
-                title="Novo Funcionário"
+                title={t("hr.newEmployee")}
                 value="+"
-                subtitle="Cadastrar"
+                subtitle={t("hr.register")}
                 icon={UserPlus}
                 color="blue"
                 index={7}

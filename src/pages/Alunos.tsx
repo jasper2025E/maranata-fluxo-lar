@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -75,14 +76,8 @@ function TableSkeleton() {
   );
 }
 
-const statusConfig = {
-  ativo: { label: "Ativo", color: "bg-emerald-100 text-emerald-700" },
-  trancado: { label: "Trancado", color: "bg-amber-100 text-amber-700" },
-  cancelado: { label: "Cancelado", color: "bg-rose-100 text-rose-700" },
-  transferido: { label: "Transferido", color: "bg-gray-100 text-gray-700" },
-};
-
 const Alunos = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
@@ -104,6 +99,13 @@ const Alunos = () => {
     endereco: "",
     observacoes: "",
   });
+
+  const statusConfig = {
+    ativo: { label: t("students.statusActive"), color: "bg-emerald-100 text-emerald-700" },
+    trancado: { label: t("students.statusLocked"), color: "bg-amber-100 text-amber-700" },
+    cancelado: { label: t("students.statusCanceled"), color: "bg-rose-100 text-rose-700" },
+    transferido: { label: t("students.statusTransferred"), color: "bg-gray-100 text-gray-700" },
+  };
 
   const enturmarMutation = useEnturmar();
 
@@ -168,19 +170,15 @@ const Alunos = () => {
         .select()
         .single();
       if (error) throw error;
-
-      // Importante: não bloquear o cadastro do aluno com geração de faturas/cobranças.
-      // A geração será disparada em background no onSuccess.
       return newAluno;
     },
     onSuccess: (newAluno, variables) => {
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
       queryClient.invalidateQueries({ queryKey: ["faturas"] });
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
-      toast.success("Aluno cadastrado com sucesso! Gerando faturas e cobranças em segundo plano.");
+      toast.success(t("students.createSuccess"));
       resetForm();
 
-      // Dispara a geração em background para manter o botão responsivo.
       void (async () => {
         try {
           if (!newAluno) return;
@@ -194,8 +192,6 @@ const Alunos = () => {
             p_data_inicio: new Date().toISOString().split("T")[0],
           });
 
-          // Para evitar sobrecarga, cria cobrança Asaas apenas para as próximas 3 faturas
-          // e com timeout para não travar o fluxo.
           const responsavelId = variables.responsavel_id || null;
           if (!responsavelId) return;
 
@@ -213,15 +209,12 @@ const Alunos = () => {
               body: { faturaId: fatura.id, billingType: "UNDEFINED" },
             });
 
-            // Timeout de 12s por fatura para evitar travamento caso a função fique instável
             await Promise.race([
               invoke,
               new Promise((_, reject) =>
                 setTimeout(() => reject(new Error("timeout_asaas")), 12_000)
               ),
-            ]).catch(() => {
-              // Silencioso: cobrança pode ser gerada depois (carnê / tentativa manual)
-            });
+            ]).catch(() => {});
           }
         } catch (err) {
           console.warn("Falha ao gerar faturas/cobranças em background:", err);
@@ -230,7 +223,7 @@ const Alunos = () => {
     },
     onError: (error) => {
       console.error(error);
-      toast.error("Erro ao cadastrar aluno. Verifique suas permissões.");
+      toast.error(t("students.createError"));
     },
   });
 
@@ -255,10 +248,10 @@ const Alunos = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
-      toast.success("Aluno atualizado com sucesso!");
+      toast.success(t("students.updateSuccess"));
       resetForm();
     },
-    onError: () => toast.error("Erro ao atualizar aluno"),
+    onError: () => toast.error(t("students.updateError")),
   });
 
   const deleteMutation = useMutation({
@@ -268,9 +261,9 @@ const Alunos = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
-      toast.success("Aluno removido com sucesso!");
+      toast.success(t("students.deleteSuccess"));
     },
-    onError: () => toast.error("Erro ao remover aluno (verifique se há faturas vinculadas)"),
+    onError: () => toast.error(t("students.deleteError")),
   });
 
   const resetForm = () => {
@@ -321,7 +314,7 @@ const Alunos = () => {
 
     const curso = cursos.find((c) => c.id === enturmandoAluno.curso_id);
     if (!curso) {
-      toast.error("Curso não encontrado");
+      toast.error(t("errors.courseNotFound"));
       return;
     }
 
@@ -331,7 +324,7 @@ const Alunos = () => {
       cursoId: enturmandoAluno.curso_id,
       valorMensalidade: curso.mensalidade,
       responsavelId: (enturmandoAluno as any).responsavel_id,
-      gerarFaturas: !enturmandoAluno.turma_id, // Só gera faturas se não tinha turma antes
+      gerarFaturas: !enturmandoAluno.turma_id,
     });
 
     setIsEnturmarOpen(false);
@@ -366,7 +359,6 @@ const Alunos = () => {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
   };
 
-  // Stats calculations
   const totalAlunos = alunos.length;
   const alunosAtivos = alunos.filter(a => a.status_matricula === 'ativo').length;
   const alunosTrancados = alunos.filter(a => a.status_matricula === 'trancado').length;
@@ -379,32 +371,32 @@ const Alunos = () => {
         {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">Alunos</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("students.title")}</h2>
             <p className="text-muted-foreground mt-1.5">
-              Gerencie os alunos matriculados na escola
+              {t("students.description")}
             </p>
           </div>
           <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsOpen(open); }}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
                 <Plus className="mr-2 h-4 w-4" />
-                Novo Aluno
+                {t("students.newStudent")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-2xl">
               <form onSubmit={handleSubmit}>
                 <DialogHeader>
                   <DialogTitle className="text-xl font-semibold">
-                    {editingAluno ? "Editar Aluno" : "Novo Aluno"}
+                    {editingAluno ? t("students.editStudent") : t("students.newStudent")}
                   </DialogTitle>
                   <DialogDescription className="text-gray-500">
-                    {editingAluno ? "Atualize os dados do aluno" : "Ao cadastrar, as faturas serão geradas automaticamente"}
+                    {editingAluno ? t("students.updateData") : t("students.invoicesGenerated")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-5 py-6">
                   <div className="grid gap-2">
                     <Label htmlFor="nome" className="text-sm font-medium text-gray-700">
-                      Nome Completo
+                      {t("students.fullName")}
                     </Label>
                     <Input
                       id="nome"
@@ -417,7 +409,7 @@ const Alunos = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="nascimento" className="text-sm font-medium text-gray-700">
-                        Data de Nascimento
+                        {t("students.birthDate")}
                       </Label>
                       <Input
                         id="nascimento"
@@ -430,11 +422,11 @@ const Alunos = () => {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="curso" className="text-sm font-medium text-gray-700">
-                        Curso
+                        {t("students.course")}
                       </Label>
                       <Select value={formData.curso_id} onValueChange={(value) => setFormData({ ...formData, curso_id: value })}>
                         <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Selecione o curso" />
+                          <SelectValue placeholder={t("students.selectCourse")} />
                         </SelectTrigger>
                         <SelectContent>
                           {cursos.map((curso) => (
@@ -449,11 +441,11 @@ const Alunos = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="turma" className="text-sm font-medium text-gray-700">
-                        Turma
+                        {t("students.class")}
                       </Label>
                       <Select value={formData.turma_id} onValueChange={(value) => setFormData({ ...formData, turma_id: value })}>
                         <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Selecione a turma" />
+                          <SelectValue placeholder={t("students.selectClass")} />
                         </SelectTrigger>
                         <SelectContent>
                           {turmas.map((turma) => (
@@ -466,14 +458,11 @@ const Alunos = () => {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="responsavel" className="text-sm font-medium text-gray-700">
-                        Responsável Financeiro
+                        {t("students.guardian")}
                       </Label>
-                      <Select 
-                        value={formData.responsavel_id} 
-                        onValueChange={(value) => setFormData({ ...formData, responsavel_id: value })}
-                      >
+                      <Select value={formData.responsavel_id} onValueChange={(value) => setFormData({ ...formData, responsavel_id: value })}>
                         <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Selecione o responsável" />
+                          <SelectValue placeholder={t("students.selectGuardian")} />
                         </SelectTrigger>
                         <SelectContent>
                           {responsaveisLista.map((resp) => (
@@ -488,20 +477,18 @@ const Alunos = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="telefone" className="text-sm font-medium text-gray-700">
-                        Telefone do Responsável
+                        {t("students.phone")}
                       </Label>
                       <Input
                         id="telefone"
                         value={formData.telefone_responsavel}
                         onChange={(e) => setFormData({ ...formData, telefone_responsavel: e.target.value })}
-                        placeholder="(99) 99999-9999"
                         className="h-11"
-                        required
                       />
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                        E-mail do Responsável
+                        {t("students.email")}
                       </Label>
                       <Input
                         id="email"
@@ -509,45 +496,42 @@ const Alunos = () => {
                         value={formData.email_responsavel}
                         onChange={(e) => setFormData({ ...formData, email_responsavel: e.target.value })}
                         className="h-11"
-                        required
                       />
                     </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="endereco" className="text-sm font-medium text-gray-700">
-                      Endereço
+                      {t("students.address")}
                     </Label>
                     <Input
                       id="endereco"
                       value={formData.endereco}
                       onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
                       className="h-11"
-                      required
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="observacoes" className="text-sm font-medium text-gray-700">
-                      Observações
+                      {t("students.observations")}
                     </Label>
                     <Textarea
                       id="observacoes"
                       value={formData.observacoes}
                       onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                      placeholder="Observações administrativas..."
-                      className="min-h-[80px]"
+                      rows={3}
                     />
                   </div>
                 </div>
                 <DialogFooter className="gap-2">
                   <Button type="button" variant="outline" onClick={resetForm}>
-                    Cancelar
+                    {t("common.cancel")}
                   </Button>
                   <Button 
                     type="submit" 
                     className="bg-blue-600 hover:bg-blue-700"
                     disabled={createMutation.isPending || updateMutation.isPending}
                   >
-                    {createMutation.isPending || updateMutation.isPending ? "Salvando..." : editingAluno ? "Salvar" : "Cadastrar"}
+                    {createMutation.isPending || updateMutation.isPending ? t("common.saving") : editingAluno ? t("common.save") : t("common.register")}
                   </Button>
                 </DialogFooter>
               </form>
@@ -555,47 +539,42 @@ const Alunos = () => {
           </Dialog>
         </div>
 
-        {/* Stats Cards - Premium Design */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-          <FinancialKPICard title="Total de Alunos" value={totalAlunos} icon={Users} variant="info" size="sm" />
-          <FinancialKPICard title="Alunos Ativos" value={alunosAtivos} icon={UserCheck} variant="success" size="sm" />
-          <FinancialKPICard title="Trancados" value={alunosTrancados} icon={Users} variant="warning" size="sm" />
-          <FinancialKPICard title="Sem Turma" value={alunosSemTurma} icon={BookOpen} variant="danger" size="sm" />
+        {/* Stats Cards */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 animate-fade-in">
+          <FinancialKPICard title={t("students.totalStudents")} value={totalAlunos} icon={Users} variant="info" size="sm" index={0} />
+          <FinancialKPICard title={t("students.activeStudents")} value={alunosAtivos} icon={UserCheck} variant="success" size="sm" index={1} />
+          <FinancialKPICard title={t("students.lockedStudents")} value={alunosTrancados} icon={Users} variant="warning" size="sm" index={2} />
+          <FinancialKPICard title={t("students.canceledStudents")} value={alunosCancelados} icon={UserX} variant="danger" size="sm" index={3} />
+          <FinancialKPICard title={t("students.withoutClass")} value={alunosSemTurma} icon={GraduationCap} variant="premium" size="sm" index={4} />
         </div>
 
         {/* Table Card */}
-        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in bg-card">
+        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
           <CardHeader className="border-b border-border/50 bg-muted/30">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-semibold text-foreground">
-                  Lista de Alunos
+                  {t("students.studentList")}
                 </CardTitle>
-                <CardDescription className="text-muted-foreground">
-                  {filteredAlunos.length} aluno(s) encontrado(s)
-                  {filterSemTurma && " • Filtro: sem turma"}
+                <CardDescription>
+                  {filteredAlunos.length} {t("students.studentsRegistered")}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Button
                   variant={filterSemTurma ? "default" : "outline"}
                   size="sm"
                   onClick={() => setFilterSemTurma(!filterSemTurma)}
-                  className={cn(
-                    "h-10",
-                    filterSemTurma && "bg-destructive hover:bg-destructive/90"
-                  )}
                 >
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Sem Turma ({alunosSemTurma})
+                  {t("students.withoutClass")}
                 </Button>
-                <div className="relative w-72">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <div className="relative w-64">
+                  <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
-                    placeholder="Buscar por nome ou email..."
+                    placeholder={t("common.search")}
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-9 h-10"
+                    className="pl-8"
                   />
                 </div>
               </div>
@@ -610,24 +589,22 @@ const Alunos = () => {
                   <Users className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-medium text-foreground mb-1">
-                  {searchTerm ? "Nenhum aluno encontrado" : "Nenhum aluno cadastrado"}
+                  {t("students.noStudentsFound")}
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-sm">
-                  {searchTerm 
-                    ? "Tente buscar com outros termos." 
-                    : "Clique no botão \"Novo Aluno\" para começar a cadastrar os alunos da escola."}
+                  {t("students.noStudentsDescription")}
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="font-semibold text-foreground">Nome</TableHead>
-                    <TableHead className="font-semibold text-foreground">Turma</TableHead>
-                    <TableHead className="font-semibold text-foreground">Curso</TableHead>
-                    <TableHead className="font-semibold text-foreground">Contato</TableHead>
-                    <TableHead className="font-semibold text-foreground">Status</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Ações</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("students.name")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("students.course")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("students.class")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("students.guardian")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("students.status")}</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -636,48 +613,31 @@ const Alunos = () => {
                       key={aluno.id}
                       className="hover:bg-muted/50 transition-colors"
                     >
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="text-sm font-semibold text-primary">
-                              {aluno.nome_completo.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                          <span className="font-medium text-foreground">{aluno.nome_completo}</span>
-                        </div>
-                      </TableCell>
+                      <TableCell className="font-medium text-foreground">{aluno.nome_completo}</TableCell>
+                      <TableCell className="text-muted-foreground">{aluno.cursos?.nome}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        {aluno.turmas ? `${aluno.turmas.nome} - ${aluno.turmas.serie}` : "-"}
+                        {aluno.turmas ? `${aluno.turmas.nome} - ${aluno.turmas.serie}` : (
+                          <Badge variant="outline" className="text-amber-600 border-amber-300">
+                            {t("students.withoutClass")}
+                          </Badge>
+                        )}
                       </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {aluno.cursos?.nome || "-"}
-                      </TableCell>
+                      <TableCell className="text-muted-foreground">{aluno.responsaveis?.nome || "-"}</TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                          <Phone className="h-3.5 w-3.5" />
-                          {aluno.telefone_responsavel}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge 
-                          className={cn(
-                            "font-medium",
-                            statusConfig[aluno.status_matricula]?.color || "bg-muted text-muted-foreground"
-                          )}
-                        >
-                          {statusConfig[aluno.status_matricula]?.label || aluno.status_matricula}
+                        <Badge className={cn("font-medium", statusConfig[aluno.status_matricula]?.color)}>
+                          {statusConfig[aluno.status_matricula]?.label}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1">
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
+                            className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
                             onClick={() => handleEnturmar(aluno)}
-                            title="Enturmar"
+                            title={t("students.assignClass")}
                           >
-                            <BookOpen className="h-4 w-4" />
+                            <GraduationCap className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="ghost" 
@@ -690,7 +650,7 @@ const Alunos = () => {
                           <Button 
                             variant="ghost" 
                             size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                             onClick={() => handleEdit(aluno)}
                           >
                             <Pencil className="h-4 w-4" />
@@ -700,7 +660,7 @@ const Alunos = () => {
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             onClick={() => {
-                              if (confirm("Tem certeza que deseja remover este aluno?")) {
+                              if (confirm(t("students.confirmDelete"))) {
                                 deleteMutation.mutate(aluno.id);
                               }
                             }}
@@ -722,81 +682,48 @@ const Alunos = () => {
         <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
           <DialogContent className="sm:max-w-lg">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold">Detalhes do Aluno</DialogTitle>
+              <DialogTitle>{t("students.studentDetails")}</DialogTitle>
             </DialogHeader>
             {viewingAluno && (
-              <div className="space-y-6 py-4">
-                {/* Avatar and Name */}
-                <div className="flex items-center gap-4">
-                  <div className="h-16 w-16 rounded-2xl bg-blue-100 flex items-center justify-center">
-                    <span className="text-2xl font-bold text-blue-600">
-                      {viewingAluno.nome_completo.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{viewingAluno.nome_completo}</h3>
-                    <Badge 
-                      className={cn(
-                        "font-medium mt-1",
-                        statusConfig[viewingAluno.status_matricula]?.color || "bg-gray-100 text-gray-700"
-                      )}
-                    >
-                      {statusConfig[viewingAluno.status_matricula]?.label || viewingAluno.status_matricula}
-                    </Badge>
-                  </div>
-                </div>
-
-                {/* Details Grid */}
+              <div className="space-y-4">
                 <div className="grid gap-4">
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-                    <Calendar className="h-5 w-5 text-gray-400 mt-0.5" />
+                  <div className="flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <Users className="h-6 w-6 text-primary" />
+                    </div>
                     <div>
-                      <p className="text-sm text-gray-500">Data de Nascimento</p>
-                      <p className="font-medium text-gray-900">
-                        {format(new Date(viewingAluno.data_nascimento), "dd/MM/yyyy")}
-                      </p>
+                      <h3 className="font-semibold text-lg">{viewingAluno.nome_completo}</h3>
+                      <p className="text-sm text-muted-foreground">{viewingAluno.cursos?.nome}</p>
                     </div>
                   </div>
-
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-                    <GraduationCap className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500">Curso e Turma</p>
-                      <p className="font-medium text-gray-900">
-                        {viewingAluno.cursos?.nome || "-"}
-                        {viewingAluno.turmas && ` • ${viewingAluno.turmas.nome} - ${viewingAluno.turmas.serie}`}
-                      </p>
+                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span>{format(new Date(viewingAluno.data_nascimento), "dd/MM/yyyy")}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                      <span>{viewingAluno.turmas ? `${viewingAluno.turmas.nome}` : t("students.withoutClass")}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-muted-foreground" />
+                      <span>{viewingAluno.telefone_responsavel || "-"}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span>{viewingAluno.email_responsavel || "-"}</span>
                     </div>
                   </div>
-
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-                    <Phone className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500">Telefone do Responsável</p>
-                      <p className="font-medium text-gray-900">{viewingAluno.telefone_responsavel}</p>
+                  {viewingAluno.endereco && (
+                    <div className="flex items-start gap-2 text-sm pt-2">
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                      <span>{viewingAluno.endereco}</span>
                     </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-                    <Mail className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500">E-mail do Responsável</p>
-                      <p className="font-medium text-gray-900">{viewingAluno.email_responsavel}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3 p-3 rounded-lg bg-gray-50">
-                    <MapPin className="h-5 w-5 text-gray-400 mt-0.5" />
-                    <div>
-                      <p className="text-sm text-gray-500">Endereço</p>
-                      <p className="font-medium text-gray-900">{viewingAluno.endereco}</p>
-                    </div>
-                  </div>
-
+                  )}
                   {viewingAluno.observacoes && (
-                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-100">
-                      <p className="text-sm text-amber-700 font-medium mb-1">Observações</p>
-                      <p className="text-sm text-amber-900">{viewingAluno.observacoes}</p>
+                    <div className="pt-2">
+                      <p className="text-sm font-medium text-muted-foreground mb-1">{t("students.observations")}:</p>
+                      <p className="text-sm">{viewingAluno.observacoes}</p>
                     </div>
                   )}
                 </div>
@@ -805,93 +732,46 @@ const Alunos = () => {
           </DialogContent>
         </Dialog>
 
-        {/* Enturmação Dialog */}
-        <Dialog open={isEnturmarOpen} onOpenChange={(open) => {
-          if (!open) {
-            setEnturmandoAluno(null);
-            setSelectedTurmaId("");
-          }
-          setIsEnturmarOpen(open);
-        }}>
+        {/* Enturmar Dialog */}
+        <Dialog open={isEnturmarOpen} onOpenChange={setIsEnturmarOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-                <BookOpen className="h-5 w-5 text-emerald-600" />
-                Enturmação Simplificada
-              </DialogTitle>
-              <DialogDescription className="text-gray-500">
-                Selecione a turma e confirme. As faturas serão geradas automaticamente.
+              <DialogTitle>{t("students.assignClass")}</DialogTitle>
+              <DialogDescription>
+                {t("students.selectClassFor")} {enturmandoAluno?.nome_completo}
               </DialogDescription>
             </DialogHeader>
-            {enturmandoAluno && (
-              <div className="space-y-6 py-4">
-                {/* Aluno Info */}
-                <div className="flex items-center gap-4 p-4 rounded-xl bg-gray-50 border">
-                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <span className="text-lg font-bold text-blue-600">
-                      {enturmandoAluno.nome_completo.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{enturmandoAluno.nome_completo}</h3>
-                    <p className="text-sm text-gray-500">
-                      {enturmandoAluno.cursos?.nome} • {formatCurrency(enturmandoAluno.cursos?.mensalidade || 0)}/mês
-                    </p>
-                  </div>
-                </div>
-
-                {/* Turma atual */}
-                {enturmandoAluno.turmas && (
-                  <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
-                    <p className="text-sm text-amber-700">
-                      <strong>Turma atual:</strong> {enturmandoAluno.turmas.nome} - {enturmandoAluno.turmas.serie}
-                    </p>
-                  </div>
-                )}
-
-                {/* Seleção de Turma */}
-                <div className="space-y-2">
-                  <Label className="text-sm font-medium text-gray-700">
-                    {enturmandoAluno.turmas ? "Nova Turma" : "Selecione a Turma"}
-                  </Label>
-                  <Select value={selectedTurmaId} onValueChange={setSelectedTurmaId}>
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Escolha uma turma..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {turmas.map((turma) => (
-                        <SelectItem key={turma.id} value={turma.id}>
-                          {turma.nome} - {turma.serie}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Info sobre faturas */}
-                {!enturmandoAluno.turma_id && selectedTurmaId && (
-                  <div className="p-3 rounded-lg bg-emerald-50 border border-emerald-200">
-                    <p className="text-sm text-emerald-700">
-                      ✓ Ao confirmar, 12 faturas mensais de <strong>{formatCurrency(enturmandoAluno.cursos?.mensalidade || 0)}</strong> serão geradas automaticamente.
-                    </p>
-                  </div>
-                )}
+            <div className="space-y-4 py-4">
+              <div className="grid gap-2">
+                <Label>{t("students.class")}</Label>
+                <Select value={selectedTurmaId} onValueChange={setSelectedTurmaId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={t("students.selectClass")} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {turmas.map((turma) => (
+                      <SelectItem key={turma.id} value={turma.id}>
+                        {turma.nome} - {turma.serie}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            )}
-            <DialogFooter className="gap-2">
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={() => setIsEnturmarOpen(false)}
-              >
-                Cancelar
+              {!enturmandoAluno?.turma_id && (
+                <div className="bg-blue-50 text-blue-700 p-3 rounded-lg text-sm">
+                  {t("students.invoicesWillBeGenerated")}
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsEnturmarOpen(false)}>
+                {t("common.cancel")}
               </Button>
-              <Button 
+              <Button
                 onClick={handleConfirmEnturmacao}
                 disabled={!selectedTurmaId || enturmarMutation.isPending}
-                className="bg-emerald-600 hover:bg-emerald-700"
               >
-                {enturmarMutation.isPending ? "Processando..." : "Confirmar Enturmação"}
+                {enturmarMutation.isPending ? t("common.saving") : t("common.confirm")}
               </Button>
             </DialogFooter>
           </DialogContent>
