@@ -32,12 +32,22 @@ const fr = {
       refresh: "Actualiser",
       copy: "Copier",
       copied: "Copié !",
+      searchPlaceholder: "Rechercher étudiants, factures...",
+      notifications: "Notifications",
+      noNotifications: "Aucune notification",
+      notificationsInfo: "Vous serez notifié des mises à jour importantes",
+      markAll: "Tout marquer",
+      viewAll: "Voir toutes les notifications",
+      unreadNotifications: "Vous avez {{count}} notification non lue",
+      unreadNotificationsPlural: "Vous avez {{count}} notifications non lues",
+      noUnreadNotifications: "Aucune notification non lue",
     },
 
     // Navigation
     nav: {
       dashboard: "Tableau de bord",
-      students: "Élèves",
+      financial: "Financier",
+      students: "Étudiants",
       guardians: "Responsables",
       courses: "Cours",
       classes: "Classes",
@@ -49,6 +59,11 @@ const fr = {
       hr: "RH",
       school: "École",
       logout: "Déconnexion",
+      main: "Principal",
+      finance: "Finance",
+      system: "Système",
+      exitSystem: "Quitter le Système",
+      financialSystem: "Système Financier",
     },
 
     // Auth
@@ -60,30 +75,65 @@ const fr = {
       forgotPassword: "Mot de passe oublié ?",
       register: "S'inscrire",
       noAccount: "Pas de compte ?",
-      hasAccount: "Vous avez déjà un compte ?",
+      hasAccount: "Déjà un compte ?",
       invalidCredentials: "Identifiants invalides",
       sessionExpired: "Session expirée",
     },
 
     // Dashboard
     dashboard: {
-      title: "Tableau de bord",
+      title: "Tableau de bord Financier",
+      subtitle: "Aperçu du flux financier et indicateurs de l'école",
       welcome: "Bienvenue",
-      totalStudents: "Total des Élèves",
-      activeStudents: "Élèves Actifs",
+      totalStudents: "Total Étudiants",
+      activeStudents: "Étudiants Actifs",
       monthlyRevenue: "Revenus Mensuels",
       pendingInvoices: "Factures en Attente",
       overdueInvoices: "Factures en Retard",
       recentPayments: "Paiements Récents",
       financialSummary: "Résumé Financier",
+      // KPIs
+      monthlyRevenues: "Revenus du Mois",
+      monthlyExpenses: "Dépenses du Mois",
+      receivable: "À Recevoir",
+      averageTicket: "Ticket Moyen",
+      perPaidInvoice: "Par facture payée",
+      monthlyBalance: "Solde Mensuel",
+      surplus: "Excédent",
+      deficit: "Déficit",
+      collectionRate: "Taux de Recouvrement",
+      ofExpected: "De la valeur attendue",
+      totalOverdue: "Total en Retard",
+      overdueInvoicesCount: "{{count}} factures en retard",
+      monthlyPayroll: "Masse Salariale Mensuelle",
+      activeEmployees: "{{count}} employés actifs",
+      pendingInvoicesCount: "{{count}} factures en attente",
+      // Quick Stats
+      guardians: "Responsables",
+      activeStudentsLabel: "Étudiants Actifs",
+      monthInvoices: "Factures du Mois",
+      paidThisMonth: "Payées ce Mois",
+      employees: "Employés",
+      defaulters: "Débiteurs",
+      // Charts
+      financialEvolution: "Évolution Financière",
+      financialEvolutionDesc: "Revenus, dépenses et solde des 6 derniers mois",
+      revenueVsExpenses: "Revenus vs Dépenses",
+      monthlyComparison: "Comparaison mensuelle",
+      revenueTrend: "Tendance des Revenus",
+      revenueTrendDesc: "Évolution du recouvrement sur les 6 derniers mois",
+      // Errors
+      loadError: "Erreur de chargement",
+      loadErrorDesc: "Impossible de charger les données du tableau de bord. Veuillez réessayer.",
+      reload: "Recharger",
     },
 
     // Students
     students: {
-      title: "Élèves",
-      addStudent: "Ajouter un Élève",
-      editStudent: "Modifier l'Élève",
-      studentName: "Nom de l'Élève",
+      title: "Étudiants",
+      addStudent: "Ajouter Étudiant",
+      editStudent: "Modifier Étudiant",
+      studentName: "Nom de l'Étudiant",
       birthDate: "Date de Naissance",
       enrollmentDate: "Date d'Inscription",
       enrollmentStatus: "Statut d'Inscription",
@@ -97,14 +147,14 @@ const fr = {
     // Guardians
     guardians: {
       title: "Responsables",
-      addGuardian: "Ajouter un Responsable",
-      editGuardian: "Modifier le Responsable",
+      addGuardian: "Ajouter Responsable",
+      editGuardian: "Modifier Responsable",
       guardianName: "Nom du Responsable",
-      cpf: "N° Fiscal",
+      cpf: "Numéro d'Identification",
       phone: "Téléphone",
       email: "E-mail",
       address: "Adresse",
-      relationship: "Lien de Parenté",
+      relationship: "Relation",
     },
 
     // Invoices
@@ -125,8 +175,8 @@ const fr = {
         cancelled: "Annulée",
         partial: "Partielle",
       },
-      generatePayment: "Générer le Paiement",
-      sendReminder: "Envoyer un Rappel",
+      generatePayment: "Générer Paiement",
+      sendReminder: "Envoyer Rappel",
     },
 
     // Payments
@@ -136,14 +186,14 @@ const fr = {
       paymentMethod: "Mode de Paiement",
       methods: {
         pix: "PIX",
-        boleto: "Prélèvement",
+        boleto: "Bordereau",
         creditCard: "Carte de Crédit",
         debitCard: "Carte de Débit",
         cash: "Espèces",
         transfer: "Virement",
       },
       receipt: "Reçu",
-      sendReceipt: "Envoyer le Reçu",
+      sendReceipt: "Envoyer Reçu",
     },
 
     // Settings
@@ -160,11 +210,20 @@ const fr = {
       theme: "Thème",
       darkMode: "Mode Sombre",
       lightMode: "Mode Clair",
-      systemTheme: "Défaut du Système",
+      systemTheme: "Suivre le Système",
       notifications: "Notifications",
       emailNotifications: "Notifications par E-mail",
       browserNotifications: "Notifications du Navigateur",
       weeklyReport: "Rapport Hebdomadaire",
+    },
+
+    // Roles
+    roles: {
+      admin: "Administrateur",
+      staff: "Personnel",
+      financeiro: "Financier",
+      secretaria: "Secrétariat",
+      user: "Utilisateur",
     },
 
     // Languages
@@ -192,6 +251,8 @@ const fr = {
       updated: "Mis à jour avec succès !",
       created: "Créé avec succès !",
       copied: "Copié dans le presse-papiers !",
+      logout: "Déconnexion réussie",
+      languageChanged: "Langue changée en {{language}}",
     },
   },
 };

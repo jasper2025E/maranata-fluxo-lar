@@ -6,7 +6,7 @@ import { LanguageSelector } from "./LanguageSelector";
 import { Bell, Search, Clock, Info, AlertTriangle, CheckCircle2, Check } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { ptBR, enUS, es, fr, de } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -22,6 +22,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useTranslation } from "react-i18next";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -30,9 +31,16 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
+  const { t, i18n } = useTranslation();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [profileName, setProfileName] = useState<string | null>(null);
   const { notifications, unreadCount, markAsRead, markAllAsRead, loading: loadingNotifications } = useNotifications();
+
+  // Get date-fns locale based on current language
+  const getDateLocale = () => {
+    const locales: Record<string, typeof ptBR> = { 'pt-BR': ptBR, en: enUS, es, fr, de };
+    return locales[i18n.language] || ptBR;
+  };
 
   const getNotificationIcon = (type: Notification["type"]) => {
     switch (type) {
@@ -86,18 +94,17 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     navigate("/auth");
   };
 
-  const roleLabels: Record<string, string> = {
-    admin: "Administrador",
-    staff: "Funcionário",
-    financeiro: "Financeiro",
-    secretaria: "Secretaria",
-  };
-
   const roleColors: Record<string, string> = {
     admin: "bg-primary",
     staff: "bg-info",
     financeiro: "bg-success",
     secretaria: "bg-warning",
+  };
+  const roleLabels: Record<string, string> = {
+    admin: t("roles.admin"),
+    staff: t("roles.staff"),
+    financeiro: t("roles.financeiro"),
+    secretaria: t("roles.secretaria"),
   };
 
   const getInitials = (name?: string | null, email?: string | null) => {
@@ -121,11 +128,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
               
-              {/* Search Bar */}
               <div className="hidden md:flex relative w-80">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar alunos, faturas..."
+                  placeholder={t("common.searchPlaceholder")}
                   className="pl-10 h-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/20"
                 />
               </div>
@@ -148,11 +154,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 <PopoverContent align="end" className="w-80 p-0 rounded-xl shadow-large">
                   <div className="p-4 border-b flex items-center justify-between">
                     <div>
-                      <h4 className="font-semibold text-sm">Notificações</h4>
+                      <h4 className="font-semibold text-sm">{t("common.notifications")}</h4>
                       <p className="text-xs text-muted-foreground">
                         {unreadCount > 0 
-                          ? `Você tem ${unreadCount} notificação${unreadCount > 1 ? "ões" : ""} não lida${unreadCount > 1 ? "s" : ""}`
-                          : "Nenhuma notificação não lida"
+                          ? t(unreadCount > 1 ? "common.unreadNotificationsPlural" : "common.unreadNotifications", { count: unreadCount })
+                          : t("common.noUnreadNotifications")
                         }
                       </p>
                     </div>
@@ -164,7 +170,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         onClick={markAllAsRead}
                       >
                         <Check className="h-3 w-3 mr-1" />
-                        Marcar todas
+                        {t("common.markAll")}
                       </Button>
                     )}
                   </div>
@@ -176,8 +182,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     ) : notifications.length === 0 ? (
                       <div className="flex flex-col items-center justify-center py-8 text-center">
                         <Bell className="h-10 w-10 text-muted-foreground/30 mb-2" />
-                        <p className="text-sm text-muted-foreground">Nenhuma notificação</p>
-                        <p className="text-xs text-muted-foreground/70">Você será notificado sobre atualizações importantes</p>
+                        <p className="text-sm text-muted-foreground">{t("common.noNotifications")}</p>
+                        <p className="text-xs text-muted-foreground/70">{t("common.notificationsInfo")}</p>
                       </div>
                     ) : (
                       <div className="p-2 space-y-1">
@@ -213,7 +219,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                                 <Clock className="h-3 w-3" /> 
                                 {formatDistanceToNow(new Date(notification.created_at), { 
                                   addSuffix: true, 
-                                  locale: ptBR 
+                                  locale: getDateLocale() 
                                 })}
                               </p>
                             </div>
@@ -225,7 +231,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   {notifications.length > 0 && (
                     <div className="p-3 border-t">
                       <Button variant="ghost" className="w-full text-sm" size="sm">
-                        Ver todas as notificações
+                        {t("common.viewAll")}
                       </Button>
                     </div>
                   )}
@@ -247,7 +253,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                         {profileName || user?.email?.split("@")[0]}
                       </p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {role ? roleLabels[role] : "Usuário"}
+                        {role ? roleLabels[role] : t("roles.user")}
                       </p>
                     </div>
                   </Button>
@@ -257,17 +263,17 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-semibold leading-none">{user?.email}</p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {role ? roleLabels[role] : "Usuário"}
+                        {role ? roleLabels[role] : t("roles.user")}
                       </p>
                     </div>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/configuracoes")} className="py-2.5 cursor-pointer">
-                    Configurações
+                    {t("nav.settings")}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut} className="py-2.5 text-destructive cursor-pointer focus:text-destructive">
-                    Sair do Sistema
+                    {t("nav.exitSystem")}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
