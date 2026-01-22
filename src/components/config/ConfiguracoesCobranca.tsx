@@ -7,17 +7,14 @@ import { Separator } from "@/components/ui/separator";
 import { 
   Percent, 
   DollarSign, 
-  Calendar, 
   Save,
   Loader2,
   Receipt,
-  Clock,
   AlertCircle,
   Gift,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AsaasWebhookConfig } from "./AsaasWebhookConfig";
 
 interface ConfiguracaoCobranca {
   juros_percentual_diario_padrao: number;
@@ -407,10 +404,6 @@ export function ConfiguracoesCobranca() {
           )}
         </Button>
       </div>
-
-      {/* Asaas Webhook Config */}
-      <Separator className="my-8" />
-      <AsaasWebhookConfig />
     </div>
   );
 }
