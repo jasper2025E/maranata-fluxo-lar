@@ -242,76 +242,66 @@ export function BulkActionsBar({
 
   return (
     <>
-      <div className="sticky top-0 z-10 bg-primary text-primary-foreground rounded-lg p-4 shadow-lg animate-in slide-in-from-top-2">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <Badge variant="secondary" className="text-lg px-3 py-1">
-              {selectedCount}
-            </Badge>
-            <div>
-              <p className="font-medium">
-                {selectedCount === 1 ? "fatura selecionada" : "faturas selecionadas"}
-              </p>
-              <p className="text-sm text-primary-foreground/80">
-                Total: {formatCurrency(totalValue)} • {pendingCount} pendente(s)
-              </p>
-            </div>
-          </div>
-
-          {isProcessing ? (
-            <div className="flex-1 max-w-xs space-y-2">
-              <div className="flex items-center gap-2">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                <span className="text-sm">{progressMessage}</span>
-              </div>
-              <Progress value={progressValue} className="h-2" />
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleGenerateCarne}
-                className="gap-2"
-              >
-                <Printer className="h-4 w-4" />
-                Gerar Carnê
-              </Button>
-              
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={handleGenerateAsaas}
-                disabled={pendingCount === 0}
-                className="gap-2"
-              >
-                <QrCode className="h-4 w-4" />
-                Gerar PIX/Boleto
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setIsCancelDialogOpen(true)}
-                disabled={pendingCount === 0}
-                className="gap-2 hover:bg-destructive hover:text-destructive-foreground"
-              >
-                <Ban className="h-4 w-4" />
-                Cancelar
-              </Button>
-
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={onClearSelection}
-                className="gap-2 text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10"
-              >
-                <X className="h-4 w-4" />
-                Limpar
-              </Button>
-            </div>
-          )}
+      <div className="flex items-center justify-between gap-4 px-4 py-2 bg-muted/50 border rounded-lg">
+        <div className="flex items-center gap-2 text-sm">
+          <Badge variant="secondary" className="font-semibold">
+            {selectedCount}
+          </Badge>
+          <span className="text-muted-foreground">
+            selecionada{selectedCount !== 1 && "s"} • {formatCurrency(totalValue)}
+          </span>
         </div>
+
+        {isProcessing ? (
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">{progressMessage}</span>
+            <Progress value={progressValue} className="h-1.5 w-24" />
+          </div>
+        ) : (
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleGenerateCarne}
+              className="h-8 gap-1.5 text-xs"
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Carnê
+            </Button>
+            
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleGenerateAsaas}
+              disabled={pendingCount === 0}
+              className="h-8 gap-1.5 text-xs"
+            >
+              <QrCode className="h-3.5 w-3.5" />
+              PIX/Boleto
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsCancelDialogOpen(true)}
+              disabled={pendingCount === 0}
+              className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+            >
+              <Ban className="h-3.5 w-3.5" />
+              Cancelar
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClearSelection}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Cancel Dialog */}
