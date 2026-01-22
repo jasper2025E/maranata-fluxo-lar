@@ -13,6 +13,7 @@ import {
   CarneDialog,
   AsaasPaymentDialog,
   SendReceiptDialog,
+  BulkActionsBar,
 } from "@/components/faturas";
 import { 
   useFaturas, 
@@ -279,6 +280,14 @@ const Faturas = () => {
           onViewModeChange={setViewMode}
           alunos={alunos}
           cursos={cursos}
+        />
+
+        {/* Bulk Actions Bar */}
+        <BulkActionsBar
+          selectedIds={selectedFaturasIds}
+          faturas={filteredFaturas}
+          onClearSelection={() => setSelectedFaturasIds(new Set())}
+          onActionComplete={() => queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all })}
         />
 
         {/* Table */}

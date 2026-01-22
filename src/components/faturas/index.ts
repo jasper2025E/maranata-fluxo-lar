@@ -6,3 +6,4 @@ export { CreateFaturaDialog } from "./CreateFaturaDialog";
 export { CarneDialog } from "./CarneDialog";
 export { AsaasPaymentDialog } from "./AsaasPaymentDialog";
 export { SendReceiptDialog } from "./SendReceiptDialog";
+export { BulkActionsBar } from "./BulkActionsBar";
