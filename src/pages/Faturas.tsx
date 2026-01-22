@@ -34,6 +34,9 @@ const Faturas = () => {
   const [cursoFilter, setCursoFilter] = useState("todos");
   const [periodoFilter, setPeriodoFilter] = useState<{ start: Date | null; end: Date | null }>({ start: null, end: null });
 
+  // Selection State
+  const [selectedFaturasIds, setSelectedFaturasIds] = useState<Set<string>>(new Set());
+
   // Dialog State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isCarneOpen, setIsCarneOpen] = useState(false);
@@ -294,6 +297,8 @@ const Faturas = () => {
           onDownloadPDF={handleDownloadPDF}
           onAsaasPayment={handleAsaasPayment}
           onDownloadReceipt={handleDownloadReceipt}
+          selectedFaturas={selectedFaturasIds}
+          onSelectionChange={setSelectedFaturasIds}
         />
 
         {/* Dialogs */}
