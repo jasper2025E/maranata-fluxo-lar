@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +35,6 @@ interface Turma {
   alunos_count?: number;
 }
 
-// Loading skeleton for table
 function TableSkeleton() {
   return (
     <div className="space-y-3">
@@ -53,6 +53,7 @@ function TableSkeleton() {
 }
 
 const Turmas = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [editingTurma, setEditingTurma] = useState<Turma | null>(null);
@@ -76,7 +77,6 @@ const Turmas = () => {
     },
   });
 
-  // Get student counts per turma
   const { data: alunosCounts = {} } = useQuery({
     queryKey: ["turmas-alunos-count"],
     queryFn: async () => {
@@ -108,12 +108,12 @@ const Turmas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["turmas"] });
-      toast.success("Turma cadastrada com sucesso!");
+      toast.success(t("classes.createSuccess"));
       resetForm();
     },
     onError: (error) => {
       console.error(error);
-      toast.error("Erro ao cadastrar turma. Verifique suas permissões.");
+      toast.error(t("classes.createError"));
     },
   });
 
@@ -132,10 +132,10 @@ const Turmas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["turmas"] });
-      toast.success("Turma atualizada com sucesso!");
+      toast.success(t("classes.updateSuccess"));
       resetForm();
     },
-    onError: () => toast.error("Erro ao atualizar turma"),
+    onError: () => toast.error(t("classes.updateError")),
   });
 
   const toggleActiveMutation = useMutation({
@@ -148,9 +148,9 @@ const Turmas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["turmas"] });
-      toast.success("Status atualizado!");
+      toast.success(t("classes.statusUpdated"));
     },
-    onError: () => toast.error("Erro ao atualizar status"),
+    onError: () => toast.error(t("classes.statusError")),
   });
 
   const deleteMutation = useMutation({
@@ -160,9 +160,9 @@ const Turmas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["turmas"] });
-      toast.success("Turma removida com sucesso!");
+      toast.success(t("classes.deleteSuccess"));
     },
-    onError: () => toast.error("Erro ao remover turma (verifique se há alunos vinculados)"),
+    onError: () => toast.error(t("classes.deleteError")),
   });
 
   const resetForm = () => {
@@ -196,7 +196,6 @@ const Turmas = () => {
     }
   };
 
-  // Stats calculations
   const totalTurmas = turmas.length;
   const turmasAtivas = turmas.filter(t => t.ativo).length;
   const turmasAnoAtual = turmas.filter(t => t.ano_letivo === currentYear).length;
@@ -208,38 +207,38 @@ const Turmas = () => {
         {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">Turmas</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("classes.title")}</h2>
             <p className="text-muted-foreground mt-1.5">
-              Gerencie as turmas e séries da escola
+              {t("classes.description")}
             </p>
           </div>
           <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsOpen(open); }}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
                 <Plus className="mr-2 h-4 w-4" />
-                Nova Turma
+                {t("classes.newClass")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
               <form onSubmit={handleSubmit}>
                 <DialogHeader>
                   <DialogTitle className="text-xl font-semibold">
-                    {editingTurma ? "Editar Turma" : "Nova Turma"}
+                    {editingTurma ? t("classes.editClass") : t("classes.newClass")}
                   </DialogTitle>
                   <DialogDescription>
-                    Preencha os dados da turma
+                    {t("classes.fillData")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-5 py-6">
                   <div className="grid gap-2">
                     <Label htmlFor="nome">
-                      Nome da Turma
+                      {t("classes.className")}
                     </Label>
                     <Input
                       id="nome"
                       value={formData.nome}
                       onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                      placeholder="Ex: Turma A"
+                      placeholder={t("classes.classNamePlaceholder")}
                       className="h-11"
                       required
                     />
@@ -247,11 +246,11 @@ const Turmas = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="serie">
-                        Série
+                        {t("classes.grade")}
                       </Label>
                       <Select value={formData.serie} onValueChange={(value) => setFormData({ ...formData, serie: value })}>
                         <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder={t("classes.selectGrade")} />
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="Maternal">Maternal</SelectItem>
@@ -271,23 +270,23 @@ const Turmas = () => {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="turno">
-                        Turno
+                        {t("classes.shift")}
                       </Label>
                       <Select value={formData.turno} onValueChange={(value) => setFormData({ ...formData, turno: value })}>
                         <SelectTrigger className="h-11">
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder={t("classes.selectShift")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Manhã">Manhã</SelectItem>
-                          <SelectItem value="Tarde">Tarde</SelectItem>
-                          <SelectItem value="Integral">Integral</SelectItem>
+                          <SelectItem value="Manhã">{t("classes.morning")}</SelectItem>
+                          <SelectItem value="Tarde">{t("classes.afternoon")}</SelectItem>
+                          <SelectItem value="Integral">{t("classes.fullTime")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="ano">
-                      Ano Letivo
+                      {t("classes.academicYear")}
                     </Label>
                     <Input
                       id="ano"
@@ -301,14 +300,14 @@ const Turmas = () => {
                 </div>
                 <DialogFooter className="gap-2">
                   <Button type="button" variant="outline" onClick={resetForm}>
-                    Cancelar
+                    {t("common.cancel")}
                   </Button>
                   <Button 
                     type="submit" 
                     className="bg-blue-600 hover:bg-blue-700"
                     disabled={createMutation.isPending || updateMutation.isPending}
                   >
-                    {createMutation.isPending || updateMutation.isPending ? "Salvando..." : editingTurma ? "Salvar" : "Cadastrar"}
+                    {createMutation.isPending || updateMutation.isPending ? t("common.saving") : editingTurma ? t("common.save") : t("common.register")}
                   </Button>
                 </DialogFooter>
               </form>
@@ -318,10 +317,10 @@ const Turmas = () => {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-          <FinancialKPICard title="Total de Turmas" value={totalTurmas} icon={GraduationCap} variant="info" size="sm" index={0} />
-          <FinancialKPICard title="Turmas Ativas" value={turmasAtivas} icon={Users} variant="success" size="sm" index={1} />
-          <FinancialKPICard title="Ano Atual" value={turmasAnoAtual} icon={Calendar} variant="warning" size="sm" index={2} />
-          <FinancialKPICard title="Alunos Vinculados" value={totalAlunos} icon={Users} variant="premium" size="sm" index={3} />
+          <FinancialKPICard title={t("classes.totalClasses")} value={totalTurmas} icon={GraduationCap} variant="info" size="sm" index={0} />
+          <FinancialKPICard title={t("classes.activeClasses")} value={turmasAtivas} icon={Users} variant="success" size="sm" index={1} />
+          <FinancialKPICard title={t("classes.currentYear")} value={turmasAnoAtual} icon={Calendar} variant="warning" size="sm" index={2} />
+          <FinancialKPICard title={t("classes.linkedStudents")} value={totalAlunos} icon={Users} variant="premium" size="sm" index={3} />
         </div>
 
         {/* Table Card */}
@@ -330,10 +329,10 @@ const Turmas = () => {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-semibold text-foreground">
-                  Lista de Turmas
+                  {t("classes.classList")}
                 </CardTitle>
                 <CardDescription>
-                  {turmas.length} turma(s) cadastrada(s)
+                  {turmas.length} {t("classes.classesRegistered")}
                 </CardDescription>
               </div>
             </div>
@@ -347,23 +346,23 @@ const Turmas = () => {
                   <GraduationCap className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-medium text-foreground mb-1">
-                  Nenhuma turma cadastrada
+                  {t("classes.noClassesFound")}
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-sm">
-                  Clique no botão "Nova Turma" para começar a cadastrar as turmas da escola.
+                  {t("classes.noClassesDescription")}
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="font-semibold text-foreground">Nome</TableHead>
-                    <TableHead className="font-semibold text-foreground">Série</TableHead>
-                    <TableHead className="font-semibold text-foreground">Turno</TableHead>
-                    <TableHead className="font-semibold text-foreground">Ano Letivo</TableHead>
-                    <TableHead className="font-semibold text-foreground">Alunos</TableHead>
-                    <TableHead className="font-semibold text-foreground">Status</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Ações</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("classes.name")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("classes.grade")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("classes.shift")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("classes.academicYear")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("classes.students")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("classes.status")}</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -397,7 +396,7 @@ const Turmas = () => {
                               : "bg-muted text-muted-foreground hover:bg-muted"
                           )}
                         >
-                          {turma.ativo ? "Ativa" : "Inativa"}
+                          {turma.ativo ? t("classes.active") : t("classes.inactive")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -424,7 +423,7 @@ const Turmas = () => {
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             onClick={() => {
-                              if (confirm("Tem certeza que deseja remover esta turma?")) {
+                              if (confirm(t("classes.confirmDelete"))) {
                                 deleteMutation.mutate(turma.id);
                               }
                             }}

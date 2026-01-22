@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,6 @@ interface Curso {
   ativo: boolean;
 }
 
-// Loading skeleton for table
 function TableSkeleton() {
   return (
     <div className="space-y-3">
@@ -45,6 +45,7 @@ function TableSkeleton() {
 }
 
 const Cursos = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [editingCurso, setEditingCurso] = useState<Curso | null>(null);
@@ -67,7 +68,6 @@ const Cursos = () => {
     },
   });
 
-  // Get student counts per curso
   const { data: alunosCounts = {} } = useQuery({
     queryKey: ["cursos-alunos-count"],
     queryFn: async () => {
@@ -99,12 +99,12 @@ const Cursos = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cursos"] });
-      toast.success("Curso cadastrado com sucesso!");
+      toast.success(t("courses.createSuccess"));
       resetForm();
     },
     onError: (error) => {
       console.error(error);
-      toast.error("Erro ao cadastrar curso. Verifique suas permissões.");
+      toast.error(t("courses.createError"));
     },
   });
 
@@ -123,10 +123,10 @@ const Cursos = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cursos"] });
-      toast.success("Curso atualizado com sucesso!");
+      toast.success(t("courses.updateSuccess"));
       resetForm();
     },
-    onError: () => toast.error("Erro ao atualizar curso"),
+    onError: () => toast.error(t("courses.updateError")),
   });
 
   const toggleActiveMutation = useMutation({
@@ -139,9 +139,9 @@ const Cursos = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cursos"] });
-      toast.success("Status atualizado!");
+      toast.success(t("courses.statusUpdated"));
     },
-    onError: () => toast.error("Erro ao atualizar status"),
+    onError: () => toast.error(t("courses.statusError")),
   });
 
   const deleteMutation = useMutation({
@@ -151,9 +151,9 @@ const Cursos = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cursos"] });
-      toast.success("Curso removido com sucesso!");
+      toast.success(t("courses.deleteSuccess"));
     },
-    onError: () => toast.error("Erro ao remover curso (verifique se há alunos vinculados)"),
+    onError: () => toast.error(t("courses.deleteError")),
   });
 
   const resetForm = () => {
@@ -192,7 +192,6 @@ const Cursos = () => {
     return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
   };
 
-  // Stats calculations
   const totalCursos = cursos.length;
   const cursosAtivos = cursos.filter(c => c.ativo).length;
   const receitaPotencial = cursos
@@ -206,61 +205,61 @@ const Cursos = () => {
         {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">Cursos</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("courses.title")}</h2>
             <p className="text-muted-foreground mt-1.5">
-              Gerencie os cursos oferecidos pela escola
+              {t("courses.description")}
             </p>
           </div>
           <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsOpen(open); }}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
                 <Plus className="mr-2 h-4 w-4" />
-                Novo Curso
+                {t("courses.newCourse")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-lg">
               <form onSubmit={handleSubmit}>
                 <DialogHeader>
                   <DialogTitle className="text-xl font-semibold">
-                    {editingCurso ? "Editar Curso" : "Novo Curso"}
+                    {editingCurso ? t("courses.editCourse") : t("courses.newCourse")}
                   </DialogTitle>
                   <DialogDescription>
-                    Preencha os dados do curso
+                    {t("courses.fillData")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-5 py-6">
                   <div className="grid gap-2">
                     <Label htmlFor="nome">
-                      Nome do Curso
+                      {t("courses.courseName")}
                     </Label>
                     <Input
                       id="nome"
                       value={formData.nome}
                       onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                      placeholder="Ex: Reforço Escolar - Fundamental I"
+                      placeholder={t("courses.courseNamePlaceholder")}
                       className="h-11"
                       required
                     />
                   </div>
                   <div className="grid gap-2">
                     <Label htmlFor="nivel">
-                      Nível
+                      {t("courses.level")}
                     </Label>
                     <Select value={formData.nivel} onValueChange={(value) => setFormData({ ...formData, nivel: value })}>
                       <SelectTrigger className="h-11">
-                        <SelectValue placeholder="Selecione o nível" />
+                        <SelectValue placeholder={t("courses.selectLevel")} />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Educação Infantil">Educação Infantil</SelectItem>
-                        <SelectItem value="Fundamental I">Fundamental I</SelectItem>
-                        <SelectItem value="Fundamental II">Fundamental II</SelectItem>
+                        <SelectItem value="Educação Infantil">{t("courses.levelPreschool")}</SelectItem>
+                        <SelectItem value="Fundamental I">{t("courses.levelElementary1")}</SelectItem>
+                        <SelectItem value="Fundamental II">{t("courses.levelElementary2")}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="mensalidade">
-                        Mensalidade (R$)
+                        {t("courses.monthlyFee")}
                       </Label>
                       <Input
                         id="mensalidade"
@@ -275,7 +274,7 @@ const Cursos = () => {
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="duracao">
-                        Duração (meses)
+                        {t("courses.duration")}
                       </Label>
                       <Input
                         id="duracao"
@@ -290,14 +289,14 @@ const Cursos = () => {
                 </div>
                 <DialogFooter className="gap-2">
                   <Button type="button" variant="outline" onClick={resetForm}>
-                    Cancelar
+                    {t("common.cancel")}
                   </Button>
                   <Button 
                     type="submit" 
                     className="bg-blue-600 hover:bg-blue-700"
                     disabled={createMutation.isPending || updateMutation.isPending}
                   >
-                    {createMutation.isPending || updateMutation.isPending ? "Salvando..." : editingCurso ? "Salvar" : "Cadastrar"}
+                    {createMutation.isPending || updateMutation.isPending ? t("common.saving") : editingCurso ? t("common.save") : t("common.register")}
                   </Button>
                 </DialogFooter>
               </form>
@@ -307,10 +306,10 @@ const Cursos = () => {
 
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 animate-fade-in">
-          <FinancialKPICard title="Total de Cursos" value={totalCursos} icon={BookOpen} variant="info" size="sm" index={0} />
-          <FinancialKPICard title="Cursos Ativos" value={cursosAtivos} icon={BookOpen} variant="success" size="sm" index={1} />
-          <FinancialKPICard title="Alunos Matriculados" value={totalAlunosMatriculados} icon={Users} variant="premium" size="sm" index={2} />
-          <FinancialKPICard title="Receita Potencial" value={formatCurrency(receitaPotencial)} icon={DollarSign} variant="warning" size="sm" index={3} />
+          <FinancialKPICard title={t("courses.totalCourses")} value={totalCursos} icon={BookOpen} variant="info" size="sm" index={0} />
+          <FinancialKPICard title={t("courses.activeCourses")} value={cursosAtivos} icon={BookOpen} variant="success" size="sm" index={1} />
+          <FinancialKPICard title={t("courses.enrolledStudents")} value={totalAlunosMatriculados} icon={Users} variant="premium" size="sm" index={2} />
+          <FinancialKPICard title={t("courses.potentialRevenue")} value={formatCurrency(receitaPotencial)} icon={DollarSign} variant="warning" size="sm" index={3} />
         </div>
 
         {/* Table Card */}
@@ -319,10 +318,10 @@ const Cursos = () => {
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle className="text-lg font-semibold text-foreground">
-                  Lista de Cursos
+                  {t("courses.courseList")}
                 </CardTitle>
                 <CardDescription>
-                  {cursos.length} curso(s) cadastrado(s)
+                  {cursos.length} {t("courses.coursesRegistered")}
                 </CardDescription>
               </div>
             </div>
@@ -336,23 +335,23 @@ const Cursos = () => {
                   <BookOpen className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-medium text-foreground mb-1">
-                  Nenhum curso cadastrado
+                  {t("courses.noCoursesFound")}
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-sm">
-                  Clique no botão "Novo Curso" para começar a cadastrar os cursos da escola.
+                  {t("courses.noCoursesDescription")}
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="font-semibold text-foreground">Nome</TableHead>
-                    <TableHead className="font-semibold text-foreground">Nível</TableHead>
-                    <TableHead className="font-semibold text-foreground">Mensalidade</TableHead>
-                    <TableHead className="font-semibold text-foreground">Duração</TableHead>
-                    <TableHead className="font-semibold text-foreground">Alunos</TableHead>
-                    <TableHead className="font-semibold text-foreground">Status</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Ações</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("courses.name")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("courses.level")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("courses.monthlyFee")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("courses.duration")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("courses.students")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("courses.status")}</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -371,7 +370,7 @@ const Cursos = () => {
                       <TableCell>
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                           <Clock className="h-3.5 w-3.5" />
-                          {curso.duracao_meses} meses
+                          {curso.duracao_meses} {t("courses.months")}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -390,7 +389,7 @@ const Cursos = () => {
                               : "bg-muted text-muted-foreground hover:bg-muted"
                           )}
                         >
-                          {curso.ativo ? "Ativo" : "Inativo"}
+                          {curso.ativo ? t("courses.active") : t("courses.inactive")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -417,7 +416,7 @@ const Cursos = () => {
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             onClick={() => {
-                              if (confirm("Tem certeza que deseja remover este curso?")) {
+                              if (confirm(t("courses.confirmDelete"))) {
                                 deleteMutation.mutate(curso.id);
                               }
                             }}

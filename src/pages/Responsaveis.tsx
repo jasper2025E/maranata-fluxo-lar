@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -80,7 +81,6 @@ interface AlunoSemResponsavel {
   curso?: { nome: string } | null;
 }
 
-// Table Skeleton
 const TableSkeleton = () => (
   <div className="space-y-3">
     {[...Array(5)].map((_, i) => (
@@ -97,6 +97,7 @@ const TableSkeleton = () => (
 );
 
 export default function Responsaveis() {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [searchTerm, setSearchTerm] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -108,7 +109,6 @@ export default function Responsaveis() {
     alunos_ids: [],
   });
 
-  // Fetch alunos para vincular
   const { data: alunosDisponiveis = [] } = useQuery({
     queryKey: ["alunos-para-vincular"],
     queryFn: async () => {
@@ -121,7 +121,6 @@ export default function Responsaveis() {
     },
   });
 
-  // Fetch responsáveis with their alunos
   const { data: responsaveis, isLoading } = useQuery({
     queryKey: ["responsaveis"],
     queryFn: async () => {
@@ -138,7 +137,6 @@ export default function Responsaveis() {
     },
   });
 
-  // Fetch stats
   const { data: stats } = useQuery({
     queryKey: ["responsaveis-stats"],
     queryFn: async () => {
@@ -155,7 +153,6 @@ export default function Responsaveis() {
       const faturasVencidas = faturas.filter((f) => f.status === "Vencida");
       const valorReceber = faturasAbertas.reduce((sum, f) => sum + Number(f.valor), 0);
 
-      // Inadimplência: responsáveis com faturas vencidas
       const responsaveisComVencidas = new Set(faturasVencidas.map((f) => f.responsavel_id)).size;
       const inadimplencia = ativos > 0 ? Math.round((responsaveisComVencidas / ativos) * 100) : 0;
 
@@ -168,7 +165,6 @@ export default function Responsaveis() {
     },
   });
 
-  // Create/Update mutation
   const saveMutation = useMutation({
     mutationFn: async (data: ResponsavelFormData & { id?: string }) => {
       let responsavelId = data.id;
@@ -203,15 +199,12 @@ export default function Responsaveis() {
         responsavelId = newResp.id;
       }
 
-      // Atualizar vinculação dos alunos
       if (responsavelId && data.alunos_ids) {
-        // Primeiro remove o responsável de todos os alunos que tinham esse responsável
         await supabase
           .from("alunos")
           .update({ responsavel_id: null })
           .eq("responsavel_id", responsavelId);
 
-        // Depois vincula os alunos selecionados
         if (data.alunos_ids.length > 0) {
           await supabase
             .from("alunos")
@@ -225,15 +218,14 @@ export default function Responsaveis() {
       queryClient.invalidateQueries({ queryKey: ["responsaveis-stats"] });
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
       queryClient.invalidateQueries({ queryKey: ["alunos-para-vincular"] });
-      toast.success(selectedResponsavel ? "Responsável atualizado!" : "Responsável cadastrado!");
+      toast.success(selectedResponsavel ? t("guardians.updateSuccess") : t("guardians.createSuccess"));
       resetForm();
     },
     onError: (error: any) => {
-      toast.error("Erro ao salvar: " + error.message);
+      toast.error(t("guardians.saveError") + ": " + error.message);
     },
   });
 
-  // Delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("responsaveis").delete().eq("id", id);
@@ -242,10 +234,10 @@ export default function Responsaveis() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
       queryClient.invalidateQueries({ queryKey: ["responsaveis-stats"] });
-      toast.success("Responsável removido!");
+      toast.success(t("guardians.deleteSuccess"));
     },
     onError: (error: any) => {
-      toast.error("Erro ao remover: " + error.message);
+      toast.error(t("guardians.deleteError") + ": " + error.message);
     },
   });
 
@@ -272,7 +264,7 @@ export default function Responsaveis() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.nome.trim() || !formData.telefone.trim()) {
-      toast.error("Nome e telefone são obrigatórios");
+      toast.error(t("guardians.requiredFields"));
       return;
     }
     saveMutation.mutate({
@@ -302,8 +294,8 @@ export default function Responsaveis() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">Responsáveis Financeiros</h1>
-            <p className="text-muted-foreground mt-1">Gerencie os responsáveis e suas mensalidades</p>
+            <h1 className="text-2xl font-bold text-foreground">{t("guardians.title")}</h1>
+            <p className="text-muted-foreground mt-1">{t("guardians.description")}</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
@@ -312,33 +304,32 @@ export default function Responsaveis() {
                 className="gap-2 bg-primary hover:bg-primary/90"
               >
                 <Plus className="h-4 w-4" />
-                Novo Responsável
+                {t("guardians.newGuardian")}
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
                 <DialogTitle>
-                  {selectedResponsavel ? "Editar Responsável" : "Cadastro Rápido"}
+                  {selectedResponsavel ? t("guardians.editGuardian") : t("guardians.quickRegister")}
                 </DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit} className="space-y-4">
-                {/* Required Fields */}
                 <div className="space-y-4 p-4 bg-blue-50/50 rounded-lg border border-blue-100">
                   <p className="text-xs font-medium text-blue-600 uppercase tracking-wide">
-                    Campos Obrigatórios
+                    {t("guardians.requiredFieldsLabel")}
                   </p>
                   <div className="space-y-2">
-                    <Label htmlFor="nome">Nome *</Label>
+                    <Label htmlFor="nome">{t("guardians.name")} *</Label>
                     <Input
                       id="nome"
                       value={formData.nome}
                       onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                      placeholder="Nome do responsável"
+                      placeholder={t("guardians.namePlaceholder")}
                       autoFocus
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="telefone">Telefone *</Label>
+                    <Label htmlFor="telefone">{t("guardians.phone")} *</Label>
                     <Input
                       id="telefone"
                       value={formData.telefone}
@@ -348,14 +339,13 @@ export default function Responsaveis() {
                   </div>
                 </div>
 
-                {/* Optional Fields */}
                 <div className="space-y-4">
                   <p className="text-xs font-medium text-gray-400 uppercase tracking-wide">
-                    Campos Opcionais
+                    {t("guardians.optionalFields")}
                   </p>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="cpf">CPF</Label>
+                      <Label htmlFor="cpf">{t("guardians.cpf")}</Label>
                       <Input
                         id="cpf"
                         value={formData.cpf || ""}
@@ -364,7 +354,7 @@ export default function Responsaveis() {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="email">E-mail</Label>
+                      <Label htmlFor="email">{t("guardians.email")}</Label>
                       <Input
                         id="email"
                         type="email"
@@ -375,25 +365,24 @@ export default function Responsaveis() {
                     </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="observacoes">Observações</Label>
+                    <Label htmlFor="observacoes">{t("guardians.observations")}</Label>
                     <Textarea
                       id="observacoes"
                       value={formData.observacoes || ""}
                       onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                      placeholder="Anotações sobre o responsável..."
+                      placeholder={t("guardians.observationsPlaceholder")}
                       rows={2}
                     />
                   </div>
 
-                  {/* Seleção de Alunos */}
                   <div className="space-y-2">
                     <Label className="flex items-center gap-2">
                       <Users className="h-4 w-4" />
-                      Vincular Alunos
+                      {t("guardians.linkStudents")}
                     </Label>
                     <div className="border rounded-lg max-h-40 overflow-y-auto p-2 space-y-1">
                       {alunosDisponiveis.length === 0 ? (
-                        <p className="text-sm text-gray-500 text-center py-2">Nenhum aluno cadastrado</p>
+                        <p className="text-sm text-gray-500 text-center py-2">{t("guardians.noStudentsRegistered")}</p>
                       ) : (
                         alunosDisponiveis.map((aluno) => {
                           const isSelected = formData.alunos_ids?.includes(aluno.id);
@@ -424,7 +413,7 @@ export default function Responsaveis() {
                                   <span className="text-xs text-gray-500 ml-2">({aluno.curso.nome})</span>
                                 )}
                                 {hasOtherResponsavel && (
-                                  <span className="text-xs text-amber-600 ml-2">(outro responsável)</span>
+                                  <span className="text-xs text-amber-600 ml-2">({t("guardians.otherGuardian")})</span>
                                 )}
                               </div>
                             </label>
@@ -434,7 +423,7 @@ export default function Responsaveis() {
                     </div>
                     {formData.alunos_ids && formData.alunos_ids.length > 0 && (
                       <p className="text-xs text-gray-500">
-                        {formData.alunos_ids.length} aluno(s) selecionado(s)
+                        {formData.alunos_ids.length} {t("guardians.studentsSelected")}
                       </p>
                     )}
                   </div>
@@ -442,10 +431,10 @@ export default function Responsaveis() {
 
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={resetForm}>
-                    Cancelar
+                    {t("common.cancel")}
                   </Button>
                   <Button type="submit" disabled={saveMutation.isPending}>
-                    {saveMutation.isPending ? "Salvando..." : "Salvar"}
+                    {saveMutation.isPending ? t("common.saving") : t("common.save")}
                   </Button>
                 </DialogFooter>
               </form>
@@ -453,50 +442,52 @@ export default function Responsaveis() {
           </Dialog>
         </div>
 
-        {/* Stats Cards - Premium Design */}
+        {/* Stats Cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <FinancialKPICard
             icon={Users}
-            title="Responsáveis Ativos"
+            title={t("guardians.activeGuardians")}
             value={stats?.ativos || 0}
             variant="info"
             size="sm"
           />
           <FinancialKPICard
             icon={FileText}
-            title="Mensalidades Abertas"
+            title={t("guardians.openInvoices")}
             value={formatCurrency(stats?.valorReceber || 0)}
             variant="warning"
             size="sm"
           />
           <FinancialKPICard
             icon={Wallet}
-            title="Valor a Receber"
+            title={t("guardians.toReceive")}
             value={formatCurrency(stats?.valorReceber || 0)}
             variant="success"
             size="sm"
           />
           <FinancialKPICard
             icon={AlertCircle}
-            title="Inadimplência"
+            title={t("guardians.delinquency")}
             value={`${stats?.inadimplencia || 0}%`}
-            variant={(stats?.inadimplencia || 0) > 20 ? "danger" : (stats?.inadimplencia || 0) > 10 ? "warning" : "info"}
+            variant={stats?.inadimplencia && stats.inadimplencia > 10 ? "danger" : "default"}
             size="sm"
           />
         </div>
 
-        {/* Search and Table */}
-        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden bg-card">
-          <CardHeader className="pb-4">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <CardTitle className="text-lg font-semibold text-foreground">Lista de Responsáveis</CardTitle>
-              <div className="relative flex-1 sm:max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* Table */}
+        <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+          <CardHeader className="border-b border-border/50 bg-muted/30">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-lg font-semibold text-foreground">
+                {t("guardians.guardianList")}
+              </CardTitle>
+              <div className="relative w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar por nome ou telefone..."
+                  placeholder={t("common.search")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9"
+                  className="pl-8"
                 />
               </div>
             </div>
@@ -504,105 +495,86 @@ export default function Responsaveis() {
           <CardContent className="p-0">
             {isLoading ? (
               <TableSkeleton />
-            ) : filteredResponsaveis && filteredResponsaveis.length > 0 ? (
+            ) : !filteredResponsaveis?.length ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
+                  <Users className="h-8 w-8 text-muted-foreground" />
+                </div>
+                <h3 className="text-lg font-medium text-foreground mb-1">
+                  {t("guardians.noGuardiansFound")}
+                </h3>
+                <p className="text-sm text-muted-foreground max-w-sm">
+                  {t("guardians.noGuardiansDescription")}
+                </p>
+              </div>
+            ) : (
               <Table>
                 <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-semibold">Responsável</TableHead>
-                    <TableHead className="font-semibold">Contato</TableHead>
-                    <TableHead className="font-semibold text-center">Alunos</TableHead>
-                    <TableHead className="font-semibold text-center">Status</TableHead>
-                    <TableHead className="font-semibold text-right">Ações</TableHead>
+                  <TableRow className="bg-muted/50 hover:bg-muted/50">
+                    <TableHead className="font-semibold text-foreground">{t("guardians.name")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("guardians.contact")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("guardians.students")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("guardians.status")}</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredResponsaveis.map((responsavel) => (
-                    <TableRow
-                      key={responsavel.id}
-                      className="hover:bg-gray-50/50 cursor-pointer"
-                      onClick={() => handleViewDetail(responsavel)}
-                    >
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-                            {responsavel.nome.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-medium text-gray-900">{responsavel.nome}</p>
-                            {responsavel.cpf && (
-                              <p className="text-xs text-gray-500">{responsavel.cpf}</p>
-                            )}
-                          </div>
-                        </div>
-                      </TableCell>
+                    <TableRow key={responsavel.id} className="hover:bg-muted/50 transition-colors">
+                      <TableCell className="font-medium text-foreground">{responsavel.nome}</TableCell>
                       <TableCell>
                         <div className="space-y-1">
-                          <div className="flex items-center gap-1.5 text-sm text-gray-700">
-                            <Phone className="h-3.5 w-3.5 text-gray-400" />
-                            {responsavel.telefone}
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <Phone className="h-3 w-3" />
+                            {formatPhone(responsavel.telefone)}
                           </div>
                           {responsavel.email && (
-                            <div className="flex items-center gap-1.5 text-sm text-gray-500">
-                              <Mail className="h-3.5 w-3.5 text-gray-400" />
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Mail className="h-3 w-3" />
                               {responsavel.email}
                             </div>
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="secondary" className="font-medium">
-                          {responsavel.alunos?.length || 0} aluno(s)
+                      <TableCell>
+                        <Badge variant="outline" className="text-xs">
+                          {responsavel.alunos?.length || 0} {t("guardians.studentsLinked")}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-center">
-                        <Badge
-                          variant={responsavel.ativo ? "default" : "secondary"}
-                          className={
-                            responsavel.ativo
-                              ? "bg-emerald-100 text-emerald-700 hover:bg-emerald-100"
-                              : "bg-gray-100 text-gray-600"
-                          }
-                        >
-                          {responsavel.ativo ? "Ativo" : "Inativo"}
+                      <TableCell>
+                        <Badge className={responsavel.ativo 
+                          ? "bg-emerald-500/10 text-emerald-500 hover:bg-emerald-500/20" 
+                          : "bg-muted text-muted-foreground hover:bg-muted"
+                        }>
+                          {responsavel.ativo ? t("guardians.active") : t("guardians.inactive")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
                         <DropdownMenu>
-                          <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+                          <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-8 w-8">
                               <MoreHorizontal className="h-4 w-4" />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleViewDetail(responsavel);
-                              }}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Ver Detalhes
+                            <DropdownMenuItem onClick={() => handleViewDetail(responsavel)}>
+                              <Eye className="mr-2 h-4 w-4" />
+                              {t("common.view")}
                             </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleEdit(responsavel);
-                              }}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Editar
+                            <DropdownMenuItem onClick={() => handleEdit(responsavel)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              {t("common.edit")}
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               className="text-destructive"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                if (confirm("Deseja remover este responsável?")) {
+                              onClick={() => {
+                                if (confirm(t("guardians.confirmDelete"))) {
                                   deleteMutation.mutate(responsavel.id);
                                 }
                               }}
                             >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              {t("common.delete")}
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -611,111 +583,46 @@ export default function Responsaveis() {
                   ))}
                 </TableBody>
               </Table>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 px-4">
-                <div className="h-16 w-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                  <Users className="h-8 w-8 text-gray-400" />
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-1">
-                  Nenhum responsável encontrado
-                </h3>
-                <p className="text-sm text-gray-500 text-center mb-4">
-                  Cadastre o primeiro responsável para começar
-                </p>
-                <Button onClick={() => setIsDialogOpen(true)} className="gap-2">
-                  <UserPlus className="h-4 w-4" />
-                  Cadastrar Responsável
-                </Button>
-              </div>
             )}
           </CardContent>
         </Card>
 
         {/* Detail Dialog */}
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-          <DialogContent className="sm:max-w-lg">
+          <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle>Detalhes do Responsável</DialogTitle>
+              <DialogTitle>{t("guardians.details")}</DialogTitle>
             </DialogHeader>
             {selectedResponsavel && (
-              <div className="space-y-6">
-                {/* Responsável Info */}
-                <div className="flex items-start gap-4">
-                  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-bold text-xl">
-                    {selectedResponsavel.nome.charAt(0).toUpperCase()}
+              <div className="space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Users className="h-6 w-6 text-primary" />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="text-xl font-semibold text-gray-900">
-                      {selectedResponsavel.nome}
-                    </h3>
-                    <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
-                      <span className="flex items-center gap-1">
-                        <Phone className="h-4 w-4" />
-                        {selectedResponsavel.telefone}
-                      </span>
-                      {selectedResponsavel.email && (
-                        <span className="flex items-center gap-1">
-                          <Mail className="h-4 w-4" />
-                          {selectedResponsavel.email}
-                        </span>
-                      )}
-                    </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">{selectedResponsavel.nome}</h3>
+                    <p className="text-sm text-muted-foreground">{formatPhone(selectedResponsavel.telefone)}</p>
                   </div>
                 </div>
-
-                {/* Alunos vinculados */}
-                <div>
-                  <h4 className="text-sm font-medium text-gray-700 mb-3">Alunos Vinculados</h4>
-                  {selectedResponsavel.alunos && selectedResponsavel.alunos.length > 0 ? (
-                    <div className="space-y-2">
+                {selectedResponsavel.email && (
+                  <div className="flex items-center gap-2 text-sm">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    {selectedResponsavel.email}
+                  </div>
+                )}
+                {selectedResponsavel.alunos && selectedResponsavel.alunos.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium mb-2">{t("guardians.linkedStudents")}:</p>
+                    <div className="space-y-1">
                       {selectedResponsavel.alunos.map((aluno) => (
-                        <div
-                          key={aluno.id}
-                          className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-                        >
-                          <span className="font-medium text-gray-900">{aluno.nome_completo}</span>
-                          <Badge
-                            variant="secondary"
-                            className={
-                              aluno.status_matricula === "ativo"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-gray-100 text-gray-600"
-                            }
-                          >
-                            {aluno.status_matricula}
-                          </Badge>
+                        <div key={aluno.id} className="flex items-center gap-2 p-2 bg-muted/50 rounded-lg">
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm">{aluno.nome_completo}</span>
                         </div>
                       ))}
                     </div>
-                  ) : (
-                    <p className="text-sm text-gray-500 italic">Nenhum aluno vinculado ainda</p>
-                  )}
-                </div>
-
-                {/* Observações */}
-                {selectedResponsavel.observacoes && (
-                  <div>
-                    <h4 className="text-sm font-medium text-gray-700 mb-2">Observações</h4>
-                    <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                      {selectedResponsavel.observacoes}
-                    </p>
                   </div>
                 )}
-
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setIsDetailOpen(false)}>
-                    Fechar
-                  </Button>
-                  <Button
-                    onClick={() => {
-                      setIsDetailOpen(false);
-                      handleEdit(selectedResponsavel);
-                    }}
-                  >
-                    <Edit className="h-4 w-4 mr-2" />
-                    Editar
-                  </Button>
-                </DialogFooter>
               </div>
             )}
           </DialogContent>

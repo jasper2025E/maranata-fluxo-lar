@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ interface Despesa {
 }
 
 const Despesas = () => {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const [isOpen, setIsOpen] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
@@ -70,12 +72,12 @@ const Despesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"] });
-      toast.success("Despesa cadastrada com sucesso!");
+      toast.success(t("expenses.createSuccess"));
       resetForm();
     },
     onError: (error: Error) => {
       console.error("Erro ao cadastrar despesa:", error);
-      toast.error(`Erro ao cadastrar despesa: ${error.message}`);
+      toast.error(t("expenses.createError"));
     },
   });
 
@@ -96,12 +98,12 @@ const Despesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"] });
-      toast.success("Despesa atualizada com sucesso!");
+      toast.success(t("expenses.updateSuccess"));
       resetForm();
     },
     onError: (error: Error) => {
       console.error("Erro ao atualizar despesa:", error);
-      toast.error(`Erro ao atualizar despesa: ${error.message}`);
+      toast.error(t("expenses.updateError"));
     },
   });
 
@@ -112,11 +114,11 @@ const Despesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"] });
-      toast.success("Despesa removida com sucesso!");
+      toast.success(t("expenses.deleteSuccess"));
     },
     onError: (error: Error) => {
       console.error("Erro ao remover despesa:", error);
-      toast.error(`Erro ao remover despesa: ${error.message}`);
+      toast.error(t("expenses.deleteError"));
     },
   });
 
@@ -130,11 +132,11 @@ const Despesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"] });
-      toast.success("Despesa marcada como paga!");
+      toast.success(t("expenses.markedAsPaid"));
     },
     onError: (error: Error) => {
       console.error("Erro ao atualizar despesa:", error);
-      toast.error(`Erro ao atualizar despesa: ${error.message}`);
+      toast.error(t("expenses.updateError"));
     },
   });
 
@@ -196,11 +198,11 @@ const Despesas = () => {
   const getCategoryBadge = (categoria: string) => {
     switch (categoria) {
       case "Fixa":
-        return <Badge className="bg-primary/10 text-primary hover:bg-primary/20">Fixa</Badge>;
+        return <Badge className="bg-primary/10 text-primary hover:bg-primary/20">{t("expenses.fixed")}</Badge>;
       case "Variável":
-        return <Badge variant="secondary">Variável</Badge>;
+        return <Badge variant="secondary">{t("expenses.variable")}</Badge>;
       case "Única":
-        return <Badge variant="outline">Única</Badge>;
+        return <Badge variant="outline">{t("expenses.oneTime")}</Badge>;
       default:
         return <Badge variant="outline">{categoria}</Badge>;
     }
@@ -212,53 +214,53 @@ const Despesas = () => {
         {/* Header */}
         <div className="flex items-center justify-between animate-fade-in">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">Despesas</h2>
+            <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("expenses.title")}</h2>
             <p className="text-muted-foreground mt-1.5">
-              Controle as despesas da escola
+              {t("expenses.description")}
             </p>
           </div>
           <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsOpen(open); }}>
             <DialogTrigger asChild>
               <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
                 <Plus className="mr-2 h-4 w-4" />
-                Nova Despesa
+                {t("expenses.newExpense")}
               </Button>
             </DialogTrigger>
             <DialogContent>
               <form onSubmit={handleSubmit}>
                 <DialogHeader>
-                  <DialogTitle>{editingDespesa ? "Editar Despesa" : "Nova Despesa"}</DialogTitle>
+                  <DialogTitle>{editingDespesa ? t("expenses.editExpense") : t("expenses.newExpense")}</DialogTitle>
                   <DialogDescription>
-                    Preencha os dados da despesa
+                    {t("expenses.fillData")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
-                    <Label htmlFor="titulo">Título</Label>
+                    <Label htmlFor="titulo">{t("expenses.expenseTitle")}</Label>
                     <Input
                       id="titulo"
                       value={formData.titulo}
                       onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                      placeholder="Ex: Domínio personalizado anual"
+                      placeholder={t("expenses.titlePlaceholder")}
                       required
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="categoria">Categoria</Label>
+                      <Label htmlFor="categoria">{t("expenses.category")}</Label>
                       <Select value={formData.categoria} onValueChange={(value) => setFormData({ ...formData, categoria: value })}>
                         <SelectTrigger>
-                          <SelectValue placeholder="Selecione" />
+                          <SelectValue placeholder={t("expenses.selectCategory")} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Fixa">Fixa</SelectItem>
-                          <SelectItem value="Variável">Variável</SelectItem>
-                          <SelectItem value="Única">Única</SelectItem>
+                          <SelectItem value="Fixa">{t("expenses.fixed")}</SelectItem>
+                          <SelectItem value="Variável">{t("expenses.variable")}</SelectItem>
+                          <SelectItem value="Única">{t("expenses.oneTime")}</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="valor">Valor (R$)</Label>
+                      <Label htmlFor="valor">{t("expenses.value")}</Label>
                       <Input
                         id="valor"
                         type="number"
@@ -270,7 +272,7 @@ const Despesas = () => {
                     </div>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="vencimento">Data de Vencimento</Label>
+                    <Label htmlFor="vencimento">{t("expenses.dueDate")}</Label>
                     <Input
                       id="vencimento"
                       type="date"
@@ -285,24 +287,24 @@ const Despesas = () => {
                       checked={formData.recorrente}
                       onCheckedChange={(checked) => setFormData({ ...formData, recorrente: checked as boolean })}
                     />
-                    <Label htmlFor="recorrente">Despesa recorrente (mensal)</Label>
+                    <Label htmlFor="recorrente">{t("expenses.recurring")}</Label>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="observacoes">Observações</Label>
+                    <Label htmlFor="observacoes">{t("expenses.observations")}</Label>
                     <Textarea
                       id="observacoes"
                       value={formData.observacoes}
                       onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                      placeholder="Observações adicionais..."
+                      placeholder={t("expenses.observationsPlaceholder")}
                     />
                   </div>
                 </div>
                 <DialogFooter>
                   <Button type="button" variant="outline" onClick={resetForm}>
-                    Cancelar
+                    {t("common.cancel")}
                   </Button>
                   <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
-                    {editingDespesa ? "Salvar" : "Cadastrar"}
+                    {editingDespesa ? t("common.save") : t("common.register")}
                   </Button>
                 </DialogFooter>
               </form>
@@ -313,7 +315,7 @@ const Despesas = () => {
         {/* Stats Cards */}
         <div className="grid gap-4 sm:grid-cols-3 animate-fade-in">
           <FinancialKPICard 
-            title="Total de Despesas" 
+            title={t("expenses.totalExpenses")} 
             value={formatCurrency(totalDespesas)} 
             icon={Wallet} 
             variant="info" 
@@ -321,7 +323,7 @@ const Despesas = () => {
             index={0} 
           />
           <FinancialKPICard 
-            title="Pagas" 
+            title={t("expenses.paid")} 
             value={formatCurrency(totalPagas)} 
             icon={CheckCircle} 
             variant="success" 
@@ -329,7 +331,7 @@ const Despesas = () => {
             index={1} 
           />
           <FinancialKPICard 
-            title="Pendentes" 
+            title={t("expenses.pending")} 
             value={formatCurrency(totalPendentes)} 
             icon={Clock} 
             variant="danger" 
@@ -343,13 +345,13 @@ const Despesas = () => {
           <CardHeader className="border-b border-border/50 bg-muted/30">
             <div className="flex items-center justify-between">
               <div>
-                <CardTitle className="text-lg font-semibold text-foreground">Lista de Despesas</CardTitle>
-                <CardDescription>{filteredDespesas.length} despesa(s)</CardDescription>
+                <CardTitle className="text-lg font-semibold text-foreground">{t("expenses.expenseList")}</CardTitle>
+                <CardDescription>{filteredDespesas.length} {t("expenses.expensesCount")}</CardDescription>
               </div>
               <div className="relative w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  placeholder="Buscar..."
+                  placeholder={t("common.search")}
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="pl-8"
@@ -359,29 +361,29 @@ const Despesas = () => {
           </CardHeader>
           <CardContent className="p-0">
             {isLoading ? (
-              <p className="text-muted-foreground p-6">Carregando...</p>
+              <p className="text-muted-foreground p-6">{t("common.loading")}</p>
             ) : filteredDespesas.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
                   <TrendingDown className="h-8 w-8 text-muted-foreground" />
                 </div>
                 <h3 className="text-lg font-medium text-foreground mb-1">
-                  Nenhuma despesa encontrada
+                  {t("expenses.noExpensesFound")}
                 </h3>
                 <p className="text-sm text-muted-foreground max-w-sm">
-                  Clique no botão "Nova Despesa" para cadastrar.
+                  {t("expenses.noExpensesDescription")}
                 </p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="font-semibold text-foreground">Título</TableHead>
-                    <TableHead className="font-semibold text-foreground">Categoria</TableHead>
-                    <TableHead className="font-semibold text-foreground">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground">Vencimento</TableHead>
-                    <TableHead className="font-semibold text-foreground">Status</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">Ações</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("expenses.expenseTitle")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("expenses.category")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("expenses.value")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("expenses.dueDate")}</TableHead>
+                    <TableHead className="font-semibold text-foreground">{t("expenses.status")}</TableHead>
+                    <TableHead className="text-right font-semibold text-foreground">{t("common.actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -389,7 +391,7 @@ const Despesas = () => {
                     <TableRow key={despesa.id} className="hover:bg-muted/50 transition-colors">
                       <TableCell className="font-medium text-foreground">
                         {despesa.titulo}
-                        {despesa.recorrente && <span className="ml-2 text-xs text-muted-foreground">(Recorrente)</span>}
+                        {despesa.recorrente && <span className="ml-2 text-xs text-muted-foreground">({t("expenses.recurringLabel")})</span>}
                       </TableCell>
                       <TableCell>{getCategoryBadge(despesa.categoria)}</TableCell>
                       <TableCell className="text-muted-foreground">
@@ -403,7 +405,7 @@ const Despesas = () => {
                             : "bg-destructive/10 text-destructive hover:bg-destructive/20"
                           }
                         >
-                          {despesa.paga ? "Paga" : "Pendente"}
+                          {despesa.paga ? t("expenses.paid") : t("expenses.pending")}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">
@@ -414,7 +416,7 @@ const Despesas = () => {
                               size="icon"
                               className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10"
                               onClick={() => markAsPaidMutation.mutate(despesa.id)}
-                              title="Marcar como paga"
+                              title={t("expenses.markAsPaid")}
                             >
                               <CheckCircle className="h-4 w-4" />
                             </Button>
@@ -431,7 +433,11 @@ const Despesas = () => {
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => deleteMutation.mutate(despesa.id)}
+                            onClick={() => {
+                              if (confirm(t("expenses.confirmDelete"))) {
+                                deleteMutation.mutate(despesa.id);
+                              }
+                            }}
                             disabled={deleteMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4" />
