@@ -7,9 +7,20 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
+  const startTime = Date.now();
+  
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
+  let eventType = '';
+  let payload: any = null;
+  let logStatus = 'received';
+  let errorMessage: string | null = null;
 
   try {
     const ASAAS_WEBHOOK_TOKEN = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
@@ -21,17 +32,27 @@ serve(async (req) => {
       // Continuar mesmo assim para não bloquear webhooks do Asaas
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     const event = await req.json();
+    payload = event;
+    eventType = event.event || 'unknown';
     console.log("Asaas Webhook Event:", JSON.stringify(event, null, 2));
 
-    const { event: eventType, payment } = event;
+    const { event: evtType, payment } = event;
 
     if (!payment || !payment.externalReference) {
       console.log("Webhook sem externalReference, ignorando");
+      logStatus = 'processed';
+      
+      // Log webhook event
+      await supabase.from("webhook_logs").insert({
+        source: "asaas",
+        event_type: eventType,
+        payload,
+        status: logStatus,
+        processing_time_ms: Date.now() - startTime,
+        ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+      });
+      
       return new Response(JSON.stringify({ received: true }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -130,6 +151,17 @@ serve(async (req) => {
       .eq("id", faturaId);
 
     console.log(`Fatura ${faturaId} atualizada: ${newStatus}`);
+    logStatus = 'processed';
+
+    // Log webhook event
+    await supabase.from("webhook_logs").insert({
+      source: "asaas",
+      event_type: eventType,
+      payload,
+      status: logStatus,
+      processing_time_ms: Date.now() - startTime,
+      ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+    });
 
     return new Response(JSON.stringify({ received: true, status: newStatus }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -137,9 +169,22 @@ serve(async (req) => {
 
   } catch (error: unknown) {
     console.error("Erro no webhook:", error);
-    const message = error instanceof Error ? error.message : "Erro desconhecido";
+    errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
+    logStatus = 'failed';
+
+    // Log failed webhook event
+    await supabase.from("webhook_logs").insert({
+      source: "asaas",
+      event_type: eventType || 'unknown',
+      payload: payload || {},
+      status: logStatus,
+      error_message: errorMessage,
+      processing_time_ms: Date.now() - startTime,
+      ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+    });
+
     return new Response(JSON.stringify({ 
-      error: message 
+      error: errorMessage 
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
