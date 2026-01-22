@@ -176,29 +176,18 @@ function drawCompactCarne(
   doc.setFillColor(...PRIMARY_COLOR);
   doc.rect(leftColWidth, yOffset, middleColWidth, 12, 'F');
   
-  // School name in header
-  if (logoBase64) {
-    try {
-      doc.addImage(logoBase64, 'PNG', midX, midY, 25, 8);
-    } catch {
-      doc.setFontSize(9);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(255, 255, 255);
-      doc.text(escola.nome.substring(0, 20), midX, midY + 6);
-    }
-  } else {
-    doc.setFontSize(9);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(255, 255, 255);
-    doc.text(escola.nome.substring(0, 20), midX, midY + 6);
-  }
+  // School name in header (text only, logo is already in left column)
+  doc.setFontSize(9);
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(255, 255, 255);
+  doc.text(escola.nome.substring(0, 25), midX, midY + 6);
   
   // CNPJ in header
   if (escola.cnpj) {
     doc.setFontSize(6);
     doc.setFont("helvetica", "normal");
     doc.setTextColor(255, 255, 255);
-    doc.text(`CNPJ: ${escola.cnpj}`, midX + 30, midY + 6);
+    doc.text(`CNPJ: ${escola.cnpj}`, midX + 50, midY + 6);
   }
   
   midY = yOffset + 16;
