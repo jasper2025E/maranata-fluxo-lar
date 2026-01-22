@@ -178,6 +178,26 @@ const Alunos = () => {
           p_valor: curso.mensalidade,
           p_data_inicio: new Date().toISOString().split("T")[0],
         });
+
+        // Criar cobranças Asaas para todas as faturas geradas
+        const { data: faturasGeradas } = await supabase
+          .from("faturas")
+          .select("id")
+          .eq("aluno_id", newAluno.id)
+          .eq("status", "Aberta")
+          .is("asaas_payment_id", null);
+
+        if (faturasGeradas && faturasGeradas.length > 0) {
+          for (const fatura of faturasGeradas) {
+            try {
+              await supabase.functions.invoke("asaas-create-payment", {
+                body: { faturaId: fatura.id, billingType: "UNDEFINED" },
+              });
+            } catch (err) {
+              console.warn(`Aviso: Não foi possível criar cobrança Asaas para fatura ${fatura.id}:`, err);
+            }
+          }
+        }
       }
     },
     onSuccess: () => {
