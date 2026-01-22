@@ -31,6 +31,7 @@ interface UserPreferences {
   browser_notifications: boolean;
   weekly_report: boolean;
   theme: string;
+  language: string;
 }
 
 interface PreferencesTabProps {
@@ -50,6 +51,7 @@ export function PreferencesTab({
   setPreferences, 
   loadingPrefs 
 }: PreferencesTabProps) {
+  const { i18n, t } = useTranslation();
   const [savingPrefs, setSavingPrefs] = useState(false);
 
   const handlePreferenceSave = async () => {
@@ -63,6 +65,7 @@ export function PreferencesTab({
         browser_notifications: preferences.browser_notifications,
         weekly_report: preferences.weekly_report,
         theme: theme || "light",
+        language: i18n.language,
       };
 
       const { error } = await supabase
@@ -71,10 +74,10 @@ export function PreferencesTab({
 
       if (error) throw error;
 
-      toast.success("Preferências salvas com sucesso!");
+      toast.success(t("success.saved"));
     } catch (error: any) {
       console.error("Error saving preferences:", error);
-      toast.error("Erro ao salvar preferências");
+      toast.error(t("errors.generic"));
     } finally {
       setSavingPrefs(false);
     }
@@ -94,6 +97,30 @@ export function PreferencesTab({
       } catch (error) {
         console.error("Error saving theme preference:", error);
       }
+    }
+  };
+
+  const handleLanguageChange = async (langCode: string) => {
+    i18n.changeLanguage(langCode);
+    setPreferences({ ...preferences, language: langCode });
+    
+    if (user) {
+      try {
+        await supabase
+          .from("user_preferences")
+          .upsert({
+            user_id: user.id,
+            language: langCode,
+          }, { onConflict: "user_id" });
+        
+        const langName = languages.find(l => l.code === langCode)?.name || langCode;
+        toast.success(t("success.languageChanged", { language: langName }));
+      } catch (error) {
+        console.error("Error saving language preference:", error);
+        toast.error(t("errors.generic"));
+      }
+    } else {
+      toast.success(t("success.saved"));
     }
   };
 
@@ -272,22 +299,21 @@ export function PreferencesTab({
 
           <Separator />
 
-          <LanguageSection />
+          <LanguageSection onLanguageChange={handleLanguageChange} />
         </CardContent>
       </Card>
     </motion.div>
   );
 }
 
-function LanguageSection() {
+interface LanguageSectionProps {
+  onLanguageChange: (langCode: string) => void;
+}
+
+function LanguageSection({ onLanguageChange }: LanguageSectionProps) {
   const { i18n, t } = useTranslation();
 
   const currentLanguage = languages.find((lang) => lang.code === i18n.language) || languages[0];
-
-  const handleLanguageChange = (langCode: string) => {
-    i18n.changeLanguage(langCode);
-    toast.success(t("success.saved"));
-  };
 
   return (
     <div className="space-y-4">
@@ -307,7 +333,7 @@ function LanguageSection() {
         {languages.map((lang) => (
           <button
             key={lang.code}
-            onClick={() => handleLanguageChange(lang.code)}
+            onClick={() => onLanguageChange(lang.code)}
             className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
               i18n.language === lang.code
                 ? "border-primary bg-primary/5"

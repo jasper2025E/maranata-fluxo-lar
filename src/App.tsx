@@ -8,6 +8,7 @@ import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useContentProtection } from "@/hooks/useContentProtection";
+import { useUserLanguage } from "@/hooks/useUserLanguage";
 
 // Pages
 import Index from "./pages/Index";
@@ -35,6 +36,9 @@ import NotFound from "./pages/NotFound";
 function AppContent() {
   // Ativar proteção de conteúdo (não afeta inputs/formulários)
   useContentProtection({ enabled: true, allowInputs: true });
+  
+  // Carregar idioma do usuário do banco de dados
+  useUserLanguage();
 
   return (
     <>

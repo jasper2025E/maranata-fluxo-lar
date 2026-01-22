@@ -1380,6 +1380,7 @@ export type Database = {
           created_at: string | null
           email_notifications: boolean | null
           id: string
+          language: string | null
           theme: string | null
           updated_at: string | null
           user_id: string
@@ -1390,6 +1391,7 @@ export type Database = {
           created_at?: string | null
           email_notifications?: boolean | null
           id?: string
+          language?: string | null
           theme?: string | null
           updated_at?: string | null
           user_id: string
@@ -1400,6 +1402,7 @@ export type Database = {
           created_at?: string | null
           email_notifications?: boolean | null
           id?: string
+          language?: string | null
           theme?: string | null
           updated_at?: string | null
           user_id?: string
