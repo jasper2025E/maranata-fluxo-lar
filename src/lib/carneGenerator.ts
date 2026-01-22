@@ -292,8 +292,13 @@ function drawPixSection(doc: jsPDF, fatura: Fatura, y: number): number {
   
   if (fatura.asaas_pix_qrcode) {
     try {
-      doc.addImage(fatura.asaas_pix_qrcode, 'PNG', qrX, y + 14, qrSize, qrSize);
-    } catch {
+      // Adiciona prefixo data URI se não existir
+      const qrCodeData = fatura.asaas_pix_qrcode.startsWith('data:') 
+        ? fatura.asaas_pix_qrcode 
+        : `data:image/png;base64,${fatura.asaas_pix_qrcode}`;
+      doc.addImage(qrCodeData, 'PNG', qrX, y + 14, qrSize, qrSize);
+    } catch (error) {
+      console.error('Erro ao adicionar QR Code:', error);
       doc.setDrawColor(200, 200, 200);
       doc.setLineWidth(0.3);
       doc.rect(qrX, y + 14, qrSize, qrSize);
