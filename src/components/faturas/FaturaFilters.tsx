@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -8,13 +7,13 @@ import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
 import {
   Search,
-  Filter,
-  LayoutGrid,
-  List,
-  Users,
+  SlidersHorizontal,
+  LayoutList,
   Layers,
+  Users,
   Calendar as CalendarIcon,
   X,
+  ChevronDown,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -49,6 +48,13 @@ interface FaturaFiltersProps {
   cursos: Curso[];
 }
 
+const viewModes = [
+  { value: "list", icon: LayoutList, label: "Lista" },
+  { value: "status", icon: Layers, label: "Status" },
+  { value: "aluno", icon: Users, label: "Aluno" },
+  { value: "mes", icon: CalendarIcon, label: "Mês" },
+] as const;
+
 export function FaturaFilters({
   searchTerm,
   onSearchChange,
@@ -67,12 +73,12 @@ export function FaturaFilters({
 }: FaturaFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
 
-  const activeFilters = [
-    statusFilter !== "todas" && `Status: ${statusFilter}`,
-    alunoFilter !== "todos" && `Aluno filtrado`,
-    cursoFilter !== "todos" && `Curso filtrado`,
-    periodoFilter.start && `Período: ${format(periodoFilter.start, "dd/MM")}${periodoFilter.end ? ` - ${format(periodoFilter.end, "dd/MM")}` : ""}`,
-  ].filter(Boolean);
+  const activeFiltersCount = [
+    statusFilter !== "todas",
+    alunoFilter !== "todos",
+    cursoFilter !== "todos",
+    periodoFilter.start !== null,
+  ].filter(Boolean).length;
 
   const clearFilters = () => {
     onStatusChange("todas");
@@ -82,111 +88,121 @@ export function FaturaFilters({
   };
 
   return (
-    <Card className="border">
-      <CardContent className="p-4 space-y-4">
-        {/* Search & View Toggle */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar por aluno, responsável ou código..."
-              value={searchTerm}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant={showFilters ? "default" : "outline"}
-              size="icon"
-              onClick={() => setShowFilters(!showFilters)}
-              className="relative"
+    <div className="space-y-3">
+      {/* Main toolbar */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        {/* Search */}
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por aluno, responsável ou código..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="pl-9 h-10 bg-background/50 border-border/50 focus:bg-background"
+          />
+          {searchTerm && (
+            <button
+              onClick={() => onSearchChange("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              <Filter className="h-4 w-4" />
-              {activeFilters.length > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-[10px] text-primary-foreground rounded-full flex items-center justify-center">
-                  {activeFilters.length}
-                </span>
-              )}
-            </Button>
-            <div className="flex border rounded-lg overflow-hidden">
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="icon"
-                className="rounded-none h-9 w-9"
-                onClick={() => onViewModeChange("list")}
-                title="Lista"
-              >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "status" ? "default" : "ghost"}
-                size="icon"
-                className="rounded-none h-9 w-9"
-                onClick={() => onViewModeChange("status")}
-                title="Por Status"
-              >
-                <Layers className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "aluno" ? "default" : "ghost"}
-                size="icon"
-                className="rounded-none h-9 w-9"
-                onClick={() => onViewModeChange("aluno")}
-                title="Por Aluno"
-              >
-                <Users className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "mes" ? "default" : "ghost"}
-                size="icon"
-                className="rounded-none h-9 w-9"
-                onClick={() => onViewModeChange("mes")}
-                title="Por Mês"
-              >
-                <CalendarIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+              <X className="h-4 w-4" />
+            </button>
+          )}
         </div>
 
-        {/* Active Filters */}
-        {activeFilters.length > 0 && (
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-muted-foreground">Filtros ativos:</span>
-            {activeFilters.map((filter, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">
-                {filter}
+        {/* Filter toggle & View modes */}
+        <div className="flex items-center gap-2">
+          <Button
+            variant={showFilters ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className={cn(
+              "h-10 gap-2 px-3",
+              activeFiltersCount > 0 && "border-primary/50"
+            )}
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+            <span className="hidden sm:inline">Filtros</span>
+            {activeFiltersCount > 0 && (
+              <Badge variant="secondary" className="h-5 w-5 p-0 justify-center text-[10px] bg-primary/10 text-primary">
+                {activeFiltersCount}
               </Badge>
-            ))}
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs">
-              <X className="h-3 w-3 mr-1" />
-              Limpar
-            </Button>
-          </div>
-        )}
+            )}
+            <ChevronDown className={cn(
+              "h-3.5 w-3.5 text-muted-foreground transition-transform",
+              showFilters && "rotate-180"
+            )} />
+          </Button>
 
-        {/* Filter Panel */}
-        {showFilters && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Status</label>
+          {/* View mode toggle */}
+          <div className="flex items-center bg-muted/50 rounded-lg p-1 gap-0.5">
+            {viewModes.map(({ value, icon: Icon, label }) => (
+              <button
+                key={value}
+                onClick={() => onViewModeChange(value)}
+                className={cn(
+                  "flex items-center justify-center h-8 w-8 rounded-md transition-all",
+                  viewMode === value
+                    ? "bg-background shadow-sm text-foreground"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+                title={label}
+              >
+                <Icon className="h-4 w-4" />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Expanded filters */}
+      {showFilters && (
+        <div className="bg-muted/30 rounded-lg p-4 border border-border/50 animate-fade-in">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {/* Status */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Status</label>
               <Select value={statusFilter} onValueChange={onStatusChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9 bg-background">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas</SelectItem>
-                  <SelectItem value="aberta">Abertas</SelectItem>
-                  <SelectItem value="paga">Pagas</SelectItem>
-                  <SelectItem value="vencida">Vencidas</SelectItem>
-                  <SelectItem value="cancelada">Canceladas</SelectItem>
+                  <SelectItem value="aberta">
+                    <span className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-blue-500" />
+                      Abertas
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="paga">
+                    <span className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      Pagas
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="vencida">
+                    <span className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-red-500" />
+                      Vencidas
+                    </span>
+                  </SelectItem>
+                  <SelectItem value="cancelada">
+                    <span className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-gray-400" />
+                      Canceladas
+                    </span>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Aluno</label>
+            {/* Aluno */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Aluno</label>
               <Select value={alunoFilter} onValueChange={onAlunoChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9 bg-background">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
                   {alunos.map(a => (
@@ -196,10 +212,13 @@ export function FaturaFilters({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Curso</label>
+            {/* Curso */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Curso</label>
               <Select value={cursoFilter} onValueChange={onCursoChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-9 bg-background">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
                   {cursos.map(c => (
@@ -209,24 +228,30 @@ export function FaturaFilters({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Período</label>
+            {/* Período */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-medium text-muted-foreground">Período</label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
+                  <Button 
+                    variant="outline" 
+                    className={cn(
+                      "h-9 w-full justify-start text-left font-normal bg-background",
+                      !periodoFilter.start && "text-muted-foreground"
+                    )}
+                  >
+                    <CalendarIcon className="h-4 w-4 mr-2 shrink-0" />
                     {periodoFilter.start ? (
-                      periodoFilter.end ? (
-                        `${format(periodoFilter.start, "dd/MM")} - ${format(periodoFilter.end, "dd/MM")}`
-                      ) : (
-                        format(periodoFilter.start, "dd/MM/yyyy")
-                      )
+                      <span className="truncate">
+                        {format(periodoFilter.start, "dd/MM")}
+                        {periodoFilter.end && ` - ${format(periodoFilter.end, "dd/MM")}`}
+                      </span>
                     ) : (
-                      <span className="text-muted-foreground">Selecionar</span>
+                      <span>Selecionar</span>
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0" align="end">
                   <Calendar
                     mode="range"
                     selected={{
@@ -240,13 +265,70 @@ export function FaturaFilters({
                       });
                     }}
                     locale={ptBR}
+                    numberOfMonths={2}
                   />
                 </PopoverContent>
               </Popover>
             </div>
           </div>
-        )}
-      </CardContent>
-    </Card>
+
+          {/* Active filters & Clear */}
+          {activeFiltersCount > 0 && (
+            <div className="flex items-center justify-between mt-4 pt-3 border-t border-border/50">
+              <div className="flex flex-wrap items-center gap-2">
+                {statusFilter !== "todas" && (
+                  <Badge variant="secondary" className="gap-1 pr-1">
+                    Status: {statusFilter}
+                    <button 
+                      onClick={() => onStatusChange("todas")}
+                      className="ml-1 hover:bg-muted rounded p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {alunoFilter !== "todos" && (
+                  <Badge variant="secondary" className="gap-1 pr-1">
+                    Aluno filtrado
+                    <button 
+                      onClick={() => onAlunoChange("todos")}
+                      className="ml-1 hover:bg-muted rounded p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {cursoFilter !== "todos" && (
+                  <Badge variant="secondary" className="gap-1 pr-1">
+                    Curso filtrado
+                    <button 
+                      onClick={() => onCursoChange("todos")}
+                      className="ml-1 hover:bg-muted rounded p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+                {periodoFilter.start && (
+                  <Badge variant="secondary" className="gap-1 pr-1">
+                    {format(periodoFilter.start, "dd/MM")}
+                    {periodoFilter.end && ` - ${format(periodoFilter.end, "dd/MM")}`}
+                    <button 
+                      onClick={() => onPeriodoChange({ start: null, end: null })}
+                      className="ml-1 hover:bg-muted rounded p-0.5"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                )}
+              </div>
+              <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 text-xs">
+                Limpar tudo
+              </Button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }

@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Plus, Printer } from "lucide-react";
+import { Plus, Printer, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   FaturaKPIs, 
@@ -77,6 +77,7 @@ const Faturas = () => {
 
   const cancelMutation = useCancelarFatura();
   const queryClient = useQueryClient();
+  
   const { data: escola } = useQuery({
     queryKey: ['escola-info'],
     queryFn: async () => {
@@ -84,6 +85,7 @@ const Faturas = () => {
       return data;
     },
   });
+
   const filteredFaturas = useMemo(() => {
     return faturas.filter((fatura) => {
       const matchesSearch = !searchTerm || 
@@ -213,7 +215,6 @@ const Faturas = () => {
       return;
     }
     try {
-      // Buscar pagamento mais recente da fatura
       const { data: pagamentos, error } = await supabase
         .from("pagamentos")
         .select("*")
@@ -246,13 +247,22 @@ const Faturas = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">Faturas</h1>
-            <p className="text-muted-foreground text-sm">Sistema enterprise de gestão de faturas e cobrança</p>
+            <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+              <Receipt className="h-6 w-6 text-primary" />
+              Faturas
+            </h1>
+            <p className="text-muted-foreground text-sm mt-1">
+              Gestão completa de cobranças e recebimentos
+            </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsCarneOpen(true)} className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsCarneOpen(true)} 
+              className="gap-2"
+            >
               <Printer className="h-4 w-4" />
-              Imprimir Carnê
+              <span className="hidden sm:inline">Imprimir</span> Carnê
             </Button>
             <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
