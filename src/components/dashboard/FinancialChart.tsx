@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   AreaChart,
@@ -47,7 +48,13 @@ const defaultColors = {
   muted: "hsl(var(--muted-foreground))",
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: any[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
       <div className="bg-popover border border-border rounded-lg shadow-lg p-3 min-w-[140px]">
@@ -81,12 +88,21 @@ export function FinancialChart({
   height = 300,
   colors = [],
 }: FinancialChartProps) {
+  const { t } = useTranslation();
+  
   const chartColors = colors.length > 0 ? colors : [
     defaultColors.success,
     defaultColors.danger,
     defaultColors.info,
     defaultColors.warning,
   ];
+
+  const translatedLabels = {
+    revenues: t("dashboard.revenues"),
+    expenses: t("dashboard.expenses"),
+    balance: t("dashboard.balance"),
+    value: t("dashboard.value"),
+  };
 
   const renderChart = () => {
     switch (type) {
@@ -116,7 +132,7 @@ export function FinancialChart({
             <Area
               type="monotone"
               dataKey="valor"
-              name="Valor"
+              name={translatedLabels.value}
               stroke={chartColors[0]}
               strokeWidth={2.5}
               fill="url(#colorValor)"
@@ -143,7 +159,7 @@ export function FinancialChart({
             <Tooltip content={<CustomTooltip />} />
             <Bar
               dataKey="valor"
-              name="Valor"
+              name={translatedLabels.value}
               fill={chartColors[0]}
               radius={[6, 6, 0, 0]}
               maxBarSize={50}
@@ -175,14 +191,14 @@ export function FinancialChart({
             />
             <Bar
               dataKey="receitas"
-              name="Receitas"
+              name={translatedLabels.revenues}
               fill={chartColors[0]}
               radius={[6, 6, 0, 0]}
               maxBarSize={35}
             />
             <Bar
               dataKey="despesas"
-              name="Despesas"
+              name={translatedLabels.expenses}
               fill={chartColors[1]}
               radius={[6, 6, 0, 0]}
               maxBarSize={35}
@@ -217,14 +233,14 @@ export function FinancialChart({
             <Area
               type="monotone"
               dataKey="receitas"
-              name="Receitas"
+              name={translatedLabels.revenues}
               fill="url(#colorReceitas)"
               stroke={chartColors[0]}
               strokeWidth={2}
             />
             <Bar
               dataKey="despesas"
-              name="Despesas"
+              name={translatedLabels.expenses}
               fill={chartColors[1]}
               radius={[4, 4, 0, 0]}
               maxBarSize={30}
@@ -232,7 +248,7 @@ export function FinancialChart({
             <Line
               type="monotone"
               dataKey="saldo"
-              name="Saldo"
+              name={translatedLabels.balance}
               stroke={chartColors[2]}
               strokeWidth={2.5}
               dot={{ fill: chartColors[2], strokeWidth: 2, r: 4 }}
