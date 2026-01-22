@@ -454,12 +454,12 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">De</Label>
                   <div className="flex gap-1">
-                    <Select value={mesInicial} onValueChange={setMesInicial}>
+                    <Select value={mesInicial || "all"} onValueChange={(v) => setMesInicial(v === "all" ? "" : v)}>
                       <SelectTrigger className="h-8 text-xs flex-1">
                         <SelectValue placeholder="Mês" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos</SelectItem>
+                        <SelectItem value="all">Todos</SelectItem>
                         {meses.map((mes, idx) => (
                           <SelectItem key={idx} value={(idx + 1).toString()}>
                             {mes.substring(0, 3)}
@@ -484,12 +484,12 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">Até</Label>
                   <div className="flex gap-1">
-                    <Select value={mesFinal} onValueChange={setMesFinal}>
+                    <Select value={mesFinal || "all"} onValueChange={(v) => setMesFinal(v === "all" ? "" : v)}>
                       <SelectTrigger className="h-8 text-xs flex-1">
                         <SelectValue placeholder="Mês" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">Todos</SelectItem>
+                        <SelectItem value="all">Todos</SelectItem>
                         {meses.map((mes, idx) => (
                           <SelectItem key={idx} value={(idx + 1).toString()}>
                             {mes.substring(0, 3)}
