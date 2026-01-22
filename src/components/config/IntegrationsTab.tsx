@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useSecrets } from "@/hooks/useSecrets";
+import { useIntegrationSettings, WebhookEvents, SecuritySettings } from "@/hooks/useIntegrationSettings";
 import { useWebhookLogs, useApiRequestLogs } from "@/hooks/useLogs";
 import { 
   Key, 
@@ -58,6 +59,28 @@ export function IntegrationsTab() {
     search: apiSearch || undefined,
     limit: 50,
   });
+
+  const { 
+    getWebhookEvents, 
+    getSecuritySettings, 
+    updateWebhookEvents, 
+    updateSecuritySettings, 
+    isSaving,
+    isLoading: settingsLoading 
+  } = useIntegrationSettings();
+
+  const webhookEvents = getWebhookEvents();
+  const securitySettings = getSecuritySettings();
+
+  const handleWebhookEventToggle = async (eventKey: keyof WebhookEvents, value: boolean) => {
+    const newEvents = { ...webhookEvents, [eventKey]: value };
+    await updateWebhookEvents(newEvents);
+  };
+
+  const handleSecurityToggle = async (settingKey: keyof SecuritySettings, value: boolean) => {
+    const newSettings = { ...securitySettings, [settingKey]: value };
+    await updateSecuritySettings(newSettings);
+  };
 
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -530,7 +553,11 @@ export function IntegrationsTab() {
                         Verifica o token de autenticação em webhooks recebidos
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={securitySettings.validate_webhook_token}
+                      onCheckedChange={(checked) => handleSecurityToggle("validate_webhook_token", checked)}
+                      disabled={isSaving}
+                    />
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between">
@@ -540,7 +567,11 @@ export function IntegrationsTab() {
                         Limita requisições por minuto para evitar abusos
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={securitySettings.rate_limiting}
+                      onCheckedChange={(checked) => handleSecurityToggle("rate_limiting", checked)}
+                      disabled={isSaving}
+                    />
                   </div>
                   <Separator />
                   <div className="flex items-center justify-between">
@@ -550,7 +581,11 @@ export function IntegrationsTab() {
                         Registra todas as operações de API para auditoria
                       </p>
                     </div>
-                    <Switch defaultChecked />
+                    <Switch 
+                      checked={securitySettings.audit_logs}
+                      onCheckedChange={(checked) => handleSecurityToggle("audit_logs", checked)}
+                      disabled={isSaving}
+                    />
                   </div>
                   <Separator />
                   <div className="space-y-2">
@@ -629,24 +664,28 @@ export function IntegrationsTab() {
               <Card className="border-border/50">
                 <CardHeader>
                   <CardTitle className="text-base">Eventos Monitorados</CardTitle>
-                  <CardDescription>Eventos que disparam ações automáticas</CardDescription>
+                  <CardDescription>Eventos que disparam ações automáticas (alterações são salvas automaticamente)</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="grid gap-3 md:grid-cols-2">
                     {[
-                      { event: "PAYMENT_CREATED", label: "Pagamento criado", active: true },
-                      { event: "PAYMENT_RECEIVED", label: "Pagamento recebido", active: true },
-                      { event: "PAYMENT_CONFIRMED", label: "Pagamento confirmado", active: true },
-                      { event: "PAYMENT_OVERDUE", label: "Pagamento vencido", active: true },
-                      { event: "PAYMENT_REFUNDED", label: "Pagamento estornado", active: false },
-                      { event: "PAYMENT_DELETED", label: "Pagamento excluído", active: false },
+                      { event: "PAYMENT_CREATED" as keyof WebhookEvents, label: "Pagamento criado" },
+                      { event: "PAYMENT_RECEIVED" as keyof WebhookEvents, label: "Pagamento recebido" },
+                      { event: "PAYMENT_CONFIRMED" as keyof WebhookEvents, label: "Pagamento confirmado" },
+                      { event: "PAYMENT_OVERDUE" as keyof WebhookEvents, label: "Pagamento vencido" },
+                      { event: "PAYMENT_REFUNDED" as keyof WebhookEvents, label: "Pagamento estornado" },
+                      { event: "PAYMENT_DELETED" as keyof WebhookEvents, label: "Pagamento excluído" },
                     ].map((item) => (
                       <div key={item.event} className="flex items-center justify-between p-3 rounded-lg border border-border/50 bg-muted/20">
                         <div>
                           <p className="text-sm font-medium">{item.label}</p>
                           <p className="text-xs text-muted-foreground font-mono">{item.event}</p>
                         </div>
-                        <Switch defaultChecked={item.active} />
+                        <Switch 
+                          checked={webhookEvents[item.event]}
+                          onCheckedChange={(checked) => handleWebhookEventToggle(item.event, checked)}
+                          disabled={isSaving || settingsLoading}
+                        />
                       </div>
                     ))}
                   </div>
