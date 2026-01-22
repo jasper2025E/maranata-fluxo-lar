@@ -307,16 +307,28 @@ export function FaturaTable({
   };
 
   const handleSelectAll = () => {
-    if (!onSelectionChange) return;
-    if (selectedFaturas?.size === faturas.length) {
-      onSelectionChange(new Set());
+    if (!onSelectionChange || !selectedFaturas) return;
+    
+    const visibleIds = new Set(faturas.map(f => f.id));
+    const allVisibleSelected = faturas.every(f => selectedFaturas.has(f.id));
+    
+    if (allVisibleSelected) {
+      // Desmarcar apenas os visíveis, mantendo outros selecionados
+      const newSelection = new Set(selectedFaturas);
+      visibleIds.forEach(id => newSelection.delete(id));
+      onSelectionChange(newSelection);
     } else {
-      onSelectionChange(new Set(faturas.map(f => f.id)));
+      // Adicionar todos os visíveis sem apagar os já selecionados
+      const newSelection = new Set(selectedFaturas);
+      visibleIds.forEach(id => newSelection.add(id));
+      onSelectionChange(newSelection);
     }
   };
 
-  const isAllSelected = selectedFaturas?.size === faturas.length && faturas.length > 0;
-  const isSomeSelected = (selectedFaturas?.size || 0) > 0 && !isAllSelected;
+  const visibleIds = new Set(faturas.map(f => f.id));
+  const visibleSelectedCount = faturas.filter(f => selectedFaturas?.has(f.id)).length;
+  const isAllVisibleSelected = visibleSelectedCount === faturas.length && faturas.length > 0;
+  const isSomeVisibleSelected = visibleSelectedCount > 0 && !isAllVisibleSelected;
 
   if (isLoading) {
     return <Card><TableSkeleton /></Card>;
@@ -350,9 +362,9 @@ export function FaturaTable({
               {onSelectionChange && (
                 <TableHead className="pl-4 w-10">
                   <Checkbox
-                    checked={isAllSelected}
+                    checked={isAllVisibleSelected}
                     ref={(ref) => {
-                      if (ref && isSomeSelected) {
+                      if (ref && isSomeVisibleSelected) {
                         (ref as any).indeterminate = true;
                       }
                     }}
