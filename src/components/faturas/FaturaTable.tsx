@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -58,6 +59,8 @@ interface FaturaTableProps {
   onDownloadPDF?: (fatura: Fatura) => void;
   onAsaasPayment?: (fatura: Fatura) => void;
   onDownloadReceipt?: (fatura: Fatura) => void;
+  selectedFaturas?: Set<string>;
+  onSelectionChange?: (selected: Set<string>) => void;
 }
 
 function getStatusConfig(status: string, dataVencimento: string) {
@@ -105,6 +108,8 @@ function FaturaRow({
   onDownloadPDF,
   onAsaasPayment,
   onDownloadReceipt,
+  isSelected,
+  onToggleSelect,
 }: {
   fatura: Fatura;
   onViewDetails: (fatura: Fatura) => void;
@@ -118,6 +123,8 @@ function FaturaRow({
   onDownloadPDF?: (fatura: Fatura) => void;
   onAsaasPayment?: (fatura: Fatura) => void;
   onDownloadReceipt?: (fatura: Fatura) => void;
+  isSelected?: boolean;
+  onToggleSelect?: (faturaId: string) => void;
 }) {
   const statusConfig = getStatusConfig(fatura.status, fatura.data_vencimento);
   const StatusIcon = statusConfig.icon;
@@ -129,7 +136,15 @@ function FaturaRow({
 
   return (
     <TableRow className="hover:bg-muted/30 transition-colors">
-      <TableCell className="pl-4 font-mono text-xs text-muted-foreground">
+      {onToggleSelect && (
+        <TableCell className="pl-4 w-10">
+          <Checkbox
+            checked={isSelected}
+            onCheckedChange={() => onToggleSelect(fatura.id)}
+          />
+        </TableCell>
+      )}
+      <TableCell className={cn("font-mono text-xs text-muted-foreground", !onToggleSelect && "pl-4")}>
         {fatura.codigo_sequencial || fatura.id.slice(0, 8)}
       </TableCell>
       <TableCell>
@@ -265,6 +280,8 @@ export function FaturaTable({
   onDownloadPDF,
   onAsaasPayment,
   onDownloadReceipt,
+  selectedFaturas,
+  onSelectionChange,
 }: FaturaTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
@@ -277,6 +294,29 @@ export function FaturaTable({
     }
     setExpandedGroups(newExpanded);
   };
+
+  const handleToggleSelect = (faturaId: string) => {
+    if (!onSelectionChange || !selectedFaturas) return;
+    const newSelection = new Set(selectedFaturas);
+    if (newSelection.has(faturaId)) {
+      newSelection.delete(faturaId);
+    } else {
+      newSelection.add(faturaId);
+    }
+    onSelectionChange(newSelection);
+  };
+
+  const handleSelectAll = () => {
+    if (!onSelectionChange) return;
+    if (selectedFaturas?.size === faturas.length) {
+      onSelectionChange(new Set());
+    } else {
+      onSelectionChange(new Set(faturas.map(f => f.id)));
+    }
+  };
+
+  const isAllSelected = selectedFaturas?.size === faturas.length && faturas.length > 0;
+  const isSomeSelected = (selectedFaturas?.size || 0) > 0 && !isAllSelected;
 
   if (isLoading) {
     return <Card><TableSkeleton /></Card>;
@@ -294,7 +334,11 @@ export function FaturaTable({
     );
   }
 
-  const rowProps = { onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, onSendReceipt, onViewHistory, onDownloadPDF, onAsaasPayment, onDownloadReceipt };
+  const rowProps = { 
+    onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, 
+    onSendReceipt, onViewHistory, onDownloadPDF, onAsaasPayment, onDownloadReceipt,
+    onToggleSelect: onSelectionChange ? handleToggleSelect : undefined,
+  };
 
   // List view
   if (viewMode === "list") {
@@ -303,7 +347,20 @@ export function FaturaTable({
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/30">
-              <TableHead className="pl-4 w-[120px]">Código</TableHead>
+              {onSelectionChange && (
+                <TableHead className="pl-4 w-10">
+                  <Checkbox
+                    checked={isAllSelected}
+                    ref={(ref) => {
+                      if (ref && isSomeSelected) {
+                        (ref as any).indeterminate = true;
+                      }
+                    }}
+                    onCheckedChange={handleSelectAll}
+                  />
+                </TableHead>
+              )}
+              <TableHead className={cn("w-[120px]", !onSelectionChange && "pl-4")}>Código</TableHead>
               <TableHead>Aluno / Responsável</TableHead>
               <TableHead>Ref.</TableHead>
               <TableHead>Valor</TableHead>
@@ -314,12 +371,20 @@ export function FaturaTable({
           </TableHeader>
           <TableBody>
             {faturas.map(fatura => (
-              <FaturaRow key={fatura.id} fatura={fatura} {...rowProps} />
+              <FaturaRow 
+                key={fatura.id} 
+                fatura={fatura} 
+                isSelected={selectedFaturas?.has(fatura.id)}
+                {...rowProps} 
+              />
             ))}
           </TableBody>
         </Table>
         <CardContent className="border-t py-3 text-center text-sm text-muted-foreground">
-          {faturas.length} fatura(s)
+          {selectedFaturas && selectedFaturas.size > 0 
+            ? `${selectedFaturas.size} de ${faturas.length} fatura(s) selecionada(s)`
+            : `${faturas.length} fatura(s)`
+          }
         </CardContent>
       </Card>
     );
