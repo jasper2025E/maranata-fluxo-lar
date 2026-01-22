@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { User } from "@supabase/supabase-js";
+import { useTranslation } from "react-i18next";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -8,7 +9,6 @@ import { Separator } from "@/components/ui/separator";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { 
   Bell, 
-  Settings,
   Loader2,
   Moon,
   Sun,
@@ -19,10 +19,12 @@ import {
   Monitor,
   Palette,
   Languages,
+  Check,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { languages } from "@/i18n";
 
 interface UserPreferences {
   email_notifications: boolean;
@@ -270,24 +272,56 @@ export function PreferencesTab({
 
           <Separator />
 
-          <div className="flex items-center justify-between p-4 rounded-lg border bg-muted/50">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-muted">
-                <Languages className="h-4 w-4 text-muted-foreground" />
-              </div>
-              <div className="space-y-0.5">
-                <Label className="font-medium">Idioma</Label>
-                <p className="text-sm text-muted-foreground">
-                  Português (Brasil)
-                </p>
-              </div>
-            </div>
-            <Button variant="outline" size="sm" disabled>
-              Em breve
-            </Button>
-          </div>
+          <LanguageSection />
         </CardContent>
       </Card>
     </motion.div>
+  );
+}
+
+function LanguageSection() {
+  const { i18n, t } = useTranslation();
+
+  const currentLanguage = languages.find((lang) => lang.code === i18n.language) || languages[0];
+
+  const handleLanguageChange = (langCode: string) => {
+    i18n.changeLanguage(langCode);
+    toast.success(t("success.saved"));
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center gap-3">
+        <div className="p-2 rounded-full bg-primary/10">
+          <Languages className="h-4 w-4 text-primary" />
+        </div>
+        <div className="space-y-0.5">
+          <Label className="font-medium">{t("settings.language")}</Label>
+          <p className="text-sm text-muted-foreground">
+            {t("languages." + (currentLanguage.code === "pt-BR" ? "pt" : currentLanguage.code))}
+          </p>
+        </div>
+      </div>
+      
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
+        {languages.map((lang) => (
+          <button
+            key={lang.code}
+            onClick={() => handleLanguageChange(lang.code)}
+            className={`flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all ${
+              i18n.language === lang.code
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-muted-foreground/50"
+            }`}
+          >
+            <span className="text-2xl">{lang.flag}</span>
+            <span className="text-sm font-medium">{lang.name}</span>
+            {i18n.language === lang.code && (
+              <Check className="h-4 w-4 text-primary" />
+            )}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
