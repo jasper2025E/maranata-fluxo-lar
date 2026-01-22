@@ -403,20 +403,49 @@ export function useCreateFatura() {
         if (descontosError) throw descontosError;
       }
 
-      // Criar cobrança no Asaas automaticamente
+      // Criar cobrança no Asaas automaticamente com retry
       if (criarCobrancaAsaas) {
-        try {
-          const { error: asaasError } = await supabase.functions.invoke("asaas-create-payment", {
-            body: { faturaId: fatura.id, billingType: "UNDEFINED" },
-          });
-          
-          if (asaasError) {
-            console.warn("Aviso: Não foi possível criar cobrança no Asaas:", asaasError);
-            // Não lançar erro, pois a fatura foi criada com sucesso
+        const maxRetries = 3;
+        let lastError: unknown = null;
+        
+        for (let attempt = 1; attempt <= maxRetries; attempt++) {
+          try {
+            const { data: asaasResult, error: asaasError } = await supabase.functions.invoke("asaas-create-payment", {
+              body: { faturaId: fatura.id, billingType: "UNDEFINED" },
+            });
+            
+            if (asaasError) {
+              lastError = asaasError;
+              console.warn(`Tentativa ${attempt}/${maxRetries} - Erro Asaas:`, asaasError);
+              if (attempt < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt)); // Backoff
+                continue;
+              }
+            } else if (asaasResult?.success) {
+              console.log("Cobrança Asaas criada com sucesso:", asaasResult.payment?.id);
+              break;
+            } else {
+              lastError = asaasResult?.error || "Resposta inválida do Asaas";
+              console.warn(`Tentativa ${attempt}/${maxRetries} - Erro:`, lastError);
+              if (attempt < maxRetries) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+                continue;
+              }
+            }
+          } catch (asaasErr) {
+            lastError = asaasErr;
+            console.warn(`Tentativa ${attempt}/${maxRetries} - Erro de conexão:`, asaasErr);
+            if (attempt < maxRetries) {
+              await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+              continue;
+            }
           }
-        } catch (asaasErr) {
-          console.warn("Aviso: Erro ao conectar com Asaas:", asaasErr);
-          // Continuar mesmo com erro do Asaas
+        }
+        
+        if (lastError) {
+          console.error("Falha ao criar cobrança Asaas após todas as tentativas:", lastError);
+          // A fatura foi criada, mas a cobrança não - notificar mas não bloquear
+          toast.warning("Fatura criada, mas a cobrança Asaas pode estar pendente.");
         }
       }
 
