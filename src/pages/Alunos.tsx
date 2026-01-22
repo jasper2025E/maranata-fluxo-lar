@@ -179,43 +179,28 @@ const Alunos = () => {
           p_data_inicio: new Date().toISOString().split("T")[0],
         });
 
-        // Criar cobranças Asaas para todas as faturas geradas (processamento em lotes com retry)
+        // Criar cobranças Asaas em background (não bloqueia a criação do aluno)
+        // Processamos apenas as 3 primeiras faturas imediatamente, as demais serão criadas via carnê
         const { data: faturasGeradas } = await supabase
           .from("faturas")
           .select("id")
           .eq("aluno_id", newAluno.id)
           .eq("status", "Aberta")
-          .is("asaas_payment_id", null);
+          .is("asaas_payment_id", null)
+          .order("data_vencimento", { ascending: true })
+          .limit(3);
 
         if (faturasGeradas && faturasGeradas.length > 0) {
-          const batchSize = 3;
-          for (let i = 0; i < faturasGeradas.length; i += batchSize) {
-            const batch = faturasGeradas.slice(i, i + batchSize);
-            await Promise.allSettled(
-              batch.map(async (fatura) => {
-                const maxRetries = 2;
-                for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                  try {
-                    const { data: result, error } = await supabase.functions.invoke("asaas-create-payment", {
-                      body: { faturaId: fatura.id, billingType: "UNDEFINED" },
-                    });
-                    if (!error && result?.success) {
-                      console.log(`Cobrança Asaas criada para fatura ${fatura.id}`);
-                      return;
-                    }
-                    if (attempt < maxRetries) {
-                      await new Promise(r => setTimeout(r, 500 * attempt));
-                    }
-                  } catch (err) {
-                    if (attempt === maxRetries) {
-                      console.warn(`Falha ao criar cobrança Asaas para fatura ${fatura.id}:`, err);
-                    }
-                  }
-                }
-              })
-            );
-            if (i + batchSize < faturasGeradas.length) {
-              await new Promise(r => setTimeout(r, 300));
+          // Processa uma fatura por vez para evitar sobrecarga
+          for (const fatura of faturasGeradas) {
+            try {
+              await supabase.functions.invoke("asaas-create-payment", {
+                body: { faturaId: fatura.id, billingType: "UNDEFINED" },
+              });
+              // Delay entre requisições
+              await new Promise(r => setTimeout(r, 800));
+            } catch (err) {
+              console.warn(`Aviso: Cobrança Asaas pendente para fatura ${fatura.id}`);
             }
           }
         }
@@ -225,7 +210,7 @@ const Alunos = () => {
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
       queryClient.invalidateQueries({ queryKey: ["faturas"] });
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
-      toast.success("Aluno cadastrado e faturas geradas com sucesso!");
+      toast.success("Aluno cadastrado com sucesso! Cobranças serão geradas em breve.");
       resetForm();
     },
     onError: (error) => {

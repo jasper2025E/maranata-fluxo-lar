@@ -54,45 +54,25 @@ export function useEnturmar() {
           if (vinculoError) throw vinculoError;
         }
 
-        // 4. Criar cobranças Asaas para todas as faturas geradas (processamento paralelo com retry)
+        // 4. Criar cobranças Asaas apenas para as próximas 3 faturas (evita sobrecarga)
         const { data: faturasGeradas } = await supabase
           .from("faturas")
           .select("id")
           .eq("aluno_id", alunoId)
           .eq("status", "Aberta")
-          .is("asaas_payment_id", null);
+          .is("asaas_payment_id", null)
+          .order("data_vencimento", { ascending: true })
+          .limit(3);
 
         if (faturasGeradas && faturasGeradas.length > 0) {
-          // Processar em lotes de 3 para não sobrecarregar a API
-          const batchSize = 3;
-          for (let i = 0; i < faturasGeradas.length; i += batchSize) {
-            const batch = faturasGeradas.slice(i, i + batchSize);
-            await Promise.allSettled(
-              batch.map(async (fatura) => {
-                const maxRetries = 2;
-                for (let attempt = 1; attempt <= maxRetries; attempt++) {
-                  try {
-                    const { data: result, error } = await supabase.functions.invoke("asaas-create-payment", {
-                      body: { faturaId: fatura.id, billingType: "UNDEFINED" },
-                    });
-                    if (!error && result?.success) {
-                      console.log(`Cobrança Asaas criada para fatura ${fatura.id}`);
-                      return;
-                    }
-                    if (attempt < maxRetries) {
-                      await new Promise(r => setTimeout(r, 500 * attempt));
-                    }
-                  } catch (err) {
-                    if (attempt === maxRetries) {
-                      console.warn(`Falha ao criar cobrança Asaas para fatura ${fatura.id}:`, err);
-                    }
-                  }
-                }
-              })
-            );
-            // Pequeno delay entre lotes
-            if (i + batchSize < faturasGeradas.length) {
-              await new Promise(r => setTimeout(r, 300));
+          for (const fatura of faturasGeradas) {
+            try {
+              await supabase.functions.invoke("asaas-create-payment", {
+                body: { faturaId: fatura.id, billingType: "UNDEFINED" },
+              });
+              await new Promise(r => setTimeout(r, 800));
+            } catch (err) {
+              console.warn(`Aviso: Cobrança Asaas pendente para fatura ${fatura.id}`);
             }
           }
         }
@@ -104,7 +84,7 @@ export function useEnturmar() {
       queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
-      toast.success("Aluno enturmado e faturas geradas com sucesso!");
+      toast.success("Aluno enturmado com sucesso! Cobranças serão geradas em breve.");
     },
     onError: (error: Error) => {
       toast.error(`Erro na enturmação: ${error.message}`);
