@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
   AlertDialog,
@@ -19,7 +20,8 @@ import {
   Printer, 
   QrCode, 
   Loader2,
-  CheckSquare,
+  CheckCircle2,
+  Download,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
@@ -27,7 +29,6 @@ import { Fatura, formatCurrency, useCancelarFatura } from "@/hooks/useFaturas";
 import { useAsaas } from "@/hooks/useAsaas";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
-import { cn } from "@/lib/utils";
 
 interface BulkActionsBarProps {
   selectedIds: Set<string>;
@@ -51,6 +52,7 @@ export function BulkActionsBar({
   const { createPayment } = useAsaas();
   const cancelMutation = useCancelarFatura();
 
+  // Buscar escola para geração do carnê
   const { data: escola } = useQuery({
     queryKey: ["escola-bulk"],
     queryFn: async () => {
@@ -91,7 +93,7 @@ export function BulkActionsBar({
 
     try {
       for (const fatura of pendingFaturas) {
-        setProgressMessage(`${cancelled + 1}/${pendingFaturas.length}`);
+        setProgressMessage(`Cancelando ${cancelled + 1} de ${pendingFaturas.length}...`);
         
         await cancelMutation.mutateAsync({ 
           id: fatura.id, 
@@ -102,7 +104,7 @@ export function BulkActionsBar({
         setProgressValue((cancelled / pendingFaturas.length) * 100);
       }
 
-      toast.success(`${cancelled} fatura(s) cancelada(s)`);
+      toast.success(`${cancelled} fatura(s) cancelada(s) com sucesso!`);
       onClearSelection();
       onActionComplete();
     } catch (error) {
@@ -121,7 +123,9 @@ export function BulkActionsBar({
       return;
     }
 
-    const pendingFaturas = selectedFaturas.filter(f => f.status !== "Cancelada");
+    const pendingFaturas = selectedFaturas.filter(
+      f => f.status !== "Cancelada"
+    );
 
     if (pendingFaturas.length === 0) {
       toast.error("Nenhuma fatura válida selecionada");
@@ -133,11 +137,14 @@ export function BulkActionsBar({
     let processed = 0;
 
     try {
+      // Primeiro, criar cobranças Asaas para faturas que não têm
       const faturasWithoutAsaas = pendingFaturas.filter(
         f => !f.asaas_payment_id && (f.status === "Aberta" || f.status === "Vencida")
       );
 
       if (faturasWithoutAsaas.length > 0) {
+        setProgressMessage(`Gerando cobranças Asaas (0/${faturasWithoutAsaas.length})...`);
+        
         for (const fatura of faturasWithoutAsaas) {
           try {
             await createPayment(fatura.id, "UNDEFINED");
@@ -145,12 +152,13 @@ export function BulkActionsBar({
             console.warn(`Erro ao criar cobrança para fatura ${fatura.id}:`, err);
           }
           processed++;
-          setProgressMessage(`Cobranças ${processed}/${faturasWithoutAsaas.length}`);
+          setProgressMessage(`Gerando cobranças Asaas (${processed}/${faturasWithoutAsaas.length})...`);
           setProgressValue((processed / (faturasWithoutAsaas.length + 1)) * 50);
         }
       }
 
-      setProgressMessage("Gerando PDF...");
+      // Buscar faturas atualizadas com dados do Asaas
+      setProgressMessage("Buscando dados atualizados...");
       const { data: updatedFaturas } = await supabase
         .from("faturas")
         .select(`
@@ -165,6 +173,7 @@ export function BulkActionsBar({
         throw new Error("Não foi possível buscar faturas atualizadas");
       }
 
+      setProgressMessage("Gerando PDF do carnê...");
       setProgressValue(90);
 
       await generateCarneCompacto(
@@ -180,7 +189,7 @@ export function BulkActionsBar({
       );
 
       setProgressValue(100);
-      toast.success(`Carnê gerado com ${updatedFaturas.length} fatura(s)`);
+      toast.success(`Carnê gerado com ${updatedFaturas.length} fatura(s)!`);
       onClearSelection();
     } catch (error: any) {
       console.error("Erro ao gerar carnê:", error);
@@ -197,7 +206,7 @@ export function BulkActionsBar({
     );
 
     if (faturasWithoutAsaas.length === 0) {
-      toast.info("Todas já têm cobrança Asaas");
+      toast.info("Todas as faturas selecionadas já têm cobrança Asaas");
       return;
     }
 
@@ -208,7 +217,7 @@ export function BulkActionsBar({
 
     try {
       for (const fatura of faturasWithoutAsaas) {
-        setProgressMessage(`${processed + 1}/${faturasWithoutAsaas.length}`);
+        setProgressMessage(`Gerando cobrança ${processed + 1} de ${faturasWithoutAsaas.length}...`);
         
         try {
           await createPayment(fatura.id, "UNDEFINED");
@@ -221,7 +230,7 @@ export function BulkActionsBar({
         setProgressValue((processed / faturasWithoutAsaas.length) * 100);
       }
 
-      toast.success(`${success} cobrança(s) gerada(s)`);
+      toast.success(`${success} cobrança(s) Asaas gerada(s)!`);
       onActionComplete();
     } catch (error) {
       toast.error("Erro ao gerar cobranças");
@@ -233,40 +242,32 @@ export function BulkActionsBar({
 
   return (
     <>
-      <div className={cn(
-        "flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all animate-fade-in",
-        "bg-primary/5 border border-primary/20"
-      )}>
-        {/* Selection info */}
-        <div className="flex items-center gap-2 text-sm min-w-0">
-          <div className="flex items-center justify-center h-6 w-6 rounded bg-primary/10">
-            <CheckSquare className="h-3.5 w-3.5 text-primary" />
-          </div>
-          <span className="font-medium text-primary">{selectedCount}</span>
-          <span className="text-muted-foreground hidden sm:inline">
-            • {formatCurrency(totalValue)}
+      <div className="flex items-center justify-between gap-4 px-4 py-2 bg-muted/50 border rounded-lg">
+        <div className="flex items-center gap-2 text-sm">
+          <Badge variant="secondary" className="font-semibold">
+            {selectedCount}
+          </Badge>
+          <span className="text-muted-foreground">
+            selecionada{selectedCount !== 1 && "s"} • {formatCurrency(totalValue)}
           </span>
         </div>
 
-        <div className="h-4 w-px bg-border hidden sm:block" />
-
-        {/* Actions or Progress */}
         {isProcessing ? (
-          <div className="flex items-center gap-3 flex-1 min-w-0">
-            <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
-            <span className="text-xs text-muted-foreground truncate">{progressMessage}</span>
-            <Progress value={progressValue} className="h-1 w-20 shrink-0" />
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">{progressMessage}</span>
+            <Progress value={progressValue} className="h-1.5 w-24" />
           </div>
         ) : (
-          <div className="flex items-center gap-1 flex-1">
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
               onClick={handleGenerateCarne}
-              className="h-7 gap-1.5 text-xs px-2"
+              className="h-8 gap-1.5 text-xs"
             >
               <Printer className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Carnê</span>
+              Carnê
             </Button>
             
             <Button
@@ -274,10 +275,10 @@ export function BulkActionsBar({
               size="sm"
               onClick={handleGenerateAsaas}
               disabled={pendingCount === 0}
-              className="h-7 gap-1.5 text-xs px-2"
+              className="h-8 gap-1.5 text-xs"
             >
               <QrCode className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">PIX</span>
+              PIX/Boleto
             </Button>
 
             <Button
@@ -285,24 +286,22 @@ export function BulkActionsBar({
               size="sm"
               onClick={() => setIsCancelDialogOpen(true)}
               disabled={pendingCount === 0}
-              className="h-7 gap-1.5 text-xs px-2 text-red-600 hover:text-red-600 hover:bg-red-500/10"
+              className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
             >
               <Ban className="h-3.5 w-3.5" />
-              <span className="hidden sm:inline">Cancelar</span>
+              Cancelar
+            </Button>
+
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClearSelection}
+              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+            >
+              <X className="h-4 w-4" />
             </Button>
           </div>
         )}
-
-        {/* Clear button */}
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClearSelection}
-          disabled={isProcessing}
-          className="h-7 w-7 shrink-0 text-muted-foreground hover:text-foreground"
-        >
-          <X className="h-4 w-4" />
-        </Button>
       </div>
 
       {/* Cancel Dialog */}
@@ -311,12 +310,13 @@ export function BulkActionsBar({
           <AlertDialogHeader>
             <AlertDialogTitle>Cancelar {pendingCount} fatura(s)?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta ação não pode ser desfeita. As faturas serão marcadas como canceladas.
+              Esta ação não pode ser desfeita. As faturas selecionadas serão 
+              marcadas como canceladas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           
           <div className="space-y-2">
-            <Label htmlFor="motivo">Motivo</Label>
+            <Label htmlFor="motivo">Motivo do cancelamento</Label>
             <Input
               id="motivo"
               placeholder="Informe o motivo..."
@@ -330,7 +330,7 @@ export function BulkActionsBar({
             <AlertDialogAction
               onClick={handleBulkCancel}
               disabled={isProcessing || !cancelMotivo.trim()}
-              className="bg-red-600 text-white hover:bg-red-700"
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               {isProcessing ? (
                 <>
@@ -338,7 +338,7 @@ export function BulkActionsBar({
                   Cancelando...
                 </>
               ) : (
-                "Confirmar"
+                "Confirmar Cancelamento"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

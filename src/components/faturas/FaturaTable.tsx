@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -32,10 +32,11 @@ import {
   XCircle,
   Clock,
   ChevronDown,
+  ChevronRight,
+  Calendar as CalendarIcon,
   History,
   Download,
   QrCode,
-  Receipt,
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -70,69 +71,24 @@ function getStatusConfig(status: string, dataVencimento: string) {
   const vencendoEm7Dias = isAfter(vencimento, hoje) && isBefore(vencimento, addDays(hoje, 7));
 
   const normalizedStatus = status?.toLowerCase() || '';
-  
-  if (normalizedStatus === "paga") {
-    return { 
-      label: "Paga", 
-      className: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20", 
-      icon: CheckCircle2,
-      dot: "bg-emerald-500"
-    };
-  }
-  if (normalizedStatus === "vencida") {
-    return { 
-      label: "Vencida", 
-      className: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20", 
-      icon: AlertCircle,
-      dot: "bg-red-500"
-    };
-  }
-  if (normalizedStatus === "cancelada") {
-    return { 
-      label: "Cancelada", 
-      className: "bg-muted text-muted-foreground border-border", 
-      icon: XCircle,
-      dot: "bg-gray-400"
-    };
-  }
-  if (normalizedStatus === "rascunho") {
-    return { 
-      label: "Rascunho", 
-      className: "bg-muted/50 text-muted-foreground border-border", 
-      icon: FileText,
-      dot: "bg-gray-300"
-    };
-  }
-  if (vencendoEm7Dias) {
-    return { 
-      label: "Vencendo", 
-      className: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20", 
-      icon: Clock,
-      dot: "bg-amber-500"
-    };
-  }
-  return { 
-    label: "Aberta", 
-    className: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20", 
-    icon: FileText,
-    dot: "bg-blue-500"
-  };
+  if (normalizedStatus === "paga") return { label: "Paga", className: "bg-success/10 text-success border-success/20", icon: CheckCircle2 };
+  if (normalizedStatus === "vencida") return { label: "Vencida", className: "bg-destructive/10 text-destructive border-destructive/20", icon: AlertCircle };
+  if (normalizedStatus === "cancelada") return { label: "Cancelada", className: "bg-muted text-muted-foreground border-border", icon: XCircle };
+  if (normalizedStatus === "rascunho") return { label: "Rascunho", className: "bg-muted/50 text-muted-foreground border-border", icon: FileText };
+  if (vencendoEm7Dias) return { label: "Vencendo", className: "bg-warning/10 text-warning border-warning/20", icon: Clock };
+  return { label: "Emitida", className: "bg-primary/10 text-primary border-primary/20", icon: FileText };
 }
 
 function TableSkeleton() {
   return (
-    <div className="space-y-3 p-4">
+    <div className="space-y-4 p-6">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex items-center gap-4 animate-pulse">
-          <Skeleton className="h-4 w-4 rounded" />
-          <Skeleton className="h-9 w-9 rounded-full" />
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-4 w-32" />
-            <Skeleton className="h-3 w-24" />
-          </div>
-          <Skeleton className="h-4 w-16" />
+        <div key={i} className="flex items-center gap-4">
+          <Skeleton className="h-10 w-10 rounded-full" />
+          <Skeleton className="h-4 w-32" />
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-20" />
           <Skeleton className="h-6 w-16 rounded-full" />
-          <Skeleton className="h-8 w-8 rounded" />
         </div>
       ))}
     </div>
@@ -176,21 +132,15 @@ function FaturaRow({
   const valorOriginal = fatura.valor_original || fatura.valor;
   const temAlteracao = valorFinal !== valorOriginal;
   const isPendente = fatura.status === "Aberta" || fatura.status === "Vencida";
+  const saldoRestante = fatura.saldo_restante || valorFinal;
 
   return (
-    <TableRow 
-      className={cn(
-        "group transition-colors",
-        isSelected && "bg-primary/5",
-        !isSelected && "hover:bg-muted/30"
-      )}
-    >
+    <TableRow className="hover:bg-muted/30 transition-colors">
       {onToggleSelect && (
         <TableCell className="pl-4 w-10">
           <Checkbox
             checked={isSelected}
             onCheckedChange={() => onToggleSelect(fatura.id)}
-            className="transition-all"
           />
         </TableCell>
       )}
@@ -199,62 +149,57 @@ function FaturaRow({
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-full bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-semibold text-primary shrink-0">
+          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
             {fatura.alunos?.nome_completo?.charAt(0).toUpperCase() || '?'}
           </div>
-          <div className="min-w-0">
-            <p className="font-medium text-sm truncate">{fatura.alunos?.nome_completo || 'N/A'}</p>
-            <p className="text-xs text-muted-foreground truncate">{fatura.responsaveis?.nome || fatura.cursos?.nome}</p>
+          <div>
+            <p className="font-medium text-sm">{fatura.alunos?.nome_completo || 'N/A'}</p>
+            <p className="text-xs text-muted-foreground">{fatura.responsaveis?.nome || fatura.cursos?.nome}</p>
           </div>
         </div>
       </TableCell>
-      <TableCell>
-        <span className="text-sm text-muted-foreground">
-          {meses[fatura.mes_referencia - 1]?.slice(0, 3)}/{fatura.ano_referencia}
-        </span>
+      <TableCell className="text-sm text-muted-foreground">
+        {meses[fatura.mes_referencia - 1]?.slice(0, 3)}/{fatura.ano_referencia}
       </TableCell>
       <TableCell>
         <div className="flex flex-col">
-          <span className="font-semibold text-sm tabular-nums">{formatCurrency(valorFinal)}</span>
+          <span className="font-semibold text-sm">{formatCurrency(valorFinal)}</span>
           {temAlteracao && (
-            <span className="text-[11px] text-muted-foreground line-through tabular-nums">
-              {formatCurrency(valorOriginal)}
-            </span>
+            <span className="text-xs text-muted-foreground line-through">{formatCurrency(valorOriginal)}</span>
+          )}
+          {saldoRestante > 0 && saldoRestante < valorFinal && (
+            <span className="text-xs text-warning">Saldo: {formatCurrency(saldoRestante)}</span>
           )}
         </div>
       </TableCell>
-      <TableCell>
+      <TableCell className="text-sm">
         <div className="flex flex-col">
-          <span className="text-sm tabular-nums">{format(new Date(fatura.data_vencimento), "dd/MM/yy")}</span>
+          <span className="text-muted-foreground">{format(new Date(fatura.data_vencimento), "dd/MM/yy")}</span>
           {fatura.dias_atraso && fatura.dias_atraso > 0 && fatura.status === "Vencida" && (
-            <span className="text-[11px] text-red-500 font-medium">{fatura.dias_atraso}d atraso</span>
+            <span className="text-xs text-destructive">{fatura.dias_atraso}d atraso</span>
           )}
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1.5">
-          <Badge 
-            variant="outline" 
-            className={cn("font-medium gap-1.5 px-2 py-0.5 text-xs border", statusConfig.className)}
-          >
-            <span className={cn("h-1.5 w-1.5 rounded-full", statusConfig.dot)} />
+        <div className="flex items-center gap-1">
+          <Badge variant="outline" className={cn("font-medium gap-1 px-2 py-0.5 text-xs", statusConfig.className)}>
+            <StatusIcon className="h-3 w-3" />
             {statusConfig.label}
           </Badge>
           {fatura.asaas_payment_id && (
-            <span title="Asaas ativo">
-              <QrCode className="h-3.5 w-3.5 text-emerald-500" />
-            </span>
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+              Asaas
+            </Badge>
+          )}
+          {fatura.versao && fatura.versao > 1 && (
+            <span className="text-[10px] text-muted-foreground">v{fatura.versao}</span>
           )}
         </div>
       </TableCell>
       <TableCell className="text-right pr-4">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="ghost" 
-              size="icon" 
-              className="h-8 w-8 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
-            >
+            <Button variant="ghost" size="icon" className="h-7 w-7">
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
@@ -288,14 +233,14 @@ function FaturaRow({
                   <Link className="h-4 w-4 mr-2" />
                   {fatura.payment_url ? "Ver link Stripe" : "Gerar link Stripe"}
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => onPayment(fatura)} className="text-emerald-600">
-                  <CreditCard className="h-4 w-4 mr-2" />Registrar pagamento
+                <DropdownMenuItem onClick={() => onPayment(fatura)} className="text-success">
+                  <CreditCard className="h-4 w-4 mr-2" />Registrar pagamento manual
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onParcelar(fatura)}>
                   <SplitSquareVertical className="h-4 w-4 mr-2" />Parcelar
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => onCancel(fatura)} className="text-red-600">
+                <DropdownMenuItem onClick={() => onCancel(fatura)} className="text-destructive">
                   <Ban className="h-4 w-4 mr-2" />Cancelar
                 </DropdownMenuItem>
               </>
@@ -368,31 +313,32 @@ export function FaturaTable({
     const allVisibleSelected = faturas.every(f => selectedFaturas.has(f.id));
     
     if (allVisibleSelected) {
+      // Desmarcar apenas os visíveis, mantendo outros selecionados
       const newSelection = new Set(selectedFaturas);
       visibleIds.forEach(id => newSelection.delete(id));
       onSelectionChange(newSelection);
     } else {
+      // Adicionar todos os visíveis sem apagar os já selecionados
       const newSelection = new Set(selectedFaturas);
       visibleIds.forEach(id => newSelection.add(id));
       onSelectionChange(newSelection);
     }
   };
 
+  const visibleIds = new Set(faturas.map(f => f.id));
   const visibleSelectedCount = faturas.filter(f => selectedFaturas?.has(f.id)).length;
   const isAllVisibleSelected = visibleSelectedCount === faturas.length && faturas.length > 0;
   const isSomeVisibleSelected = visibleSelectedCount > 0 && !isAllVisibleSelected;
 
   if (isLoading) {
-    return <Card className="border-0 shadow-sm overflow-hidden"><TableSkeleton /></Card>;
+    return <Card><TableSkeleton /></Card>;
   }
 
   if (faturas.length === 0) {
     return (
-      <Card className="border-0 shadow-sm">
+      <Card className="border">
         <CardContent className="flex flex-col items-center justify-center py-16">
-          <div className="h-16 w-16 rounded-full bg-muted/50 flex items-center justify-center mb-4">
-            <Receipt className="h-8 w-8 text-muted-foreground" />
-          </div>
+          <FileText className="h-12 w-12 text-muted-foreground mb-4" />
           <h3 className="font-semibold mb-1">Nenhuma fatura encontrada</h3>
           <p className="text-sm text-muted-foreground">Ajuste os filtros ou crie uma nova fatura</p>
         </CardContent>
@@ -409,10 +355,10 @@ export function FaturaTable({
   // List view
   if (viewMode === "list") {
     return (
-      <Card className="border-0 shadow-sm overflow-hidden">
+      <Card className="border overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/30 hover:bg-muted/30">
+            <TableRow className="bg-muted/30">
               {onSelectionChange && (
                 <TableHead className="pl-4 w-10">
                   <Checkbox
@@ -426,13 +372,13 @@ export function FaturaTable({
                   />
                 </TableHead>
               )}
-              <TableHead className={cn("w-[100px] text-xs font-medium", !onSelectionChange && "pl-4")}>Código</TableHead>
-              <TableHead className="text-xs font-medium">Aluno</TableHead>
-              <TableHead className="text-xs font-medium">Ref.</TableHead>
-              <TableHead className="text-xs font-medium">Valor</TableHead>
-              <TableHead className="text-xs font-medium">Vencimento</TableHead>
-              <TableHead className="text-xs font-medium">Status</TableHead>
-              <TableHead className="text-right pr-4 text-xs font-medium w-[60px]"></TableHead>
+              <TableHead className={cn("w-[120px]", !onSelectionChange && "pl-4")}>Código</TableHead>
+              <TableHead>Aluno / Responsável</TableHead>
+              <TableHead>Ref.</TableHead>
+              <TableHead>Valor</TableHead>
+              <TableHead>Vencimento</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead className="text-right pr-4">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -446,24 +392,18 @@ export function FaturaTable({
             ))}
           </TableBody>
         </Table>
-        
-        {/* Footer */}
-        <div className="border-t bg-muted/20 px-4 py-2.5 flex items-center justify-between">
-          <span className="text-xs text-muted-foreground">
-            {faturas.length} fatura{faturas.length !== 1 && "s"}
-          </span>
-          {selectedFaturas && selectedFaturas.size > 0 && (
-            <span className="text-xs font-medium text-primary">
-              {selectedFaturas.size} selecionada{selectedFaturas.size !== 1 && "s"}
-            </span>
-          )}
-        </div>
+        <CardContent className="border-t py-3 text-center text-sm text-muted-foreground">
+          {selectedFaturas && selectedFaturas.size > 0 
+            ? `${selectedFaturas.size} de ${faturas.length} fatura(s) selecionada(s)`
+            : `${faturas.length} fatura(s)`
+          }
+        </CardContent>
       </Card>
     );
   }
 
   // Grouped views
-  let groups: { key: string; label: string; faturas: Fatura[]; total: number; statusConfig?: ReturnType<typeof getStatusConfig> }[] = [];
+  let groups: { key: string; label: string; faturas: Fatura[]; total: number }[] = [];
 
   if (viewMode === "status") {
     const byStatus: Record<string, Fatura[]> = { Vencida: [], Aberta: [], Paga: [], Cancelada: [] };
@@ -478,7 +418,6 @@ export function FaturaTable({
         label: status,
         faturas: items,
         total: items.reduce((sum, f) => sum + getValorFinal(f), 0),
-        statusConfig: getStatusConfig(status, new Date().toISOString()),
       }));
   } else if (viewMode === "aluno") {
     const byAluno: Record<string, { nome: string; faturas: Fatura[] }> = {};
@@ -517,48 +456,52 @@ export function FaturaTable({
   }
 
   return (
-    <div className="space-y-3">
-      {groups.map(({ key, label, faturas: items, total, statusConfig }) => {
+    <div className="space-y-4">
+    {groups.map(({ key, label, faturas: items, total }) => {
         const isExpanded = expandedGroups.has(key) || expandedGroups.size === 0;
+        const config = viewMode === "status" ? getStatusConfig(key, new Date().toISOString()) : null;
 
         return (
           <Collapsible key={key} open={isExpanded} onOpenChange={() => toggleGroup(key)}>
-            <Card className="border-0 shadow-sm overflow-hidden">
+            <Card className="border">
               <CollapsibleTrigger asChild>
-                <button className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left">
-                  <div className="flex items-center gap-3">
-                    <ChevronDown className={cn(
-                      "h-4 w-4 text-muted-foreground transition-transform",
-                      !isExpanded && "-rotate-90"
-                    )} />
-                    {statusConfig && (
-                      <span className={cn("h-2.5 w-2.5 rounded-full", statusConfig.dot)} />
-                    )}
-                    <span className="font-medium">{label}</span>
-                    <Badge variant="secondary" className="text-xs">
-                      {items.length}
-                    </Badge>
+                <div className="cursor-pointer hover:bg-muted/30 transition-colors p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      {isExpanded ? <ChevronDown className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+                      {config ? (
+                        <Badge variant="outline" className={cn("font-medium", config.className)}>
+                          {label}
+                        </Badge>
+                      ) : viewMode === "mes" ? (
+                        <>
+                          <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{label}</span>
+                        </>
+                      ) : (
+                        <>
+                          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-semibold text-primary">
+                            {label.charAt(0).toUpperCase()}
+                          </div>
+                          <span className="font-medium">{label}</span>
+                        </>
+                      )}
+                      <span className="text-sm text-muted-foreground">({items.length})</span>
+                    </div>
+                    <span className="font-semibold">{formatCurrency(total)}</span>
                   </div>
-                  <span className="text-sm font-semibold tabular-nums">
-                    {formatCurrency(total)}
-                  </span>
-                </button>
+                </div>
               </CollapsibleTrigger>
               <CollapsibleContent>
-                <div className="border-t">
+                <CardContent className="p-0">
                   <Table>
                     <TableBody>
                       {items.map(fatura => (
-                        <FaturaRow 
-                          key={fatura.id} 
-                          fatura={fatura} 
-                          isSelected={selectedFaturas?.has(fatura.id)}
-                          {...rowProps} 
-                        />
+                        <FaturaRow key={fatura.id} fatura={fatura} {...rowProps} />
                       ))}
                     </TableBody>
                   </Table>
-                </div>
+                </CardContent>
               </CollapsibleContent>
             </Card>
           </Collapsible>
