@@ -2,7 +2,8 @@ import { ReactNode, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { Bell, Search, FileText, CreditCard, Users, Clock, Info, AlertTriangle, CheckCircle2, Check } from "lucide-react";
+import { LanguageSelector } from "./LanguageSelector";
+import { Bell, Search, Clock, Info, AlertTriangle, CheckCircle2, Check } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -130,7 +131,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </div>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              {/* Language Selector */}
+              <LanguageSelector variant="compact" />
+
               {/* Notifications */}
               <Popover>
                 <PopoverTrigger asChild>
