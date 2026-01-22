@@ -7,7 +7,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { Switch } from "@/components/ui/switch";
 import { Progress } from "@/components/ui/progress";
 import { Printer, Loader2, FileText, User, Calendar, Zap, QrCode, AlertCircle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,7 +32,6 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
   const [selectedResponsavel, setSelectedResponsavel] = useState<string>("");
   const [selectedFaturas, setSelectedFaturas] = useState<Set<string>>(new Set());
   const [isGenerating, setIsGenerating] = useState(false);
-  const [integrarAsaas, setIntegrarAsaas] = useState(true);
   const [progressMessage, setProgressMessage] = useState("");
   const [progressValue, setProgressValue] = useState(0);
   const { createPayment } = useAsaas();
@@ -151,59 +149,54 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
       const faturasParaImprimir = faturas?.filter(f => selectedFaturas.has(f.id)) || [];
       const responsavel = responsaveis?.find(r => r.id === selectedResponsavel);
 
-      if (integrarAsaas) {
-        // Gerar cobranças Asaas para faturas que ainda não têm
-        const faturasAbertas = faturasParaImprimir.filter(
-          f => f.status !== "Paga" && !f.asaas_payment_id
-        );
+      // Gerar cobranças Asaas para faturas que ainda não têm
+      const faturasAbertas = faturasParaImprimir.filter(
+        f => f.status !== "Paga" && !f.asaas_payment_id
+      );
 
-        if (faturasAbertas.length > 0) {
-          setProgressMessage(`Gerando ${faturasAbertas.length} cobranças Asaas...`);
-          
-          for (let i = 0; i < faturasAbertas.length; i++) {
-            const fatura = faturasAbertas[i];
-            setProgressMessage(`Gerando cobrança ${i + 1}/${faturasAbertas.length}: ${meses[fatura.mes_referencia - 1]}/${fatura.ano_referencia}`);
-            setProgressValue(((i + 1) / faturasAbertas.length) * 50);
+      if (faturasAbertas.length > 0) {
+        setProgressMessage(`Gerando ${faturasAbertas.length} cobranças Asaas...`);
+        
+        for (let i = 0; i < faturasAbertas.length; i++) {
+          const fatura = faturasAbertas[i];
+          setProgressMessage(`Gerando cobrança ${i + 1}/${faturasAbertas.length}: ${meses[fatura.mes_referencia - 1]}/${fatura.ano_referencia}`);
+          setProgressValue(((i + 1) / faturasAbertas.length) * 50);
 
-            try {
-              await createPayment(fatura.id, "UNDEFINED");
-            } catch (error) {
-              console.warn(`Falha ao gerar cobrança para fatura ${fatura.id}:`, error);
-            }
+          try {
+            await createPayment(fatura.id, "UNDEFINED");
+          } catch (error) {
+            console.warn(`Falha ao gerar cobrança para fatura ${fatura.id}:`, error);
           }
         }
-
-        // Buscar faturas atualizadas com dados do Asaas
-        setProgressMessage("Buscando dados atualizados...");
-        setProgressValue(60);
-        await refetchFaturas();
-
-        // Aguardar um momento para garantir que os dados estão atualizados
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Buscar faturas atualizadas novamente
-        const { data: faturasAtualizadas } = await supabase
-          .from("faturas")
-          .select(`
-            *,
-            alunos(nome_completo, email_responsavel, responsavel_id),
-            cursos(nome),
-            responsaveis(nome, email, telefone, cpf)
-          `)
-          .in("id", Array.from(selectedFaturas));
-
-        setProgressMessage("Gerando carnê com QR Codes...");
-        setProgressValue(80);
-
-        await generateCarneCompacto(
-          (faturasAtualizadas as Fatura[]) || faturasParaImprimir,
-          escola,
-          responsavel
-        );
-      } else {
-        // Gerar carnê simples sem Asaas
-        await generateCarneCompacto(faturasParaImprimir, escola, responsavel);
       }
+
+      // Buscar faturas atualizadas com dados do Asaas
+      setProgressMessage("Buscando dados atualizados...");
+      setProgressValue(60);
+      await refetchFaturas();
+
+      // Aguardar um momento para garantir que os dados estão atualizados
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      // Buscar faturas atualizadas novamente
+      const { data: faturasAtualizadas } = await supabase
+        .from("faturas")
+        .select(`
+          *,
+          alunos(nome_completo, email_responsavel, responsavel_id),
+          cursos(nome),
+          responsaveis(nome, email, telefone, cpf)
+        `)
+        .in("id", Array.from(selectedFaturas));
+
+      setProgressMessage("Gerando carnê com QR Codes...");
+      setProgressValue(80);
+
+      await generateCarneCompacto(
+        (faturasAtualizadas as Fatura[]) || faturasParaImprimir,
+        escola,
+        responsavel
+      );
 
       setProgressValue(100);
       toast.success(`Carnê gerado com ${faturasParaImprimir.length} fatura(s)!`);
@@ -278,31 +271,12 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
             )}
           </div>
 
-          {/* Integração Asaas */}
-          <div className="flex items-center justify-between p-3 rounded-lg border bg-muted/30">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                <QrCode className="h-4 w-4 text-primary" />
-              </div>
-              <div>
-                <p className="font-medium text-sm">Incluir QR Code PIX</p>
-                <p className="text-xs text-muted-foreground">
-                  Gerar cobranças Asaas automaticamente
-                </p>
-              </div>
-            </div>
-            <Switch
-              checked={integrarAsaas}
-              onCheckedChange={setIntegrarAsaas}
-            />
-          </div>
-
-          {integrarAsaas && faturasAbertasSemAsaas > 0 && (
-            <div className="flex items-start gap-2 p-3 rounded-lg border border-warning/30 bg-warning/5">
-              <AlertCircle className="h-4 w-4 text-warning mt-0.5 shrink-0" />
+          {/* Info QR Code PIX */}
+          {faturasAbertasSemAsaas > 0 && (
+            <div className="flex items-start gap-2 p-3 rounded-lg border border-primary/30 bg-primary/5">
+              <QrCode className="h-4 w-4 text-primary mt-0.5 shrink-0" />
               <p className="text-xs text-muted-foreground">
-                <strong>{faturasAbertasSemAsaas}</strong> fatura(s) selecionada(s) ainda não têm cobrança Asaas. 
-                Serão geradas automaticamente ao imprimir.
+                <strong>{faturasAbertasSemAsaas}</strong> fatura(s) selecionada(s) terão QR Code PIX gerado automaticamente.
               </p>
             </div>
           )}
@@ -414,10 +388,8 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
           >
             {isGenerating ? (
               <Loader2 className="h-4 w-4 animate-spin" />
-            ) : integrarAsaas ? (
-              <QrCode className="h-4 w-4" />
             ) : (
-              <Printer className="h-4 w-4" />
+              <QrCode className="h-4 w-4" />
             )}
             {isGenerating 
               ? "Gerando..." 
