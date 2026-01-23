@@ -12,11 +12,16 @@ import {
   UserCog,
   CreditCard,
   ChevronDown,
+  ChevronRight,
   Search,
   Bell,
   HelpCircle,
   Menu,
-  X
+  X,
+  BarChart3,
+  FileText,
+  MoreHorizontal,
+  FolderOpen
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -29,6 +34,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -36,43 +46,65 @@ interface PlatformLayoutProps {
   children: ReactNode;
 }
 
-interface NavItem {
-  icon: React.ElementType;
+interface NavSubItem {
   label: string;
   path: string;
-  badge?: string;
+}
+
+interface NavModule {
+  icon: React.ElementType;
+  label: string;
+  path?: string;
+  subItems?: NavSubItem[];
 }
 
 interface NavSection {
-  title?: string;
-  items: NavItem[];
+  title: string;
+  modules: NavModule[];
 }
 
 const navigation: NavSection[] = [
   {
-    items: [
-      { icon: LayoutDashboard, label: "Página inicial", path: "/platform" },
-    ],
-  },
-  {
-    items: [
-      { icon: Building2, label: "Escolas", path: "/platform/tenants" },
-      { icon: CreditCard, label: "Assinaturas", path: "/platform/subscriptions" },
-      { icon: Users, label: "Usuários", path: "/platform/users" },
-    ],
-  },
-  {
-    title: "Atalhos",
-    items: [
-      { icon: UserCog, label: "Acessar Como", path: "/platform/impersonate" },
-      { icon: Activity, label: "Atividade", path: "/platform/logs" },
-    ],
-  },
-  {
-    title: "Sistema",
-    items: [
-      { icon: Settings, label: "Configurações", path: "/platform/settings" },
-      { icon: Shield, label: "Segurança", path: "/platform/security" },
+    title: "Produtos",
+    modules: [
+      { 
+        icon: CreditCard, 
+        label: "Assinaturas", 
+        subItems: [
+          { label: "Visão geral", path: "/platform/subscriptions" },
+          { label: "Planos", path: "/platform/subscriptions" },
+          { label: "Histórico", path: "/platform/subscriptions" },
+        ]
+      },
+      { 
+        icon: Building2, 
+        label: "Escolas", 
+        subItems: [
+          { label: "Todas as escolas", path: "/platform/tenants" },
+          { label: "Adicionar escola", path: "/platform/tenants/new" },
+        ]
+      },
+      { 
+        icon: Users, 
+        label: "Usuários", 
+        subItems: [
+          { label: "Todos os usuários", path: "/platform/users" },
+          { label: "Acessar como", path: "/platform/impersonate" },
+        ]
+      },
+      { 
+        icon: BarChart3, 
+        label: "Relatórios", 
+        path: "/platform/logs"
+      },
+      { 
+        icon: MoreHorizontal, 
+        label: "Mais", 
+        subItems: [
+          { label: "Configurações", path: "/platform/settings" },
+          { label: "Segurança", path: "/platform/security" },
+        ]
+      },
     ],
   },
 ];
@@ -81,8 +113,8 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [expandedModules, setExpandedModules] = useState<string[]>(["Assinaturas", "Escolas", "Usuários"]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -99,31 +131,95 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
     if (path === "/platform") {
       return location.pathname === "/platform";
     }
-    return location.pathname.startsWith(path);
+    return location.pathname === path;
   };
 
-  const NavLink = ({ item }: { item: NavItem }) => (
-    <button
-      onClick={() => {
-        navigate(item.path);
-        setMobileMenuOpen(false);
-      }}
-      className={cn(
-        "flex items-center gap-3 w-full px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200",
-        isActive(item.path)
-          ? "bg-primary/10 text-primary"
-          : "text-muted-foreground hover:bg-muted hover:text-foreground"
-      )}
-    >
-      <item.icon className="h-4 w-4" />
-      <span>{item.label}</span>
-      {item.badge && (
-        <span className="ml-auto text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
-          {item.badge}
-        </span>
-      )}
-    </button>
-  );
+  const isModuleActive = (module: NavModule) => {
+    if (module.path) return isActive(module.path);
+    return module.subItems?.some(sub => isActive(sub.path)) ?? false;
+  };
+
+  const toggleModule = (label: string) => {
+    setExpandedModules(prev => 
+      prev.includes(label) 
+        ? prev.filter(m => m !== label)
+        : [...prev, label]
+    );
+  };
+
+  const NavModule = ({ module }: { module: NavModule }) => {
+    const hasSubItems = module.subItems && module.subItems.length > 0;
+    const isExpanded = expandedModules.includes(module.label);
+    const moduleActive = isModuleActive(module);
+
+    if (!hasSubItems) {
+      return (
+        <button
+          onClick={() => {
+            if (module.path) {
+              navigate(module.path);
+              setMobileMenuOpen(false);
+            }
+          }}
+          className={cn(
+            "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors",
+            moduleActive
+              ? "text-primary font-medium"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <module.icon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-left">{module.label}</span>
+          <ChevronRight className="h-4 w-4 opacity-40" />
+        </button>
+      );
+    }
+
+    return (
+      <Collapsible open={isExpanded} onOpenChange={() => toggleModule(module.label)}>
+        <CollapsibleTrigger asChild>
+          <button
+            className={cn(
+              "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors",
+              moduleActive
+                ? "text-primary font-medium"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+            )}
+          >
+            <module.icon className="h-4 w-4 shrink-0" />
+            <span className="flex-1 text-left">{module.label}</span>
+            <ChevronDown 
+              className={cn(
+                "h-4 w-4 opacity-40 transition-transform duration-200",
+                isExpanded && "rotate-180"
+              )} 
+            />
+          </button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <div className="ml-7 mt-1 space-y-0.5 border-l border-border/50 pl-3">
+            {module.subItems?.map((subItem) => (
+              <button
+                key={subItem.path + subItem.label}
+                onClick={() => {
+                  navigate(subItem.path);
+                  setMobileMenuOpen(false);
+                }}
+                className={cn(
+                  "block w-full text-left px-2 py-1.5 text-sm rounded transition-colors",
+                  isActive(subItem.path)
+                    ? "text-primary font-medium"
+                    : "text-muted-foreground hover:text-foreground"
+                )}
+              >
+                {subItem.label}
+              </button>
+            ))}
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    );
+  };
 
   const Sidebar = ({ className }: { className?: string }) => (
     <aside className={cn("flex flex-col h-full", className)}>
@@ -156,18 +252,32 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
         </DropdownMenu>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
-        {navigation.map((section, idx) => (
-          <div key={idx}>
-            {section.title && (
-              <p className="px-3 mb-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                {section.title}
-              </p>
-            )}
-            <div className="space-y-1">
-              {section.items.map((item) => (
-                <NavLink key={item.path} item={item} />
+      {/* Home Link */}
+      <div className="px-3 py-3 border-b">
+        <button
+          onClick={() => navigate("/platform")}
+          className={cn(
+            "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors",
+            location.pathname === "/platform"
+              ? "bg-primary/10 text-primary font-medium"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <LayoutDashboard className="h-4 w-4" />
+          <span>Página inicial</span>
+        </button>
+      </div>
+
+      {/* Navigation Modules */}
+      <nav className="flex-1 overflow-y-auto py-4 px-3">
+        {navigation.map((section) => (
+          <div key={section.title}>
+            <p className="px-3 mb-3 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              {section.title}
+            </p>
+            <div className="space-y-0.5">
+              {section.modules.map((module) => (
+                <NavModule key={module.label} module={module} />
               ))}
             </div>
           </div>
