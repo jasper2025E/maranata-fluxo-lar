@@ -300,7 +300,6 @@ export default function MinhaAssinatura() {
                     {status.label}
                   </Badge>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
               </div>
               
               <div className="p-5">
