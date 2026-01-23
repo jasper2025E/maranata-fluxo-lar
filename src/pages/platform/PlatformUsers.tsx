@@ -83,6 +83,7 @@ interface PlatformUser {
   created_at: string;
 }
 
+// Role labels - Platform Admin is the global system manager (not a school)
 const roleLabels: Record<AppRole, string> = {
   platform_admin: "Platform Admin",
   admin: "Administrador",
@@ -90,6 +91,9 @@ const roleLabels: Record<AppRole, string> = {
   financeiro: "Financeiro",
   secretaria: "Secretaria",
 };
+
+// Roles that can be assigned to schools (Platform Admin cannot be linked to schools)
+const schoolRoles: AppRole[] = ["admin", "staff", "financeiro", "secretaria"];
 
 const roleBadgeVariants: Record<AppRole, string> = {
   platform_admin: "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/30",
@@ -927,7 +931,15 @@ export default function PlatformUsers() {
                 <Label className="text-slate-300">Cargo *</Label>
                 <Select 
                   value={formData.role} 
-                  onValueChange={(value) => setFormData({ ...formData, role: value as AppRole })}
+                  onValueChange={(value) => {
+                    const newRole = value as AppRole;
+                    // Platform Admin cannot be linked to schools
+                    if (newRole === "platform_admin") {
+                      setFormData({ ...formData, role: newRole, tenant_id: "" });
+                    } else {
+                      setFormData({ ...formData, role: newRole });
+                    }
+                  }}
                 >
                   <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                     <SelectValue />
@@ -940,27 +952,34 @@ export default function PlatformUsers() {
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.role === "platform_admin" && (
+                  <p className="text-xs text-amber-400 mt-1">
+                    ⚠️ Platform Admin é o gerenciador global - não pode ser vinculado a escolas
+                  </p>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-slate-300">Escola (opcional)</Label>
-                <Select 
-                  value={formData.tenant_id} 
-                  onValueChange={(value) => setFormData({ ...formData, tenant_id: value })}
-                >
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                    <SelectValue placeholder="Selecione uma escola" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="" className="text-slate-400">Nenhuma</SelectItem>
-                    {tenants.map(tenant => (
-                      <SelectItem key={tenant.id} value={tenant.id} className="text-white">
-                        {tenant.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {formData.role !== "platform_admin" && (
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Escola (opcional)</Label>
+                  <Select 
+                    value={formData.tenant_id} 
+                    onValueChange={(value) => setFormData({ ...formData, tenant_id: value })}
+                  >
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue placeholder="Selecione uma escola" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="" className="text-slate-400">Nenhuma</SelectItem>
+                      {tenants.map(tenant => (
+                        <SelectItem key={tenant.id} value={tenant.id} className="text-white">
+                          {tenant.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <DialogFooter>
@@ -1029,7 +1048,15 @@ export default function PlatformUsers() {
                 <Label className="text-slate-300">Cargo</Label>
                 <Select 
                   value={formData.role} 
-                  onValueChange={(value) => setFormData({ ...formData, role: value as AppRole })}
+                  onValueChange={(value) => {
+                    const newRole = value as AppRole;
+                    // Platform Admin cannot be linked to schools
+                    if (newRole === "platform_admin") {
+                      setFormData({ ...formData, role: newRole, tenant_id: "" });
+                    } else {
+                      setFormData({ ...formData, role: newRole });
+                    }
+                  }}
                 >
                   <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                     <SelectValue />
@@ -1042,27 +1069,34 @@ export default function PlatformUsers() {
                     ))}
                   </SelectContent>
                 </Select>
+                {formData.role === "platform_admin" && (
+                  <p className="text-xs text-amber-400 mt-1">
+                    ⚠️ Platform Admin é o gerenciador global - não pode ser vinculado a escolas
+                  </p>
+                )}
               </div>
 
-              <div className="space-y-2">
-                <Label className="text-slate-300">Escola</Label>
-                <Select 
-                  value={formData.tenant_id} 
-                  onValueChange={(value) => setFormData({ ...formData, tenant_id: value })}
-                >
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
-                    <SelectValue placeholder="Selecione uma escola" />
-                  </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
-                    <SelectItem value="" className="text-slate-400">Nenhuma</SelectItem>
-                    {tenants.map(tenant => (
-                      <SelectItem key={tenant.id} value={tenant.id} className="text-white">
-                        {tenant.nome}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {formData.role !== "platform_admin" && (
+                <div className="space-y-2">
+                  <Label className="text-slate-300">Escola</Label>
+                  <Select 
+                    value={formData.tenant_id} 
+                    onValueChange={(value) => setFormData({ ...formData, tenant_id: value })}
+                  >
+                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                      <SelectValue placeholder="Selecione uma escola" />
+                    </SelectTrigger>
+                    <SelectContent className="bg-slate-800 border-slate-700">
+                      <SelectItem value="" className="text-slate-400">Nenhuma</SelectItem>
+                      {tenants.map(tenant => (
+                        <SelectItem key={tenant.id} value={tenant.id} className="text-white">
+                          {tenant.nome}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
             </div>
 
             <DialogFooter>
