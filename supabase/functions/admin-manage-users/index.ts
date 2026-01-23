@@ -56,6 +56,12 @@ Deno.serve(async (req) => {
     
     const requestingUserId = userData.user.id;
 
+    console.log("admin-manage-users: request", {
+      requestingUserId,
+      method: req.method,
+      url: req.url,
+    });
+
     // Check if requesting user is admin or platform_admin
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from("user_roles")
@@ -66,7 +72,25 @@ Deno.serve(async (req) => {
     const isAdmin = userRoles.includes("admin");
     const isPlatformAdmin = userRoles.includes("platform_admin");
 
+    if (roleError) {
+      console.error("admin-manage-users: role lookup error", {
+        requestingUserId,
+        roleError,
+      });
+    }
+
+    console.log("admin-manage-users: roles", {
+      requestingUserId,
+      userRoles,
+      isAdmin,
+      isPlatformAdmin,
+    });
+
     if (roleError || (!isAdmin && !isPlatformAdmin)) {
+      console.warn("admin-manage-users: access denied", {
+        requestingUserId,
+        userRoles,
+      });
       return new Response(
         JSON.stringify({ error: "Only admins can manage users" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -75,6 +99,14 @@ Deno.serve(async (req) => {
 
     const body: CreateUserRequest = await req.json();
     const { action, email, password, nome, role, userId, tenant_id } = body;
+
+    console.log("admin-manage-users: action", {
+      requestingUserId,
+      action,
+      targetUserId: userId ?? null,
+      targetRole: role,
+      hasTenantId: Boolean(tenant_id),
+    });
 
     if (action === "create") {
       if (!email || !password || !nome || !role) {
