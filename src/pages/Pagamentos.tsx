@@ -103,10 +103,10 @@ const Pagamentos = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("payments.title")}</h2>
-          <p className="text-muted-foreground mt-1">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("payments.title")}</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
             {t("payments.description")}
           </p>
         </div>

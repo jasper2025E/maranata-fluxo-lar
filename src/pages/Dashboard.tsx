@@ -68,7 +68,7 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
@@ -78,7 +78,7 @@ const Dashboard = () => {
           <h2 className="text-2xl font-bold tracking-tight text-foreground">
             {t("dashboard.title")}
           </h2>
-          <p className="text-muted-foreground mt-1">
+          <p className="text-muted-foreground mt-1 text-sm">
             {t("dashboard.subtitle")}
           </p>
         </motion.div>

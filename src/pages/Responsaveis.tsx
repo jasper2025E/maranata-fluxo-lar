@@ -290,20 +290,17 @@ export default function Responsaveis() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-foreground">{t("guardians.title")}</h1>
-            <p className="text-muted-foreground mt-1">{t("guardians.description")}</p>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("guardians.title")}</h1>
+            <p className="text-muted-foreground mt-1 text-sm">{t("guardians.description")}</p>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button
-                onClick={() => resetForm()}
-                className="gap-2 bg-primary hover:bg-primary/90"
-              >
-                <Plus className="h-4 w-4" />
+              <Button onClick={() => resetForm()}>
+                <Plus className="mr-2 h-4 w-4" />
                 {t("guardians.newGuardian")}
               </Button>
             </DialogTrigger>

@@ -41,10 +41,10 @@ export default function RH() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("hr.title")}</h1>
-          <p className="text-muted-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("hr.title")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">
             {t("hr.description")}
           </p>
         </div>

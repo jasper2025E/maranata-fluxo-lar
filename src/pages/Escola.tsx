@@ -167,11 +167,11 @@ const EscolaPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
-        <div className="animate-fade-in">
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Dados da Escola</h2>
-          <p className="text-muted-foreground mt-1.5">Configure as informações institucionais</p>
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">Dados da Escola</h2>
+          <p className="text-muted-foreground mt-1 text-sm">Configure as informações institucionais</p>
         </div>
 
         <form onSubmit={handleSubmit}>
