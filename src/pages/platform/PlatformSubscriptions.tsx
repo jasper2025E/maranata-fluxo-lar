@@ -229,8 +229,10 @@ export default function PlatformSubscriptions() {
   };
 
   const filteredSubscriptions = subscriptions.filter((sub) => {
-    const matchesSearch = sub.nome.toLowerCase().includes(search.toLowerCase()) ||
-      sub.email?.toLowerCase().includes(search.toLowerCase());
+    const q = search.toLowerCase();
+    const matchesSearch =
+      sub.nome.toLowerCase().includes(q) ||
+      (sub.email ?? "").toLowerCase().includes(q);
     const matchesStatus = statusFilter === "all" || sub.subscription_status === statusFilter;
     return matchesSearch && matchesStatus;
   });
