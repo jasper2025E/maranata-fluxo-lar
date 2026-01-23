@@ -55,6 +55,7 @@ const financeItems = [
   { titleKey: "nav.payments", url: "/pagamentos", icon: CreditCard },
   { titleKey: "nav.expenses", url: "/despesas", icon: Receipt },
   { titleKey: "nav.reports", url: "/relatorios", icon: BarChart3 },
+  { titleKey: "nav.subscription", url: "/assinatura", icon: CreditCard, roles: ["admin"] },
 ];
 
 const settingsItems = [

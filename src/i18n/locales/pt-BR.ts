@@ -77,6 +77,7 @@ const ptBR = {
       payments: "Pagamentos",
       expenses: "Despesas",
       reports: "Relatórios",
+      subscription: "Minha Assinatura",
       settings: "Configurações",
       hr: "RH",
       school: "Escola",

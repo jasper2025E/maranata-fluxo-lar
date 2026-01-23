@@ -29,6 +29,7 @@ import Configuracoes from "./pages/Configuracoes";
 import PaymentResult from "./pages/PaymentResult";
 import RH from "./pages/RH";
 import PontoEletronico from "./pages/PontoEletronico";
+import MinhaAssinatura from "./pages/MinhaAssinatura";
 
 // Platform Admin Pages
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
@@ -166,6 +167,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <RH />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/assinatura"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <MinhaAssinatura />
               </ProtectedRoute>
             }
           />
