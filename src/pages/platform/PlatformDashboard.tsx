@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
 import { 
   Building2, 
@@ -13,16 +12,18 @@ import {
   CheckCircle,
   Clock,
   ArrowRight,
-  RefreshCw
+  RefreshCw,
+  ExternalLink,
+  Sparkles,
+  BookOpen,
+  Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Progress } from "@/components/ui/progress";
 import PlatformLayout from "@/components/platform/PlatformLayout";
 import { formatCurrency } from "@/lib/formatters";
 
@@ -51,21 +52,12 @@ interface PlatformStats {
   totalAlunos: number;
   totalFaturas: number;
   receitaTotal: number;
-  mrr: number; // Monthly Recurring Revenue
+  mrr: number;
 }
 
-const subscriptionStatusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
-  trial: { label: "Período de Teste", variant: "outline", icon: <Clock className="h-3 w-3" /> },
-  active: { label: "Ativa", variant: "default", icon: <CheckCircle className="h-3 w-3" /> },
-  past_due: { label: "Inadimplente", variant: "destructive", icon: <AlertTriangle className="h-3 w-3" /> },
-  cancelled: { label: "Cancelada", variant: "secondary", icon: <Clock className="h-3 w-3" /> },
-  suspended: { label: "Suspensa", variant: "destructive", icon: <AlertTriangle className="h-3 w-3" /> },
-};
-
 export default function PlatformDashboard() {
-  const { t } = useTranslation();
   const navigate = useNavigate();
-  const { isPlatformAdmin } = useAuth();
+  const { isPlatformAdmin, user } = useAuth();
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [stats, setStats] = useState<PlatformStats>({
     totalTenants: 0,
@@ -79,7 +71,6 @@ export default function PlatformDashboard() {
     mrr: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (!isPlatformAdmin()) {
@@ -91,65 +82,38 @@ export default function PlatformDashboard() {
 
   const fetchData = async () => {
     try {
-      // Fetch tenants with subscription data
       const { data: tenantsData, error: tenantsError } = await supabase
         .from("tenants")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (tenantsError) {
-        console.error("Error fetching tenants:", tenantsError);
-      }
+      if (tenantsError) console.error("Error fetching tenants:", tenantsError);
       setTenants(tenantsData || []);
 
-      // Calculate subscription stats
       const activeTenants = tenantsData?.filter(t => t.subscription_status === "active" || t.status === "ativo").length || 0;
       const trialTenants = tenantsData?.filter(t => t.subscription_status === "trial").length || 0;
       const overdueTenants = tenantsData?.filter(t => t.subscription_status === "past_due" || t.subscription_status === "suspended").length || 0;
-      
-      // Calculate MRR (Monthly Recurring Revenue)
       const mrr = tenantsData?.filter(t => t.subscription_status === "active")
         .reduce((sum, t) => sum + (Number(t.monthly_price) || 0), 0) || 0;
 
-      // Get user count
-      const { count: usersCount, error: usersError } = await supabase
+      const { count: usersCount } = await supabase
         .from("profiles")
         .select("*", { count: "exact", head: true });
-      
-      if (usersError) {
-        console.error("Error fetching users count:", usersError);
-      }
 
-      // Get alunos count
-      let totalAlunos = 0;
-      const { count: alunosCount, error: alunosError } = await supabase
+      const { count: alunosCount } = await supabase
         .from("alunos")
         .select("*", { count: "exact", head: true });
-      
-      if (!alunosError) {
-        totalAlunos = alunosCount || 0;
-      }
 
-      // Get faturas count and revenue
-      let totalFaturas = 0;
-      let receitaTotal = 0;
-      const { count: faturasCount, error: faturasError } = await supabase
+      const { count: faturasCount } = await supabase
         .from("faturas")
         .select("*", { count: "exact", head: true });
-      
-      if (!faturasError) {
-        totalFaturas = faturasCount || 0;
-      }
 
-      // Get paid invoices for revenue
-      const { data: paidFaturas, error: revenueError } = await supabase
+      const { data: paidFaturas } = await supabase
         .from("faturas")
         .select("valor_total")
         .eq("status", "Paga");
-      
-      if (!revenueError && paidFaturas) {
-        receitaTotal = paidFaturas.reduce((sum, f) => sum + (Number(f.valor_total) || 0), 0);
-      }
+
+      const receitaTotal = paidFaturas?.reduce((sum, f) => sum + (Number(f.valor_total) || 0), 0) || 0;
 
       setStats({
         totalTenants: tenantsData?.length || 0,
@@ -157,8 +121,8 @@ export default function PlatformDashboard() {
         trialTenants,
         overdueTenants,
         totalUsers: usersCount || 0,
-        totalAlunos,
-        totalFaturas,
+        totalAlunos: alunosCount || 0,
+        totalFaturas: faturasCount || 0,
         receitaTotal,
         mrr,
       });
@@ -166,36 +130,18 @@ export default function PlatformDashboard() {
       console.error("Error fetching platform data:", error);
     } finally {
       setLoading(false);
-      setRefreshing(false);
     }
-  };
-
-  const handleRefresh = () => {
-    setRefreshing(true);
-    fetchData();
-  };
-
-  const getSubscriptionBadge = (status: string | null) => {
-    const config = subscriptionStatusConfig[status || "trial"] || subscriptionStatusConfig.trial;
-    return (
-      <Badge variant={config.variant} className="flex items-center gap-1">
-        {config.icon}
-        {config.label}
-      </Badge>
-    );
   };
 
   if (loading) {
     return (
       <PlatformLayout>
         <div className="space-y-6">
-          <div className="space-y-2">
-            <Skeleton className="h-8 w-64 bg-slate-700" />
-            <Skeleton className="h-4 w-96 bg-slate-700" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-32 bg-slate-800" />
+          <Skeleton className="h-32 w-full" />
+          <Skeleton className="h-48 w-full" />
+          <div className="grid gap-4 md:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-24" />
             ))}
           </div>
         </div>
@@ -205,272 +151,305 @@ export default function PlatformDashboard() {
 
   return (
     <PlatformLayout>
-      <div className="space-y-6">
-        {/* Header */}
+      <div className="space-y-8">
+        {/* Welcome Banner */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
+          className="relative overflow-hidden rounded-xl bg-gradient-to-r from-background to-muted border p-6 md:p-8"
         >
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">
-              Painel do Gestor
+          {/* Decorative gradient */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent transform translate-x-16 -translate-y-16 rounded-full blur-3xl" />
+          <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-primary/30 to-transparent" />
+          
+          <div className="relative z-10">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
+              É bom ter você de volta!
             </h1>
-            <p className="text-slate-400">
-              Visão geral da plataforma e gestão centralizada de escolas
+            <p className="text-muted-foreground mt-2 max-w-xl">
+              Gerencie todas as escolas da plataforma ou{" "}
+              <button 
+                onClick={() => navigate("/platform/tenants")}
+                className="text-primary hover:underline"
+              >
+                explore os recursos disponíveis
+              </button>{" "}
+              para começar.
             </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="border-slate-700 text-slate-300 hover:bg-slate-800"
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
-            Atualizar
-          </Button>
+        </motion.div>
+
+        {/* Quick Start Card */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-xl font-semibold">Comece a gerenciar</CardTitle>
+              <Button variant="ghost" size="icon" className="text-muted-foreground">
+                <span className="sr-only">Fechar</span>
+                ×
+              </Button>
+            </CardHeader>
+            <CardContent>
+              <div className="grid md:grid-cols-3 gap-4">
+                {/* Quick Action 1 */}
+                <button
+                  onClick={() => navigate("/platform/tenants/new")}
+                  className="group p-4 rounded-lg border bg-card hover:bg-muted/50 transition-all text-left"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="secondary" className="text-xs">Rápido</Badge>
+                  </div>
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                    Cadastrar nova escola
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                    Iniciar <ArrowRight className="h-3 w-3" />
+                  </p>
+                </button>
+
+                {/* Quick Action 2 */}
+                <button
+                  onClick={() => navigate("/platform/subscriptions")}
+                  className="group p-4 rounded-lg border bg-card hover:bg-muted/50 transition-all text-left"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge variant="outline" className="text-xs">Financeiro</Badge>
+                  </div>
+                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
+                    Gerenciar assinaturas
+                  </h3>
+                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
+                    Iniciar <ArrowRight className="h-3 w-3" />
+                  </p>
+                </button>
+
+                {/* Explore All */}
+                <button
+                  onClick={() => navigate("/platform/tenants")}
+                  className="group p-4 rounded-lg border-2 border-dashed hover:border-primary/50 transition-all text-left flex items-center justify-between"
+                >
+                  <div>
+                    <h3 className="font-semibold text-foreground">
+                      Ver todas as escolas
+                    </h3>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {stats.totalTenants} cadastradas
+                    </p>
+                  </div>
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                </button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Today Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="space-y-4"
+        >
+          <h2 className="text-xl font-semibold text-foreground">Hoje</h2>
+          
+          <div className="flex flex-wrap items-center gap-6 md:gap-12">
+            {/* Volume */}
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-muted-foreground">MRR</span>
+              </div>
+              <p className="text-2xl font-semibold text-foreground">
+                {formatCurrency(stats.mrr)}
+              </p>
+            </div>
+
+            {/* Escolas Ativas */}
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Escolas ativas</span>
+              <p className="text-2xl font-semibold text-foreground">
+                {stats.activeTenants}
+              </p>
+            </div>
+
+            {/* Saldo */}
+            <div className="space-y-1">
+              <span className="text-sm text-muted-foreground">Receita total</span>
+              <p className="text-2xl font-semibold text-foreground">
+                {formatCurrency(stats.receitaTotal)}
+              </p>
+            </div>
+
+            <div className="ml-auto">
+              <Button 
+                variant="link" 
+                className="text-primary"
+                onClick={() => navigate("/platform/subscriptions")}
+              >
+                Ver detalhes
+              </Button>
+            </div>
+          </div>
         </motion.div>
 
         {/* Stats Grid */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
+          transition={{ delay: 0.2 }}
           className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
         >
-          {/* Escolas */}
-          <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20 text-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-300">Escolas</CardTitle>
-              <Building2 className="h-4 w-4 text-amber-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalTenants}</div>
-              <div className="flex items-center gap-2 text-xs text-slate-400">
-                <span className="text-green-400">{stats.activeTenants} ativas</span>
-                <span>•</span>
-                <span className="text-blue-400">{stats.trialTenants} em teste</span>
-              </div>
-              {stats.overdueTenants > 0 && (
-                <div className="mt-1 text-xs text-red-400">
-                  {stats.overdueTenants} inadimplente{stats.overdueTenants > 1 ? "s" : ""}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* MRR */}
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20 text-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-300">Receita Mensal (MRR)</CardTitle>
-              <CreditCard className="h-4 w-4 text-green-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{formatCurrency(stats.mrr)}</div>
-              <p className="text-xs text-slate-400">
-                Assinaturas ativas
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Usuários */}
-          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 text-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-300">Usuários</CardTitle>
-              <Users className="h-4 w-4 text-blue-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalUsers}</div>
-              <p className="text-xs text-slate-400">
-                Em todas as escolas
-              </p>
-            </CardContent>
-          </Card>
-
-          {/* Alunos */}
-          <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20 text-white">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-slate-300">Alunos</CardTitle>
-              <GraduationCap className="h-4 w-4 text-purple-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalAlunos}</div>
-              <p className="text-xs text-slate-400">
-                Cadastrados na plataforma
-              </p>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Secondary Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="grid gap-4 md:grid-cols-2"
-        >
-          {/* Subscription Overview */}
-          <Card className="bg-slate-800/50 border-slate-700 text-white">
-            <CardHeader>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg">Status das Assinaturas</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Visão geral de todas as escolas
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => navigate("/platform/subscriptions")}
-                  className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-                >
-                  Gerenciar
-                  <ArrowRight className="h-4 w-4 ml-1" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Ativas</span>
-                  <span className="text-green-400">{stats.activeTenants}</span>
-                </div>
-                <Progress 
-                  value={(stats.activeTenants / (stats.totalTenants || 1)) * 100} 
-                  className="h-2 bg-slate-700"
-                />
-              </div>
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span className="text-slate-400">Em Teste</span>
-                  <span className="text-blue-400">{stats.trialTenants}</span>
-                </div>
-                <Progress 
-                  value={(stats.trialTenants / (stats.totalTenants || 1)) * 100} 
-                  className="h-2 bg-slate-700"
-                />
-              </div>
-              {stats.overdueTenants > 0 && (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-slate-400">Inadimplentes</span>
-                    <span className="text-red-400">{stats.overdueTenants}</span>
+                  <p className="text-sm text-muted-foreground">Total de Escolas</p>
+                  <p className="text-2xl font-bold">{stats.totalTenants}</p>
+                  <div className="flex items-center gap-2 mt-1 text-xs">
+                    <span className="text-green-600 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      {stats.activeTenants} ativas
+                    </span>
+                    {stats.trialTenants > 0 && (
+                      <span className="text-blue-600 flex items-center gap-1">
+                        <Clock className="h-3 w-3" />
+                        {stats.trialTenants} em teste
+                      </span>
+                    )}
                   </div>
-                  <Progress 
-                    value={(stats.overdueTenants / (stats.totalTenants || 1)) * 100} 
-                    className="h-2 bg-slate-700"
-                  />
                 </div>
-              )}
+                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Building2 className="h-6 w-6 text-primary" />
+                </div>
+              </div>
             </CardContent>
           </Card>
 
-          {/* Financial Overview */}
-          <Card className="bg-slate-800/50 border-slate-700 text-white">
-            <CardHeader>
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <CardTitle className="text-lg">Resumo Financeiro</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Faturamento consolidado
-                  </CardDescription>
+                  <p className="text-sm text-muted-foreground">Usuários</p>
+                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Em todas as escolas</p>
                 </div>
-                <Receipt className="h-5 w-5 text-slate-400" />
+                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                  <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
+                </div>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50">
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Total de Faturas</p>
-                  <p className="text-xl font-semibold">{stats.totalFaturas}</p>
+                  <p className="text-sm text-muted-foreground">Alunos</p>
+                  <p className="text-2xl font-bold">{stats.totalAlunos}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Cadastrados na plataforma</p>
                 </div>
-                <Receipt className="h-8 w-8 text-slate-600" />
+                <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                  <GraduationCap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
+                </div>
               </div>
-              <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-md transition-shadow">
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Receita Total</p>
-                  <p className="text-xl font-semibold text-green-400">{formatCurrency(stats.receitaTotal)}</p>
+                  <p className="text-sm text-muted-foreground">Faturas</p>
+                  <p className="text-2xl font-bold">{stats.totalFaturas}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Total emitidas</p>
                 </div>
-                <TrendingUp className="h-8 w-8 text-green-500/50" />
+                <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                  <Receipt className="h-6 w-6 text-green-600 dark:text-green-400" />
+                </div>
               </div>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Schools List */}
+        {/* Recent Schools */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
+          transition={{ delay: 0.25 }}
         >
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-lg text-white">Escolas Recentes</CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Últimas escolas cadastradas na plataforma
-                  </CardDescription>
-                </div>
-                <Button 
-                  onClick={() => navigate("/platform/tenants")}
-                  className="bg-amber-500 hover:bg-amber-600 text-black"
-                >
-                  <Building2 className="h-4 w-4 mr-2" />
-                  Ver Todas
-                </Button>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div>
+                <CardTitle>Escolas Recentes</CardTitle>
+                <CardDescription>Últimas escolas cadastradas na plataforma</CardDescription>
               </div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => navigate("/platform/tenants")}
+              >
+                Ver todas
+              </Button>
             </CardHeader>
             <CardContent>
-              <ScrollArea className="h-[320px]">
-                <div className="space-y-3">
-                  {tenants.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Building2 className="h-12 w-12 mx-auto mb-4 text-slate-600" />
-                      <p className="text-slate-400">Nenhuma escola cadastrada</p>
-                      <p className="text-sm text-slate-500 mt-1">
-                        Comece cadastrando a primeira escola da plataforma
-                      </p>
-                      <Button
-                        onClick={() => navigate("/platform/tenants/new")}
-                        className="mt-4 bg-amber-500 hover:bg-amber-600 text-black"
-                      >
-                        Cadastrar Escola
-                      </Button>
-                    </div>
-                  ) : (
-                    tenants.slice(0, 5).map((tenant) => (
-                      <motion.div
-                        key={tenant.id}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="flex items-center justify-between p-4 rounded-lg bg-slate-900/50 border border-slate-700/50 hover:bg-slate-900 transition-colors cursor-pointer"
-                        onClick={() => navigate(`/platform/tenants/${tenant.id}`)}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                            <Building2 className="h-5 w-5 text-amber-400" />
-                          </div>
-                          <div>
-                            <p className="font-medium text-white">{tenant.nome}</p>
-                            <p className="text-sm text-slate-400">
-                              {tenant.cnpj || "CNPJ não informado"}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge variant="outline" className="border-slate-600 text-slate-300">
-                            {tenant.plano}
-                          </Badge>
-                          {getSubscriptionBadge(tenant.subscription_status)}
-                        </div>
-                      </motion.div>
-                    ))
-                  )}
+              {tenants.length === 0 ? (
+                <div className="text-center py-12">
+                  <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                  <p className="text-muted-foreground">Nenhuma escola cadastrada</p>
+                  <Button
+                    onClick={() => navigate("/platform/tenants/new")}
+                    className="mt-4"
+                  >
+                    Cadastrar primeira escola
+                  </Button>
                 </div>
-              </ScrollArea>
+              ) : (
+                <div className="space-y-2">
+                  {tenants.slice(0, 5).map((tenant) => (
+                    <button
+                      key={tenant.id}
+                      onClick={() => navigate(`/platform/tenants/${tenant.id}`)}
+                      className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-muted/50 transition-colors text-left"
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                          <Building2 className="h-5 w-5 text-primary" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground">{tenant.nome}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {tenant.cnpj || "CNPJ não informado"}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{tenant.plano}</Badge>
+                        {tenant.subscription_status === "active" && (
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
+                            <CheckCircle className="h-3 w-3 mr-1" />
+                            Ativa
+                          </Badge>
+                        )}
+                        {tenant.subscription_status === "trial" && (
+                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Teste
+                          </Badge>
+                        )}
+                        {(tenant.subscription_status === "past_due" || tenant.subscription_status === "suspended") && (
+                          <Badge variant="destructive">
+                            <AlertTriangle className="h-3 w-3 mr-1" />
+                            Inadimplente
+                          </Badge>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </motion.div>

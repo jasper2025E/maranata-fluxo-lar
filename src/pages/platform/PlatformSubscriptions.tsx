@@ -47,12 +47,32 @@ interface Subscription {
   blocked_reason: string | null;
 }
 
-const statusConfig: Record<string, { label: string; color: string; icon: React.ReactNode }> = {
-  trial: { label: "Em Teste", color: "bg-blue-500/20 text-blue-400 border-blue-500/30", icon: <Clock className="h-3 w-3" /> },
-  active: { label: "Ativa", color: "bg-green-500/20 text-green-400 border-green-500/30", icon: <CheckCircle className="h-3 w-3" /> },
-  past_due: { label: "Inadimplente", color: "bg-amber-500/20 text-amber-400 border-amber-500/30", icon: <AlertTriangle className="h-3 w-3" /> },
-  cancelled: { label: "Cancelada", color: "bg-slate-500/20 text-slate-400 border-slate-500/30", icon: <Clock className="h-3 w-3" /> },
-  suspended: { label: "Suspensa", color: "bg-red-500/20 text-red-400 border-red-500/30", icon: <AlertTriangle className="h-3 w-3" /> },
+const statusConfig: Record<string, { label: string; className: string; icon: React.ReactNode }> = {
+  trial: { 
+    label: "Em Teste", 
+    className: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400", 
+    icon: <Clock className="h-3 w-3" /> 
+  },
+  active: { 
+    label: "Ativa", 
+    className: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400", 
+    icon: <CheckCircle className="h-3 w-3" /> 
+  },
+  past_due: { 
+    label: "Inadimplente", 
+    className: "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400", 
+    icon: <AlertTriangle className="h-3 w-3" /> 
+  },
+  cancelled: { 
+    label: "Cancelada", 
+    className: "bg-muted text-muted-foreground", 
+    icon: <Clock className="h-3 w-3" /> 
+  },
+  suspended: { 
+    label: "Suspensa", 
+    className: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400", 
+    icon: <AlertTriangle className="h-3 w-3" /> 
+  },
 };
 
 export default function PlatformSubscriptions() {
@@ -151,13 +171,13 @@ export default function PlatformSubscriptions() {
     return (
       <PlatformLayout>
         <div className="space-y-6">
-          <Skeleton className="h-8 w-64 bg-slate-700" />
-          <div className="grid gap-4 md:grid-cols-4">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton key={i} className="h-24 bg-slate-800" />
+          <Skeleton className="h-8 w-64" />
+          <div className="grid gap-4 md:grid-cols-5">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <Skeleton key={i} className="h-24" />
             ))}
           </div>
-          <Skeleton className="h-96 bg-slate-800" />
+          <Skeleton className="h-96" />
         </div>
       </PlatformLayout>
     );
@@ -173,10 +193,8 @@ export default function PlatformSubscriptions() {
           className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">
-              Assinaturas
-            </h1>
-            <p className="text-slate-400">
+            <h1 className="text-2xl font-bold text-foreground">Assinaturas</h1>
+            <p className="text-muted-foreground">
               Gerencie as assinaturas e pagamentos das escolas
             </p>
           </div>
@@ -184,7 +202,6 @@ export default function PlatformSubscriptions() {
             variant="outline"
             size="sm"
             onClick={fetchSubscriptions}
-            className="border-slate-700 text-slate-300 hover:bg-slate-800"
           >
             <RefreshCw className="h-4 w-4 mr-2" />
             Atualizar
@@ -198,62 +215,62 @@ export default function PlatformSubscriptions() {
           transition={{ delay: 0.1 }}
           className="grid gap-4 md:grid-cols-2 lg:grid-cols-5"
         >
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">MRR</p>
-                  <p className="text-2xl font-bold text-green-400">{formatCurrency(stats.mrr)}</p>
+                  <p className="text-sm text-muted-foreground">MRR</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(stats.mrr)}</p>
                 </div>
-                <CreditCard className="h-8 w-8 text-green-500/50" />
+                <CreditCard className="h-8 w-8 text-muted-foreground/30" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Ativas</p>
-                  <p className="text-2xl font-bold text-white">{stats.active}</p>
+                  <p className="text-sm text-muted-foreground">Ativas</p>
+                  <p className="text-2xl font-bold">{stats.active}</p>
                 </div>
-                <CheckCircle className="h-8 w-8 text-green-500/50" />
+                <CheckCircle className="h-8 w-8 text-green-500/30" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Em Teste</p>
-                  <p className="text-2xl font-bold text-white">{stats.trial}</p>
+                  <p className="text-sm text-muted-foreground">Em Teste</p>
+                  <p className="text-2xl font-bold">{stats.trial}</p>
                 </div>
-                <Clock className="h-8 w-8 text-blue-500/50" />
+                <Clock className="h-8 w-8 text-blue-500/30" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Inadimplentes</p>
-                  <p className="text-2xl font-bold text-amber-400">{stats.pastDue}</p>
+                  <p className="text-sm text-muted-foreground">Inadimplentes</p>
+                  <p className="text-2xl font-bold text-amber-600">{stats.pastDue}</p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-amber-500/50" />
+                <AlertTriangle className="h-8 w-8 text-amber-500/30" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-slate-400">Suspensas</p>
-                  <p className="text-2xl font-bold text-red-400">{stats.suspended}</p>
+                  <p className="text-sm text-muted-foreground">Suspensas</p>
+                  <p className="text-2xl font-bold text-red-600">{stats.suspended}</p>
                 </div>
-                <AlertTriangle className="h-8 w-8 text-red-500/50" />
+                <AlertTriangle className="h-8 w-8 text-red-500/30" />
               </div>
             </CardContent>
           </Card>
@@ -267,20 +284,20 @@ export default function PlatformSubscriptions() {
           className="flex flex-col sm:flex-row gap-4"
         >
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por escola ou e-mail..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+              className="pl-9"
             />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-full sm:w-48 bg-slate-800/50 border-slate-700 text-white">
+            <SelectTrigger className="w-full sm:w-48">
               <Filter className="h-4 w-4 mr-2" />
               <SelectValue placeholder="Status" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
+            <SelectContent>
               <SelectItem value="all">Todos os Status</SelectItem>
               <SelectItem value="active">Ativas</SelectItem>
               <SelectItem value="trial">Em Teste</SelectItem>
@@ -297,86 +314,83 @@ export default function PlatformSubscriptions() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardContent className="p-0">
               <Table>
                 <TableHeader>
-                  <TableRow className="border-slate-700 hover:bg-transparent">
-                    <TableHead className="text-slate-400">Escola</TableHead>
-                    <TableHead className="text-slate-400">Plano</TableHead>
-                    <TableHead className="text-slate-400">Status</TableHead>
-                    <TableHead className="text-slate-400">Valor</TableHead>
-                    <TableHead className="text-slate-400">Próximo Venc.</TableHead>
-                    <TableHead className="text-slate-400 text-right">Ações</TableHead>
+                  <TableRow>
+                    <TableHead>Escola</TableHead>
+                    <TableHead>Plano</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Valor</TableHead>
+                    <TableHead>Próximo Venc.</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {filteredSubscriptions.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="text-center py-12">
-                        <Building2 className="h-12 w-12 mx-auto mb-4 text-slate-600" />
-                        <p className="text-slate-400">Nenhuma assinatura encontrada</p>
+                        <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
+                        <p className="text-muted-foreground">Nenhuma assinatura encontrada</p>
                       </TableCell>
                     </TableRow>
                   ) : (
                     filteredSubscriptions.map((sub) => {
-                      const status = statusConfig[sub.subscription_status || "trial"];
+                      const status = statusConfig[sub.subscription_status || "trial"] || statusConfig.trial;
                       return (
                         <TableRow 
                           key={sub.id} 
-                          className="border-slate-700 hover:bg-slate-800/50 cursor-pointer"
+                          className="cursor-pointer hover:bg-muted/50"
                           onClick={() => navigate(`/platform/tenants/${sub.id}`)}
                         >
                           <TableCell>
                             <div className="flex items-center gap-3">
-                              <div className="h-9 w-9 rounded-lg bg-amber-500/20 flex items-center justify-center">
-                                <Building2 className="h-4 w-4 text-amber-400" />
+                              <div className="h-9 w-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                                <Building2 className="h-4 w-4 text-primary" />
                               </div>
                               <div>
-                                <p className="font-medium text-white">{sub.nome}</p>
-                                <p className="text-sm text-slate-400">{sub.email || "-"}</p>
+                                <p className="font-medium">{sub.nome}</p>
+                                <p className="text-sm text-muted-foreground">{sub.email || "-"}</p>
                               </div>
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline" className="border-slate-600 text-slate-300">
-                              {sub.plano}
-                            </Badge>
+                            <Badge variant="outline">{sub.plano}</Badge>
                           </TableCell>
                           <TableCell>
-                            <Badge className={`${status.color} flex items-center gap-1 w-fit`}>
+                            <Badge className={`${status.className} flex items-center gap-1 w-fit`}>
                               {status.icon}
                               {status.label}
                             </Badge>
                             {sub.blocked_at && (
-                              <p className="text-xs text-red-400 mt-1">
+                              <p className="text-xs text-destructive mt-1">
                                 Bloqueada {formatDistanceToNow(new Date(sub.blocked_at), { addSuffix: true, locale: ptBR })}
                               </p>
                             )}
                           </TableCell>
-                          <TableCell className="text-white">
+                          <TableCell>
                             {formatCurrency(sub.monthly_price || 0)}
-                            <span className="text-slate-400 text-sm">/mês</span>
+                            <span className="text-muted-foreground text-sm">/mês</span>
                           </TableCell>
-                          <TableCell className="text-slate-300">
+                          <TableCell>
                             {sub.subscription_ends_at 
                               ? format(new Date(sub.subscription_ends_at), "dd/MM/yyyy", { locale: ptBR })
                               : sub.trial_ends_at
-                                ? <span className="text-blue-400">Teste até {format(new Date(sub.trial_ends_at), "dd/MM", { locale: ptBR })}</span>
+                                ? <span className="text-blue-600">Teste até {format(new Date(sub.trial_ends_at), "dd/MM", { locale: ptBR })}</span>
                                 : "-"
                             }
                           </TableCell>
                           <TableCell className="text-right">
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
-                                <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
+                                <Button variant="ghost" size="icon">
                                   <MoreVertical className="h-4 w-4" />
                                 </Button>
                               </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
+                              <DropdownMenuContent align="end">
                                 <DropdownMenuItem 
                                   onClick={(e) => { e.stopPropagation(); navigate(`/platform/tenants/${sub.id}`); }}
-                                  className="text-slate-300 focus:bg-slate-700 focus:text-white"
                                 >
                                   <ExternalLink className="h-4 w-4 mr-2" />
                                   Ver Detalhes
@@ -384,7 +398,6 @@ export default function PlatformSubscriptions() {
                                 {sub.email && (
                                   <DropdownMenuItem 
                                     onClick={(e) => { e.stopPropagation(); window.location.href = `mailto:${sub.email}`; }}
-                                    className="text-slate-300 focus:bg-slate-700 focus:text-white"
                                   >
                                     <Mail className="h-4 w-4 mr-2" />
                                     Enviar E-mail
@@ -393,7 +406,7 @@ export default function PlatformSubscriptions() {
                                 {sub.subscription_status !== "active" && (
                                   <DropdownMenuItem 
                                     onClick={(e) => { e.stopPropagation(); handleActivateSubscription(sub.id); }}
-                                    className="text-green-400 focus:bg-green-500/20 focus:text-green-300"
+                                    className="text-green-600"
                                   >
                                     <CheckCircle className="h-4 w-4 mr-2" />
                                     Ativar Assinatura
@@ -402,7 +415,7 @@ export default function PlatformSubscriptions() {
                                 {sub.subscription_status === "active" && (
                                   <DropdownMenuItem 
                                     onClick={(e) => { e.stopPropagation(); handleSuspendSubscription(sub.id); }}
-                                    className="text-red-400 focus:bg-red-500/20 focus:text-red-300"
+                                    className="text-destructive"
                                   >
                                     <AlertTriangle className="h-4 w-4 mr-2" />
                                     Suspender

@@ -228,11 +228,11 @@ export default function PlatformLogs() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <Activity className="h-8 w-8 text-amber-400" />
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+              <Activity className="h-6 w-6 text-primary" />
               Registros de Atividade
             </h1>
-            <p className="text-slate-400 mt-1">
+            <p className="text-muted-foreground mt-1">
               Acompanhe todas as ações realizadas na plataforma
             </p>
           </div>
@@ -241,7 +241,6 @@ export default function PlatformLogs() {
             variant="outline"
             onClick={fetchLogs}
             disabled={loading}
-            className="border-slate-700 text-slate-300 hover:bg-slate-800"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Atualizar
@@ -255,44 +254,44 @@ export default function PlatformLogs() {
           transition={{ delay: 0.1 }}
           className="grid grid-cols-2 md:grid-cols-5 gap-4"
         >
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Total de Logs</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Total</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-white">{stats.total}</p>
+              <p className="text-2xl font-bold">{stats.total}</p>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Hoje</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Hoje</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-amber-400">{stats.today}</p>
+              <p className="text-2xl font-bold text-primary">{stats.today}</p>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Criações</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Criações</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-emerald-400">{stats.inserts}</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.inserts}</p>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Atualizações</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Atualizações</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-blue-400">{stats.updates}</p>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{stats.updates}</p>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Exclusões</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Exclusões</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-red-400">{stats.deletes}</p>
+              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.deletes}</p>
             </CardContent>
           </Card>
         </motion.div>
@@ -305,24 +304,24 @@ export default function PlatformLogs() {
           className="flex flex-col md:flex-row gap-4"
         >
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por tabela, ação ou usuário..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+              className="pl-10"
             />
           </div>
 
           <Select value={selectedTenant} onValueChange={setSelectedTenant}>
-            <SelectTrigger className="w-full md:w-[180px] bg-slate-800/50 border-slate-700 text-white">
-              <Building2 className="h-4 w-4 mr-2 text-slate-400" />
+            <SelectTrigger className="w-full md:w-[180px]">
+              <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Escola" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
-              <SelectItem value="all" className="text-white">Todas</SelectItem>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
               {tenants.map(tenant => (
-                <SelectItem key={tenant.id} value={tenant.id} className="text-white">
+                <SelectItem key={tenant.id} value={tenant.id}>
                   {tenant.nome}
                 </SelectItem>
               ))}
@@ -330,14 +329,14 @@ export default function PlatformLogs() {
           </Select>
 
           <Select value={selectedTable} onValueChange={setSelectedTable}>
-            <SelectTrigger className="w-full md:w-[160px] bg-slate-800/50 border-slate-700 text-white">
-              <FileText className="h-4 w-4 mr-2 text-slate-400" />
+            <SelectTrigger className="w-full md:w-[160px]">
+              <FileText className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Tabela" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
-              <SelectItem value="all" className="text-white">Todas</SelectItem>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
               {tables.map(table => (
-                <SelectItem key={table} value={table} className="text-white">
+                <SelectItem key={table} value={table}>
                   {table}
                 </SelectItem>
               ))}
@@ -345,15 +344,15 @@ export default function PlatformLogs() {
           </Select>
 
           <Select value={selectedAction} onValueChange={setSelectedAction}>
-            <SelectTrigger className="w-full md:w-[150px] bg-slate-800/50 border-slate-700 text-white">
-              <Filter className="h-4 w-4 mr-2 text-slate-400" />
+            <SelectTrigger className="w-full md:w-[150px]">
+              <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Ação" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
-              <SelectItem value="all" className="text-white">Todas</SelectItem>
-              <SelectItem value="INSERT" className="text-white">Criação</SelectItem>
-              <SelectItem value="UPDATE" className="text-white">Atualização</SelectItem>
-              <SelectItem value="DELETE" className="text-white">Exclusão</SelectItem>
+            <SelectContent>
+              <SelectItem value="all">Todas</SelectItem>
+              <SelectItem value="INSERT">Criação</SelectItem>
+              <SelectItem value="UPDATE">Atualização</SelectItem>
+              <SelectItem value="DELETE">Exclusão</SelectItem>
             </SelectContent>
           </Select>
         </motion.div>
