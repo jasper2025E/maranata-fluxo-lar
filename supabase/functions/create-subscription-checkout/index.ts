@@ -32,7 +32,7 @@ serve(async (req) => {
   }
 
   try {
-    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY");
+    const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") || Deno.env.get("STRIPESECRETAPI");
     if (!stripeSecretKey) {
       throw new Error("Stripe não configurado");
     }
