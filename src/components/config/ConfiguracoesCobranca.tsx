@@ -1,18 +1,8 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
-import { 
-  Percent, 
-  DollarSign, 
-  Save,
-  Loader2,
-  Receipt,
-  AlertCircle,
-  Gift,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -73,8 +63,7 @@ export function ConfiguracoesCobranca() {
         });
       }
     } catch (error) {
-      console.error("Erro ao carregar configurações:", error);
-      toast.error("Erro ao carregar configurações de cobrança");
+      toast.error("Erro ao carregar configurações");
     } finally {
       setLoading(false);
     }
@@ -83,7 +72,6 @@ export function ConfiguracoesCobranca() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      // Check if escola record exists
       const { data: existing } = await supabase
         .from("escola")
         .select("id")
@@ -93,44 +81,27 @@ export function ConfiguracoesCobranca() {
       if (existing) {
         const { error } = await supabase
           .from("escola")
-          .update({
-            juros_percentual_diario_padrao: config.juros_percentual_diario_padrao,
-            juros_percentual_mensal_padrao: config.juros_percentual_mensal_padrao,
-            multa_fixa_padrao: config.multa_fixa_padrao,
-            multa_percentual_padrao: config.multa_percentual_padrao,
-            dias_carencia_juros: config.dias_carencia_juros,
-            desconto_pontualidade_percentual: config.desconto_pontualidade_percentual,
-            dias_desconto_pontualidade: config.dias_desconto_pontualidade,
-          })
+          .update(config)
           .eq("id", existing.id);
-
         if (error) throw error;
       } else {
-        // Create new escola record with defaults
         const { error } = await supabase
           .from("escola")
-          .insert({
-            nome: "Minha Escola",
-            ...config,
-          });
-
+          .insert({ nome: "Minha Escola", ...config });
         if (error) throw error;
       }
 
-      toast.success("Configurações de cobrança salvas com sucesso!");
-    } catch (error: any) {
-      console.error("Erro ao salvar configurações:", error);
-      toast.error("Erro ao salvar configurações: " + error.message);
+      toast.success("Configurações salvas");
+    } catch (error) {
+      toast.error("Erro ao salvar configurações");
     } finally {
       setSaving(false);
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
-  };
+  const formatCurrency = (value: number) => 
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
-  // Calculate example values
   const valorExemplo = 500;
   const diasAtrasoExemplo = 15;
   const jurosDiario = valorExemplo * (config.juros_percentual_diario_padrao / 100) * diasAtrasoExemplo;
@@ -139,269 +110,180 @@ export function ConfiguracoesCobranca() {
 
   if (loading) {
     return (
-      <Card className="border shadow-sm">
-        <CardContent className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+      </div>
     );
   }
 
+  const ConfigField = ({ 
+    id, 
+    label, 
+    value, 
+    onChange, 
+    hint,
+    suffix,
+    prefix,
+    step = "0.01"
+  }: { 
+    id: string; 
+    label: string; 
+    value: number; 
+    onChange: (v: number) => void; 
+    hint?: string;
+    suffix?: string;
+    prefix?: string;
+    step?: string;
+  }) => (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-sm font-medium">{label}</Label>
+      <div className="relative">
+        {prefix && (
+          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{prefix}</span>
+        )}
+        <Input
+          id={id}
+          type="number"
+          step={step}
+          min="0"
+          value={value}
+          onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
+          className={`h-9 ${prefix ? 'pl-8' : ''} ${suffix ? 'pr-8' : ''}`}
+        />
+        {suffix && (
+          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{suffix}</span>
+        )}
+      </div>
+      {hint && <p className="text-xs text-muted-foreground">{hint}</p>}
+    </div>
+  );
+
   return (
     <div className="space-y-6">
-      {/* Juros por Atraso */}
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Percent className="h-5 w-5 text-primary" />
-            Juros por Atraso
-          </CardTitle>
-          <CardDescription>
-            Configure as taxas de juros aplicadas automaticamente após o vencimento
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="jurosDiario">Taxa de Juros Diária (%)</Label>
-              <div className="relative">
-                <Input
-                  id="jurosDiario"
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  value={config.juros_percentual_diario_padrao}
-                  onChange={(e) => setConfig({ 
-                    ...config, 
-                    juros_percentual_diario_padrao: parseFloat(e.target.value) || 0 
-                  })}
-                  className="pr-8"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Aplicado por dia de atraso. Ex: 0.033% = ~1% ao mês
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="jurosMensal">Taxa de Juros Mensal (%)</Label>
-              <div className="relative">
-                <Input
-                  id="jurosMensal"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  value={config.juros_percentual_mensal_padrao}
-                  onChange={(e) => setConfig({ 
-                    ...config, 
-                    juros_percentual_mensal_padrao: parseFloat(e.target.value) || 0 
-                  })}
-                  className="pr-8"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Usado quando juros diário = 0. Dividido proporcionalmente
-              </p>
-            </div>
+      {/* Juros */}
+      <div className="bg-card border border-border rounded-lg">
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="text-sm font-medium text-foreground">Juros por atraso</h3>
+        </div>
+        <div className="p-6 space-y-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <ConfigField
+              id="jurosDiario"
+              label="Taxa diária"
+              value={config.juros_percentual_diario_padrao}
+              onChange={(v) => setConfig({ ...config, juros_percentual_diario_padrao: v })}
+              suffix="%"
+              hint="Ex: 0.033% = ~1% ao mês"
+              step="0.001"
+            />
+            <ConfigField
+              id="jurosMensal"
+              label="Taxa mensal"
+              value={config.juros_percentual_mensal_padrao}
+              onChange={(v) => setConfig({ ...config, juros_percentual_mensal_padrao: v })}
+              suffix="%"
+              hint="Usado quando juros diário = 0"
+              step="0.1"
+            />
           </div>
+          <ConfigField
+            id="diasCarencia"
+            label="Dias de carência"
+            value={config.dias_carencia_juros}
+            onChange={(v) => setConfig({ ...config, dias_carencia_juros: v })}
+            hint="Dias após vencimento antes de cobrar juros"
+            step="1"
+          />
+        </div>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="diasCarencia">Dias de Carência</Label>
-            <div className="relative">
-              <Input
-                id="diasCarencia"
-                type="number"
-                min="0"
-                value={config.dias_carencia_juros}
-                onChange={(e) => setConfig({ 
-                  ...config, 
-                  dias_carencia_juros: parseInt(e.target.value) || 0 
-                })}
-                className="max-w-[200px]"
-              />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Dias após o vencimento antes de começar a cobrar juros
-            </p>
+      {/* Multa */}
+      <div className="bg-card border border-border rounded-lg">
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="text-sm font-medium text-foreground">Multa por atraso</h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <ConfigField
+              id="multaPercentual"
+              label="Multa percentual"
+              value={config.multa_percentual_padrao}
+              onChange={(v) => setConfig({ ...config, multa_percentual_padrao: v })}
+              suffix="%"
+              hint="Máximo legal: 2%"
+              step="0.1"
+            />
+            <ConfigField
+              id="multaFixa"
+              label="Multa fixa"
+              value={config.multa_fixa_padrao}
+              onChange={(v) => setConfig({ ...config, multa_fixa_padrao: v })}
+              prefix="R$"
+              hint="Valor fixo adicional"
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Multa por Atraso */}
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-destructive" />
-            Multa por Atraso
-          </CardTitle>
-          <CardDescription>
-            Configure a multa aplicada quando a fatura vence
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="multaPercentual">Multa Percentual (%)</Label>
-              <div className="relative">
-                <Input
-                  id="multaPercentual"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={config.multa_percentual_padrao}
-                  onChange={(e) => setConfig({ 
-                    ...config, 
-                    multa_percentual_padrao: parseFloat(e.target.value) || 0 
-                  })}
-                  className="pr-8"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Multa sobre o valor da fatura. Máximo legal: 2%
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="multaFixa">Multa Fixa (R$)</Label>
-              <div className="relative">
-                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="multaFixa"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  value={config.multa_fixa_padrao}
-                  onChange={(e) => setConfig({ 
-                    ...config, 
-                    multa_fixa_padrao: parseFloat(e.target.value) || 0 
-                  })}
-                  className="pl-9"
-                />
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Valor fixo adicional cobrado por atraso
-              </p>
-            </div>
+      {/* Desconto */}
+      <div className="bg-card border border-border rounded-lg">
+        <div className="px-6 py-4 border-b border-border">
+          <h3 className="text-sm font-medium text-foreground">Desconto por pontualidade</h3>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <ConfigField
+              id="descontoPontualidade"
+              label="Desconto"
+              value={config.desconto_pontualidade_percentual}
+              onChange={(v) => setConfig({ ...config, desconto_pontualidade_percentual: v })}
+              suffix="%"
+              hint="Desconto para pagamento antecipado"
+              step="0.1"
+            />
+            <ConfigField
+              id="diasDesconto"
+              label="Dias antes do vencimento"
+              value={config.dias_desconto_pontualidade}
+              onChange={(v) => setConfig({ ...config, dias_desconto_pontualidade: v })}
+              hint="Prazo para aplicar o desconto"
+              step="1"
+            />
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
-      {/* Desconto por Pontualidade */}
-      <Card className="border shadow-sm">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Gift className="h-5 w-5 text-success" />
-            Desconto por Pontualidade
-          </CardTitle>
-          <CardDescription>
-            Configure descontos para pagamentos antecipados
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="descontoPontualidade">Desconto (%)</Label>
-              <div className="relative">
-                <Input
-                  id="descontoPontualidade"
-                  type="number"
-                  step="0.1"
-                  min="0"
-                  max="100"
-                  value={config.desconto_pontualidade_percentual}
-                  onChange={(e) => setConfig({ 
-                    ...config, 
-                    desconto_pontualidade_percentual: parseFloat(e.target.value) || 0 
-                  })}
-                  className="pr-8"
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Desconto para pagamentos antes do vencimento
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="diasDesconto">Dias antes do vencimento</Label>
-              <Input
-                id="diasDesconto"
-                type="number"
-                min="0"
-                value={config.dias_desconto_pontualidade}
-                onChange={(e) => setConfig({ 
-                  ...config, 
-                  dias_desconto_pontualidade: parseInt(e.target.value) || 0 
-                })}
-              />
-              <p className="text-xs text-muted-foreground">
-                Quantos dias antes do vencimento o desconto é aplicado
-              </p>
-            </div>
+      {/* Preview */}
+      <div className="bg-muted/50 border border-border rounded-lg p-6">
+        <p className="text-xs font-medium text-muted-foreground mb-3">
+          Simulação: fatura de {formatCurrency(valorExemplo)} vencida há {diasAtrasoExemplo} dias
+        </p>
+        <div className="space-y-2 text-sm">
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Valor original</span>
+            <span>{formatCurrency(valorExemplo)}</span>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Preview/Simulação */}
-      <Card className="border border-primary/20 bg-primary/5">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Receipt className="h-5 w-5 text-primary" />
-            Simulação de Cobrança
-          </CardTitle>
-          <CardDescription>
-            Exemplo com fatura de {formatCurrency(valorExemplo)} vencida há {diasAtrasoExemplo} dias
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Valor Original:</span>
-              <span className="font-medium">{formatCurrency(valorExemplo)}</span>
-            </div>
+          <div className="flex justify-between text-destructive">
+            <span>Juros ({diasAtrasoExemplo} dias)</span>
+            <span>+{formatCurrency(jurosDiario)}</span>
+          </div>
+          {config.multa_percentual_padrao > 0 && (
             <div className="flex justify-between text-destructive">
-              <span>Juros ({config.juros_percentual_diario_padrao}% × {diasAtrasoExemplo} dias):</span>
-              <span>+ {formatCurrency(jurosDiario)}</span>
+              <span>Multa ({config.multa_percentual_padrao}%)</span>
+              <span>+{formatCurrency(multaPercentual)}</span>
             </div>
-            {config.multa_percentual_padrao > 0 && (
-              <div className="flex justify-between text-destructive">
-                <span>Multa ({config.multa_percentual_padrao}%):</span>
-                <span>+ {formatCurrency(multaPercentual)}</span>
-              </div>
-            )}
-            {config.multa_fixa_padrao > 0 && (
-              <div className="flex justify-between text-destructive">
-                <span>Multa Fixa:</span>
-                <span>+ {formatCurrency(config.multa_fixa_padrao)}</span>
-              </div>
-            )}
-            <Separator />
-            <div className="flex justify-between font-semibold text-base">
-              <span>Valor Final:</span>
-              <span className="text-primary">{formatCurrency(totalExemplo)}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Save Button */}
-      <div className="flex justify-end">
-        <Button onClick={handleSave} disabled={saving} size="lg" className="gap-2">
-          {saving ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Salvando...
-            </>
-          ) : (
-            <>
-              <Save className="h-4 w-4" />
-              Salvar Configurações de Cobrança
-            </>
           )}
+          <div className="flex justify-between font-medium pt-2 border-t border-border">
+            <span>Total</span>
+            <span>{formatCurrency(totalExemplo)}</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Save */}
+      <div className="flex justify-end">
+        <Button onClick={handleSave} disabled={saving} size="sm">
+          {saving ? "Salvando..." : "Salvar configurações"}
         </Button>
       </div>
     </div>
