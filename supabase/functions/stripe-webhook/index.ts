@@ -123,9 +123,51 @@ serve(async (req) => {
       case "checkout.session.completed": {
         const session = event.data.object;
         const faturaId = session.metadata?.fatura_id;
+        const tenantId = session.metadata?.tenant_id;
+        const planId = session.metadata?.plan_id;
 
-        console.log(`Checkout completado - Session: ${session.id}, Fatura: ${faturaId}`);
+        console.log(`Checkout completado - Session: ${session.id}, Mode: ${session.mode}`);
 
+        // Handle subscription checkout
+        if (session.mode === "subscription" && tenantId) {
+          console.log(`Subscription checkout para tenant: ${tenantId}, plano: ${planId}`);
+          
+          const { error: updateError } = await supabase
+            .from("tenants")
+            .update({
+              plano: planId,
+              subscription_status: "active",
+              stripe_subscription_id: session.subscription,
+              stripe_customer_id: session.customer,
+              subscription_started_at: new Date().toISOString(),
+              monthly_price: session.amount_total / 100,
+            })
+            .eq("id", tenantId);
+
+          if (updateError) {
+            console.error("Erro ao atualizar tenant:", updateError);
+            throw updateError;
+          }
+
+          // Registrar no histórico
+          await supabase.from("subscription_history").insert({
+            tenant_id: tenantId,
+            event_type: "activated",
+            old_status: "trial",
+            new_status: "active",
+            amount: session.amount_total / 100,
+            stripe_event_id: event.id,
+            metadata: {
+              plan_id: planId,
+              subscription_id: session.subscription,
+              message: `Plano ${planId} ativado com sucesso`,
+            },
+          });
+
+          console.log(`Tenant ${tenantId} atualizado para plano ${planId}`);
+        }
+
+        // Handle invoice checkout (existing logic)
         if (faturaId && session.payment_status === "paid") {
           // Atualizar status da fatura
           const { error: faturaError } = await supabase
@@ -178,6 +220,137 @@ serve(async (req) => {
             message: `Pagamento de R$ ${(session.amount_total / 100).toFixed(2)} recebido.`,
             type: "success",
             link: "/faturas",
+          });
+        }
+        break;
+      }
+
+      case "customer.subscription.updated": {
+        const subscription = event.data.object;
+        const tenantId = subscription.metadata?.tenant_id;
+        
+        console.log(`Subscription updated: ${subscription.id}, status: ${subscription.status}`);
+
+        if (tenantId) {
+          const statusMap: Record<string, string> = {
+            active: "active",
+            past_due: "past_due",
+            canceled: "cancelled",
+            unpaid: "suspended",
+            trialing: "trial",
+          };
+
+          const newStatus = statusMap[subscription.status] || subscription.status;
+
+          await supabase
+            .from("tenants")
+            .update({
+              subscription_status: newStatus,
+              monthly_price: subscription.items?.data?.[0]?.price?.unit_amount 
+                ? subscription.items.data[0].price.unit_amount / 100 
+                : undefined,
+            })
+            .eq("id", tenantId);
+
+          // Registrar no histórico
+          await supabase.from("subscription_history").insert({
+            tenant_id: tenantId,
+            event_type: "subscription_updated",
+            new_status: newStatus,
+            stripe_event_id: event.id,
+            metadata: {
+              subscription_id: subscription.id,
+              stripe_status: subscription.status,
+            },
+          });
+        }
+        break;
+      }
+
+      case "customer.subscription.deleted": {
+        const subscription = event.data.object;
+        const tenantId = subscription.metadata?.tenant_id;
+        
+        console.log(`Subscription cancelled: ${subscription.id}`);
+
+        if (tenantId) {
+          await supabase
+            .from("tenants")
+            .update({
+              subscription_status: "cancelled",
+              stripe_subscription_id: null,
+            })
+            .eq("id", tenantId);
+
+          // Registrar no histórico
+          await supabase.from("subscription_history").insert({
+            tenant_id: tenantId,
+            event_type: "subscription_cancelled",
+            new_status: "cancelled",
+            stripe_event_id: event.id,
+            metadata: {
+              subscription_id: subscription.id,
+              message: "Assinatura cancelada",
+            },
+          });
+        }
+        break;
+      }
+
+      case "invoice.paid": {
+        const invoice = event.data.object;
+        const tenantId = invoice.subscription_details?.metadata?.tenant_id;
+        
+        console.log(`Invoice paid: ${invoice.id}`);
+
+        if (tenantId && invoice.billing_reason !== "subscription_create") {
+          // Registrar renovação
+          await supabase.from("subscription_history").insert({
+            tenant_id: tenantId,
+            event_type: "payment_received",
+            new_status: "active",
+            amount: invoice.amount_paid / 100,
+            stripe_event_id: event.id,
+            metadata: {
+              invoice_id: invoice.id,
+              message: "Pagamento da assinatura recebido",
+            },
+          });
+
+          // Garantir status ativo
+          await supabase
+            .from("tenants")
+            .update({ subscription_status: "active" })
+            .eq("id", tenantId);
+        }
+        break;
+      }
+
+      case "invoice.payment_failed": {
+        const invoice = event.data.object;
+        const tenantId = invoice.subscription_details?.metadata?.tenant_id;
+        
+        console.log(`Invoice payment failed: ${invoice.id}`);
+
+        if (tenantId) {
+          await supabase
+            .from("tenants")
+            .update({
+              subscription_status: "past_due",
+              grace_period_ends_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            })
+            .eq("id", tenantId);
+
+          // Registrar falha
+          await supabase.from("subscription_history").insert({
+            tenant_id: tenantId,
+            event_type: "payment_failed",
+            new_status: "past_due",
+            stripe_event_id: event.id,
+            metadata: {
+              invoice_id: invoice.id,
+              message: "Falha no pagamento da assinatura",
+            },
           });
         }
         break;
