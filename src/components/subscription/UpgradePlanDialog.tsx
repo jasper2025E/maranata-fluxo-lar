@@ -22,65 +22,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { formatCurrency } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useSubscriptionPlans, getPlanPriceFormatted, SubscriptionPlan } from "@/hooks/useSubscriptionPlans";
 
-interface Plan {
-  id: string;
-  name: string;
-  price: number;
-  features: string[];
-  icon: React.ReactNode;
-  popular?: boolean;
-  color: string;
-}
-
-const plans: Plan[] = [
-  {
-    id: "basic",
-    name: "Básico",
-    price: 99,
-    color: "from-gray-500 to-gray-600",
-    icon: <Zap className="h-5 w-5" />,
-    features: [
-      "Até 50 alunos",
-      "Gestão de faturas",
-      "Relatórios básicos",
-      "Suporte por email",
-    ],
-  },
-  {
-    id: "pro",
-    name: "Profissional",
-    price: 199,
-    color: "from-primary to-primary/80",
-    icon: <Sparkles className="h-5 w-5" />,
-    popular: true,
-    features: [
-      "Até 200 alunos",
-      "Integração Asaas/PIX",
-      "Relatórios avançados",
-      "Suporte prioritário",
-      "Gestão de RH",
-    ],
-  },
-  {
-    id: "enterprise",
-    name: "Enterprise",
-    price: 499,
-    color: "from-violet-500 to-purple-600",
-    icon: <Crown className="h-5 w-5" />,
-    features: [
-      "Alunos ilimitados",
-      "Todas as integrações",
-      "API personalizada",
-      "Suporte dedicado 24/7",
-      "Treinamento incluso",
-    ],
-  },
-];
+const iconMap: Record<string, React.ReactNode> = {
+  Zap: <Zap className="h-5 w-5" />,
+  Sparkles: <Sparkles className="h-5 w-5" />,
+  Crown: <Crown className="h-5 w-5" />,
+};
 
 interface TenantValidation {
   isValid: boolean;
@@ -106,6 +57,7 @@ export function UpgradePlanDialog({
   onSuccess,
 }: UpgradePlanDialogProps) {
   const navigate = useNavigate();
+  const { data: plans = [], isLoading: loadingPlans } = useSubscriptionPlans();
   const [loading, setLoading] = useState<string | null>(null);
   const [validating, setValidating] = useState(true);
   const [validation, setValidation] = useState<TenantValidation>({
@@ -350,14 +302,14 @@ export function UpgradePlanDialog({
 
                 <div className="text-center mb-4">
                   <div
-                    className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${plan.color} text-white mb-3`}
+                    className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${plan.color} text-primary-foreground mb-3`}
                   >
-                    {plan.icon}
+                    {iconMap[plan.icon] || <Zap className="h-5 w-5" />}
                   </div>
                   <h3 className="font-semibold text-lg text-foreground">{plan.name}</h3>
                   <div className="mt-2">
                     <span className="text-3xl font-bold text-foreground">
-                      {formatCurrency(plan.price)}
+                      {getPlanPriceFormatted(plan.price)}
                     </span>
                     <span className="text-muted-foreground">/mês</span>
                   </div>
