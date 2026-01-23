@@ -129,31 +129,32 @@ const Faturas = () => {
   };
 
   const handlePaymentLink = async (fatura: Fatura) => {
+    // Links de pagamento são gerados via Asaas
     if (fatura.payment_url) {
       navigator.clipboard.writeText(fatura.payment_url);
       toast.success(t("invoices.linkCopied"));
-    } else {
+    } else if (fatura.asaas_payment_id) {
+      // Buscar link do Asaas
       toast.info(t("invoices.generatingLink"));
       try {
-        const response = await supabase.functions.invoke("create-checkout", {
-          body: {
-            faturaId: fatura.id,
-            successUrl: `${window.location.origin}/pagamento/resultado?success=true&fatura_id=${fatura.id}`,
-            cancelUrl: `${window.location.origin}/pagamento/resultado?canceled=true&fatura_id=${fatura.id}`,
-          },
+        const response = await supabase.functions.invoke("asaas-get-payment", {
+          body: { paymentId: fatura.asaas_payment_id },
         });
         if (response.error) {
           throw new Error(response.error.message || t("invoices.linkError"));
         }
-        if (response.data?.url) {
-          navigator.clipboard.writeText(response.data.url);
+        const paymentUrl = response.data?.invoiceUrl || response.data?.bankSlipUrl;
+        if (paymentUrl) {
+          navigator.clipboard.writeText(paymentUrl);
           toast.success(t("invoices.linkGenerated"));
         } else {
-          toast.error(t("invoices.linkError"));
+          toast.error(t("invoices.noPaymentLink"));
         }
       } catch (error: any) {
         toast.error(error.message || t("invoices.linkError"));
       }
+    } else {
+      toast.error(t("invoices.generateAsaasFirst"));
     }
   };
 
