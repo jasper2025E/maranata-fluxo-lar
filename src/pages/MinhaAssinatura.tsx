@@ -159,10 +159,18 @@ export default function MinhaAssinatura() {
           .maybeSingle();
 
         if (error) throw error;
-        setTenantId(profile?.tenant_id ?? null);
+        
+        const fetchedTenantId = profile?.tenant_id ?? null;
+        setTenantId(fetchedTenantId);
+        
+        // If no tenant_id, stop loading here
+        if (!fetchedTenantId) {
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
         setTenantId(null);
+        setLoading(false);
       }
     };
 
