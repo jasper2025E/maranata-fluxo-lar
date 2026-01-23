@@ -12,6 +12,7 @@ import { useUserLanguage } from "@/hooks/useUserLanguage";
 
 // Pages
 import Index from "./pages/Index";
+import RootRedirect from "./components/RootRedirect";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import ResponsavelDashboard from "./pages/ResponsavelDashboard";
@@ -52,10 +53,10 @@ function AppContent() {
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/" element={<RootRedirect />} />
           <Route path="/auth" element={<Auth />} />
           {/* Legacy route (marketing removido) */}
-          <Route path="/marketing" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/marketing" element={<RootRedirect />} />
           
           {/* Protected Routes */}
           <Route
