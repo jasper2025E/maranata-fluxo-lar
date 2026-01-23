@@ -23,12 +23,13 @@ serve(async (req) => {
       );
     }
 
-    // Create client with user's token to verify they're authenticated
-    const supabaseClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
-      global: { headers: { Authorization: authHeader } },
-    });
+    // Create admin client for role checking
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+    // Verify user token
+    const token = authHeader.replace("Bearer ", "");
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token);
+    
     if (userError || !user) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
@@ -36,16 +37,21 @@ serve(async (req) => {
       );
     }
 
-    // Check if user is admin
-    const { data: roles } = await supabaseClient
+    // ============================================
+    // SECURITY: Only platform_admin can access system secrets
+    // School admins MUST NOT see platform API credentials
+    // ============================================
+    const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
 
-    const isAdmin = roles?.some((r) => r.role === "admin");
-    if (!isAdmin) {
+    const isPlatformAdmin = roles?.some((r) => r.role === "platform_admin");
+    
+    if (!isPlatformAdmin) {
+      console.error(`Access denied: User ${user.id} (${user.email}) attempted to access manage-secrets`);
       return new Response(
-        JSON.stringify({ error: "Admin access required" }),
+        JSON.stringify({ error: "Acesso restrito. Esta função é exclusiva para administradores da plataforma." }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }

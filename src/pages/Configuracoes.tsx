@@ -26,6 +26,9 @@ import {
   IntegrationsTab,
 } from "@/components/config";
 
+// SECURITY: Integrations tab is ONLY for platform_admin
+// School admins (role === "admin") must NOT access system API credentials
+
 interface UserPreferences {
   email_notifications: boolean;
   browser_notifications: boolean;
@@ -34,7 +37,7 @@ interface UserPreferences {
 }
 
 const Configuracoes = () => {
-  const { user, role } = useAuth();
+  const { user, role, isPlatformAdmin } = useAuth();
   const { theme, setTheme } = useTheme();
   const { i18n } = useTranslation();
   const [loadingPrefs, setLoadingPrefs] = useState(true);
@@ -160,7 +163,8 @@ const Configuracoes = () => {
                   <span className="hidden sm:inline">Usuários</span>
                 </TabsTrigger>
               )}
-              {role === "admin" && (
+              {/* SECURITY: Integrações tab is ONLY for platform_admin - NOT for school admins */}
+              {isPlatformAdmin() && (
                 <TabsTrigger value="integracoes" className="gap-2 data-[state=active]:bg-background">
                   <RefreshCw className="h-4 w-4" />
                   <span className="hidden sm:inline">Integrações</span>
@@ -222,8 +226,8 @@ const Configuracoes = () => {
             </TabsContent>
           )}
 
-          {/* Integrações Tab - Admin Only */}
-          {role === "admin" && (
+          {/* Integrações Tab - ONLY Platform Admin (Gestor) */}
+          {isPlatformAdmin() && (
             <TabsContent value="integracoes">
               <IntegrationsTab />
             </TabsContent>
