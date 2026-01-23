@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, LineChart, Line, PieChart, Pie, Cell, ComposedChart, Area, AreaChart } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, PieChart, Pie, Cell, ComposedChart, Line } from "recharts";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { 
@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { format, subMonths, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
+import { FinancialKPICard } from "@/components/dashboard/FinancialKPICard";
 
 const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const mesesCompletos = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -390,42 +391,38 @@ const Relatorios = () => {
 
         {/* KPIs Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Recebido</span>
-              <TrendingUp className="h-4 w-4 text-green-600" />
-            </div>
-            <p className="text-2xl font-semibold text-foreground mt-1">{formatCurrency(totalEntradasPeriodo)}</p>
-            <p className="text-xs text-muted-foreground mt-1">no período</p>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Despesas</span>
-              <TrendingDown className="h-4 w-4 text-destructive" />
-            </div>
-            <p className="text-2xl font-semibold text-foreground mt-1">{formatCurrency(totalSaidasPeriodo)}</p>
-            <p className="text-xs text-muted-foreground mt-1">no período</p>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Saldo</span>
-              <DollarSign className={cn("h-4 w-4", saldoPeriodo >= 0 ? "text-green-600" : "text-destructive")} />
-            </div>
-            <p className={cn("text-2xl font-semibold mt-1", saldoPeriodo >= 0 ? "text-green-600" : "text-destructive")}>
-              {formatCurrency(saldoPeriodo)}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">receitas - despesas</p>
-          </div>
-          <div className="bg-card border border-border rounded-lg p-4">
-            <div className="flex items-center justify-between">
-              <span className="text-xs text-muted-foreground">Inadimplência</span>
-              <AlertTriangle className={cn("h-4 w-4", taxaInadimplencia > 10 ? "text-destructive" : "text-yellow-600")} />
-            </div>
-            <p className={cn("text-2xl font-semibold mt-1", taxaInadimplencia > 10 ? "text-destructive" : taxaInadimplencia > 5 ? "text-yellow-600" : "text-foreground")}>
-              {taxaInadimplencia.toFixed(1)}%
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">{formatCurrency(valorInadimplente)}</p>
-          </div>
+          <FinancialKPICard
+            title="Recebido"
+            value={formatCurrency(totalEntradasPeriodo)}
+            subtitle="no período"
+            icon={TrendingUp}
+            variant="success"
+            index={0}
+          />
+          <FinancialKPICard
+            title="Despesas"
+            value={formatCurrency(totalSaidasPeriodo)}
+            subtitle="no período"
+            icon={TrendingDown}
+            variant="danger"
+            index={1}
+          />
+          <FinancialKPICard
+            title="Saldo"
+            value={formatCurrency(saldoPeriodo)}
+            subtitle="receitas - despesas"
+            icon={DollarSign}
+            variant={saldoPeriodo >= 0 ? "success" : "danger"}
+            index={2}
+          />
+          <FinancialKPICard
+            title="Inadimplência"
+            value={`${taxaInadimplencia.toFixed(1)}%`}
+            subtitle={formatCurrency(valorInadimplente)}
+            icon={AlertTriangle}
+            variant={taxaInadimplencia > 10 ? "danger" : taxaInadimplencia > 5 ? "warning" : "success"}
+            index={3}
+          />
         </div>
 
         {/* Secondary Stats */}
