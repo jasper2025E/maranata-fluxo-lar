@@ -12,23 +12,10 @@ import {
   Trash2, 
   Key, 
   RefreshCw,
-  Wifi,
-  WifiOff,
   Copy,
   Loader2,
   CreditCard,
-  AlertTriangle,
-  Star,
-  MoreHorizontal,
-  ChevronDown,
-  ChevronUp,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { 
   useGatewayConfigs, 
@@ -60,6 +47,7 @@ function GatewayCard({ config, onTest, onUpdate, onDelete, onSetSecret, isTestin
   const [secretValues, setSecretValues] = useState<Record<string, string>>({});
   
   const info = GATEWAY_INFO[config.gateway_type];
+  const hasApiKey = config.secrets.some(s => s.key_name === "api_key");
   
   const handleSaveSecret = async (keyName: string) => {
     const value = secretValues[keyName];
@@ -78,156 +66,127 @@ function GatewayCard({ config, onTest, onUpdate, onDelete, onSetSecret, isTestin
   };
 
   return (
-    <div className={`bg-card border rounded-lg ${config.is_default ? 'border-primary/50' : 'border-border'}`}>
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+    <div className="bg-card border border-border rounded-lg">
+      {/* Header compacto */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        <div className="flex items-center gap-3">
+          <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center">
             {info.logo ? (
-              <img src={info.logo} alt={info.name} className="w-6 h-6 rounded" />
+              <img src={info.logo} alt={info.name} className="w-5 h-5" />
             ) : (
-              <div className="w-6 h-6 rounded bg-muted flex items-center justify-center">
-                <CreditCard className="w-3.5 h-3.5" />
-              </div>
+              <CreditCard className="w-4 h-4 text-muted-foreground" />
             )}
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-medium text-foreground">{config.display_name}</span>
-                {config.is_default && (
-                  <Badge variant="secondary" className="text-xs py-0 px-1.5">
-                    <Star className="w-3 h-3 mr-0.5" />
-                    Padrão
-                  </Badge>
-                )}
-              </div>
-              <p className="text-xs text-muted-foreground">{info.name}</p>
+          </div>
+          <div>
+            <span className="text-sm font-medium text-foreground">{config.display_name}</span>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <span className="text-xs text-muted-foreground">{info.name}</span>
+              <span className="text-muted-foreground">·</span>
+              <span className={`text-xs ${config.environment === "production" ? "text-primary" : "text-muted-foreground"}`}>
+                {config.environment === "production" ? "Produção" : "Sandbox"}
+              </span>
             </div>
           </div>
-          
-          <div className="flex items-center gap-2">
-            <Badge 
-              variant="outline" 
-              className={`text-xs ${config.environment === "production" 
-                ? "bg-primary/10 text-primary border-primary/30"
-                : "bg-muted text-muted-foreground"
-              }`}
-            >
-              {config.environment === "production" ? "Produção" : "Sandbox"}
-            </Badge>
-            
-            {config.connection_status === "connected" ? (
-              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
-                <Wifi className="w-3 h-3 mr-1" />
-                OK
-              </Badge>
-            ) : config.connection_status === "error" ? (
-              <Badge variant="destructive" className="text-xs">
-                <WifiOff className="w-3 h-3 mr-1" />
-                Erro
-              </Badge>
-            ) : (
-              <Badge variant="secondary" className="text-xs">
-                <AlertTriangle className="w-3 h-3 mr-1" />
-                Pendente
-              </Badge>
-            )}
-          </div>
+        </div>
+        
+        <div className="flex items-center gap-2">
+          {config.is_default && (
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
+              Padrão
+            </span>
+          )}
+          <span className={`h-2 w-2 rounded-full ${
+            config.connection_status === "connected" 
+              ? "bg-green-500" 
+              : config.connection_status === "error" 
+                ? "bg-destructive" 
+                : "bg-yellow-500"
+          }`} />
         </div>
       </div>
       
-      {/* Content */}
+      {/* Ações e métodos */}
       <div className="px-4 py-3 space-y-3">
-        {/* Status e Métodos */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <Switch
-                id={`active-${config.id}`}
                 checked={config.is_active}
                 onCheckedChange={(checked) => onUpdate({ is_active: checked })}
                 className="scale-90"
               />
-              <Label htmlFor={`active-${config.id}`} className="text-xs text-muted-foreground">Ativo</Label>
-            </div>
+              <span className="text-xs text-muted-foreground">Ativo</span>
+            </label>
             
-            <div className="flex items-center gap-2">
+            <label className="flex items-center gap-2 cursor-pointer">
               <Switch
-                id={`default-${config.id}`}
                 checked={config.is_default}
                 onCheckedChange={(checked) => onUpdate({ is_default: checked })}
                 className="scale-90"
               />
-              <Label htmlFor={`default-${config.id}`} className="text-xs text-muted-foreground">Padrão</Label>
-            </div>
+              <span className="text-xs text-muted-foreground">Padrão</span>
+            </label>
           </div>
           
-          <div className="flex items-center gap-1.5">
-            <Button 
-              variant="outline" 
-              size="sm"
-              className="h-7 text-xs"
+          <div className="flex items-center gap-1">
+            <button
+              className="h-7 px-2.5 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors flex items-center gap-1.5"
+              onClick={() => setShowSecrets(!showSecrets)}
+            >
+              <Key className="w-3.5 h-3.5" />
+              Credenciais
+            </button>
+            <button
+              className="h-7 px-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors disabled:opacity-50"
               onClick={onTest}
-              disabled={isTesting}
+              disabled={isTesting || !hasApiKey}
+              title={!hasApiKey ? "Configure a API Key primeiro" : "Testar conexão"}
             >
               {isTesting ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
                 <RefreshCw className="w-3.5 h-3.5" />
               )}
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-7 text-xs"
-              onClick={() => setShowSecrets(!showSecrets)}
+            </button>
+            <button
+              className="h-7 px-2 text-xs text-destructive/70 hover:text-destructive hover:bg-destructive/10 rounded-md transition-colors"
+              onClick={onDelete}
             >
-              <Key className="w-3.5 h-3.5 mr-1" />
-              Credenciais
-              {showSecrets ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
-            </Button>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem 
-                  className="text-destructive focus:text-destructive"
-                  onClick={onDelete}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                  Remover
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
           </div>
         </div>
 
-        {/* Métodos de Pagamento */}
+        {/* Métodos */}
         <div className="flex flex-wrap gap-1">
           {config.allowed_methods.map((method) => (
-            <Badge key={method} variant="secondary" className="text-xs py-0 px-1.5 font-normal">
+            <span key={method} className="text-xs text-muted-foreground bg-muted px-2 py-0.5 rounded">
               {METHOD_LABELS[method]}
-            </Badge>
+            </span>
           ))}
         </div>
         
-        {/* Seção de Credenciais */}
+        {/* Erro de conexão */}
+        {config.connection_error && (
+          <p className="text-xs text-destructive">{config.connection_error}</p>
+        )}
+        
+        {/* Credenciais colapsáveis */}
         {showSecrets && (
           <div className="pt-3 border-t border-border space-y-3">
-            <p className="text-xs text-muted-foreground">
-              Credenciais criptografadas com AES-256
-            </p>
-            
             {info.requiredSecrets.map((secretDef) => {
               const existingSecret = config.secrets.find(s => s.key_name === secretDef.key);
               
               return (
                 <div key={secretDef.key} className="space-y-1.5">
-                  <Label className="text-xs font-medium">{secretDef.label}</Label>
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-foreground">{secretDef.label}</span>
+                    {existingSecret && (
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(existingSecret.last_rotated).toLocaleDateString('pt-BR')}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex gap-2">
                     <Input
                       type="password"
@@ -241,6 +200,7 @@ function GatewayCard({ config, onTest, onUpdate, onDelete, onSetSecret, isTestin
                     />
                     <Button
                       size="sm"
+                      variant="outline"
                       className="h-8 text-xs"
                       onClick={() => handleSaveSecret(secretDef.key)}
                       disabled={!secretValues[secretDef.key]}
@@ -248,37 +208,25 @@ function GatewayCard({ config, onTest, onUpdate, onDelete, onSetSecret, isTestin
                       Salvar
                     </Button>
                   </div>
-                  {existingSecret && (
-                    <p className="text-xs text-muted-foreground">
-                      Atualizado: {new Date(existingSecret.last_rotated).toLocaleDateString('pt-BR')}
-                    </p>
-                  )}
                 </div>
               );
             })}
             
-            {/* Webhook URL */}
             {config.webhook_token && (
-              <div className="space-y-1.5 pt-2">
-                <Label className="text-xs font-medium">Webhook</Label>
+              <div className="space-y-1.5">
+                <span className="text-xs font-medium text-foreground">Webhook</span>
                 <div className="flex gap-2">
                   <Input
                     readOnly
                     value={`/gateway-webhook/${config.gateway_type}/${config.webhook_token.substring(0, 8)}...`}
                     className="h-8 text-xs font-mono bg-muted"
                   />
-                  <Button size="sm" variant="outline" className="h-8" onClick={copyWebhookUrl}>
+                  <Button size="sm" variant="outline" className="h-8 px-2" onClick={copyWebhookUrl}>
                     <Copy className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
             )}
-          </div>
-        )}
-        
-        {config.connection_error && (
-          <div className="text-xs text-destructive bg-destructive/10 rounded px-2 py-1.5">
-            {config.connection_error}
           </div>
         )}
       </div>
