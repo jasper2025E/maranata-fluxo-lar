@@ -27,7 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/lib/formatters";
-import { useEscola } from "@/hooks/useEscola";
+import { useAuth } from "@/contexts/AuthContext";
 import { UpgradePlanDialog } from "@/components/subscription/UpgradePlanDialog";
 import { toast } from "sonner";
 
@@ -129,11 +129,38 @@ export default function MinhaAssinatura() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { data: escola } = useEscola();
+  const { user } = useAuth();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [history, setHistory] = useState<SubscriptionEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+  const [tenantId, setTenantId] = useState<string | null>(null);
+
+  // Fetch tenant_id from user's profile
+  useEffect(() => {
+    const fetchTenantId = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("tenant_id")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        setTenantId(profile?.tenant_id ?? null);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        setTenantId(null);
+      }
+    };
+
+    fetchTenantId();
+  }, [user?.id]);
 
   // Handle success/cancel from Stripe checkout
   useEffect(() => {
@@ -142,9 +169,7 @@ export default function MinhaAssinatura() {
 
     if (success === "true") {
       toast.success("Assinatura ativada com sucesso! Seu plano foi atualizado.");
-      // Clear URL params
       setSearchParams({});
-      // Refresh data
       fetchSubscriptionData();
     } else if (canceled === "true") {
       toast.info("Checkout cancelado. Você pode tentar novamente quando quiser.");
@@ -153,11 +178,13 @@ export default function MinhaAssinatura() {
   }, [searchParams]);
 
   useEffect(() => {
-    fetchSubscriptionData();
-  }, [escola]);
+    if (tenantId) {
+      fetchSubscriptionData();
+    }
+  }, [tenantId]);
 
   const fetchSubscriptionData = async () => {
-    if (!escola?.tenant_id) {
+    if (!tenantId) {
       setLoading(false);
       return;
     }
@@ -167,7 +194,7 @@ export default function MinhaAssinatura() {
       const { data: tenantData, error: tenantError } = await supabase
         .from("tenants")
         .select("id, nome, plano, subscription_status, monthly_price, subscription_started_at, grace_period_ends_at")
-        .eq("id", escola.tenant_id)
+        .eq("id", tenantId)
         .single();
 
       if (tenantError) throw tenantError;
@@ -177,7 +204,7 @@ export default function MinhaAssinatura() {
       const { data: historyData, error: historyError } = await supabase
         .from("subscription_history")
         .select("*")
-        .eq("tenant_id", escola.tenant_id)
+        .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false })
         .limit(10);
 

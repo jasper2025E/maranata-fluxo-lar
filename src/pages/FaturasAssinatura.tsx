@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/formatters";
+import { useAuth } from "@/contexts/AuthContext";
 import { useEscola } from "@/hooks/useEscola";
 import { 
   generateSubscriptionInvoicePDF, 
@@ -117,28 +118,57 @@ const planLabels: Record<string, string> = {
 
 export default function FaturasAssinatura() {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { data: escola } = useEscola();
   const [tenant, setTenant] = useState<TenantData | null>(null);
   const [events, setEvents] = useState<SubscriptionEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [filterType, setFilterType] = useState<string>("all");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [tenantId, setTenantId] = useState<string | null>(null);
+
+  // Fetch tenant_id from user's profile
+  useEffect(() => {
+    const fetchTenantId = async () => {
+      if (!user?.id) {
+        setLoading(false);
+        return;
+      }
+
+      try {
+        const { data: profile, error } = await supabase
+          .from("profiles")
+          .select("tenant_id")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+        setTenantId(profile?.tenant_id ?? null);
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+        setTenantId(null);
+        setLoading(false);
+      }
+    };
+
+    fetchTenantId();
+  }, [user?.id]);
 
   useEffect(() => {
-    if (escola?.tenant_id) {
+    if (tenantId) {
       fetchData();
     }
-  }, [escola?.tenant_id]);
+  }, [tenantId]);
 
   const fetchData = async () => {
-    if (!escola?.tenant_id) return;
+    if (!tenantId) return;
 
     try {
       // Fetch tenant data
       const { data: tenantData, error: tenantError } = await supabase
         .from("tenants")
         .select("id, nome, plano, email, cnpj, subscription_status, monthly_price, subscription_started_at")
-        .eq("id", escola.tenant_id)
+        .eq("id", tenantId)
         .single();
 
       if (tenantError) throw tenantError;
@@ -148,7 +178,7 @@ export default function FaturasAssinatura() {
       const { data: eventsData, error: eventsError } = await supabase
         .from("subscription_history")
         .select("*")
-        .eq("tenant_id", escola.tenant_id)
+        .eq("tenant_id", tenantId)
         .order("created_at", { ascending: false });
 
       if (eventsError) throw eventsError;
