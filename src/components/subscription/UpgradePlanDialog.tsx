@@ -108,6 +108,23 @@ export function UpgradePlanDialog({
         return;
       }
 
+      // Verificar se o tenant tem email configurado
+      const { data: tenant, error: tenantError } = await supabase
+        .from("tenants")
+        .select("email")
+        .eq("id", tenantId)
+        .single();
+
+      if (tenantError) {
+        console.error("Erro ao buscar tenant:", tenantError);
+        throw new Error("Erro ao buscar dados da escola");
+      }
+
+      if (!tenant?.email) {
+        toast.error("É necessário configurar um email da escola antes de assinar. Vá em Configurações > Dados da Escola.");
+        return;
+      }
+
       const response = await supabase.functions.invoke("create-subscription-checkout", {
         body: {
           tenantId,

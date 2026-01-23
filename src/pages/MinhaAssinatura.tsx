@@ -310,7 +310,12 @@ export default function MinhaAssinatura() {
                   <> Você tem até <strong>{format(new Date(subscription.grace_period_ends_at), "dd/MM/yyyy", { locale: ptBR })}</strong> para regularizar.</>
                 )}
               </p>
-              <Button size="sm" className="mt-3" variant="default">
+              <Button 
+                size="sm" 
+                className="mt-3" 
+                variant="default"
+                onClick={() => setUpgradeDialogOpen(true)}
+              >
                 <CreditCard className="h-4 w-4 mr-2" />
                 Regularizar Pagamento
               </Button>
