@@ -728,6 +728,7 @@ export type Database = {
           desconto_percentual: number | null
           desconto_valor: number | null
           dias_atraso: number | null
+          gateway_config_id: string | null
           id: string
           juros: number | null
           juros_percentual_diario: number | null
@@ -779,6 +780,7 @@ export type Database = {
           desconto_percentual?: number | null
           desconto_valor?: number | null
           dias_atraso?: number | null
+          gateway_config_id?: string | null
           id?: string
           juros?: number | null
           juros_percentual_diario?: number | null
@@ -830,6 +832,7 @@ export type Database = {
           desconto_percentual?: number | null
           desconto_valor?: number | null
           dias_atraso?: number | null
+          gateway_config_id?: string | null
           id?: string
           juros?: number | null
           juros_percentual_diario?: number | null
@@ -869,6 +872,13 @@ export type Database = {
             columns: ["curso_id"]
             isOneToOne: false
             referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faturas_gateway_config_id_fkey"
+            columns: ["gateway_config_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_gateway_configs"
             referencedColumns: ["id"]
           },
           {
@@ -1171,6 +1181,101 @@ export type Database = {
           },
         ]
       }
+      gateway_transaction_logs: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          duration_ms: number | null
+          error_code: string | null
+          error_message: string | null
+          external_reference: string | null
+          fatura_id: string | null
+          gateway_config_id: string | null
+          gateway_type: Database["public"]["Enums"]["payment_gateway_type"]
+          id: string
+          ip_address: string | null
+          operation: string
+          pagamento_id: string | null
+          request_payload: Json | null
+          response_payload: Json | null
+          status: string
+          tenant_id: string
+          user_agent: string | null
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          external_reference?: string | null
+          fatura_id?: string | null
+          gateway_config_id?: string | null
+          gateway_type: Database["public"]["Enums"]["payment_gateway_type"]
+          id?: string
+          ip_address?: string | null
+          operation: string
+          pagamento_id?: string | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: string
+          tenant_id: string
+          user_agent?: string | null
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          duration_ms?: number | null
+          error_code?: string | null
+          error_message?: string | null
+          external_reference?: string | null
+          fatura_id?: string | null
+          gateway_config_id?: string | null
+          gateway_type?: Database["public"]["Enums"]["payment_gateway_type"]
+          id?: string
+          ip_address?: string | null
+          operation?: string
+          pagamento_id?: string | null
+          request_payload?: Json | null
+          response_payload?: Json | null
+          status?: string
+          tenant_id?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gateway_transaction_logs_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gateway_transaction_logs_gateway_config_id_fkey"
+            columns: ["gateway_config_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_gateway_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gateway_transaction_logs_pagamento_id_fkey"
+            columns: ["pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "pagamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gateway_transaction_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_settings: {
         Row: {
           created_at: string
@@ -1265,6 +1370,7 @@ export type Database = {
           estorno_de: string | null
           fatura_id: string
           gateway: string | null
+          gateway_config_id: string | null
           gateway_id: string | null
           gateway_status: string | null
           id: string
@@ -1286,6 +1392,7 @@ export type Database = {
           estorno_de?: string | null
           fatura_id: string
           gateway?: string | null
+          gateway_config_id?: string | null
           gateway_id?: string | null
           gateway_status?: string | null
           id?: string
@@ -1307,6 +1414,7 @@ export type Database = {
           estorno_de?: string | null
           fatura_id?: string
           gateway?: string | null
+          gateway_config_id?: string | null
           gateway_id?: string | null
           gateway_status?: string | null
           id?: string
@@ -1326,6 +1434,13 @@ export type Database = {
             columns: ["fatura_id"]
             isOneToOne: false
             referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamentos_gateway_config_id_fkey"
+            columns: ["gateway_config_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_gateway_configs"
             referencedColumns: ["id"]
           },
           {
@@ -1719,6 +1834,118 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_gateway_configs: {
+        Row: {
+          allowed_methods: Database["public"]["Enums"]["payment_method_type"][]
+          connection_error: string | null
+          connection_status: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          display_name: string
+          environment: Database["public"]["Enums"]["gateway_environment"]
+          gateway_type: Database["public"]["Enums"]["payment_gateway_type"]
+          id: string
+          is_active: boolean
+          is_default: boolean
+          last_connection_test: string | null
+          settings: Json | null
+          tenant_id: string
+          updated_at: string
+          updated_by: string | null
+          webhook_token: string | null
+          webhook_url: string | null
+        }
+        Insert: {
+          allowed_methods?: Database["public"]["Enums"]["payment_method_type"][]
+          connection_error?: string | null
+          connection_status?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          display_name: string
+          environment?: Database["public"]["Enums"]["gateway_environment"]
+          gateway_type: Database["public"]["Enums"]["payment_gateway_type"]
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          last_connection_test?: string | null
+          settings?: Json | null
+          tenant_id: string
+          updated_at?: string
+          updated_by?: string | null
+          webhook_token?: string | null
+          webhook_url?: string | null
+        }
+        Update: {
+          allowed_methods?: Database["public"]["Enums"]["payment_method_type"][]
+          connection_error?: string | null
+          connection_status?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          display_name?: string
+          environment?: Database["public"]["Enums"]["gateway_environment"]
+          gateway_type?: Database["public"]["Enums"]["payment_gateway_type"]
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          last_connection_test?: string | null
+          settings?: Json | null
+          tenant_id?: string
+          updated_at?: string
+          updated_by?: string | null
+          webhook_token?: string | null
+          webhook_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_gateway_configs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_gateway_secrets: {
+        Row: {
+          created_at: string
+          encrypted_value: string
+          gateway_config_id: string
+          id: string
+          key_name: string
+          key_prefix: string | null
+          last_rotated: string | null
+        }
+        Insert: {
+          created_at?: string
+          encrypted_value: string
+          gateway_config_id: string
+          id?: string
+          key_name: string
+          key_prefix?: string | null
+          last_rotated?: string | null
+        }
+        Update: {
+          created_at?: string
+          encrypted_value?: string
+          gateway_config_id?: string
+          id?: string
+          key_name?: string
+          key_prefix?: string | null
+          last_rotated?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_gateway_secrets_gateway_config_id_fkey"
+            columns: ["gateway_config_id"]
+            isOneToOne: false
+            referencedRelation: "tenant_gateway_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenant_payment_methods: {
         Row: {
           card_brand: string
@@ -2079,6 +2306,21 @@ export type Database = {
       contrato_tipo: "clt" | "pj" | "temporario" | "estagio"
       funcionario_status: "ativo" | "inativo" | "afastado" | "ferias"
       funcionario_tipo: "professor" | "administrativo" | "outro"
+      gateway_environment: "sandbox" | "production"
+      payment_gateway_type:
+        | "asaas"
+        | "mercado_pago"
+        | "stripe"
+        | "pagarme"
+        | "gerencianet"
+        | "pix_banco"
+        | "custom_api"
+      payment_method_type:
+        | "pix"
+        | "boleto"
+        | "credit_card"
+        | "debit_card"
+        | "bank_transfer"
       subscription_status:
         | "trial"
         | "active"
@@ -2223,6 +2465,23 @@ export const Constants = {
       contrato_tipo: ["clt", "pj", "temporario", "estagio"],
       funcionario_status: ["ativo", "inativo", "afastado", "ferias"],
       funcionario_tipo: ["professor", "administrativo", "outro"],
+      gateway_environment: ["sandbox", "production"],
+      payment_gateway_type: [
+        "asaas",
+        "mercado_pago",
+        "stripe",
+        "pagarme",
+        "gerencianet",
+        "pix_banco",
+        "custom_api",
+      ],
+      payment_method_type: [
+        "pix",
+        "boleto",
+        "credit_card",
+        "debit_card",
+        "bank_transfer",
+      ],
       subscription_status: [
         "trial",
         "active",

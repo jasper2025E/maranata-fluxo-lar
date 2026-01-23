@@ -13,6 +13,7 @@ import {
   Database,
   Users,
   RefreshCw,
+  Building2,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
@@ -24,10 +25,12 @@ import {
   ConfiguracoesCobranca,
   UserManagementTab,
   IntegrationsTab,
+  GatewayConfigTab,
 } from "@/components/config";
 
 // SECURITY: Integrations tab is ONLY for platform_admin
 // School admins (role === "admin") must NOT access system API credentials
+// Gateway config tab is for school admins to configure their own payment gateways
 
 interface UserPreferences {
   email_notifications: boolean;
@@ -163,6 +166,13 @@ const Configuracoes = () => {
                   <span className="hidden sm:inline">Usuários</span>
                 </TabsTrigger>
               )}
+              {/* Gateway config for school admins - their own payment gateways */}
+              {role === "admin" && (
+                <TabsTrigger value="gateways" className="gap-2 data-[state=active]:bg-background">
+                  <Building2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Bancos</span>
+                </TabsTrigger>
+              )}
               {/* SECURITY: Integrações tab is ONLY for platform_admin - NOT for school admins */}
               {isPlatformAdmin() && (
                 <TabsTrigger value="integracoes" className="gap-2 data-[state=active]:bg-background">
@@ -223,6 +233,13 @@ const Configuracoes = () => {
           {role === "admin" && (
             <TabsContent value="usuarios">
               <UserManagementTab />
+            </TabsContent>
+          )}
+
+          {/* Gateways Tab - Admin Only (suas próprias integrações de pagamento) */}
+          {role === "admin" && (
+            <TabsContent value="gateways">
+              <GatewayConfigTab />
             </TabsContent>
           )}
 
