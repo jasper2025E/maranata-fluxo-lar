@@ -36,6 +36,9 @@ import TenantsList from "./pages/platform/TenantsList";
 import TenantForm from "./pages/platform/TenantForm";
 import ImpersonateUser from "./pages/platform/ImpersonateUser";
 import PlatformUsers from "./pages/platform/PlatformUsers";
+import PlatformLogs from "./pages/platform/PlatformLogs";
+import PlatformSettings from "./pages/platform/PlatformSettings";
+import PlatformSecurity from "./pages/platform/PlatformSecurity";
 
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
@@ -211,6 +214,30 @@ function AppContent() {
             element={
               <ProtectedRoute platformOnly>
                 <PlatformUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/logs"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformLogs />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/settings"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformSettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/security"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformSecurity />
               </ProtectedRoute>
             }
           />
