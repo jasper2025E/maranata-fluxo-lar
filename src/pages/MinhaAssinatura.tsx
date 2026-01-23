@@ -369,14 +369,12 @@ export default function MinhaAssinatura() {
                     Acompanhe todas as atividades e pagamentos
                   </p>
                 </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm"
+                <button 
                   onClick={() => navigate("/assinatura/faturas")}
-                  className="text-sm text-primary hover:text-primary/80"
+                  className="text-sm text-primary hover:underline font-medium"
                 >
                   Ver todas as faturas
-                </Button>
+                </button>
               </div>
 
               <div className="divide-y divide-border">
