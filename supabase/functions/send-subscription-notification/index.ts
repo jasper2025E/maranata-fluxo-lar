@@ -9,7 +9,13 @@ const corsHeaders = {
 };
 
 interface NotificationRequest {
-  type: "payment_failed" | "subscription_expiring" | "subscription_expired" | "payment_reminder";
+  type: 
+    | "payment_failed" 
+    | "subscription_expiring" 
+    | "subscription_expired" 
+    | "subscription_suspended"
+    | "payment_reminder"
+    | "trial_expiring";
   tenant_id: string;
   metadata?: Record<string, unknown>;
 }
@@ -127,6 +133,40 @@ const getEmailTemplate = (
         `,
       };
 
+    case "subscription_suspended":
+      return {
+        subject: `🔒 Acesso suspenso - ${tenantName}`,
+        html: `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 24px;">🔒 Acesso Suspenso</h1>
+            </div>
+            <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+              <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+                Olá,
+              </p>
+              <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+                O acesso da escola <strong>${tenantName}</strong> foi <strong>suspenso</strong> por falta de pagamento.
+              </p>
+              <div style="background: #fef2f2; border-left: 4px solid #dc2626; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                <p style="color: #991b1b; margin: 0; font-size: 14px;">
+                  <strong>Acesso bloqueado:</strong> Os usuários não conseguirão acessar o sistema até que o pagamento seja regularizado.
+                </p>
+              </div>
+              <div style="text-align: center; margin-top: 30px;">
+                <a href="${Deno.env.get("SITE_URL") || "https://app.example.com"}/assinatura" 
+                   style="background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
+                  Regularizar Agora
+                </a>
+              </div>
+            </div>
+            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 20px;">
+              Este é um email automático do sistema de gestão escolar.
+            </p>
+          </div>
+        `,
+      };
+
     case "payment_reminder":
       return {
         subject: `💳 Lembrete de pagamento - ${tenantName}`,
@@ -147,6 +187,41 @@ const getEmailTemplate = (
                 <a href="${Deno.env.get("SITE_URL") || "https://app.example.com"}/assinatura" 
                    style="background: #3b82f6; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
                   Ver Assinatura
+                </a>
+              </div>
+            </div>
+            <p style="color: #9ca3af; font-size: 12px; text-align: center; margin-top: 20px;">
+              Este é um email automático do sistema de gestão escolar.
+            </p>
+          </div>
+        `,
+      };
+
+    case "trial_expiring":
+      const daysRemaining = metadata?.days_remaining || 3;
+      return {
+        subject: `⏰ Seu período de teste termina em ${daysRemaining} dias - ${tenantName}`,
+        html: `
+          <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+            <div style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; border-radius: 12px 12px 0 0; text-align: center;">
+              <h1 style="color: white; margin: 0; font-size: 24px;">⏰ Trial Expirando</h1>
+            </div>
+            <div style="background: #ffffff; padding: 30px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 12px 12px;">
+              <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+                Olá,
+              </p>
+              <p style="color: #374151; font-size: 16px; line-height: 1.6;">
+                O período de teste gratuito da escola <strong>${tenantName}</strong> termina em <strong>${daysRemaining} dias</strong>.
+              </p>
+              <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; border-radius: 0 8px 8px 0;">
+                <p style="color: #92400e; margin: 0; font-size: 14px;">
+                  <strong>Não perca seus dados!</strong> Assine agora para continuar usando todas as funcionalidades do sistema.
+                </p>
+              </div>
+              <div style="text-align: center; margin-top: 30px;">
+                <a href="${Deno.env.get("SITE_URL") || "https://app.example.com"}/assinatura" 
+                   style="background: #10b981; color: white; padding: 12px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block;">
+                  Escolher Plano
                 </a>
               </div>
             </div>
