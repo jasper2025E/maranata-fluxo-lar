@@ -129,12 +129,19 @@ export default function MinhaAssinatura() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, isPlatformAdmin } = useAuth();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [history, setHistory] = useState<SubscriptionEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
   const [tenantId, setTenantId] = useState<string | null>(null);
+
+  // Platform admins should not access this page - redirect them
+  useEffect(() => {
+    if (isPlatformAdmin()) {
+      navigate("/platform");
+    }
+  }, [isPlatformAdmin, navigate]);
 
   // Fetch tenant_id from user's profile
   useEffect(() => {
@@ -232,15 +239,26 @@ export default function MinhaAssinatura() {
     );
   }
 
-  if (!subscription) {
+  if (!subscription || !tenantId) {
     return (
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center py-20">
           <CreditCard className="h-16 w-16 text-muted-foreground/50 mb-4" />
           <h2 className="text-xl font-semibold text-foreground">Informações não disponíveis</h2>
-          <p className="text-muted-foreground mt-2">
-            Não foi possível carregar os dados da assinatura.
+          <p className="text-muted-foreground mt-2 text-center max-w-md">
+            {isPlatformAdmin() 
+              ? "Como administrador da plataforma, você gerencia assinaturas através do módulo Plataforma > Escolas."
+              : "Não foi possível carregar os dados da assinatura. Verifique se sua conta está vinculada a uma escola."
+            }
           </p>
+          {isPlatformAdmin() && (
+            <Button 
+              className="mt-4" 
+              onClick={() => navigate("/platform/escolas")}
+            >
+              Ir para Gestão de Escolas
+            </Button>
+          )}
         </div>
       </DashboardLayout>
     );
