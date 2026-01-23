@@ -68,16 +68,48 @@ serve(async (req) => {
 
     console.log(`Criando checkout de assinatura para tenant: ${tenantId}, plano: ${planId}`);
 
-    // Buscar dados do tenant
+    // Buscar dados do tenant com validação completa
     const { data: tenant, error: tenantError } = await supabase
       .from("tenants")
-      .select("id, nome, email, stripe_customer_id, subscription_status, plano")
+      .select("id, nome, email, cnpj, stripe_customer_id, subscription_status, plano")
       .eq("id", tenantId)
       .single();
 
     if (tenantError || !tenant) {
       console.error("Erro ao buscar tenant:", tenantError);
       throw new Error("Escola não encontrada");
+    }
+
+    // Validação de dados obrigatórios
+    const missingFields: string[] = [];
+
+    if (!tenant.email || tenant.email.trim() === "") {
+      missingFields.push("Email");
+    }
+
+    if (!tenant.cnpj || tenant.cnpj.trim() === "") {
+      missingFields.push("CNPJ");
+    }
+
+    if (!tenant.nome || tenant.nome.trim() === "") {
+      missingFields.push("Nome da escola");
+    }
+
+    if (missingFields.length > 0) {
+      console.error("Dados obrigatórios ausentes:", missingFields);
+      throw new Error(`Dados obrigatórios não preenchidos: ${missingFields.join(", ")}. Acesse Configurações > Dados da Escola para completar.`);
+    }
+
+    // Validação básica de email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(tenant.email)) {
+      throw new Error("Email da escola inválido. Corrija em Configurações > Dados da Escola.");
+    }
+
+    // Validação básica de CNPJ (14 dígitos)
+    const cnpjDigits = tenant.cnpj.replace(/\D/g, "");
+    if (cnpjDigits.length !== 14) {
+      throw new Error("CNPJ da escola inválido. Corrija em Configurações > Dados da Escola.");
     }
 
     // Verificar se já tem assinatura ativa do mesmo plano
