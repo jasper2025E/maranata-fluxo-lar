@@ -14,6 +14,7 @@ import {
   Loader2,
   Info,
 } from "lucide-react";
+import { PaymentMethodCard } from "@/components/subscription/PaymentMethodCard";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -326,64 +327,11 @@ export default function MinhaAssinatura() {
               </div>
             </div>
 
-            {/* Payment Method Card */}
-            <div className="bg-background rounded-xl border border-border shadow-sm">
-              <div className="p-5 pb-3">
-                <h2 className="text-base font-semibold text-foreground">Forma de pagamento</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Gerencie seu método de pagamento para assinatura.
-                </p>
-              </div>
-
-              <div className="px-5 pb-5">
-                <div className="border border-border rounded-lg">
-                  <div className="flex items-center gap-3 p-4">
-                    <div className="flex items-center gap-2 flex-1">
-                      <input 
-                        type="radio" 
-                        checked={true} 
-                        readOnly 
-                        className="h-4 w-4 text-primary border-2 border-muted-foreground"
-                      />
-                      <span className="text-sm font-medium text-foreground">Cartão de crédito ou débito</span>
-                      <Badge 
-                        variant="secondary" 
-                        className="text-[10px] px-2 py-0.5 bg-muted text-muted-foreground font-medium rounded"
-                      >
-                        Principal
-                      </Badge>
-                    </div>
-                  </div>
-
-                  {paymentMethod ? (
-                    <div className="px-4 py-3 border-t border-border bg-muted/20">
-                      <div className="flex items-center gap-2 pl-6">
-                        <div className="flex items-center gap-1.5 px-2 py-1 bg-[#1a1f71] text-white rounded text-[10px] font-bold tracking-wider uppercase">
-                          {paymentMethod.card_brand}
-                        </div>
-                        <span className="text-sm text-muted-foreground">
-                          {paymentMethod.card_brand} com final {paymentMethod.card_last_four}
-                        </span>
-                      </div>
-                      <div className="pl-6 mt-2">
-                        <button className="text-sm text-primary hover:underline font-medium">
-                          Substituir cartão de crédito
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="px-4 py-3 border-t border-border bg-muted/20">
-                      <div className="flex items-center gap-2 pl-6">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          Será redirecionado para checkout seguro
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            {/* Payment Method Card - Component with full functionality */}
+            <PaymentMethodCard 
+              tenantId={tenantId} 
+              onUpdate={fetchSubscriptionData}
+            />
 
             {/* Invoice History */}
             <div className="bg-background rounded-xl border border-border shadow-sm">
