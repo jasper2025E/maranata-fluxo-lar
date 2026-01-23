@@ -77,6 +77,7 @@ const en = {
       payments: "Payments",
       expenses: "Expenses",
       reports: "Reports",
+      subscription: "My Subscription",
       settings: "Settings",
       hr: "HR",
       school: "School",
