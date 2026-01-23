@@ -1,12 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getSupabaseAdmin, getAsaasCredentials } from "../_shared/gateway-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const ASAAS_API_URL = "https://api.asaas.com/v3";
 
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
@@ -14,14 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    if (!ASAAS_API_KEY) {
-      throw new Error("ASAAS_API_KEY não configurada");
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = getSupabaseAdmin();
 
     const { faturaId } = await req.json();
 
@@ -29,10 +20,10 @@ serve(async (req) => {
       throw new Error("faturaId é obrigatório");
     }
 
-    // Buscar fatura
+    // Buscar fatura com tenant
     const { data: fatura, error: faturaError } = await supabase
       .from("faturas")
-      .select("asaas_payment_id, asaas_pix_qrcode, asaas_pix_payload, asaas_boleto_url, asaas_boleto_barcode")
+      .select("asaas_payment_id, asaas_pix_qrcode, asaas_pix_payload, asaas_boleto_url, asaas_boleto_barcode, tenant_id, gateway_config_id")
       .eq("id", faturaId)
       .single();
 
@@ -43,6 +34,11 @@ serve(async (req) => {
     if (!fatura.asaas_payment_id) {
       throw new Error("Fatura não tem cobrança no Asaas");
     }
+
+    // Obter credenciais do gateway
+    const credentials = await getAsaasCredentials(supabase, fatura.tenant_id);
+    const ASAAS_API_KEY = credentials.apiKey;
+    const ASAAS_API_URL = credentials.apiUrl;
 
     // Buscar dados atualizados do pagamento
     const paymentResponse = await fetch(`${ASAAS_API_URL}/payments/${fatura.asaas_payment_id}`, {

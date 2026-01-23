@@ -1,12 +1,10 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getSupabaseAdmin, getAsaasCredentials, logGatewayTransaction } from "../_shared/gateway-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
-
-const ASAAS_API_URL = "https://api.asaas.com/v3";
 
 const meses = [
   "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
@@ -18,28 +16,24 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  const supabase = getSupabaseAdmin();
+  let tenantId: string | null = null;
+  let gatewayConfigId: string | null = null;
+
   try {
-    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    if (!ASAAS_API_KEY) {
-      throw new Error("ASAAS_API_KEY não configurada");
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     const { faturaId, billingType = "UNDEFINED" } = await req.json();
 
     if (!faturaId) {
       throw new Error("faturaId é obrigatório");
     }
 
-    // Buscar fatura com dados do aluno e responsável
+    // Buscar fatura com dados do aluno, responsável e tenant
     const { data: fatura, error: faturaError } = await supabase
       .from("faturas")
       .select(`
         *,
-        alunos(nome_completo, responsavel_id),
+        alunos(nome_completo, responsavel_id, tenant_id),
         cursos(nome),
         responsaveis(id, nome, cpf, email, telefone, asaas_customer_id)
       `)
@@ -50,13 +44,20 @@ serve(async (req) => {
       throw new Error("Fatura não encontrada");
     }
 
+    tenantId = fatura.tenant_id || fatura.alunos?.tenant_id || null;
+
     if (fatura.status === "Paga" || fatura.status === "Cancelada") {
       throw new Error(`Fatura já está ${fatura.status.toLowerCase()}`);
     }
 
+    // Obter credenciais do gateway (tenant-specific ou fallback global)
+    const credentials = await getAsaasCredentials(supabase, tenantId);
+    const ASAAS_API_KEY = credentials.apiKey;
+    const ASAAS_API_URL = credentials.apiUrl;
+    gatewayConfigId = credentials.configId;
+
     // Verificar se já existe cobrança no Asaas
     if (fatura.asaas_payment_id) {
-      // Buscar dados atualizados do pagamento
       const existingPayment = await fetch(`${ASAAS_API_URL}/payments/${fatura.asaas_payment_id}`, {
         headers: { "access_token": ASAAS_API_KEY },
       });
@@ -96,7 +97,7 @@ serve(async (req) => {
     const isValidCPF = (cpf: string): boolean => {
       const cleanCpf = cpf.replace(/\D/g, '');
       if (cleanCpf.length !== 11) return false;
-      if (/^(\d)\1+$/.test(cleanCpf)) return false; // Todos dígitos iguais
+      if (/^(\d)\1+$/.test(cleanCpf)) return false;
       
       let sum = 0;
       for (let i = 0; i < 9; i++) {
@@ -146,7 +147,6 @@ serve(async (req) => {
     // Criar cliente no Asaas se não existir
     let customerId = responsavel.asaas_customer_id;
     if (!customerId) {
-      // Validar e formatar CPF/CNPJ
       const rawCpfCnpj = responsavel.cpf?.replace(/\D/g, '') || '';
       let validCpfCnpj: string | null = null;
       
@@ -156,7 +156,6 @@ serve(async (req) => {
         validCpfCnpj = rawCpfCnpj;
       } else if (rawCpfCnpj.length > 0) {
         console.warn(`CPF/CNPJ inválido para responsável ${responsavel.nome}: ${rawCpfCnpj}`);
-        // Continuar sem CPF - Asaas permite criar cliente sem CPF
       }
 
       const customerData: Record<string, unknown> = {
@@ -166,7 +165,6 @@ serve(async (req) => {
         notificationDisabled: false,
       };
       
-      // Só incluir cpfCnpj se for válido
       if (validCpfCnpj) {
         customerData.cpfCnpj = validCpfCnpj;
       }
@@ -202,7 +200,7 @@ serve(async (req) => {
     const mesReferencia = meses[fatura.mes_referencia - 1];
     const description = `Mensalidade ${mesReferencia}/${fatura.ano_referencia} - ${fatura.alunos?.nome_completo || 'Aluno'} - ${fatura.cursos?.nome || 'Curso'}`;
 
-    // Ajustar data de vencimento - se for no passado, usar hoje ou amanhã
+    // Ajustar data de vencimento
     let dueDate = fatura.data_vencimento;
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -210,7 +208,6 @@ serve(async (req) => {
     dataVencimento.setHours(0, 0, 0, 0);
     
     if (dataVencimento < hoje) {
-      // Data no passado - usar amanhã para dar tempo de processamento
       const amanha = new Date(hoje);
       amanha.setDate(amanha.getDate() + 1);
       dueDate = amanha.toISOString().split('T')[0];
@@ -218,9 +215,9 @@ serve(async (req) => {
     }
 
     // Criar cobrança no Asaas
-    const paymentData: any = {
+    const paymentData = {
       customer: customerId,
-      billingType: billingType, // UNDEFINED permite PIX, Boleto e Cartão
+      billingType: billingType,
       value: Number(valorFatura.toFixed(2)),
       dueDate: dueDate,
       description: description,
@@ -241,6 +238,21 @@ serve(async (req) => {
 
     if (!paymentResponse.ok) {
       console.error("Erro Asaas Payment:", paymentResult);
+      
+      await logGatewayTransaction(supabase, {
+        tenantId: tenantId || "",
+        gatewayConfigId,
+        gatewayType: "asaas",
+        operation: "create_payment",
+        status: "failed",
+        faturaId,
+        amount: valorFatura,
+        errorMessage: paymentResult.errors?.[0]?.description || "Erro ao criar cobrança",
+        requestPayload: { billingType, value: valorFatura },
+        responsePayload: paymentResult,
+        durationMs: Date.now() - startTime,
+      });
+      
       throw new Error(paymentResult.errors?.[0]?.description || "Erro ao criar cobrança no Asaas");
     }
 
@@ -276,7 +288,7 @@ serve(async (req) => {
       }
     }
 
-    // Atualizar fatura com dados do Asaas
+    // Atualizar fatura com dados do Asaas e gateway_config_id
     await supabase
       .from("faturas")
       .update({
@@ -290,9 +302,24 @@ serve(async (req) => {
         asaas_due_date: paymentResult.dueDate,
         asaas_billing_type: paymentResult.billingType,
         payment_url: paymentResult.invoiceUrl,
+        gateway_config_id: gatewayConfigId, // Link to gateway config
         updated_at: new Date().toISOString(),
       })
       .eq("id", faturaId);
+
+    // Log successful transaction
+    await logGatewayTransaction(supabase, {
+      tenantId: tenantId || "",
+      gatewayConfigId,
+      gatewayType: "asaas",
+      operation: "create_payment",
+      status: "success",
+      faturaId,
+      amount: valorFatura,
+      externalReference: paymentResult.id,
+      responsePayload: { paymentId: paymentResult.id, status: paymentResult.status },
+      durationMs: Date.now() - startTime,
+    });
 
     return new Response(JSON.stringify({ 
       success: true, 

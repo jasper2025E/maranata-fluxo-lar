@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getSupabaseAdmin, logGatewayTransaction } from "../_shared/gateway-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -13,9 +13,7 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
-  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-  const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-  const supabase = createClient(supabaseUrl, supabaseKey);
+  const supabase = getSupabaseAdmin();
 
   let eventType = '';
   let payload: any = null;
@@ -60,6 +58,13 @@ serve(async (req) => {
 
     const faturaId = payment.externalReference;
 
+    // Buscar fatura para obter tenant_id e gateway_config_id
+    const { data: fatura } = await supabase
+      .from("faturas")
+      .select("id, valor, valor_total, tenant_id, gateway_config_id")
+      .eq("id", faturaId)
+      .single();
+
     // Mapear status do Asaas para status interno
     const statusMap: Record<string, string> = {
       PENDING: "Aberta",
@@ -90,13 +95,6 @@ serve(async (req) => {
       updateData.status = "Paga";
       updateData.saldo_restante = 0;
 
-      // Buscar fatura para verificar se já tem pagamento registrado
-      const { data: fatura } = await supabase
-        .from("faturas")
-        .select("id, valor, valor_total")
-        .eq("id", faturaId)
-        .single();
-
       if (fatura) {
         // Verificar se já existe pagamento para esta fatura via Asaas
         const { data: existingPayment } = await supabase
@@ -114,7 +112,7 @@ serve(async (req) => {
             : payment.billingType === "CREDIT_CARD" ? "Cartão"
             : "Asaas";
 
-          await supabase
+          const { data: novoPagamento } = await supabase
             .from("pagamentos")
             .insert({
               fatura_id: faturaId,
@@ -124,8 +122,27 @@ serve(async (req) => {
               gateway: "asaas",
               gateway_id: payment.id,
               gateway_status: payment.status,
+              gateway_config_id: fatura.gateway_config_id, // Link to gateway config
               referencia: payment.invoiceNumber || payment.id,
-            });
+              tenant_id: fatura.tenant_id,
+            })
+            .select("id")
+            .single();
+
+          // Log transaction
+          await logGatewayTransaction(supabase, {
+            tenantId: fatura.tenant_id || "",
+            gatewayConfigId: fatura.gateway_config_id,
+            gatewayType: "asaas",
+            operation: "webhook_payment_received",
+            status: "success",
+            faturaId,
+            pagamentoId: novoPagamento?.id,
+            amount: payment.value,
+            externalReference: payment.id,
+            responsePayload: { status: payment.status, billingType: payment.billingType },
+            durationMs: Date.now() - startTime,
+          });
 
           // Criar notificação de pagamento
           await supabase
@@ -135,6 +152,7 @@ serve(async (req) => {
               message: `Pagamento de R$ ${payment.value.toFixed(2)} recebido via ${metodo}`,
               type: "success",
               link: "/faturas",
+              tenant_id: fatura.tenant_id,
             });
         }
       }
