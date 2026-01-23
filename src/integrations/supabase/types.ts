@@ -1665,6 +1665,60 @@ export type Database = {
           },
         ]
       }
+      subscription_plans: {
+        Row: {
+          active: boolean | null
+          color: string | null
+          created_at: string | null
+          display_order: number | null
+          features: string[]
+          icon: string | null
+          id: string
+          limite_alunos: number | null
+          limite_usuarios: number | null
+          name: string
+          popular: boolean | null
+          price: number
+          stripe_price_id: string | null
+          stripe_product_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          active?: boolean | null
+          color?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          features?: string[]
+          icon?: string | null
+          id: string
+          limite_alunos?: number | null
+          limite_usuarios?: number | null
+          name: string
+          popular?: boolean | null
+          price: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          active?: boolean | null
+          color?: string | null
+          created_at?: string | null
+          display_order?: number | null
+          features?: string[]
+          icon?: string | null
+          id?: string
+          limite_alunos?: number | null
+          limite_usuarios?: number | null
+          name?: string
+          popular?: boolean | null
+          price?: number
+          stripe_price_id?: string | null
+          stripe_product_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       tenants: {
         Row: {
           blocked_at: string | null

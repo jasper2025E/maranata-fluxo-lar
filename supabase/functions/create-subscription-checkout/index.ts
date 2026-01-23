@@ -7,24 +7,7 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Planos disponíveis com preços em centavos
-const PLANS = {
-  basic: {
-    name: "Plano Básico",
-    price: 9900, // R$ 99,00
-    features: ["Até 50 alunos", "Gestão de faturas", "Relatórios básicos", "Suporte por email"],
-  },
-  pro: {
-    name: "Plano Profissional",
-    price: 19900, // R$ 199,00
-    features: ["Até 200 alunos", "Integração Asaas/PIX", "Relatórios avançados", "Suporte prioritário", "Gestão de RH"],
-  },
-  enterprise: {
-    name: "Plano Enterprise",
-    price: 49900, // R$ 499,00
-    features: ["Alunos ilimitados", "Todas as integrações", "API personalizada", "Suporte dedicado 24/7", "Treinamento incluso"],
-  },
-};
+// Plans will be fetched from database
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -61,12 +44,20 @@ serve(async (req) => {
       throw new Error("ID do tenant e plano são obrigatórios");
     }
 
-    const plan = PLANS[planId as keyof typeof PLANS];
-    if (!plan) {
-      throw new Error("Plano inválido");
+    // Fetch plan from database
+    const { data: plan, error: planError } = await supabase
+      .from("subscription_plans")
+      .select("*")
+      .eq("id", planId)
+      .eq("active", true)
+      .single();
+
+    if (planError || !plan) {
+      console.error("Erro ao buscar plano:", planError);
+      throw new Error("Plano inválido ou inativo");
     }
 
-    console.log(`Criando checkout de assinatura para tenant: ${tenantId}, plano: ${planId}`);
+    console.log(`Criando checkout de assinatura para tenant: ${tenantId}, plano: ${planId}, preço: ${plan.price}`);
 
     // Buscar dados do tenant com validação completa
     const { data: tenant, error: tenantError } = await supabase

@@ -13,9 +13,8 @@ import {
   TrendingUp,
   Shield,
   Sparkles,
-  ChevronRight,
-  Download,
   ExternalLink,
+  ChevronRight,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -26,10 +25,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { formatCurrency } from "@/lib/formatters";
 import { useAuth } from "@/contexts/AuthContext";
 import { UpgradePlanDialog } from "@/components/subscription/UpgradePlanDialog";
 import { toast } from "sonner";
+import { useSubscriptionPlans, getPlanPriceFormatted } from "@/hooks/useSubscriptionPlans";
 
 interface SubscriptionData {
   id: string;
@@ -126,6 +125,7 @@ const eventTypeLabels: Record<string, { label: string; icon: React.ReactNode }> 
 };
 
 export default function MinhaAssinatura() {
+  const { data: subscriptionPlans = [] } = useSubscriptionPlans();
   const { t } = useTranslation();
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -352,7 +352,7 @@ export default function MinhaAssinatura() {
                 {/* Pricing */}
                 <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-bold text-foreground">
-                    {formatCurrency(subscription.monthly_price || 0)}
+                    {getPlanPriceFormatted((subscription.monthly_price || 0) * 100)}
                   </span>
                   <span className="text-muted-foreground">/mês</span>
                 </div>
@@ -511,7 +511,7 @@ export default function MinhaAssinatura() {
                           <p className="font-medium text-foreground">{config.label}</p>
                           {event.amount && (
                             <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
-                              {formatCurrency(event.amount)}
+                              {getPlanPriceFormatted(event.amount * 100)}
                             </p>
                           )}
                           {event.metadata && typeof event.metadata === 'object' && 'message' in event.metadata && (

@@ -67,7 +67,7 @@ const navigation: NavSection[] = [
         label: "Assinaturas", 
         subItems: [
           { label: "Visão geral", path: "/platform/subscriptions" },
-          { label: "Planos", path: "/platform/subscriptions" },
+          { label: "Planos", path: "/platform/plans" },
           { label: "Histórico", path: "/platform/subscriptions" },
         ]
       },
