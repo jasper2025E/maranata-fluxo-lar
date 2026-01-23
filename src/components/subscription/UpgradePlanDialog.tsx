@@ -247,12 +247,11 @@ export function UpgradePlanDialog({
               return (
                 <div
                   key={plan.id}
-                  onClick={() => !isCurrentPlan && !loading && validation.isValid && handleSelectPlan(plan.id)}
                   className={cn(
                     "relative rounded-lg border p-5 transition-all duration-200 animate-fade-in",
                     isCurrentPlan
-                      ? "border-foreground bg-muted/30 cursor-default"
-                      : "border-border cursor-pointer hover:border-foreground hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm"
+                      ? "border-foreground bg-muted/30"
+                      : "border-border hover:border-foreground/50 hover:shadow-md hover:-translate-y-1"
                   )}
                   style={{ animationDelay: `${index * 75}ms`, animationFillMode: 'both' }}
                 >
