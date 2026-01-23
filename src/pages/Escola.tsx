@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Upload, Save, MapPin, Phone, Mail, Calendar } from "lucide-react";
+import { Building2, Upload, Save, MapPin, Phone, Mail, Calendar, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -168,9 +168,16 @@ const EscolaPage = () => {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Configurações</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">Dados da Escola</span>
+        </nav>
+
         {/* Header */}
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Dados da Escola</h2>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Dados da Escola</h1>
           <p className="text-muted-foreground mt-1 text-sm">Configure as informações institucionais</p>
         </div>
 

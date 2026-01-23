@@ -14,6 +14,7 @@ import {
   Users,
   RefreshCw,
   Building2,
+  ChevronRight,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
@@ -123,13 +124,20 @@ const Configuracoes = () => {
   return (
     <DashboardLayout>
       <div className="max-w-5xl mx-auto space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Conta</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">Configurações</span>
+        </nav>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h2>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             Gerencie sua conta e preferências do sistema
           </p>

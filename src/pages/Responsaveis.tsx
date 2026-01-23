@@ -291,6 +291,13 @@ export default function Responsaveis() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{t("nav.financial")}</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{t("guardians.title")}</span>
+        </nav>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -299,7 +306,7 @@ export default function Responsaveis() {
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
-              <Button onClick={() => resetForm()}>
+              <Button size="sm" onClick={() => resetForm()}>
                 <Plus className="mr-2 h-4 w-4" />
                 {t("guardians.newGuardian")}
               </Button>

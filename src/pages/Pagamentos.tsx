@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, FileText, Receipt, DollarSign, QrCode, CreditCard as CardIcon, FileBarChart } from "lucide-react";
+import { Search, FileText, Receipt, DollarSign, QrCode, CreditCard as CardIcon, FileBarChart, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
@@ -104,8 +104,16 @@ const Pagamentos = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{t("nav.financial")}</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{t("payments.title")}</span>
+        </nav>
+
+        {/* Header */}
         <div>
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("payments.title")}</h2>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("payments.title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {t("payments.description")}
           </p>
