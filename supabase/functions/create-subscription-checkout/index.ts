@@ -120,6 +120,29 @@ serve(async (req) => {
     // Criar ou buscar customer no Stripe
     let customerId = tenant.stripe_customer_id;
 
+    // Verificar se o customer existe no Stripe
+    if (customerId) {
+      console.log("Verificando se customer existe no Stripe:", customerId);
+      const customerCheck = await fetch(`https://api.stripe.com/v1/customers/${customerId}`, {
+        headers: {
+          "Authorization": `Bearer ${stripeSecretKey}`,
+        },
+      });
+      
+      const customerData = await customerCheck.json();
+      
+      if (customerData.error || customerData.deleted) {
+        console.log("Customer não existe ou foi deletado, será criado um novo");
+        customerId = null;
+        
+        // Limpar o ID inválido do banco
+        await supabase
+          .from("tenants")
+          .update({ stripe_customer_id: null })
+          .eq("id", tenantId);
+      }
+    }
+
     if (!customerId && tenant.email) {
       console.log("Criando customer no Stripe...");
       
