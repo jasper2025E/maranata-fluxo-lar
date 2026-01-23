@@ -257,7 +257,7 @@ const Faturas = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("invoices.title")}</h1>
+            
             <p className="text-muted-foreground text-sm mt-1">{t("invoices.description")}</p>
           </div>
           <div className="flex gap-2">

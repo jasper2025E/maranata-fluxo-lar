@@ -52,7 +52,7 @@ export default function RH() {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("hr.title")}</h1>
+          
           <p className="text-muted-foreground mt-1 text-sm">
             {t("hr.description")}
           </p>

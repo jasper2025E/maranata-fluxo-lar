@@ -177,7 +177,7 @@ const EscolaPage = () => {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Dados da Escola</h1>
+          
           <p className="text-muted-foreground mt-1 text-sm">Configure as informações institucionais</p>
         </div>
 

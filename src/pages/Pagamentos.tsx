@@ -113,7 +113,7 @@ const Pagamentos = () => {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("payments.title")}</h1>
+          
           <p className="text-muted-foreground mt-1 text-sm">
             {t("payments.description")}
           </p>

@@ -137,7 +137,7 @@ const Configuracoes = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h1>
+          
           <p className="text-muted-foreground mt-1 text-sm">
             Gerencie sua conta e preferências do sistema
           </p>
