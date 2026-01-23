@@ -352,6 +352,28 @@ serve(async (req) => {
               message: "Falha no pagamento da assinatura",
             },
           });
+
+          // Enviar notificação por email aos admins
+          try {
+            await fetch(`${supabaseUrl}/functions/v1/send-subscription-notification`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${supabaseServiceKey}`,
+              },
+              body: JSON.stringify({
+                type: "payment_failed",
+                tenant_id: tenantId,
+                metadata: {
+                  invoice_id: invoice.id,
+                  amount: invoice.amount_due / 100,
+                },
+              }),
+            });
+            console.log(`Payment failed notification sent for tenant: ${tenantId}`);
+          } catch (notifError) {
+            console.error("Error sending payment failed notification:", notifError);
+          }
         }
         break;
       }
