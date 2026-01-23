@@ -973,13 +973,20 @@ export default function PlatformUsers() {
                   <Label className="text-slate-300">Escola (opcional)</Label>
                   <Select 
                     value={formData.tenant_id} 
-                    onValueChange={(value) => setFormData({ ...formData, tenant_id: value })}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        tenant_id: value === "__none__" ? "" : value,
+                      })
+                    }
                   >
                     <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                       <SelectValue placeholder="Selecione uma escola" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="" className="text-slate-400">Nenhuma</SelectItem>
+                      <SelectItem value="__none__" className="text-slate-400">
+                        Nenhuma
+                      </SelectItem>
                       {tenants.map(tenant => (
                         <SelectItem key={tenant.id} value={tenant.id} className="text-white">
                           {tenant.nome}
@@ -1090,13 +1097,20 @@ export default function PlatformUsers() {
                   <Label className="text-slate-300">Escola</Label>
                   <Select 
                     value={formData.tenant_id} 
-                    onValueChange={(value) => setFormData({ ...formData, tenant_id: value })}
+                    onValueChange={(value) =>
+                      setFormData({
+                        ...formData,
+                        tenant_id: value === "__none__" ? "" : value,
+                      })
+                    }
                   >
                     <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
                       <SelectValue placeholder="Selecione uma escola" />
                     </SelectTrigger>
                     <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="" className="text-slate-400">Nenhuma</SelectItem>
+                      <SelectItem value="__none__" className="text-slate-400">
+                        Nenhuma
+                      </SelectItem>
                       {tenants.map(tenant => (
                         <SelectItem key={tenant.id} value={tenant.id} className="text-white">
                           {tenant.nome}
