@@ -1,38 +1,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getSupabaseAdmin, getAsaasCredentials, logGatewayTransaction } from "../_shared/gateway-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const ASAAS_API_URL = "https://api.asaas.com/v3";
-
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const startTime = Date.now();
+  const supabase = getSupabaseAdmin();
+
   try {
-    const ASAAS_API_KEY = Deno.env.get("ASAAS_API_KEY");
-    if (!ASAAS_API_KEY) {
-      throw new Error("ASAAS_API_KEY não configurada");
-    }
-
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
     const { faturaId, motivo } = await req.json();
 
     if (!faturaId) {
       throw new Error("faturaId é obrigatório");
     }
 
-    // Buscar fatura
+    // Buscar fatura com tenant
     const { data: fatura, error: faturaError } = await supabase
       .from("faturas")
-      .select("asaas_payment_id")
+      .select("asaas_payment_id, tenant_id, gateway_config_id")
       .eq("id", faturaId)
       .single();
 
@@ -60,6 +52,11 @@ serve(async (req) => {
       });
     }
 
+    // Obter credenciais do gateway
+    const credentials = await getAsaasCredentials(supabase, fatura.tenant_id);
+    const ASAAS_API_KEY = credentials.apiKey;
+    const ASAAS_API_URL = credentials.apiUrl;
+
     // Cancelar cobrança no Asaas
     const cancelResponse = await fetch(`${ASAAS_API_URL}/payments/${fatura.asaas_payment_id}`, {
       method: "DELETE",
@@ -69,7 +66,32 @@ serve(async (req) => {
     if (!cancelResponse.ok) {
       const errorData = await cancelResponse.json();
       console.error("Erro ao cancelar no Asaas:", errorData);
+      
+      await logGatewayTransaction(supabase, {
+        tenantId: fatura.tenant_id || "",
+        gatewayConfigId: fatura.gateway_config_id || credentials.configId,
+        gatewayType: "asaas",
+        operation: "cancel_payment",
+        status: "failed",
+        faturaId,
+        externalReference: fatura.asaas_payment_id,
+        errorMessage: errorData.errors?.[0]?.description || "Erro ao cancelar",
+        durationMs: Date.now() - startTime,
+      });
+      
       // Continuar mesmo com erro para atualizar localmente
+    } else {
+      // Log successful cancellation
+      await logGatewayTransaction(supabase, {
+        tenantId: fatura.tenant_id || "",
+        gatewayConfigId: fatura.gateway_config_id || credentials.configId,
+        gatewayType: "asaas",
+        operation: "cancel_payment",
+        status: "success",
+        faturaId,
+        externalReference: fatura.asaas_payment_id,
+        durationMs: Date.now() - startTime,
+      });
     }
 
     // Atualizar fatura
