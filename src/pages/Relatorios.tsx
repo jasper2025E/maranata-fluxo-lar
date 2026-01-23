@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ const STATUS_COLORS = {
 };
 
 const Relatorios = () => {
+  const { t } = useTranslation();
   const currentDate = new Date();
   const [periodoInicio, setPeriodoInicio] = useState(format(subMonths(currentDate, 6), "yyyy-MM-dd"));
   const [periodoFim, setPeriodoFim] = useState(format(currentDate, "yyyy-MM-dd"));
@@ -338,9 +340,9 @@ const Relatorios = () => {
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Financeiro</span>
+          <span className="text-muted-foreground">{t("nav.financial")}</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium text-foreground">Relatórios</span>
+          <span className="font-medium text-foreground">{t("reports.title")}</span>
         </nav>
 
         {/* Filters Bar */}
@@ -392,31 +394,31 @@ const Relatorios = () => {
         {/* KPIs Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FinancialKPICard
-            title="Recebido"
+            title={t("reports.received")}
             value={formatCurrency(totalEntradasPeriodo)}
-            subtitle="no período"
+            subtitle={t("reports.inPeriod")}
             icon={TrendingUp}
             variant="success"
             index={0}
           />
           <FinancialKPICard
-            title="Despesas"
+            title={t("reports.expenses")}
             value={formatCurrency(totalSaidasPeriodo)}
-            subtitle="no período"
+            subtitle={t("reports.inPeriod")}
             icon={TrendingDown}
             variant="danger"
             index={1}
           />
           <FinancialKPICard
-            title="Saldo"
+            title={t("reports.balance")}
             value={formatCurrency(saldoPeriodo)}
-            subtitle="receitas - despesas"
+            subtitle={t("reports.revenuesMinusExpenses")}
             icon={DollarSign}
             variant={saldoPeriodo >= 0 ? "success" : "danger"}
             index={2}
           />
           <FinancialKPICard
-            title="Inadimplência"
+            title={t("reports.delinquency")}
             value={`${taxaInadimplencia.toFixed(1)}%`}
             subtitle={formatCurrency(valorInadimplente)}
             icon={AlertTriangle}
@@ -430,33 +432,33 @@ const Relatorios = () => {
           <div className="bg-card border border-border rounded-lg px-4 py-3 flex items-center gap-3">
             <Receipt className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-xs text-muted-foreground">Ticket médio</p>
+              <p className="text-xs text-muted-foreground">{t("reports.averageTicket")}</p>
               <p className="text-sm font-semibold">{formatCurrency(ticketMedio)}</p>
             </div>
           </div>
           <div className="bg-card border border-border rounded-lg px-4 py-3 flex items-center gap-3">
-            <Wallet className="h-4 w-4 text-yellow-600" />
+            <Wallet className="h-4 w-4 text-warning" />
             <div>
-              <p className="text-xs text-muted-foreground">Em aberto</p>
-              <p className="text-sm font-semibold text-yellow-600">{formatCurrency(valorEmAberto)}</p>
+              <p className="text-xs text-muted-foreground">{t("reports.openValue")}</p>
+              <p className="text-sm font-semibold text-warning">{formatCurrency(valorEmAberto)}</p>
             </div>
           </div>
           <div className="bg-card border border-border rounded-lg px-4 py-3 flex items-center gap-3">
             <Users className="h-4 w-4 text-muted-foreground" />
             <div>
-              <p className="text-xs text-muted-foreground">Alunos</p>
+              <p className="text-xs text-muted-foreground">{t("reports.students")}</p>
               <p className="text-sm font-semibold">{alunos.length}</p>
             </div>
           </div>
           <div className="bg-card border border-border rounded-lg px-4 py-3 flex items-center gap-3">
             {comparativoAnual.variacao >= 0 ? (
-              <TrendingUp className="h-4 w-4 text-green-600" />
+              <TrendingUp className="h-4 w-4 text-success" />
             ) : (
               <TrendingDown className="h-4 w-4 text-destructive" />
             )}
             <div>
               <p className="text-xs text-muted-foreground">vs {anoAnterior}</p>
-              <p className={cn("text-sm font-semibold", comparativoAnual.variacao >= 0 ? "text-green-600" : "text-destructive")}>
+              <p className={cn("text-sm font-semibold", comparativoAnual.variacao >= 0 ? "text-success" : "text-destructive")}>
                 {comparativoAnual.variacao >= 0 ? "+" : ""}{comparativoAnual.variacao.toFixed(1)}%
               </p>
             </div>

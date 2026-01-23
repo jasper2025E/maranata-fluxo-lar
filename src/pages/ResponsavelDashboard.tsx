@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -165,6 +166,7 @@ async function fetchResponsaveisInadimplentes(): Promise<ResponsavelComPendencia
 }
 
 const ResponsavelDashboard = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [isRefreshing, setIsRefreshing] = useState(false);
   
@@ -207,10 +209,10 @@ const ResponsavelDashboard = () => {
       <DashboardLayout>
         <EmptyState
           icon={AlertCircle}
-          title="Erro ao carregar dados"
-          description="Não foi possível carregar os dados do dashboard. Tente novamente."
+          title={t("responsibleDashboard.loadError")}
+          description={t("responsibleDashboard.loadErrorDesc")}
           action={{
-            label: "Recarregar",
+            label: t("responsibleDashboard.tryAgain"),
             onClick: () => window.location.reload(),
           }}
         />
@@ -266,30 +268,30 @@ const ResponsavelDashboard = () => {
         {/* Main KPIs - Premium Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <FinancialKPICard
-            title="Responsáveis Ativos"
+            title={t("responsibleDashboard.activeResponsibles")}
             value={stats.responsaveisAtivos}
-            subtitle={`de ${stats.totalResponsaveis} cadastrados`}
+            subtitle={t("responsibleDashboard.ofRegistered", { count: stats.totalResponsaveis })}
             icon={UserCheck}
             variant="info"
           />
           <FinancialKPICard
-            title="Valor a Receber"
+            title={t("responsibleDashboard.toReceive")}
             value={formatCurrency(stats.valorAReceber)}
-            subtitle={`${stats.faturasAbertas + stats.faturasVencidas} faturas pendentes`}
+            subtitle={t("responsibleDashboard.pendingInvoices", { count: stats.faturasAbertas + stats.faturasVencidas })}
             icon={Wallet}
             variant="warning"
           />
           <FinancialKPICard
-            title="Recebido no Mês"
+            title={t("responsibleDashboard.receivedThisMonth")}
             value={formatCurrency(stats.valorRecebidoMes)}
-            subtitle={`${stats.faturasPagas} faturas pagas`}
+            subtitle={t("responsibleDashboard.paidInvoices", { count: stats.faturasPagas })}
             icon={TrendingUp}
             variant="success"
           />
           <FinancialKPICard
-            title="Inadimplência"
+            title={t("responsibleDashboard.delinquency")}
             value={`${inadimplenciaRate}%`}
-            subtitle={`${stats.responsaveisInadimplentes} responsáveis`}
+            subtitle={t("responsibleDashboard.responsibles", { count: stats.responsaveisInadimplentes })}
             icon={AlertCircle}
             variant={inadimplenciaRate > 20 ? "danger" : inadimplenciaRate > 10 ? "warning" : "info"}
           />
@@ -299,10 +301,10 @@ const ResponsavelDashboard = () => {
         <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden bg-card">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg font-semibold text-foreground">
-              Ações Rápidas
+              {t("responsibleDashboard.quickActions")}
             </CardTitle>
             <CardDescription className="text-muted-foreground">
-              Acesse as principais funcionalidades
+              {t("responsibleDashboard.quickActionsDesc")}
             </CardDescription>
           </CardHeader>
           <CardContent>
