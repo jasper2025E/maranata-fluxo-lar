@@ -90,18 +90,51 @@ export default function TenantsList() {
     if (!selectedTenant) return;
 
     try {
-      const { error } = await supabase
+      // Primeiro, deletar registros dependentes em ordem
+      // 1. Deletar escola vinculada ao tenant
+      const { error: escolaError } = await supabase
+        .from("escola")
+        .delete()
+        .eq("tenant_id", selectedTenant.id);
+
+      if (escolaError) {
+        console.error("Error deleting escola:", escolaError);
+        // Continuar mesmo se não houver escola (pode não existir)
+      }
+
+      // 2. Deletar histórico de assinatura
+      const { error: historyError } = await supabase
+        .from("subscription_history")
+        .delete()
+        .eq("tenant_id", selectedTenant.id);
+
+      if (historyError) {
+        console.error("Error deleting subscription_history:", historyError);
+      }
+
+      // 3. Deletar profiles vinculados ao tenant
+      const { error: profilesError } = await supabase
+        .from("profiles")
+        .delete()
+        .eq("tenant_id", selectedTenant.id);
+
+      if (profilesError) {
+        console.error("Error deleting profiles:", profilesError);
+      }
+
+      // 4. Finalmente, deletar o tenant
+      const { error: tenantError } = await supabase
         .from("tenants")
         .delete()
         .eq("id", selectedTenant.id);
 
-      if (error) throw error;
+      if (tenantError) throw tenantError;
 
       toast.success("Escola removida com sucesso");
       setTenants(tenants.filter(t => t.id !== selectedTenant.id));
     } catch (error) {
       console.error("Error deleting tenant:", error);
-      toast.error("Erro ao remover escola");
+      toast.error("Erro ao remover escola. Verifique se não há dados vinculados.");
     } finally {
       setDeleteDialogOpen(false);
       setSelectedTenant(null);
