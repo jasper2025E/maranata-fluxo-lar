@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
 import { 
   Building2, 
@@ -8,11 +8,11 @@ import {
   Shield, 
   LogOut,
   Activity,
-  Users
+  Users,
+  UserCog
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
   Tooltip,
@@ -21,6 +21,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface PlatformLayoutProps {
   children: ReactNode;
@@ -29,6 +30,7 @@ interface PlatformLayoutProps {
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/platform" },
   { icon: Building2, label: "Escolas", path: "/platform/tenants" },
+  { icon: UserCog, label: "Acessar Como", path: "/platform/impersonate" },
   { icon: Users, label: "Usuários", path: "/platform/users" },
   { icon: Activity, label: "Logs", path: "/platform/logs" },
   { icon: Settings, label: "Configurações", path: "/platform/settings" },
@@ -37,6 +39,7 @@ const navItems = [
 
 export default function PlatformLayout({ children }: PlatformLayoutProps) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, signOut } = useAuth();
 
   const handleSignOut = async () => {
@@ -48,6 +51,13 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
   const getInitials = (email?: string) => {
     if (!email) return "PA";
     return email.substring(0, 2).toUpperCase();
+  };
+
+  const isActive = (path: string) => {
+    if (path === "/platform") {
+      return location.pathname === "/platform";
+    }
+    return location.pathname.startsWith(path);
   };
 
   return (
@@ -74,7 +84,12 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-10 w-10 text-slate-400 hover:text-white hover:bg-slate-700/50"
+                    className={cn(
+                      "h-10 w-10 transition-all",
+                      isActive(item.path)
+                        ? "bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 hover:text-amber-300"
+                        : "text-slate-400 hover:text-white hover:bg-slate-700/50"
+                    )}
                     onClick={() => navigate(item.path)}
                   >
                     <item.icon className="h-5 w-5" />

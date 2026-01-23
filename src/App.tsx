@@ -33,6 +33,7 @@ import PontoEletronico from "./pages/PontoEletronico";
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
 import TenantsList from "./pages/platform/TenantsList";
 import TenantForm from "./pages/platform/TenantForm";
+import ImpersonateUser from "./pages/platform/ImpersonateUser";
 
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
@@ -192,6 +193,14 @@ function AppContent() {
             element={
               <ProtectedRoute platformOnly>
                 <TenantForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/impersonate"
+            element={
+              <ProtectedRoute platformOnly>
+                <ImpersonateUser />
               </ProtectedRoute>
             }
           />
