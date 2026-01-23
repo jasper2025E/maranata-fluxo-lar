@@ -29,6 +29,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { UpgradePlanDialog } from "@/components/subscription/UpgradePlanDialog";
 import { toast } from "sonner";
 import { useSubscriptionPlans, getPlanPriceFormatted } from "@/hooks/useSubscriptionPlans";
+import { PaymentMethodCard } from "@/components/subscription/PaymentMethodCard";
 
 interface SubscriptionData {
   id: string;
@@ -412,13 +413,18 @@ export default function MinhaAssinatura() {
             </Card>
           </motion.div>
 
-          {/* Quick Stats */}
+          {/* Payment Method & Quick Stats */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
             className="space-y-4"
           >
+            {/* Payment Method Card */}
+            <PaymentMethodCard 
+              tenantId={tenantId} 
+              onUpdate={() => fetchSubscriptionData()}
+            />
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-base flex items-center gap-2">
