@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CreditCard,
@@ -127,6 +127,7 @@ const eventTypeLabels: Record<string, { label: string; icon: React.ReactNode }> 
 
 export default function MinhaAssinatura() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: escola } = useEscola();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
@@ -340,9 +341,13 @@ export default function MinhaAssinatura() {
                     <TrendingUp className="h-4 w-4" />
                     Alterar Plano
                   </Button>
-                  <Button variant="ghost" className="gap-2">
-                    <Download className="h-4 w-4" />
-                    Baixar Faturas
+                  <Button 
+                    variant="outline" 
+                    className="gap-2"
+                    onClick={() => navigate("/assinatura/faturas")}
+                  >
+                    <Receipt className="h-4 w-4" />
+                    Ver Faturas
                   </Button>
                 </div>
               </CardContent>
