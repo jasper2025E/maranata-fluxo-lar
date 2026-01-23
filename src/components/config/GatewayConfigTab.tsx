@@ -1,36 +1,34 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { 
   Plus, 
   Trash2, 
-  Settings, 
   Key, 
-  CheckCircle, 
-  XCircle, 
   RefreshCw,
   Wifi,
   WifiOff,
-  Eye,
-  EyeOff,
   Copy,
-  Shield,
   Loader2,
   CreditCard,
-  Building2,
   AlertTriangle,
   Star,
+  MoreHorizontal,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { 
   useGatewayConfigs, 
@@ -43,8 +41,8 @@ import {
 const METHOD_LABELS: Record<PaymentMethodType, string> = {
   pix: "PIX",
   boleto: "Boleto",
-  credit_card: "Cartão de Crédito",
-  debit_card: "Cartão de Débito",
+  credit_card: "Cartão",
+  debit_card: "Débito",
   bank_transfer: "Transferência",
 };
 
@@ -60,7 +58,6 @@ interface GatewayCardProps {
 function GatewayCard({ config, onTest, onUpdate, onDelete, onSetSecret, isTesting }: GatewayCardProps) {
   const [showSecrets, setShowSecrets] = useState(false);
   const [secretValues, setSecretValues] = useState<Record<string, string>>({});
-  const [isEditing, setIsEditing] = useState(false);
   
   const info = GATEWAY_INFO[config.gateway_type];
   
@@ -76,129 +73,143 @@ function GatewayCard({ config, onTest, onUpdate, onDelete, onSetSecret, isTestin
     if (config.webhook_token) {
       const url = `${window.location.origin}/functions/v1/gateway-webhook/${config.gateway_type}/${config.webhook_token}`;
       navigator.clipboard.writeText(url);
-      toast.success("URL do webhook copiada");
+      toast.success("URL copiada");
     }
   };
 
   return (
-    <Card className={`border-border/50 ${config.is_default ? 'ring-2 ring-primary/50' : ''}`}>
-      <CardHeader className="pb-3">
+    <div className={`bg-card border rounded-lg ${config.is_default ? 'border-primary/50' : 'border-border'}`}>
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-border">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             {info.logo ? (
-              <img src={info.logo} alt={info.name} className="w-8 h-8 rounded" />
+              <img src={info.logo} alt={info.name} className="w-6 h-6 rounded" />
             ) : (
-              <div className="w-8 h-8 rounded bg-muted flex items-center justify-center">
-                <CreditCard className="w-4 h-4" />
+              <div className="w-6 h-6 rounded bg-muted flex items-center justify-center">
+                <CreditCard className="w-3.5 h-3.5" />
               </div>
             )}
             <div>
               <div className="flex items-center gap-2">
-                <CardTitle className="text-base">{config.display_name}</CardTitle>
+                <span className="text-sm font-medium text-foreground">{config.display_name}</span>
                 {config.is_default && (
-                  <Badge variant="secondary" className="text-xs">
-                    <Star className="w-3 h-3 mr-1" />
+                  <Badge variant="secondary" className="text-xs py-0 px-1.5">
+                    <Star className="w-3 h-3 mr-0.5" />
                     Padrão
                   </Badge>
                 )}
               </div>
-              <CardDescription className="text-xs">{info.name} • {info.description}</CardDescription>
+              <p className="text-xs text-muted-foreground">{info.name}</p>
             </div>
           </div>
           
           <div className="flex items-center gap-2">
             <Badge 
               variant="outline" 
-              className={config.environment === "production" 
+              className={`text-xs ${config.environment === "production" 
                 ? "bg-primary/10 text-primary border-primary/30"
-                : "bg-secondary text-secondary-foreground"
-              }
+                : "bg-muted text-muted-foreground"
+              }`}
             >
               {config.environment === "production" ? "Produção" : "Sandbox"}
             </Badge>
             
             {config.connection_status === "connected" ? (
-              <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800">
                 <Wifi className="w-3 h-3 mr-1" />
-                Conectado
+                OK
               </Badge>
             ) : config.connection_status === "error" ? (
-              <Badge variant="destructive">
+              <Badge variant="destructive" className="text-xs">
                 <WifiOff className="w-3 h-3 mr-1" />
                 Erro
               </Badge>
             ) : (
-              <Badge variant="secondary">
+              <Badge variant="secondary" className="text-xs">
                 <AlertTriangle className="w-3 h-3 mr-1" />
-                Não testado
+                Pendente
               </Badge>
             )}
           </div>
         </div>
-      </CardHeader>
+      </div>
       
-      <CardContent className="space-y-4">
-        {/* Status e Ações Rápidas */}
+      {/* Content */}
+      <div className="px-4 py-3 space-y-3">
+        {/* Status e Métodos */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <Label htmlFor={`active-${config.id}`} className="text-sm">Ativo</Label>
               <Switch
                 id={`active-${config.id}`}
                 checked={config.is_active}
                 onCheckedChange={(checked) => onUpdate({ is_active: checked })}
+                className="scale-90"
               />
+              <Label htmlFor={`active-${config.id}`} className="text-xs text-muted-foreground">Ativo</Label>
             </div>
             
             <div className="flex items-center gap-2">
-              <Label htmlFor={`default-${config.id}`} className="text-sm">Padrão</Label>
               <Switch
                 id={`default-${config.id}`}
                 checked={config.is_default}
                 onCheckedChange={(checked) => onUpdate({ is_default: checked })}
+                className="scale-90"
               />
+              <Label htmlFor={`default-${config.id}`} className="text-xs text-muted-foreground">Padrão</Label>
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
             <Button 
               variant="outline" 
               size="sm"
+              className="h-7 text-xs"
               onClick={onTest}
               disabled={isTesting}
             >
               {isTesting ? (
-                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
               ) : (
-                <RefreshCw className="w-4 h-4 mr-1" />
+                <RefreshCw className="w-3.5 h-3.5" />
               )}
-              Testar
             </Button>
             
             <Button
               variant="outline"
               size="sm"
+              className="h-7 text-xs"
               onClick={() => setShowSecrets(!showSecrets)}
             >
-              <Key className="w-4 h-4 mr-1" />
+              <Key className="w-3.5 h-3.5 mr-1" />
               Credenciais
+              {showSecrets ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />}
             </Button>
             
-            <Button
-              variant="ghost"
-              size="sm"
-              className="text-destructive hover:text-destructive"
-              onClick={onDelete}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="h-7 w-7 p-0">
+                  <MoreHorizontal className="w-4 h-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem 
+                  className="text-destructive focus:text-destructive"
+                  onClick={onDelete}
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  Remover
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
         {/* Métodos de Pagamento */}
         <div className="flex flex-wrap gap-1">
           {config.allowed_methods.map((method) => (
-            <Badge key={method} variant="secondary" className="text-xs">
+            <Badge key={method} variant="secondary" className="text-xs py-0 px-1.5 font-normal">
               {METHOD_LABELS[method]}
             </Badge>
           ))}
@@ -206,23 +217,17 @@ function GatewayCard({ config, onTest, onUpdate, onDelete, onSetSecret, isTestin
         
         {/* Seção de Credenciais */}
         {showSecrets && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-3 pt-3 border-t"
-          >
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Shield className="w-4 h-4" />
-              <span>Credenciais armazenadas com criptografia AES-256</span>
-            </div>
+          <div className="pt-3 border-t border-border space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Credenciais criptografadas com AES-256
+            </p>
             
             {info.requiredSecrets.map((secretDef) => {
               const existingSecret = config.secrets.find(s => s.key_name === secretDef.key);
               
               return (
-                <div key={secretDef.key} className="space-y-2">
-                  <Label className="text-sm">{secretDef.label}</Label>
+                <div key={secretDef.key} className="space-y-1.5">
+                  <Label className="text-xs font-medium">{secretDef.label}</Label>
                   <div className="flex gap-2">
                     <Input
                       type="password"
@@ -232,10 +237,11 @@ function GatewayCard({ config, onTest, onUpdate, onDelete, onSetSecret, isTestin
                         ...prev, 
                         [secretDef.key]: e.target.value 
                       }))}
-                      className="font-mono text-sm"
+                      className="h-8 text-xs font-mono"
                     />
                     <Button
                       size="sm"
+                      className="h-8 text-xs"
                       onClick={() => handleSaveSecret(secretDef.key)}
                       disabled={!secretValues[secretDef.key]}
                     >
@@ -244,7 +250,7 @@ function GatewayCard({ config, onTest, onUpdate, onDelete, onSetSecret, isTestin
                   </div>
                   {existingSecret && (
                     <p className="text-xs text-muted-foreground">
-                      Última atualização: {new Date(existingSecret.last_rotated).toLocaleDateString('pt-BR')}
+                      Atualizado: {new Date(existingSecret.last_rotated).toLocaleDateString('pt-BR')}
                     </p>
                   )}
                 </div>
@@ -253,32 +259,30 @@ function GatewayCard({ config, onTest, onUpdate, onDelete, onSetSecret, isTestin
             
             {/* Webhook URL */}
             {config.webhook_token && (
-              <div className="space-y-2 pt-2">
-                <Label className="text-sm">URL do Webhook</Label>
+              <div className="space-y-1.5 pt-2">
+                <Label className="text-xs font-medium">Webhook</Label>
                 <div className="flex gap-2">
                   <Input
                     readOnly
-                    value={`/functions/v1/gateway-webhook/${config.gateway_type}/${config.webhook_token.substring(0, 8)}...`}
-                    className="font-mono text-xs bg-muted"
+                    value={`/gateway-webhook/${config.gateway_type}/${config.webhook_token.substring(0, 8)}...`}
+                    className="h-8 text-xs font-mono bg-muted"
                   />
-                  <Button size="sm" variant="outline" onClick={copyWebhookUrl}>
-                    <Copy className="w-4 h-4" />
+                  <Button size="sm" variant="outline" className="h-8" onClick={copyWebhookUrl}>
+                    <Copy className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
             )}
-          </motion.div>
+          </div>
         )}
         
         {config.connection_error && (
-          <Alert variant="destructive" className="py-2">
-            <AlertDescription className="text-xs">
-              {config.connection_error}
-            </AlertDescription>
-          </Alert>
+          <div className="text-xs text-destructive bg-destructive/10 rounded px-2 py-1.5">
+            {config.connection_error}
+          </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -308,22 +312,19 @@ function AddGatewayDialog({ open, onOpenChange, onAdd, isLoading }: AddGatewayDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Building2 className="w-5 h-5" />
-            Conectar Gateway de Pagamento
-          </DialogTitle>
+          <DialogTitle>Conectar gateway</DialogTitle>
           <DialogDescription>
-            Configure um novo gateway para processar cobranças da sua escola
+            Adicione um novo gateway de pagamento
           </DialogDescription>
         </DialogHeader>
         
         <div className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label>Gateway</Label>
+            <Label className="text-sm font-medium">Gateway</Label>
             <Select value={gatewayType} onValueChange={(v) => setGatewayType(v as GatewayType)}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -332,7 +333,6 @@ function AddGatewayDialog({ open, onOpenChange, onAdd, isLoading }: AddGatewayDi
                     <div className="flex items-center gap-2">
                       {info.logo && <img src={info.logo} alt="" className="w-4 h-4" />}
                       <span>{info.name}</span>
-                      <span className="text-muted-foreground text-xs">- {info.description}</span>
                     </div>
                   </SelectItem>
                 ))}
@@ -341,49 +341,36 @@ function AddGatewayDialog({ open, onOpenChange, onAdd, isLoading }: AddGatewayDi
           </div>
           
           <div className="space-y-2">
-            <Label>Nome de Identificação</Label>
+            <Label className="text-sm font-medium">Nome de identificação</Label>
             <Input
-              placeholder="Ex: Asaas Principal, Mercado Pago Escola"
+              placeholder="Ex: Asaas Principal"
+              className="h-9"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
             />
           </div>
           
           <div className="space-y-2">
-            <Label>Ambiente</Label>
+            <Label className="text-sm font-medium">Ambiente</Label>
             <Select value={environment} onValueChange={(v) => setEnvironment(v as "sandbox" | "production")}>
-              <SelectTrigger>
+              <SelectTrigger className="h-9">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="sandbox">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary">
-                      Sandbox
-                    </Badge>
-                    <span className="text-muted-foreground text-xs">Para testes</span>
-                  </div>
-                </SelectItem>
-                <SelectItem value="production">
-                  <div className="flex items-center gap-2">
-                    <Badge variant="default">
-                      Produção
-                    </Badge>
-                    <span className="text-muted-foreground text-xs">Transações reais</span>
-                  </div>
-                </SelectItem>
+                <SelectItem value="sandbox">Sandbox (testes)</SelectItem>
+                <SelectItem value="production">Produção</SelectItem>
               </SelectContent>
             </Select>
           </div>
         </div>
         
         <DialogFooter>
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
+          <Button variant="outline" size="sm" onClick={() => onOpenChange(false)}>
             Cancelar
           </Button>
-          <Button onClick={handleSubmit} disabled={isLoading || !displayName.trim()}>
-            {isLoading && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-            Adicionar Gateway
+          <Button size="sm" onClick={handleSubmit} disabled={isLoading || !displayName.trim()}>
+            {isLoading && <Loader2 className="w-4 h-4 mr-1.5 animate-spin" />}
+            Adicionar
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -428,7 +415,7 @@ export function GatewayConfigTab() {
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <Skeleton className="h-32" />
+        <Skeleton className="h-8 w-48" />
         <Skeleton className="h-32" />
       </div>
     );
@@ -436,53 +423,48 @@ export function GatewayConfigTab() {
 
   if (error) {
     return (
-      <Alert variant="destructive">
-        <AlertDescription>
-          Erro ao carregar configurações de gateway: {(error as Error).message}
-        </AlertDescription>
-      </Alert>
+      <div className="text-sm text-destructive bg-destructive/10 rounded-lg px-4 py-3">
+        Erro ao carregar gateways: {(error as Error).message}
+      </div>
     );
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-6"
-    >
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Gateways de Pagamento</h3>
+          <h3 className="text-base font-medium text-foreground">Gateways de pagamento</h3>
           <p className="text-sm text-muted-foreground">
-            Configure os bancos e gateways para processar cobranças
+            Configure os gateways para processar cobranças
           </p>
         </div>
         
-        <Button onClick={() => setAddDialogOpen(true)}>
-          <Plus className="w-4 h-4 mr-2" />
-          Conectar Banco
+        <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+          <Plus className="w-4 h-4 mr-1.5" />
+          Conectar
         </Button>
       </div>
 
       {/* Lista de Gateways */}
       {configs.length === 0 ? (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-            <Building2 className="w-12 h-12 text-muted-foreground mb-4" />
-            <h4 className="font-medium mb-2">Nenhum gateway configurado</h4>
-            <p className="text-sm text-muted-foreground mb-4">
-              Conecte um banco ou gateway para começar a processar pagamentos
+        <div className="bg-card border border-dashed border-border rounded-lg">
+          <div className="flex flex-col items-center justify-center py-12 text-center px-4">
+            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center mb-3">
+              <CreditCard className="w-5 h-5 text-muted-foreground" />
+            </div>
+            <p className="text-sm font-medium text-foreground mb-1">Nenhum gateway configurado</p>
+            <p className="text-xs text-muted-foreground mb-4">
+              Conecte um gateway para processar pagamentos
             </p>
-            <Button onClick={() => setAddDialogOpen(true)}>
-              <Plus className="w-4 h-4 mr-2" />
-              Conectar Primeiro Banco
+            <Button size="sm" onClick={() => setAddDialogOpen(true)}>
+              <Plus className="w-4 h-4 mr-1.5" />
+              Conectar primeiro gateway
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="space-y-3">
           {configs.map((config) => (
             <GatewayCard
               key={config.id}
@@ -497,27 +479,19 @@ export function GatewayConfigTab() {
         </div>
       )}
 
-      {/* Info Card */}
-      <Card className="bg-muted/20 border-border/50">
-        <CardContent className="flex items-start gap-3 p-4">
-          <Shield className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-          <div className="text-sm">
-            <p className="font-medium text-foreground mb-1">Segurança das Credenciais</p>
-            <p className="text-muted-foreground">
-              Todas as chaves de API são criptografadas com AES-256 e armazenadas de forma segura.
-              As credenciais nunca são expostas no frontend - apenas máscaras são exibidas.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Info */}
+      <div className="bg-muted/50 rounded-lg px-4 py-3">
+        <p className="text-xs text-muted-foreground">
+          As credenciais são armazenadas com criptografia AES-256. Cada escola tem suas próprias chaves isoladas.
+        </p>
+      </div>
 
-      {/* Add Dialog */}
       <AddGatewayDialog
         open={addDialogOpen}
         onOpenChange={setAddDialogOpen}
         onAdd={handleAddGateway}
         isLoading={isCreating}
       />
-    </motion.div>
+    </div>
   );
 }

@@ -52,66 +52,37 @@ export function SystemTab({ role }: SystemTabProps) {
     }
   };
 
-  const ResetButton = ({ 
-    label, 
-    description, 
-    tableType 
-  }: { 
-    label: string; 
-    description: string; 
-    tableType: "alunos" | "faturas" | "pagamentos" | "responsaveis"; 
-  }) => (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>
-        <button className="w-full text-left px-4 py-3 rounded-lg border border-border hover:border-destructive/50 hover:bg-destructive/5 transition-colors">
-          <p className="text-sm font-medium text-foreground">{label}</p>
-          <p className="text-xs text-muted-foreground">{description}</p>
-        </button>
-      </AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Excluir {label.toLowerCase()}?</AlertDialogTitle>
-          <AlertDialogDescription>
-            Esta ação é irreversível e excluirá permanentemente todos os dados.
-          </AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={() => handleResetData(tableType)}
-            className="bg-destructive hover:bg-destructive/90"
-            disabled={resettingData}
-          >
-            {resettingData ? <Loader2 className="h-4 w-4 animate-spin" /> : "Excluir"}
-          </AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
-  );
-
   return (
     <div className="space-y-6">
-      {/* System Status */}
+      {/* Header */}
+      <div>
+        <h3 className="text-base font-medium text-foreground">Sistema</h3>
+        <p className="text-sm text-muted-foreground">
+          Status, backup e configurações avançadas
+        </p>
+      </div>
+
+      {/* Status do Sistema */}
       <div className="bg-card border border-border rounded-lg">
-        <div className="px-6 py-4 border-b border-border">
-          <h3 className="text-sm font-medium text-foreground">Status do sistema</h3>
+        <div className="px-4 py-3 border-b border-border">
+          <span className="text-sm font-medium text-foreground">Status</span>
         </div>
-        <div className="p-6">
+        <div className="p-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
-              <p className="text-xs text-muted-foreground">Status</p>
+              <p className="text-xs text-muted-foreground mb-0.5">Status</p>
               <p className="text-sm font-medium text-green-600">Online</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Banco de dados</p>
+              <p className="text-xs text-muted-foreground mb-0.5">Banco de dados</p>
               <p className="text-sm font-medium text-foreground">PostgreSQL</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Versão</p>
+              <p className="text-xs text-muted-foreground mb-0.5">Versão</p>
               <p className="text-sm font-medium text-foreground">1.0.0</p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Uptime</p>
+              <p className="text-xs text-muted-foreground mb-0.5">Uptime</p>
               <p className="text-sm font-medium text-foreground">99.9%</p>
             </div>
           </div>
@@ -120,32 +91,61 @@ export function SystemTab({ role }: SystemTabProps) {
 
       {/* Backup */}
       <div className="bg-card border border-border rounded-lg">
-        <div className="px-6 py-4 border-b border-border">
-          <h3 className="text-sm font-medium text-foreground">Backup e exportação</h3>
+        <div className="px-4 py-3 border-b border-border">
+          <span className="text-sm font-medium text-foreground">Backup e exportação</span>
         </div>
-        <div className="p-6">
+        <div className="p-4">
           <BackupExport />
         </div>
       </div>
 
-      {/* Danger Zone */}
+      {/* Zona de Perigo */}
       <div className="bg-card border border-destructive/30 rounded-lg">
-        <div className="px-6 py-4 border-b border-destructive/30">
-          <h3 className="text-sm font-medium text-destructive">Zona de perigo</h3>
+        <div className="px-4 py-3 border-b border-destructive/30">
+          <span className="text-sm font-medium text-destructive">Zona de perigo</span>
         </div>
-        <div className="p-6 space-y-4">
+        <div className="p-4 space-y-4">
           <p className="text-xs text-muted-foreground">
-            Atenção: estas ações são irreversíveis e excluirão permanentemente os dados.
+            Estas ações são irreversíveis e excluirão permanentemente os dados.
           </p>
 
-          <div className="grid sm:grid-cols-2 gap-3">
-            <ResetButton label="Alunos" description="Remove todos os alunos" tableType="alunos" />
-            <ResetButton label="Responsáveis" description="Remove todos os responsáveis" tableType="responsaveis" />
-            <ResetButton label="Faturas" description="Remove todas as faturas" tableType="faturas" />
-            <ResetButton label="Pagamentos" description="Remove todos os pagamentos" tableType="pagamentos" />
+          <div className="grid sm:grid-cols-2 gap-2">
+            {[
+              { label: "Alunos", description: "Remove todos os alunos", tableType: "alunos" as const },
+              { label: "Responsáveis", description: "Remove todos os responsáveis", tableType: "responsaveis" as const },
+              { label: "Faturas", description: "Remove todas as faturas", tableType: "faturas" as const },
+              { label: "Pagamentos", description: "Remove todos os pagamentos", tableType: "pagamentos" as const },
+            ].map((item) => (
+              <AlertDialog key={item.tableType}>
+                <AlertDialogTrigger asChild>
+                  <button className="w-full text-left px-3 py-2.5 rounded-md border border-border hover:border-destructive/50 hover:bg-destructive/5 transition-colors">
+                    <p className="text-sm font-medium text-foreground">{item.label}</p>
+                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                  </button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Excluir {item.label.toLowerCase()}?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Esta ação é irreversível e excluirá permanentemente todos os dados.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => handleResetData(item.tableType)}
+                      className="bg-destructive hover:bg-destructive/90"
+                      disabled={resettingData}
+                    >
+                      {resettingData ? <Loader2 className="h-4 w-4 animate-spin" /> : "Excluir"}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ))}
           </div>
 
-          <div className="pt-4 border-t border-border">
+          <div className="pt-3 border-t border-border">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="destructive" size="sm">
@@ -165,6 +165,7 @@ export function SystemTab({ role }: SystemTabProps) {
                         value={confirmText}
                         onChange={(e) => setConfirmText(e.target.value)}
                         placeholder="CONFIRMAR"
+                        className="h-9"
                       />
                     </div>
                   </AlertDialogDescription>
