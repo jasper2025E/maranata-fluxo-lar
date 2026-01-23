@@ -83,9 +83,6 @@ const Dashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <p className="text-muted-foreground mt-1 text-sm">
-            {t("dashboard.subtitle")}
-          </p>
         </motion.div>
 
         {/* Quick Stats Row */}

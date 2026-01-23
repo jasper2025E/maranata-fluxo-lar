@@ -302,7 +302,7 @@ export default function Responsaveis() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             
-            <p className="text-muted-foreground mt-1 text-sm">{t("guardians.description")}</p>
+            
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>

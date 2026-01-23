@@ -138,9 +138,6 @@ const Configuracoes = () => {
           transition={{ duration: 0.3 }}
         >
           
-          <p className="text-muted-foreground mt-1 text-sm">
-            Gerencie sua conta e preferências do sistema
-          </p>
         </motion.div>
 
         <Tabs defaultValue="perfil" className="space-y-6">

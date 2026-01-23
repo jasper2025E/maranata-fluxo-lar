@@ -178,7 +178,7 @@ const EscolaPage = () => {
         {/* Header */}
         <div>
           
-          <p className="text-muted-foreground mt-1 text-sm">Configure as informações institucionais</p>
+          
         </div>
 
         <form onSubmit={handleSubmit}>
