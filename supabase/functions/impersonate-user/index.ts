@@ -66,31 +66,54 @@ Deno.serve(async (req) => {
     const { action, target_user_id, tenant_id } = body;
 
     if (action === "get_users") {
-      // Get users for a specific tenant or all users
-      let query = supabaseAdmin
+      // Get profiles
+      let profilesQuery = supabaseAdmin
         .from("profiles")
-        .select(`
-          id,
-          nome,
-          email,
-          tenant_id,
-          user_roles!inner(role)
-        `)
-        .neq("user_roles.role", "platform_admin");
+        .select("id, nome, email, tenant_id");
 
       if (tenant_id) {
-        query = query.eq("tenant_id", tenant_id);
+        profilesQuery = profilesQuery.eq("tenant_id", tenant_id);
       }
 
-      const { data: users, error: usersError } = await query;
+      const { data: profiles, error: profilesError } = await profilesQuery;
 
-      if (usersError) {
-        console.error("Error fetching users:", usersError);
+      if (profilesError) {
+        console.error("Error fetching profiles:", profilesError);
         return new Response(
           JSON.stringify({ error: "Failed to fetch users" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+
+      // Get all user roles
+      const { data: roles, error: rolesError } = await supabaseAdmin
+        .from("user_roles")
+        .select("user_id, role");
+
+      if (rolesError) {
+        console.error("Error fetching roles:", rolesError);
+        return new Response(
+          JSON.stringify({ error: "Failed to fetch roles" }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Create a map of user_id to roles
+      const rolesMap = new Map<string, { role: string }[]>();
+      for (const role of roles || []) {
+        if (!rolesMap.has(role.user_id)) {
+          rolesMap.set(role.user_id, []);
+        }
+        rolesMap.get(role.user_id)!.push({ role: role.role });
+      }
+
+      // Combine profiles with roles, excluding platform_admins
+      const users = (profiles || [])
+        .map(profile => ({
+          ...profile,
+          user_roles: rolesMap.get(profile.id) || []
+        }))
+        .filter(user => !user.user_roles.some(r => r.role === "platform_admin"));
 
       return new Response(
         JSON.stringify({ users }),

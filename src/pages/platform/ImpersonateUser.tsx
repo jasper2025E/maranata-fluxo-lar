@@ -221,7 +221,7 @@ export default function ImpersonateUser() {
           className="flex flex-col sm:flex-row gap-4"
         >
           <div className="w-full sm:w-64">
-            <Select value={selectedTenant} onValueChange={handleTenantChange}>
+            <Select value={selectedTenant || "all"} onValueChange={handleTenantChange}>
               <SelectTrigger className="bg-slate-800/50 border-slate-700 text-white">
                 <SelectValue placeholder="Filtrar por escola" />
               </SelectTrigger>
