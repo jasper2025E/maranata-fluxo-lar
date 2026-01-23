@@ -22,7 +22,9 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Validate JWT
+    // ============================================
+    // SECURITY: Validate user is authenticated
+    // ============================================
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("Token de autorização não fornecido");
@@ -40,6 +42,35 @@ serve(async (req) => {
 
     if (!tenantId) {
       throw new Error("ID do tenant é obrigatório");
+    }
+
+    // ============================================
+    // SECURITY: Verify user belongs to this tenant
+    // Only allow users from the same tenant OR platform_admin
+    // ============================================
+    const { data: userProfile } = await supabase
+      .from("profiles")
+      .select("tenant_id")
+      .eq("id", user.id)
+      .single();
+
+    const { data: isPlatformAdmin } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "platform_admin")
+      .single();
+
+    // User must belong to the tenant OR be a platform_admin
+    if (!isPlatformAdmin && userProfile?.tenant_id !== tenantId) {
+      console.error(`User ${user.id} attempted to access tenant ${tenantId} but belongs to ${userProfile?.tenant_id}`);
+      return new Response(
+        JSON.stringify({ error: "Acesso negado. Você não tem permissão para gerenciar esta escola." }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
 
     // Get tenant data
@@ -107,7 +138,7 @@ serve(async (req) => {
     }
 
     // Create SetupIntent for saving card
-    console.log("Creating SetupIntent...");
+    console.log("Creating SetupIntent for tenant:", tenantId);
     
     const setupIntentResponse = await fetch("https://api.stripe.com/v1/setup_intents", {
       method: "POST",
@@ -120,6 +151,7 @@ serve(async (req) => {
         "payment_method_types[]": "card",
         usage: "off_session",
         "metadata[tenant_id]": tenantId,
+        "metadata[user_id]": user.id,
       }),
     });
 

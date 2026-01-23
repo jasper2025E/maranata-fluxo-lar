@@ -7,6 +7,9 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
+// Secret key for cron job authentication
+const CRON_SECRET = Deno.env.get("CRON_SECRET_KEY");
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -22,18 +25,57 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // This can be called by cron or manually
-    // Check for optional auth header (for manual calls)
+    // ============================================
+    // SECURITY: Validate request origin
+    // Only allow: cron jobs (service role) OR platform_admin
+    // ============================================
     const authHeader = req.headers.get("Authorization");
-    let isManualCall = false;
+    const cronSecretHeader = req.headers.get("x-cron-secret");
     
-    if (authHeader) {
-      const { data: { user }, error: authError } = await supabase.auth.getUser(
-        authHeader.replace("Bearer ", "")
-      );
+    let isAuthorized = false;
+    let isPlatformAdmin = false;
+
+    // Check 1: Cron job with secret key (highest priority)
+    if (cronSecretHeader && CRON_SECRET && cronSecretHeader === CRON_SECRET) {
+      isAuthorized = true;
+      console.log("Request authorized via CRON_SECRET");
+    }
+    // Check 2: Service role key (from pg_net/cron)
+    else if (authHeader?.includes(supabaseServiceKey)) {
+      isAuthorized = true;
+      console.log("Request authorized via service role key");
+    }
+    // Check 3: Platform admin user
+    else if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
       if (!authError && user) {
-        isManualCall = true;
+        // Check if user is platform_admin
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "platform_admin")
+          .single();
+        
+        if (roleData) {
+          isAuthorized = true;
+          isPlatformAdmin = true;
+          console.log("Request authorized via platform_admin:", user.email);
+        }
       }
+    }
+
+    if (!isAuthorized) {
+      console.error("Unauthorized access attempt to stripe-charge-subscription");
+      return new Response(
+        JSON.stringify({ error: "Acesso não autorizado. Esta função é restrita ao sistema." }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
 
     const body = await req.json().catch(() => ({}));
