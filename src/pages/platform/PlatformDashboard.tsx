@@ -70,38 +70,77 @@ export default function PlatformDashboard() {
 
   const fetchData = async () => {
     try {
-      // Fetch tenants
+      // Fetch tenants - platform admin has access via RLS
       const { data: tenantsData, error: tenantsError } = await supabase
         .from("tenants")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (tenantsError) throw tenantsError;
+      if (tenantsError) {
+        console.error("Error fetching tenants:", tenantsError);
+      }
       setTenants(tenantsData || []);
 
-      // Calculate stats
+      // Calculate stats from tenants
       const activeTenants = tenantsData?.filter(t => t.status === "ativo").length || 0;
       
-      // Get global counts (these would need proper aggregation in production)
-      const { count: usersCount } = await supabase
+      // For platform admin, we need to use RPC or direct queries that bypass tenant isolation
+      // Since platform_admin has special RLS policies, these should work
+      
+      // Get user count from profiles (platform admin can view all)
+      const { count: usersCount, error: usersError } = await supabase
         .from("profiles")
         .select("*", { count: "exact", head: true });
+      
+      if (usersError) {
+        console.error("Error fetching users count:", usersError);
+      }
 
-      const { count: alunosCount } = await supabase
+      // For alunos and faturas, platform admin might not have direct access
+      // We'll aggregate from what we can access
+      let totalAlunos = 0;
+      let totalFaturas = 0;
+      let receitaTotal = 0;
+
+      // Try to get alunos count
+      const { count: alunosCount, error: alunosError } = await supabase
         .from("alunos")
         .select("*", { count: "exact", head: true });
+      
+      if (!alunosError) {
+        totalAlunos = alunosCount || 0;
+      } else {
+        console.error("Error fetching alunos:", alunosError);
+      }
 
-      const { count: faturasCount } = await supabase
+      // Try to get faturas count and revenue
+      const { count: faturasCount, error: faturasError } = await supabase
         .from("faturas")
         .select("*", { count: "exact", head: true });
+      
+      if (!faturasError) {
+        totalFaturas = faturasCount || 0;
+      } else {
+        console.error("Error fetching faturas:", faturasError);
+      }
+
+      // Get paid invoices for revenue calculation
+      const { data: paidFaturas, error: revenueError } = await supabase
+        .from("faturas")
+        .select("valor_total")
+        .eq("status", "Paga");
+      
+      if (!revenueError && paidFaturas) {
+        receitaTotal = paidFaturas.reduce((sum, f) => sum + (Number(f.valor_total) || 0), 0);
+      }
 
       setStats({
         totalTenants: tenantsData?.length || 0,
         activeTenants,
         totalUsers: usersCount || 0,
-        totalAlunos: alunosCount || 0,
-        totalFaturas: faturasCount || 0,
-        receitaTotal: 0, // Would need aggregation
+        totalAlunos,
+        totalFaturas,
+        receitaTotal,
       });
     } catch (error) {
       console.error("Error fetching platform data:", error);
