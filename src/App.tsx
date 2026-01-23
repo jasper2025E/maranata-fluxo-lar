@@ -31,6 +31,7 @@ import RH from "./pages/RH";
 import PontoEletronico from "./pages/PontoEletronico";
 import MinhaAssinatura from "./pages/MinhaAssinatura";
 import FaturasAssinatura from "./pages/FaturasAssinatura";
+import PagarFatura from "./pages/PagarFatura";
 
 // Platform Admin Pages
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
@@ -186,6 +187,14 @@ function AppContent() {
             element={
               <ProtectedRoute requiredRole="admin">
                 <FaturasAssinatura />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/pagar-fatura"
+            element={
+              <ProtectedRoute>
+                <PagarFatura />
               </ProtectedRoute>
             }
           />
