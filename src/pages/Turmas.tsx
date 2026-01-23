@@ -11,7 +11,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Plus, Pencil, Trash2, Users, Calendar, Clock, GraduationCap, Archive } from "lucide-react";
+import { Plus, Pencil, Trash2, Users, Calendar, Clock, GraduationCap, Archive, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -204,17 +204,24 @@ const Turmas = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{t("nav.registrations")}</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{t("classes.title")}</span>
+        </nav>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("classes.title")}</h2>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("classes.title")}</h1>
             <p className="text-muted-foreground mt-1 text-sm">
               {t("classes.description")}
             </p>
           </div>
           <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsOpen(open); }}>
             <DialogTrigger asChild>
-              <Button>
+              <Button size="sm">
                 <Plus className="mr-2 h-4 w-4" />
                 {t("classes.newClass")}
               </Button>

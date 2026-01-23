@@ -67,8 +67,11 @@ const ptBR = {
 
     // Navigation
     nav: {
+      home: "Início",
       dashboard: "Dashboard",
       financial: "Financeiro",
+      registrations: "Cadastros",
+      management: "Gestão",
       students: "Alunos",
       guardians: "Responsáveis",
       courses: "Cursos",

@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Plus, Printer } from "lucide-react";
+import { Plus, Printer, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   FaturaKPIs, 
@@ -247,18 +247,25 @@ const Faturas = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{t("nav.financial")}</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{t("invoices.title")}</span>
+        </nav>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("invoices.title")}</h1>
-            <p className="text-muted-foreground text-sm">{t("invoices.description")}</p>
+            <p className="text-muted-foreground text-sm mt-1">{t("invoices.description")}</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setIsCarneOpen(true)} className="gap-2">
+            <Button variant="outline" size="sm" onClick={() => setIsCarneOpen(true)} className="gap-2">
               <Printer className="h-4 w-4" />
               {t("invoices.printCarne")}
             </Button>
-            <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+            <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
               {t("invoices.newInvoice")}
             </Button>

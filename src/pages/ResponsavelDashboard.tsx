@@ -18,6 +18,7 @@ import {
   XCircle,
   RefreshCw,
   Download,
+  ChevronRight,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { FinancialKPICard } from "@/components/dashboard";
@@ -231,12 +232,19 @@ const ResponsavelDashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Financeiro</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">Dashboard Financeiro</span>
+        </nav>
+
         {/* Header with Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
               Dashboard Financeiro
-            </h2>
+            </h1>
             <p className="text-muted-foreground mt-1 text-sm">
               Gestão de responsáveis e cobranças
             </p>

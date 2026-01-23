@@ -15,6 +15,7 @@ import {
   Target,
   Briefcase,
   GraduationCap,
+  ChevronRight,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { LoadingState } from "@/components/LoadingState";
@@ -69,15 +70,22 @@ const Dashboard = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{t("nav.home")}</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{t("dashboard.title")}</span>
+        </nav>
+
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4 }}
+          transition={{ duration: 0.3 }}
         >
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {t("dashboard.title")}
-          </h2>
+          </h1>
           <p className="text-muted-foreground mt-1 text-sm">
             {t("dashboard.subtitle")}
           </p>

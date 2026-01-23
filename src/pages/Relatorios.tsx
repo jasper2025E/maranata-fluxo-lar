@@ -34,7 +34,8 @@ import {
   BookOpen,
   UserCheck,
   Percent,
-  CalendarDays
+  CalendarDays,
+  ChevronRight,
 } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths, parseISO, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -501,10 +502,17 @@ const Relatorios = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Financeiro</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">Relatórios</span>
+        </nav>
+
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">Relatórios Financeiros</h2>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Relatórios Financeiros</h1>
             <p className="text-muted-foreground mt-1 text-sm">
               Análise completa com insights e exportação
             </p>

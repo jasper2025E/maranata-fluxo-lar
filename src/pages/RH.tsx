@@ -15,7 +15,8 @@ import {
   UserPlus,
   Briefcase,
   BarChart,
-  MapPinned
+  MapPinned,
+  ChevronRight,
 } from "lucide-react";
 import { FuncionariosTab } from "@/components/rh/FuncionariosTab";
 import { CargosTab } from "@/components/rh/CargosTab";
@@ -42,6 +43,14 @@ export default function RH() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
+        {/* Breadcrumb */}
+        <nav className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">{t("nav.management")}</span>
+          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium text-foreground">{t("hr.title")}</span>
+        </nav>
+
+        {/* Header */}
         <div>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("hr.title")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">
