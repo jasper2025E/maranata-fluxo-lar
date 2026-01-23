@@ -6,6 +6,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Secret key for cron job authentication
+const CRON_SECRET = Deno.env.get("CRON_SECRET_KEY");
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -16,6 +19,53 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // ============================================
+    // SECURITY: Only allow cron jobs OR platform_admin
+    // School admins MUST NOT be able to trigger this
+    // ============================================
+    const authHeader = req.headers.get("Authorization");
+    const cronSecretHeader = req.headers.get("x-cron-secret");
+    
+    let isAuthorized = false;
+
+    // Check 1: Cron job with secret key
+    if (cronSecretHeader && CRON_SECRET && cronSecretHeader === CRON_SECRET) {
+      isAuthorized = true;
+      console.log("Request authorized via CRON_SECRET");
+    }
+    // Check 2: Service role key (from pg_net/cron)
+    else if (authHeader?.includes(supabaseServiceKey)) {
+      isAuthorized = true;
+      console.log("Request authorized via service role key");
+    }
+    // Check 3: Platform admin user
+    else if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      
+      if (!authError && user) {
+        const { data: roleData } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", user.id)
+          .eq("role", "platform_admin")
+          .single();
+        
+        if (roleData) {
+          isAuthorized = true;
+          console.log("Request authorized via platform_admin:", user.email);
+        }
+      }
+    }
+
+    if (!isAuthorized) {
+      console.error("Unauthorized access attempt to process-expired-subscriptions");
+      return new Response(
+        JSON.stringify({ error: "Acesso não autorizado. Esta função é restrita ao sistema." }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const now = new Date();
     const results = {
