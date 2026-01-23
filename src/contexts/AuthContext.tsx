@@ -35,20 +35,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     isFetching.current = true;
-    lastFetchedUserId.current = userId;
+    // Only mark as fetched after a successful fetch. If we mark it here and the
+    // query errors, we can get stuck with role=null and no retries.
     
     try {
       const { data, error } = await supabase
         .from("user_roles")
         .select("role")
         .eq("user_id", userId)
-        .maybeSingle();
+        .order("role", { ascending: true });
 
       if (error) throw error;
-      setRole(data?.role ?? null);
+
+      // Support multiple roles per user (we always pick the highest privilege).
+      const roles = (data ?? []).map((r) => r.role) as AppRole[];
+      const rolePriority: AppRole[] = [
+        "platform_admin",
+        "admin",
+        "financeiro",
+        "secretaria",
+        "staff",
+      ];
+
+      const resolvedRole = rolePriority.find((rp) => roles.includes(rp)) ?? null;
+      setRole(resolvedRole);
+      lastFetchedUserId.current = userId;
     } catch (error) {
       console.error("Error fetching user role:", error);
       setRole(null);
+      // Allow retry on next auth event/page load
+      lastFetchedUserId.current = null;
     } finally {
       isFetching.current = false;
       setLoading(false);
