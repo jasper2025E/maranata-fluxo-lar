@@ -861,17 +861,8 @@ Para migração manual, importe as planilhas no novo sistema.
     switch (category) {
       case "academico": return "Acadêmico";
       case "financeiro": return "Financeiro";
-      case "administrativo": return "Administrativo / RH";
+      case "administrativo": return "Administrativo";
       default: return category;
-    }
-  };
-
-  const getCategoryColor = (category: string) => {
-    switch (category) {
-      case "academico": return "bg-blue-500/10 text-blue-600 border-blue-500/20";
-      case "financeiro": return "bg-emerald-500/10 text-emerald-600 border-emerald-500/20";
-      case "administrativo": return "bg-purple-500/10 text-purple-600 border-purple-500/20";
-      default: return "bg-muted";
     }
   };
 
@@ -882,218 +873,154 @@ Para migração manual, importe as planilhas no novo sistema.
   };
 
   return (
-    <Card className="border shadow-sm">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Database className="h-5 w-5 text-primary" />
-          Backup do Sistema
-        </CardTitle>
-        <CardDescription>
-          Exporte todos os dados do sistema em formato organizado e humanizado, pronto para migração.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Info Box */}
-        <div className="rounded-lg border border-primary/20 bg-primary/5 p-4">
-          <div className="flex items-start gap-3">
-            <FolderArchive className="h-5 w-5 text-primary mt-0.5" />
-            <div>
-              <p className="font-medium text-sm">Backup Organizado em ZIP</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                O backup gera um arquivo ZIP contendo: planilhas separadas por módulo, 
-                arquivos/fotos baixados, e um README explicativo. 
-                Dados são humanizados (nomes reais em vez de IDs).
-              </p>
-            </div>
-          </div>
+    <div className="space-y-5">
+      {/* Format Selection */}
+      <div className="space-y-2">
+        <Label className="text-xs font-medium text-muted-foreground">Formato</Label>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setExportFormat("xlsx")}
+            className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors ${
+              exportFormat === "xlsx"
+                ? "bg-primary/10 border-primary/30 text-foreground"
+                : "bg-background border-border text-muted-foreground hover:border-primary/30"
+            }`}
+          >
+            <FileSpreadsheet className="h-4 w-4" />
+            Excel
+          </button>
+          <button
+            onClick={() => setExportFormat("pdf")}
+            className={`flex items-center gap-2 px-3 py-2 rounded-md border text-sm transition-colors ${
+              exportFormat === "pdf"
+                ? "bg-primary/10 border-primary/30 text-foreground"
+                : "bg-background border-border text-muted-foreground hover:border-primary/30"
+            }`}
+          >
+            <FileText className="h-4 w-4" />
+            PDF
+          </button>
         </div>
+      </div>
 
-        {/* Format Selection */}
-        <div className="space-y-3">
-          <Label className="text-sm font-medium">Formato das Planilhas</Label>
-          <RadioGroup
-            value={exportFormat}
-            onValueChange={(v) => setExportFormat(v as "xlsx" | "pdf")}
-            className="flex gap-4"
-          >
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="xlsx" id="xlsx" />
-              <Label htmlFor="xlsx" className="flex items-center gap-2 cursor-pointer">
-                <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                <span>Excel (.xlsx)</span>
-                <Badge variant="secondary" className="text-xs">Recomendado</Badge>
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2">
-              <RadioGroupItem value="pdf" id="pdf" />
-              <Label htmlFor="pdf" className="flex items-center gap-2 cursor-pointer">
-                <FileText className="h-4 w-4 text-red-600" />
-                <span>PDF (Conferência)</span>
-              </Label>
-            </div>
-          </RadioGroup>
-          <p className="text-xs text-muted-foreground">
-            {exportFormat === "xlsx" 
-              ? "Excel: Ideal para migração. Dados estruturados e prontos para importação."
-              : "PDF: Ideal para conferência visual. Relatórios formatados para impressão."}
-          </p>
-        </div>
+      {/* Quick Actions */}
+      <div className="flex flex-wrap gap-1.5">
+        <Button
+          variant={allSelected ? "default" : "outline"}
+          size="sm"
+          onClick={toggleAll}
+          className="h-7 text-xs"
+        >
+          {allSelected ? "Desmarcar" : "Selecionar tudo"}
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => selectCategory("academico")}
+          className="h-7 text-xs"
+        >
+          Acadêmico
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => selectCategory("financeiro")}
+          className="h-7 text-xs"
+        >
+          Financeiro
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => selectCategory("administrativo")}
+          className="h-7 text-xs"
+        >
+          RH
+        </Button>
+      </div>
 
-        <Separator />
-
-        {/* Quick Actions */}
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={allSelected ? "default" : "outline"}
-            size="sm"
-            onClick={toggleAll}
-            className="gap-2"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            {allSelected ? "Desmarcar Tudo" : "Exportar Tudo"}
-          </Button>
-          <Separator orientation="vertical" className="h-8" />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => selectCategory("academico")}
-            className="gap-2"
-          >
-            <GraduationCap className="h-4 w-4" />
-            Acadêmico
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => selectCategory("financeiro")}
-            className="gap-2"
-          >
-            <DollarSign className="h-4 w-4" />
-            Financeiro
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => selectCategory("administrativo")}
-            className="gap-2"
-          >
-            <Building2 className="h-4 w-4" />
-            Administrativo
-          </Button>
-        </div>
-
-        <Separator />
-
-        {/* Module Selection */}
-        <div className="space-y-6">
-          {Object.entries(groupedModules).map(([category, modules]) => (
-            <div key={category} className="space-y-3">
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className={getCategoryColor(category)}>
+      {/* Module Selection */}
+      <div className="space-y-4">
+        {Object.entries(groupedModules).map(([category, modules]) => {
+          const selectedCount = modules.filter(m => selectedModules.has(m.id)).length;
+          return (
+            <div key={category} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-medium text-foreground">
                   {getCategoryLabel(category)}
-                </Badge>
+                </span>
                 <span className="text-xs text-muted-foreground">
-                  {modules.filter(m => selectedModules.has(m.id)).length} de {modules.length} selecionados
+                  {selectedCount}/{modules.length}
                 </span>
               </div>
               
-              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-1.5 sm:grid-cols-2">
                 {modules.map((module) => (
-                  <div
+                  <button
                     key={module.id}
-                    className={`flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer hover:bg-muted/50 ${
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-md border text-left transition-colors ${
                       selectedModules.has(module.id) 
                         ? "bg-primary/5 border-primary/30" 
-                        : "bg-background"
+                        : "bg-background border-border hover:border-primary/20"
                     }`}
                     onClick={() => toggleModule(module.id)}
                   >
                     <Checkbox
-                      id={module.id}
                       checked={selectedModules.has(module.id)}
                       onCheckedChange={() => toggleModule(module.id)}
-                      className="mt-0.5"
+                      className="pointer-events-none"
                     />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        {module.icon}
-                        <Label
-                          htmlFor={module.id}
-                          className="font-medium text-sm cursor-pointer"
-                        >
-                          {module.name}
-                        </Label>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                        {module.description}
+                    <div className="min-w-0">
+                      <p className="text-xs font-medium text-foreground truncate">
+                        {module.name}
                       </p>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
-          ))}
+          );
+        })}
+      </div>
+
+      {/* Export Progress */}
+      {exporting && (
+        <div className="space-y-2 py-2">
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-muted-foreground">{currentStep || "Preparando..."}</span>
+            <span className="font-medium text-foreground">{progress}%</span>
+          </div>
+          <Progress value={progress} className="h-1.5" />
         </div>
+      )}
 
-        <Separator />
+      {/* Export Complete Message */}
+      {exportComplete && !exporting && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400">
+          <CheckCircle2 className="h-4 w-4 shrink-0" />
+          <p className="text-xs">Backup baixado com sucesso</p>
+        </div>
+      )}
 
-        {/* Export Progress */}
-        {exporting && (
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-muted-foreground">Exportando...</span>
-              <span className="font-medium">{progress}%</span>
-            </div>
-            <Progress value={progress} className="h-2" />
-            {currentStep && (
-              <p className="text-xs text-muted-foreground">
-                {currentStep}
-              </p>
-            )}
-          </div>
+      {/* Export Button */}
+      <Button
+        onClick={handleExport}
+        disabled={exporting || selectedModules.size === 0}
+        className="w-full"
+        size="sm"
+      >
+        {exporting ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
+            Gerando... {progress}%
+          </>
+        ) : (
+          <>
+            <Download className="h-4 w-4 mr-1.5" />
+            Baixar backup ({selectedModules.size})
+          </>
         )}
-
-        {/* Export Complete Message */}
-        {exportComplete && !exporting && (
-          <div className="rounded-lg border border-green-500/20 bg-green-500/10 p-4">
-            <div className="flex items-center gap-3">
-              <CheckCircle2 className="h-5 w-5 text-green-600" />
-              <div>
-                <p className="font-medium text-sm text-green-700">Backup Gerado com Sucesso!</p>
-                <p className="text-xs text-green-600/80 mt-0.5">
-                  O arquivo ZIP foi baixado para sua pasta de downloads.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Export Button */}
-        <Button
-          onClick={handleExport}
-          disabled={exporting || selectedModules.size === 0}
-          className="w-full gap-2"
-          size="lg"
-        >
-          {exporting ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Gerando Backup... {progress}%
-            </>
-          ) : (
-            <>
-              <Download className="h-4 w-4" />
-              <FolderArchive className="h-4 w-4" />
-              Baixar Backup ZIP ({selectedModules.size} {selectedModules.size === 1 ? "módulo" : "módulos"})
-            </>
-          )}
-        </Button>
-
-        {/* Info Footer */}
-        <p className="text-xs text-muted-foreground text-center">
-          O backup contém planilhas organizadas, arquivos baixados e dados prontos para migração.
-        </p>
-      </CardContent>
-    </Card>
+      </Button>
+    </div>
   );
 }
