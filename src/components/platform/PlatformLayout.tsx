@@ -88,6 +88,11 @@ const navigation: NavSection[] = [
         ]
       },
       { 
+        icon: Activity, 
+        label: "Analytics", 
+        path: "/platform/analytics"
+      },
+      { 
         icon: BarChart3, 
         label: "Relatórios", 
         path: "/platform/logs"
