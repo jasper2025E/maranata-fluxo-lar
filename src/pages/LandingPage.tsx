@@ -228,7 +228,7 @@ export default function LandingPage() {
       <LandingContato config={config} />
       
       {/* Enrollment Form */}
-      <LandingInscricao config={config} cursos={cursosPublicos} utmParams={utmParams} />
+      <LandingInscricao config={config} cursos={cursosPublicos} tenantId={cursos?.[0]?.tenant_id} utmParams={utmParams} />
       
       {/* Footer */}
       <LandingFooter config={config} />

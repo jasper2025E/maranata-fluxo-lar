@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Separator } from "@/components/ui/separator";
-import { Plus, Trash2, Loader2, CreditCard, User, Users, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Loader2, User, Users, CheckCircle2, ClipboardCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { trackLeadStart, trackInitiateCheckout, trackPurchase } from "./LandingPixels";
@@ -35,11 +35,13 @@ interface Curso {
   nivel: string;
   mensalidade: number;
   duracao_meses: number;
+  tenant_id?: string;
 }
 
 interface LandingInscricaoProps {
   config: LandingConfig;
   cursos: Curso[];
+  tenantId?: string;
   utmParams: {
     source: string | null;
     medium: string | null;
@@ -71,12 +73,11 @@ const inscricaoSchema = z.object({
 
 type InscricaoFormValues = z.infer<typeof inscricaoSchema>;
 
-type Step = "responsavel" | "alunos" | "checkout" | "sucesso";
+type Step = "responsavel" | "alunos" | "confirmacao" | "sucesso";
 
-export function LandingInscricao({ config, cursos, utmParams }: LandingInscricaoProps) {
+export function LandingInscricao({ config, cursos, tenantId, utmParams }: LandingInscricaoProps) {
   const [step, setStep] = useState<Step>("responsavel");
   const [isLoading, setIsLoading] = useState(false);
-  const [checkoutUrl, setCheckoutUrl] = useState<string | null>(null);
 
   const form = useForm<InscricaoFormValues>({
     resolver: zodResolver(inscricaoSchema),
@@ -142,7 +143,7 @@ export function LandingInscricao({ config, cursos, utmParams }: LandingInscricao
     } else if (step === "alunos") {
       const isValid = await form.trigger("alunos");
       if (isValid) {
-        setStep("checkout");
+        setStep("confirmacao");
         trackInitiateCheckout(calcularTotal());
       }
     }
@@ -150,15 +151,24 @@ export function LandingInscricao({ config, cursos, utmParams }: LandingInscricao
 
   const handlePreviousStep = () => {
     if (step === "alunos") setStep("responsavel");
-    if (step === "checkout") setStep("alunos");
+    if (step === "confirmacao") setStep("alunos");
   };
 
   const onSubmit = async (data: InscricaoFormValues) => {
     setIsLoading(true);
     
     try {
-      // Call edge function to create checkout session
-      const { data: checkoutData, error } = await supabase.functions.invoke('create-enrollment-checkout', {
+      // Obter tenant_id do primeiro curso (todos são do mesmo tenant)
+      const firstCurso = cursos.find(c => c.id === data.alunos[0]?.curso_id);
+      const effectiveTenantId = tenantId || firstCurso?.tenant_id;
+
+      if (!effectiveTenantId) {
+        toast.error("Erro: escola não identificada");
+        return;
+      }
+
+      // Usar edge function para registrar pré-matrícula
+      const { data: result, error } = await supabase.functions.invoke('register-prematricula', {
         body: {
           responsavel: {
             nome: data.responsavel_nome,
@@ -171,24 +181,23 @@ export function LandingInscricao({ config, cursos, utmParams }: LandingInscricao
             data_nascimento: aluno.data_nascimento || null,
             curso_id: aluno.curso_id,
           })),
+          tenant_id: effectiveTenantId,
           utm_params: utmParams,
         },
       });
 
       if (error) throw error;
 
-      if (checkoutData?.url) {
-        setCheckoutUrl(checkoutData.url);
-        // Redirect to Stripe checkout
-        window.location.href = checkoutData.url;
-      } else if (checkoutData?.success) {
-        // Direct success (for testing or free plans)
-        trackPurchase(calcularTotal(), checkoutData.id);
+      if (result?.success) {
+        trackPurchase(calcularTotal(), result.responsavel_id || "unknown");
+        toast.success("Pré-matrícula registrada com sucesso!");
         setStep("sucesso");
+      } else {
+        throw new Error(result?.error || "Erro ao processar inscrição");
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Erro na inscrição:", error);
-      toast.error("Erro ao processar inscrição. Tente novamente.");
+      toast.error(error.message || "Erro ao processar inscrição. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -243,7 +252,7 @@ export function LandingInscricao({ config, cursos, utmParams }: LandingInscricao
             {[
               { id: "responsavel", label: "Responsável", icon: User },
               { id: "alunos", label: "Alunos", icon: Users },
-              { id: "checkout", label: "Pagamento", icon: CreditCard },
+              { id: "confirmacao", label: "Confirmação", icon: ClipboardCheck },
             ].map((s, index) => (
               <div key={s.id} className="flex items-center">
                 <div 
@@ -269,12 +278,12 @@ export function LandingInscricao({ config, cursos, utmParams }: LandingInscricao
             <CardTitle>
               {step === "responsavel" && "Dados do Responsável"}
               {step === "alunos" && "Dados dos Alunos"}
-              {step === "checkout" && "Finalizar Inscrição"}
+              {step === "confirmacao" && "Confirmar Pré-Matrícula"}
             </CardTitle>
             <CardDescription>
               {step === "responsavel" && "Preencha seus dados pessoais"}
               {step === "alunos" && "Adicione os alunos que deseja matricular"}
-              {step === "checkout" && "Revise os dados e finalize o pagamento"}
+              {step === "confirmacao" && "Revise os dados e confirme a pré-matrícula"}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -441,8 +450,8 @@ export function LandingInscricao({ config, cursos, utmParams }: LandingInscricao
                   </div>
                 )}
 
-                {/* Step 3: Checkout */}
-                {step === "checkout" && (
+                {/* Step 3: Confirmação */}
+                {step === "confirmacao" && (
                   <div className="space-y-6">
                     {/* Summary */}
                     <div className="bg-muted rounded-lg p-4">
@@ -517,7 +526,7 @@ export function LandingInscricao({ config, cursos, utmParams }: LandingInscricao
                     </Button>
                   )}
 
-                  {step !== "checkout" ? (
+                  {step !== "confirmacao" ? (
                     <Button
                       type="button"
                       onClick={handleNextStep}
@@ -538,8 +547,8 @@ export function LandingInscricao({ config, cursos, utmParams }: LandingInscricao
                         </>
                       ) : (
                         <>
-                          <CreditCard className="h-4 w-4 mr-2" />
-                          Ir para Pagamento
+                          <ClipboardCheck className="h-4 w-4 mr-2" />
+                          Confirmar Pré-Matrícula
                         </>
                       )}
                     </Button>
