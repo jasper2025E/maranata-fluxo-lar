@@ -20,7 +20,8 @@ const Auth = () => {
   const {
     user,
     signIn,
-    loading: authLoading
+    loading: authLoading,
+    isPlatformAdmin
   } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -57,13 +58,16 @@ const Auth = () => {
     fetchEscola();
   }, []);
 
-  // Redirect if already authenticated
-  if (user && !authLoading) {
-    navigate("/dashboard", {
-      replace: true
-    });
-    return null;
-  }
+  // Redirect if already authenticated - route based on role
+  useEffect(() => {
+    if (user && !authLoading) {
+      if (isPlatformAdmin()) {
+        navigate("/platform", { replace: true });
+      } else {
+        navigate("/dashboard", { replace: true });
+      }
+    }
+  }, [user, authLoading, isPlatformAdmin, navigate]);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
