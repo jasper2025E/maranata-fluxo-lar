@@ -22,7 +22,9 @@ serve(async (req) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Validate JWT
+    // ============================================
+    // SECURITY: Validate user is authenticated
+    // ============================================
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       throw new Error("Token de autorização não fornecido");
@@ -40,6 +42,35 @@ serve(async (req) => {
 
     if (!tenantId || !setupIntentId) {
       throw new Error("Dados obrigatórios não fornecidos");
+    }
+
+    // ============================================
+    // SECURITY: Verify user belongs to this tenant
+    // Only allow users from the same tenant OR platform_admin
+    // ============================================
+    const { data: userProfile } = await supabase
+      .from("profiles")
+      .select("tenant_id")
+      .eq("id", user.id)
+      .single();
+
+    const { data: isPlatformAdmin } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "platform_admin")
+      .single();
+
+    // User must belong to the tenant OR be a platform_admin
+    if (!isPlatformAdmin && userProfile?.tenant_id !== tenantId) {
+      console.error(`User ${user.id} attempted to save payment method for tenant ${tenantId} but belongs to ${userProfile?.tenant_id}`);
+      return new Response(
+        JSON.stringify({ error: "Acesso negado. Você não tem permissão para gerenciar esta escola." }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
 
     // Retrieve SetupIntent to get payment method
@@ -60,6 +91,20 @@ serve(async (req) => {
 
     if (setupIntent.status !== "succeeded") {
       throw new Error("SetupIntent não foi confirmado com sucesso");
+    }
+
+    // ============================================
+    // SECURITY: Verify SetupIntent belongs to this tenant
+    // ============================================
+    if (setupIntent.metadata?.tenant_id !== tenantId) {
+      console.error(`SetupIntent ${setupIntentId} belongs to tenant ${setupIntent.metadata?.tenant_id}, not ${tenantId}`);
+      return new Response(
+        JSON.stringify({ error: "SetupIntent não pertence a esta escola." }),
+        { 
+          status: 403, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
 
     const pmId = paymentMethodId || setupIntent.payment_method;
@@ -122,26 +167,35 @@ serve(async (req) => {
       throw new Error("Erro ao salvar método de pagamento");
     }
 
-    // Enable auto billing on tenant
+    // Enable auto billing on tenant and set billing day
+    const billingDay = new Date().getDate();
+    const nextBillingDate = new Date();
+    nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+    nextBillingDate.setDate(billingDay);
+
     await supabase
       .from("tenants")
       .update({ 
         auto_billing_enabled: true,
         stripe_customer_id: customerId,
+        billing_day: billingDay,
+        next_billing_date: nextBillingDate.toISOString(),
       })
       .eq("id", tenantId);
 
-    // Log to subscription history
+    // Log to subscription history with user info for audit
     await supabase.from("subscription_history").insert({
       tenant_id: tenantId,
       event_type: "payment_method_added",
       metadata: {
         card_brand: card.brand,
         card_last_four: card.last4,
+        added_by_user_id: user.id,
+        added_by_email: user.email,
       },
     });
 
-    console.log("Payment method saved successfully");
+    console.log("Payment method saved successfully for tenant:", tenantId);
 
     return new Response(
       JSON.stringify({
