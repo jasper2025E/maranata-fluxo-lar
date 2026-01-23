@@ -239,7 +239,7 @@ export function UpgradePlanDialog({
           (!validation.isValid && !validating) && "opacity-50 pointer-events-none"
         )}>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {plans.map((plan) => {
+            {plans.map((plan, index) => {
               const planOrder = getPlanOrder(plan.id);
               const isCurrentPlan = plan.id === currentPlan;
               const isUpgrade = planOrder > currentPlanOrder;
@@ -248,11 +248,12 @@ export function UpgradePlanDialog({
                 <div
                   key={plan.id}
                   className={cn(
-                    "relative rounded-lg border p-5 transition-all",
+                    "relative rounded-lg border p-5 transition-all duration-200 animate-fade-in",
                     isCurrentPlan
                       ? "border-foreground bg-muted/30"
-                      : "border-border hover:border-muted-foreground/50"
+                      : "border-border hover:border-muted-foreground/50 hover:shadow-sm"
                   )}
+                  style={{ animationDelay: `${index * 75}ms`, animationFillMode: 'both' }}
                 >
                   {/* Current Plan Indicator */}
                   {isCurrentPlan && (
