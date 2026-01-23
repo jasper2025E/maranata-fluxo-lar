@@ -316,12 +316,39 @@ export default function MinhaAssinatura() {
                         Assinante desde {format(new Date(subscription.subscription_started_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
                       </p>
                     )}
-                    {subscription.next_billing_date && (
-                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
-                        <Receipt className="h-3.5 w-3.5" />
-                        Próximo faturamento: {format(new Date(subscription.next_billing_date), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
-                      </p>
-                    )}
+                    {(() => {
+                      // Calculate next billing date
+                      let nextBillingDate: Date | null = null;
+                      
+                      if (subscription.next_billing_date) {
+                        nextBillingDate = new Date(subscription.next_billing_date);
+                      } else if (subscription.billing_day) {
+                        // Calculate based on billing_day
+                        const today = new Date();
+                        nextBillingDate = new Date(today.getFullYear(), today.getMonth(), subscription.billing_day);
+                        if (nextBillingDate <= today) {
+                          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+                        }
+                      } else if (subscription.subscription_started_at) {
+                        // Calculate 30 days from start or next month same day
+                        const startDate = new Date(subscription.subscription_started_at);
+                        const today = new Date();
+                        nextBillingDate = new Date(today.getFullYear(), today.getMonth(), startDate.getDate());
+                        if (nextBillingDate <= today) {
+                          nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+                        }
+                      }
+
+                      if (nextBillingDate) {
+                        return (
+                          <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                            <Receipt className="h-3.5 w-3.5" />
+                            Próximo faturamento: {format(nextBillingDate, "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                          </p>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                   <Button 
                     variant="outline"
