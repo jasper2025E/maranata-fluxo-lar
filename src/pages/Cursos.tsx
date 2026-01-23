@@ -201,18 +201,18 @@ const Cursos = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-8">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">{t("courses.title")}</h2>
-            <p className="text-muted-foreground mt-1.5">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">{t("courses.title")}</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
               {t("courses.description")}
             </p>
           </div>
           <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsOpen(open); }}>
             <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white shadow-sm">
+              <Button>
                 <Plus className="mr-2 h-4 w-4" />
                 {t("courses.newCourse")}
               </Button>

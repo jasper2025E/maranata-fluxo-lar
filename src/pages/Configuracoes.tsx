@@ -108,8 +108,8 @@ const Configuracoes = () => {
   if (!user) {
     return (
       <DashboardLayout>
-        <div className="space-y-6 max-w-4xl">
-          <Skeleton className="h-10 w-48" />
+        <div className="max-w-5xl mx-auto space-y-6">
+          <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-72" />
           <div className="space-y-4">
             <Skeleton className="h-12 w-full" />
@@ -122,15 +122,15 @@ const Configuracoes = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-4xl">
+      <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <h2 className="text-3xl font-bold tracking-tight text-foreground">Configurações</h2>
-          <p className="text-muted-foreground mt-1">
+          <h2 className="text-2xl font-bold tracking-tight text-foreground">Configurações</h2>
+          <p className="text-muted-foreground mt-1 text-sm">
             Gerencie sua conta e preferências do sistema
           </p>
         </motion.div>

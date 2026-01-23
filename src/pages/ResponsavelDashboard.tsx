@@ -230,14 +230,14 @@ const ResponsavelDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header with Actions */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 animate-fade-in">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight text-foreground">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">
               Dashboard Financeiro
             </h2>
-            <p className="text-muted-foreground mt-1">
+            <p className="text-muted-foreground mt-1 text-sm">
               Gestão de responsáveis e cobranças
             </p>
           </div>

@@ -500,29 +500,29 @@ const Relatorios = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold tracking-tight">Relatórios Financeiros</h2>
-            <p className="text-muted-foreground mt-1">
+            <h2 className="text-2xl font-bold tracking-tight text-foreground">Relatórios Financeiros</h2>
+            <p className="text-muted-foreground mt-1 text-sm">
               Análise completa com insights e exportação
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" onClick={exportarResumoFinanceiro} className="gap-2">
+            <Button variant="outline" size="sm" onClick={exportarResumoFinanceiro} className="gap-2">
               <Download className="h-4 w-4" />
               Resumo
             </Button>
-            <Button variant="outline" onClick={exportarReceitaMensal} className="gap-2">
+            <Button variant="outline" size="sm" onClick={exportarReceitaMensal} className="gap-2">
               <Download className="h-4 w-4" />
               Mensal
             </Button>
-            <Button variant="outline" onClick={exportarInadimplencia} className="gap-2">
+            <Button variant="outline" size="sm" onClick={exportarInadimplencia} className="gap-2">
               <Download className="h-4 w-4" />
               Inadimplência
             </Button>
-            <Button variant="outline" onClick={exportarPorCurso} className="gap-2">
+            <Button variant="outline" size="sm" onClick={exportarPorCurso} className="gap-2">
               <Download className="h-4 w-4" />
               Por Curso
             </Button>
