@@ -1,7 +1,5 @@
 import { useState, useEffect } from "react";
-import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
   Receipt,
   Download,
@@ -12,21 +10,18 @@ import {
   Clock,
   XCircle,
   TrendingUp,
-  Filter,
+  ChevronLeft,
   ChevronRight,
   Sparkles,
+  Loader2,
 } from "lucide-react";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { formatCurrency } from "@/lib/formatters";
 import { useAuth } from "@/contexts/AuthContext";
 import { useEscola } from "@/hooks/useEscola";
@@ -118,25 +113,22 @@ const planLabels: Record<string, string> = {
 };
 
 export default function FaturasAssinatura() {
-  const { t } = useTranslation();
   const { user, isPlatformAdmin } = useAuth();
   const navigate = useNavigate();
   const { data: escola } = useEscola();
   const [tenant, setTenant] = useState<TenantData | null>(null);
   const [events, setEvents] = useState<SubscriptionEvent[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filterType, setFilterType] = useState<string>("all");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+  const [exportingHistory, setExportingHistory] = useState(false);
   const [tenantId, setTenantId] = useState<string | null>(null);
 
-  // Platform admins should not access this page - redirect them
   useEffect(() => {
     if (isPlatformAdmin()) {
       navigate("/platform/subscriptions");
     }
   }, [isPlatformAdmin, navigate]);
 
-  // Fetch tenant_id from user's profile
   useEffect(() => {
     const fetchTenantId = async () => {
       if (!user?.id) {
@@ -156,7 +148,6 @@ export default function FaturasAssinatura() {
         const fetchedTenantId = profile?.tenant_id ?? null;
         setTenantId(fetchedTenantId);
         
-        // If no tenant_id found, stop loading here
         if (!fetchedTenantId) {
           setLoading(false);
         }
@@ -180,7 +171,6 @@ export default function FaturasAssinatura() {
     if (!tenantId) return;
 
     try {
-      // Fetch tenant data
       const { data: tenantData, error: tenantError } = await supabase
         .from("tenants")
         .select("id, nome, plano, email, cnpj, subscription_status, monthly_price, subscription_started_at")
@@ -190,7 +180,6 @@ export default function FaturasAssinatura() {
       if (tenantError) throw tenantError;
       setTenant(tenantData);
 
-      // Fetch all subscription events
       const { data: eventsData, error: eventsError } = await supabase
         .from("subscription_history")
         .select("*")
@@ -210,12 +199,6 @@ export default function FaturasAssinatura() {
   const paymentEvents = events.filter(
     e => e.event_type === "payment_received" || e.event_type === "activated"
   );
-
-  const filteredEvents = filterType === "all" 
-    ? events 
-    : filterType === "payments"
-    ? paymentEvents
-    : events.filter(e => e.event_type === filterType);
 
   const totalPago = paymentEvents.reduce((sum, e) => sum + (e.amount || 0), 0);
 
@@ -259,6 +242,7 @@ export default function FaturasAssinatura() {
   const handleDownloadHistory = async () => {
     if (!tenant) return;
 
+    setExportingHistory(true);
     try {
       await generateSubscriptionHistoryPDF(
         events.map(e => ({
@@ -287,20 +271,16 @@ export default function FaturasAssinatura() {
     } catch (error) {
       console.error("Error generating PDF:", error);
       toast.error("Erro ao gerar PDF");
+    } finally {
+      setExportingHistory(false);
     }
   };
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-8 w-64" />
-          <div className="grid gap-4 md:grid-cols-3">
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-            <Skeleton className="h-32" />
-          </div>
-          <Skeleton className="h-96" />
+        <div className="min-h-[60vh] flex items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       </DashboardLayout>
     );
@@ -322,230 +302,127 @@ export default function FaturasAssinatura() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-        >
-          <div>
-            <h2 className="text-2xl font-bold tracking-tight text-foreground">
-              Faturas da Assinatura
-            </h2>
-            <p className="text-muted-foreground mt-1">
-              Histórico de pagamentos e recibos do seu plano
-            </p>
-          </div>
-          <Button onClick={handleDownloadHistory} variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            Exportar Histórico
-          </Button>
-        </motion.div>
-
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-          >
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Plano Atual
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">
-                  {planLabels[tenant.plano] || tenant.plano}
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {formatCurrency(tenant.monthly_price || 0)}/mês
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Total Pago
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                  {formatCurrency(totalPago)}
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {paymentEvents.length} pagamentos
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  Assinante Desde
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">
-                  {tenant.subscription_started_at 
-                    ? format(new Date(tenant.subscription_started_at), "MMM yyyy", { locale: ptBR })
-                    : "-"
-                  }
-                </div>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {tenant.subscription_started_at 
-                    ? formatDistanceToNow(new Date(tenant.subscription_started_at), { addSuffix: true, locale: ptBR })
-                    : "Não iniciada"
-                  }
-                </p>
-              </CardContent>
-            </Card>
-          </motion.div>
-        </div>
-
-        {/* Tabs */}
-        <Tabs defaultValue="payments" className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <TabsList>
-              <TabsTrigger value="payments" className="gap-2">
-                <Receipt className="h-4 w-4" />
-                Pagamentos
-              </TabsTrigger>
-              <TabsTrigger value="history" className="gap-2">
-                <FileText className="h-4 w-4" />
-                Histórico Completo
-              </TabsTrigger>
-            </TabsList>
-
-            <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="w-[200px]">
-                <Filter className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filtrar eventos" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Todos os eventos</SelectItem>
-                <SelectItem value="payments">Apenas pagamentos</SelectItem>
-                <SelectItem value="activated">Ativações</SelectItem>
-                <SelectItem value="subscription_updated">Atualizações</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Shopify-style layout */}
+      <div className="min-h-screen bg-[#f6f6f7]">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          {/* Breadcrumb */}
+          <div className="flex items-center gap-2 text-sm mb-6">
+            <button 
+              onClick={() => navigate("/assinatura")}
+              className="text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
+            <span className="text-muted-foreground">Assinatura</span>
+            <ChevronRight className="h-3 w-3 text-muted-foreground" />
+            <span className="text-foreground font-medium">Faturas</span>
           </div>
 
-          {/* Payments Tab */}
-          <TabsContent value="payments">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Receipt className="h-5 w-5 text-primary" />
-                  Pagamentos Recebidos
-                </CardTitle>
-                <CardDescription>
-                  Histórico de pagamentos da sua assinatura com opção de download
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+          {/* Page Title */}
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-xl font-semibold text-foreground">Faturas da Assinatura</h1>
+            <button
+              onClick={handleDownloadHistory}
+              disabled={exportingHistory}
+              className="text-sm text-primary hover:underline font-medium disabled:opacity-50"
+            >
+              {exportingHistory ? (
+                <span className="flex items-center gap-1">
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                  Exportando...
+                </span>
+              ) : (
+                "Exportar histórico"
+              )}
+            </button>
+          </div>
+
+          {/* Two Column Layout */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left Column - Main Content */}
+            <div className="lg:col-span-2 space-y-4">
+              {/* Payments Card */}
+              <div className="bg-background rounded-lg border border-border">
+                <div className="p-5 border-b border-border">
+                  <h3 className="text-sm font-semibold text-foreground">Pagamentos</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Histórico de pagamentos da sua assinatura
+                  </p>
+                </div>
+
                 {paymentEvents.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Receipt className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-muted-foreground">Nenhum pagamento registrado</p>
+                  <div className="p-8 text-center">
+                    <Receipt className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">Nenhum pagamento registrado</p>
                   </div>
                 ) : (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Descrição</TableHead>
-                        <TableHead>Valor</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {paymentEvents.map((event, index) => {
-                        const config = eventConfig[event.event_type] || eventConfig.payment_received;
-                        return (
-                          <motion.tr
-                            key={event.id}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ delay: index * 0.05 }}
-                            className="group"
-                          >
-                            <TableCell className="font-medium">
-                              {format(new Date(event.created_at), "dd/MM/yyyy")}
-                            </TableCell>
-                            <TableCell>
-                              <div className="flex items-center gap-2">
-                                <span className={config.color}>{config.icon}</span>
-                                {config.label}
-                              </div>
-                            </TableCell>
-                            <TableCell className="font-semibold text-emerald-600 dark:text-emerald-400">
-                              {formatCurrency(event.amount || 0)}
-                            </TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  <div className="divide-y divide-border">
+                    {paymentEvents.map((event) => {
+                      const config = eventConfig[event.event_type] || eventConfig.payment_received;
+                      return (
+                        <div 
+                          key={event.id}
+                          className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors group"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 bg-muted/50 rounded-lg ${config.color}`}>
+                              {config.icon}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{config.label}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {format(new Date(event.created_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="text-right">
+                              <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                                {formatCurrency(event.amount || 0)}
+                              </p>
+                              <Badge 
+                                variant="secondary" 
+                                className="text-[10px] bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                              >
                                 Pago
                               </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleDownloadInvoice(event)}
-                                disabled={downloadingId === event.id}
-                                className="gap-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
+                            </div>
+                            <button
+                              onClick={() => handleDownloadInvoice(event)}
+                              disabled={downloadingId === event.id}
+                              className="text-sm text-primary hover:underline font-medium opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
+                            >
+                              {downloadingId === event.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
                                 <Download className="h-4 w-4" />
-                                PDF
-                              </Button>
-                            </TableCell>
-                          </motion.tr>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
 
-          {/* History Tab */}
-          <TabsContent value="history">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-primary" />
-                  Histórico Completo
-                </CardTitle>
-                <CardDescription>
-                  Todos os eventos relacionados à sua assinatura
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {filteredEvents.length === 0 ? (
-                  <div className="text-center py-12">
-                    <FileText className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
-                    <p className="text-muted-foreground">Nenhum evento encontrado</p>
+              {/* All Events Card */}
+              <div className="bg-background rounded-lg border border-border">
+                <div className="p-5 border-b border-border">
+                  <h3 className="text-sm font-semibold text-foreground">Histórico completo</h3>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Todos os eventos da sua assinatura
+                  </p>
+                </div>
+
+                {events.length === 0 ? (
+                  <div className="p-8 text-center">
+                    <FileText className="h-10 w-10 text-muted-foreground/30 mx-auto mb-3" />
+                    <p className="text-sm text-muted-foreground">Nenhum evento registrado</p>
                   </div>
                 ) : (
-                  <div className="space-y-3">
-                    {filteredEvents.map((event, index) => {
+                  <div className="divide-y divide-border">
+                    {events.map((event) => {
                       const config = eventConfig[event.event_type] || {
                         label: event.event_type,
                         icon: <ChevronRight className="h-4 w-4" />,
@@ -553,51 +430,95 @@ export default function FaturasAssinatura() {
                       };
 
                       return (
-                        <motion.div
-                          key={`${event.id}-${index}`}
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: index * 0.03 }}
-                          className="flex items-start gap-4 p-4 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                        <div 
+                          key={event.id}
+                          className="flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
                         >
-                          <div className={`p-2 bg-background rounded-lg shadow-sm ${config.color}`}>
-                            {config.icon}
+                          <div className="flex items-center gap-3">
+                            <div className={`p-2 bg-muted/50 rounded-lg ${config.color}`}>
+                              {config.icon}
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-foreground">{config.label}</p>
+                              {event.new_status && (
+                                <Badge variant="outline" className="text-[10px] mt-1">
+                                  {event.new_status}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-foreground">{config.label}</p>
+                          <div className="text-right">
                             {event.amount && event.amount > 0 && (
                               <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
                                 {formatCurrency(event.amount)}
                               </p>
                             )}
-                            {event.metadata && typeof event.metadata === 'object' && 'message' in event.metadata && (
-                              <p className="text-sm text-muted-foreground mt-1">
-                                {String(event.metadata.message)}
-                              </p>
-                            )}
-                            {event.new_status && (
-                              <Badge variant="outline" className="mt-2">
-                                Status: {event.new_status}
-                              </Badge>
-                            )}
-                          </div>
-                          <div className="text-right shrink-0">
-                            <p className="text-sm text-muted-foreground">
-                              {format(new Date(event.created_at), "dd/MM/yyyy")}
-                            </p>
-                            <p className="text-xs text-muted-foreground/70">
-                              {format(new Date(event.created_at), "HH:mm")}
+                            <p className="text-xs text-muted-foreground">
+                              {format(new Date(event.created_at), "dd/MM/yyyy HH:mm")}
                             </p>
                           </div>
-                        </motion.div>
+                        </div>
                       );
                     })}
                   </div>
                 )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+              </div>
+            </div>
+
+            {/* Right Column - Summary */}
+            <div className="lg:col-span-1">
+              <div className="bg-background rounded-lg border border-border sticky top-6">
+                <div className="p-5 border-b border-border">
+                  <h3 className="text-sm font-semibold text-foreground">Resumo</h3>
+                </div>
+
+                <div className="p-5 space-y-4">
+                  {/* Plan */}
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Plano atual</p>
+                    <p className="text-sm font-semibold text-foreground mt-1">
+                      {planLabels[tenant.plano] || tenant.plano}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatCurrency(tenant.monthly_price || 0)}/mês
+                    </p>
+                  </div>
+
+                  <div className="border-t border-border pt-4">
+                    <p className="text-xs text-muted-foreground uppercase tracking-wide">Total pago</p>
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400 mt-1">
+                      {formatCurrency(totalPago)}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {paymentEvents.length} pagamento{paymentEvents.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+
+                  {tenant.subscription_started_at && (
+                    <div className="border-t border-border pt-4">
+                      <p className="text-xs text-muted-foreground uppercase tracking-wide">Assinante desde</p>
+                      <p className="text-sm font-medium text-foreground mt-1">
+                        {format(new Date(tenant.subscription_started_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatDistanceToNow(new Date(tenant.subscription_started_at), { addSuffix: true, locale: ptBR })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="p-5 border-t border-border">
+                  <Button 
+                    onClick={() => navigate("/assinatura")}
+                    className="w-full bg-foreground text-background hover:bg-foreground/90"
+                  >
+                    Voltar para Assinatura
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
