@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { 
   Users, 
   Search, 
@@ -11,7 +11,12 @@ import {
   UserPlus,
   Pencil,
   Trash2,
-  Filter
+  Filter,
+  X,
+  Link,
+  Unlink,
+  CheckSquare,
+  Square
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,6 +25,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
 import {
   Select,
   SelectContent,
@@ -101,6 +108,14 @@ export default function PlatformUsers() {
   const [selectedTenant, setSelectedTenant] = useState<string>("all");
   const [selectedRole, setSelectedRole] = useState<string>("all");
   
+  // Bulk selection states
+  const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
+  const [bulkActionLoading, setBulkActionLoading] = useState(false);
+  const [bulkActionProgress, setBulkActionProgress] = useState(0);
+  const [bulkLinkDialogOpen, setBulkLinkDialogOpen] = useState(false);
+  const [bulkUnlinkDialogOpen, setBulkUnlinkDialogOpen] = useState(false);
+  const [bulkTargetTenant, setBulkTargetTenant] = useState("");
+  
   // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -143,7 +158,6 @@ export default function PlatformUsers() {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      // Fetch profiles with tenant info
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
         .select(`
@@ -158,14 +172,12 @@ export default function PlatformUsers() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch all user roles
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("user_id, role");
 
       if (rolesError) throw rolesError;
 
-      // Create a map of user_id to highest role
       const roleMap = new Map<string, AppRole>();
       const rolePriority: AppRole[] = ["platform_admin", "admin", "financeiro", "secretaria", "staff"];
       
@@ -179,7 +191,6 @@ export default function PlatformUsers() {
         }
       });
 
-      // Combine data
       const combinedUsers: PlatformUser[] = (profiles || []).map(profile => ({
         id: profile.id,
         email: profile.email,
@@ -196,6 +207,110 @@ export default function PlatformUsers() {
       toast.error("Erro ao carregar usuários");
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Bulk selection handlers
+  const toggleUserSelection = (userId: string) => {
+    setSelectedUserIds(prev => {
+      const next = new Set(prev);
+      if (next.has(userId)) {
+        next.delete(userId);
+      } else {
+        next.add(userId);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    const selectableUsers = filteredUsers.filter(u => u.role !== "platform_admin");
+    if (selectedUserIds.size === selectableUsers.length) {
+      setSelectedUserIds(new Set());
+    } else {
+      setSelectedUserIds(new Set(selectableUsers.map(u => u.id)));
+    }
+  };
+
+  const clearSelection = () => {
+    setSelectedUserIds(new Set());
+  };
+
+  // Bulk action handlers
+  const handleBulkLink = async () => {
+    if (!bulkTargetTenant || selectedUserIds.size === 0) return;
+
+    setBulkActionLoading(true);
+    setBulkActionProgress(0);
+    
+    const userIds = Array.from(selectedUserIds);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < userIds.length; i++) {
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ tenant_id: bulkTargetTenant })
+          .eq("id", userIds[i]);
+
+        if (error) throw error;
+        successCount++;
+      } catch (error) {
+        console.error("Error linking user:", error);
+        errorCount++;
+      }
+      setBulkActionProgress(((i + 1) / userIds.length) * 100);
+    }
+
+    setBulkActionLoading(false);
+    setBulkLinkDialogOpen(false);
+    setBulkTargetTenant("");
+    clearSelection();
+    fetchUsers();
+
+    if (errorCount === 0) {
+      toast.success(`${successCount} usuário(s) vinculado(s) com sucesso!`);
+    } else {
+      toast.warning(`${successCount} vinculado(s), ${errorCount} erro(s)`);
+    }
+  };
+
+  const handleBulkUnlink = async () => {
+    if (selectedUserIds.size === 0) return;
+
+    setBulkActionLoading(true);
+    setBulkActionProgress(0);
+    
+    const userIds = Array.from(selectedUserIds);
+    let successCount = 0;
+    let errorCount = 0;
+
+    for (let i = 0; i < userIds.length; i++) {
+      try {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ tenant_id: null })
+          .eq("id", userIds[i]);
+
+        if (error) throw error;
+        successCount++;
+      } catch (error) {
+        console.error("Error unlinking user:", error);
+        errorCount++;
+      }
+      setBulkActionProgress(((i + 1) / userIds.length) * 100);
+    }
+
+    setBulkActionLoading(false);
+    setBulkUnlinkDialogOpen(false);
+    clearSelection();
+    fetchUsers();
+
+    if (errorCount === 0) {
+      toast.success(`${successCount} usuário(s) desvinculado(s) com sucesso!`);
+    } else {
+      toast.warning(`${successCount} desvinculado(s), ${errorCount} erro(s)`);
     }
   };
 
@@ -256,7 +371,6 @@ export default function PlatformUsers() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      // Update tenant_id separately if changed
       if (formData.tenant_id !== (selectedUser.tenant_id || "")) {
         await supabase
           .from("profiles")
@@ -357,6 +471,11 @@ export default function PlatformUsers() {
     withoutTenant: users.filter(u => !u.tenant_id).length,
   };
 
+  // Bulk selection stats
+  const selectableCount = filteredUsers.filter(u => u.role !== "platform_admin").length;
+  const isAllSelected = selectableCount > 0 && selectedUserIds.size === selectableCount;
+  const isSomeSelected = selectedUserIds.size > 0;
+
   if (!isPlatformAdmin()) {
     return null;
   }
@@ -391,6 +510,68 @@ export default function PlatformUsers() {
             Novo Usuário
           </Button>
         </motion.div>
+
+        {/* Bulk Actions Bar */}
+        <AnimatePresence>
+          {isSomeSelected && (
+            <motion.div
+              initial={{ opacity: 0, y: -10, height: 0 }}
+              animate={{ opacity: 1, y: 0, height: "auto" }}
+              exit={{ opacity: 0, y: -10, height: 0 }}
+              className="overflow-hidden"
+            >
+              <Card className="bg-amber-500/10 border-amber-500/30">
+                <CardContent className="py-3 px-4">
+                  <div className="flex items-center justify-between flex-wrap gap-3">
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="bg-amber-500/20 text-amber-300 border-amber-500/40">
+                        {selectedUserIds.size} selecionado(s)
+                      </Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={clearSelection}
+                        className="text-slate-400 hover:text-white h-8"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Limpar
+                      </Button>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setBulkLinkDialogOpen(true)}
+                        disabled={bulkActionLoading}
+                        className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8"
+                      >
+                        <Link className="h-4 w-4 mr-1" />
+                        Vincular a Escola
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setBulkUnlinkDialogOpen(true)}
+                        disabled={bulkActionLoading}
+                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8"
+                      >
+                        <Unlink className="h-4 w-4 mr-1" />
+                        Desvincular
+                      </Button>
+                    </div>
+                  </div>
+
+                  {bulkActionLoading && (
+                    <div className="mt-3">
+                      <Progress value={bulkActionProgress} className="h-1 bg-slate-700" />
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Stats Cards */}
         <motion.div
@@ -503,6 +684,19 @@ export default function PlatformUsers() {
               <Table>
                 <TableHeader>
                   <TableRow className="border-slate-700 hover:bg-transparent">
+                    <TableHead className="w-12 text-slate-400">
+                      <button
+                        onClick={toggleSelectAll}
+                        className="flex items-center justify-center h-8 w-8 hover:bg-slate-700 rounded transition-colors"
+                        disabled={selectableCount === 0}
+                      >
+                        {isAllSelected ? (
+                          <CheckSquare className="h-4 w-4 text-amber-400" />
+                        ) : (
+                          <Square className="h-4 w-4 text-slate-400" />
+                        )}
+                      </button>
+                    </TableHead>
                     <TableHead className="text-slate-400">Usuário</TableHead>
                     <TableHead className="text-slate-400">Cargo</TableHead>
                     <TableHead className="text-slate-400">Escola</TableHead>
@@ -513,80 +707,175 @@ export default function PlatformUsers() {
                 <TableBody>
                   {loading ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-10 text-slate-400">
+                      <TableCell colSpan={6} className="text-center py-10 text-slate-400">
                         <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
                         Carregando usuários...
                       </TableCell>
                     </TableRow>
                   ) : filteredUsers.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-10 text-slate-400">
+                      <TableCell colSpan={6} className="text-center py-10 text-slate-400">
                         Nenhum usuário encontrado
                       </TableCell>
                     </TableRow>
                   ) : (
-                    filteredUsers.map((user) => (
-                      <TableRow key={user.id} className="border-slate-700 hover:bg-slate-700/50">
-                        <TableCell>
-                          <div className="flex flex-col">
-                            <span className="font-medium text-white">{user.nome}</span>
-                            <span className="text-sm text-slate-400 flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {user.email}
+                    filteredUsers.map((user) => {
+                      const isSelectable = user.role !== "platform_admin";
+                      const isSelected = selectedUserIds.has(user.id);
+                      
+                      return (
+                        <TableRow 
+                          key={user.id} 
+                          className={`border-slate-700 hover:bg-slate-700/50 ${isSelected ? "bg-amber-500/5" : ""}`}
+                        >
+                          <TableCell>
+                            {isSelectable ? (
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() => toggleUserSelection(user.id)}
+                                className="border-slate-600 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                              />
+                            ) : (
+                              <div className="h-4 w-4" />
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium text-white">{user.nome}</span>
+                              <span className="text-sm text-slate-400 flex items-center gap-1">
+                                <Mail className="h-3 w-3" />
+                                {user.email}
+                              </span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`${roleBadgeVariants[user.role]} border`}>
+                              <Shield className="h-3 w-3 mr-1" />
+                              {roleLabels[user.role]}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            {user.tenant_nome ? (
+                              <span className="text-slate-300 flex items-center gap-1">
+                                <Building2 className="h-3 w-3 text-slate-400" />
+                                {user.tenant_nome}
+                              </span>
+                            ) : (
+                              <span className="text-slate-500 italic">Sem escola</span>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-slate-400 flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {format(new Date(user.created_at), "dd/MM/yyyy", { locale: ptBR })}
                             </span>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${roleBadgeVariants[user.role]} border`}>
-                            <Shield className="h-3 w-3 mr-1" />
-                            {roleLabels[user.role]}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {user.tenant_nome ? (
-                            <span className="text-slate-300 flex items-center gap-1">
-                              <Building2 className="h-3 w-3 text-slate-400" />
-                              {user.tenant_nome}
-                            </span>
-                          ) : (
-                            <span className="text-slate-500 italic">Sem escola</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-slate-400 flex items-center gap-1">
-                            <Calendar className="h-3 w-3" />
-                            {format(new Date(user.created_at), "dd/MM/yyyy", { locale: ptBR })}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openEditDialog(user)}
-                              className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-700"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openDeleteDialog(user)}
-                              disabled={user.role === "platform_admin"}
-                              className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-50"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    ))
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openEditDialog(user)}
+                                className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-700"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => openDeleteDialog(user)}
+                                disabled={user.role === "platform_admin"}
+                                className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })
                   )}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Bulk Link Dialog */}
+        <Dialog open={bulkLinkDialogOpen} onOpenChange={setBulkLinkDialogOpen}>
+          <DialogContent className="bg-slate-900 border-slate-700 text-white">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Link className="h-5 w-5 text-emerald-400" />
+                Vincular Usuários a Escola
+              </DialogTitle>
+              <DialogDescription className="text-slate-400">
+                Selecione a escola para vincular os {selectedUserIds.size} usuário(s) selecionado(s).
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="py-4">
+              <Label className="text-slate-300">Escola de Destino</Label>
+              <Select value={bulkTargetTenant} onValueChange={setBulkTargetTenant}>
+                <SelectTrigger className="mt-2 bg-slate-800 border-slate-700 text-white">
+                  <SelectValue placeholder="Selecione uma escola" />
+                </SelectTrigger>
+                <SelectContent className="bg-slate-800 border-slate-700">
+                  {tenants.map(tenant => (
+                    <SelectItem key={tenant.id} value={tenant.id} className="text-white">
+                      {tenant.nome}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <DialogFooter>
+              <Button
+                variant="outline"
+                onClick={() => setBulkLinkDialogOpen(false)}
+                className="border-slate-700 text-slate-300"
+              >
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleBulkLink}
+                disabled={!bulkTargetTenant || bulkActionLoading}
+                className="bg-emerald-600 hover:bg-emerald-700"
+              >
+                {bulkActionLoading ? "Vinculando..." : "Vincular"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Bulk Unlink Dialog */}
+        <AlertDialog open={bulkUnlinkDialogOpen} onOpenChange={setBulkUnlinkDialogOpen}>
+          <AlertDialogContent className="bg-slate-900 border-slate-700">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="text-white flex items-center gap-2">
+                <Unlink className="h-5 w-5 text-red-400" />
+                Desvincular Usuários
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-slate-400">
+                Tem certeza que deseja desvincular os {selectedUserIds.size} usuário(s) selecionado(s) de suas escolas?
+                Eles ficarão sem escola vinculada.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel className="border-slate-700 text-slate-300">
+                Cancelar
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleBulkUnlink}
+                disabled={bulkActionLoading}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                {bulkActionLoading ? "Desvinculando..." : "Desvincular"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Create User Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
