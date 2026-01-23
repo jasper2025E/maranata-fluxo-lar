@@ -3,6 +3,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { LanguageSelector } from "./LanguageSelector";
+import { GracePeriodBanner } from "./GracePeriodBanner";
 import { Bell, Search, Clock, Info, AlertTriangle, CheckCircle2, Check } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
@@ -123,6 +124,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
       <div className="min-h-screen flex w-full bg-background">
         <AppSidebar />
         <div className="flex-1 flex flex-col transition-[margin] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+          {/* Grace Period Warning Banner */}
+          <GracePeriodBanner />
+          
           {/* Premium Header */}
           <header className="h-16 border-b border-border/50 bg-card/95 backdrop-blur-sm flex items-center justify-between px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4">

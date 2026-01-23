@@ -29,6 +29,7 @@ export type Database = {
           responsavel_id: string | null
           status_matricula: Database["public"]["Enums"]["aluno_status"] | null
           telefone_responsavel: string | null
+          tenant_id: string | null
           turma_id: string | null
           updated_at: string | null
         }
@@ -46,6 +47,7 @@ export type Database = {
           responsavel_id?: string | null
           status_matricula?: Database["public"]["Enums"]["aluno_status"] | null
           telefone_responsavel?: string | null
+          tenant_id?: string | null
           turma_id?: string | null
           updated_at?: string | null
         }
@@ -63,6 +65,7 @@ export type Database = {
           responsavel_id?: string | null
           status_matricula?: Database["public"]["Enums"]["aluno_status"] | null
           telefone_responsavel?: string | null
+          tenant_id?: string | null
           turma_id?: string | null
           updated_at?: string | null
         }
@@ -79,6 +82,13 @@ export type Database = {
             columns: ["responsavel_id"]
             isOneToOne: false
             referencedRelation: "responsaveis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "alunos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
           {
@@ -188,6 +198,7 @@ export type Database = {
           nome: string
           salario_base: number
           setor_id: string | null
+          tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -198,6 +209,7 @@ export type Database = {
           nome: string
           salario_base?: number
           setor_id?: string | null
+          tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -208,6 +220,7 @@ export type Database = {
           nome?: string
           salario_base?: number
           setor_id?: string | null
+          tenant_id?: string | null
           updated_at?: string | null
         }
         Relationships: [
@@ -216,6 +229,13 @@ export type Database = {
             columns: ["setor_id"]
             isOneToOne: false
             referencedRelation: "setores"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cargos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -232,6 +252,7 @@ export type Database = {
           id: string
           observacoes: string | null
           salario: number
+          tenant_id: string | null
           tipo: Database["public"]["Enums"]["contrato_tipo"]
           updated_at: string | null
         }
@@ -246,6 +267,7 @@ export type Database = {
           id?: string
           observacoes?: string | null
           salario: number
+          tenant_id?: string | null
           tipo?: Database["public"]["Enums"]["contrato_tipo"]
           updated_at?: string | null
         }
@@ -260,6 +282,7 @@ export type Database = {
           id?: string
           observacoes?: string | null
           salario?: number
+          tenant_id?: string | null
           tipo?: Database["public"]["Enums"]["contrato_tipo"]
           updated_at?: string | null
         }
@@ -269,6 +292,13 @@ export type Database = {
             columns: ["funcionario_id"]
             isOneToOne: false
             referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contratos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -282,6 +312,7 @@ export type Database = {
           mensalidade: number
           nivel: string
           nome: string
+          tenant_id: string | null
         }
         Insert: {
           ativo?: boolean | null
@@ -291,6 +322,7 @@ export type Database = {
           mensalidade: number
           nivel: string
           nome: string
+          tenant_id?: string | null
         }
         Update: {
           ativo?: boolean | null
@@ -300,8 +332,17 @@ export type Database = {
           mensalidade?: number
           nivel?: string
           nome?: string
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "cursos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       despesas: {
         Row: {
@@ -313,6 +354,7 @@ export type Database = {
           observacoes: string | null
           paga: boolean | null
           recorrente: boolean | null
+          tenant_id: string | null
           titulo: string
           updated_at: string | null
           valor: number
@@ -326,6 +368,7 @@ export type Database = {
           observacoes?: string | null
           paga?: boolean | null
           recorrente?: boolean | null
+          tenant_id?: string | null
           titulo: string
           updated_at?: string | null
           valor: number
@@ -339,11 +382,20 @@ export type Database = {
           observacoes?: string | null
           paga?: boolean | null
           recorrente?: boolean | null
+          tenant_id?: string | null
           titulo?: string
           updated_at?: string | null
           valor?: number
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "despesas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       escola: {
         Row: {
@@ -425,6 +477,7 @@ export type Database = {
           fatura_id: string
           id: string
           percentual: number | null
+          tenant_id: string | null
           tipo: string
           valor: number | null
           valor_aplicado: number
@@ -437,6 +490,7 @@ export type Database = {
           fatura_id: string
           id?: string
           percentual?: number | null
+          tenant_id?: string | null
           tipo: string
           valor?: number | null
           valor_aplicado: number
@@ -449,6 +503,7 @@ export type Database = {
           fatura_id?: string
           id?: string
           percentual?: number | null
+          tenant_id?: string | null
           tipo?: string
           valor?: number | null
           valor_aplicado?: number
@@ -461,6 +516,13 @@ export type Database = {
             referencedRelation: "faturas"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fatura_descontos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
         ]
       }
       fatura_documentos: {
@@ -470,6 +532,7 @@ export type Database = {
           fatura_id: string
           id: string
           nome: string
+          tenant_id: string | null
           tipo: string
           url: string
         }
@@ -479,6 +542,7 @@ export type Database = {
           fatura_id: string
           id?: string
           nome: string
+          tenant_id?: string | null
           tipo: string
           url: string
         }
@@ -488,6 +552,7 @@ export type Database = {
           fatura_id?: string
           id?: string
           nome?: string
+          tenant_id?: string | null
           tipo?: string
           url?: string
         }
@@ -497,6 +562,13 @@ export type Database = {
             columns: ["fatura_id"]
             isOneToOne: false
             referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatura_documentos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -512,6 +584,7 @@ export type Database = {
           id: string
           ip_address: string | null
           motivo: string | null
+          tenant_id: string | null
           user_agent: string | null
           versao: number
         }
@@ -525,6 +598,7 @@ export type Database = {
           id?: string
           ip_address?: string | null
           motivo?: string | null
+          tenant_id?: string | null
           user_agent?: string | null
           versao: number
         }
@@ -538,6 +612,7 @@ export type Database = {
           id?: string
           ip_address?: string | null
           motivo?: string | null
+          tenant_id?: string | null
           user_agent?: string | null
           versao?: number
         }
@@ -547,6 +622,13 @@ export type Database = {
             columns: ["fatura_id"]
             isOneToOne: false
             referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatura_historico_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -565,6 +647,7 @@ export type Database = {
           ordem: number | null
           quantidade: number
           subtotal: number
+          tenant_id: string | null
           valor_final: number
           valor_unitario: number
         }
@@ -581,6 +664,7 @@ export type Database = {
           ordem?: number | null
           quantidade?: number
           subtotal: number
+          tenant_id?: string | null
           valor_final: number
           valor_unitario: number
         }
@@ -597,6 +681,7 @@ export type Database = {
           ordem?: number | null
           quantidade?: number
           subtotal?: number
+          tenant_id?: string | null
           valor_final?: number
           valor_unitario?: number
         }
@@ -606,6 +691,13 @@ export type Database = {
             columns: ["fatura_id"]
             isOneToOne: false
             referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatura_itens_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -649,6 +741,7 @@ export type Database = {
           status: string
           stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
+          tenant_id: string | null
           updated_at: string | null
           updated_by: string | null
           valor: number
@@ -699,6 +792,7 @@ export type Database = {
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
+          tenant_id?: string | null
           updated_at?: string | null
           updated_by?: string | null
           valor: number
@@ -749,6 +843,7 @@ export type Database = {
           status?: string
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
+          tenant_id?: string | null
           updated_at?: string | null
           updated_by?: string | null
           valor?: number
@@ -783,6 +878,13 @@ export type Database = {
             referencedRelation: "responsaveis"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "faturas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
         ]
       }
       folha_pagamento: {
@@ -807,6 +909,7 @@ export type Database = {
           outros_adicionais: number | null
           pago: boolean | null
           salario_base: number
+          tenant_id: string | null
           total_bruto: number
           total_liquido: number
           updated_at: string | null
@@ -832,6 +935,7 @@ export type Database = {
           outros_adicionais?: number | null
           pago?: boolean | null
           salario_base: number
+          tenant_id?: string | null
           total_bruto: number
           total_liquido: number
           updated_at?: string | null
@@ -857,6 +961,7 @@ export type Database = {
           outros_adicionais?: number | null
           pago?: boolean | null
           salario_base?: number
+          tenant_id?: string | null
           total_bruto?: number
           total_liquido?: number
           updated_at?: string | null
@@ -876,6 +981,13 @@ export type Database = {
             referencedRelation: "funcionarios"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "folha_pagamento_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
         ]
       }
       funcionario_documentos: {
@@ -884,6 +996,7 @@ export type Database = {
           funcionario_id: string
           id: string
           nome: string
+          tenant_id: string | null
           tipo: string | null
           url: string
         }
@@ -892,6 +1005,7 @@ export type Database = {
           funcionario_id: string
           id?: string
           nome: string
+          tenant_id?: string | null
           tipo?: string | null
           url: string
         }
@@ -900,6 +1014,7 @@ export type Database = {
           funcionario_id?: string
           id?: string
           nome?: string
+          tenant_id?: string | null
           tipo?: string | null
           url?: string
         }
@@ -911,6 +1026,13 @@ export type Database = {
             referencedRelation: "funcionarios"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "funcionario_documentos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
         ]
       }
       funcionario_turmas: {
@@ -919,6 +1041,7 @@ export type Database = {
           funcionario_id: string
           id: string
           materia: string | null
+          tenant_id: string | null
           turma_id: string
         }
         Insert: {
@@ -926,6 +1049,7 @@ export type Database = {
           funcionario_id: string
           id?: string
           materia?: string | null
+          tenant_id?: string | null
           turma_id: string
         }
         Update: {
@@ -933,6 +1057,7 @@ export type Database = {
           funcionario_id?: string
           id?: string
           materia?: string | null
+          tenant_id?: string | null
           turma_id?: string
         }
         Relationships: [
@@ -941,6 +1066,13 @@ export type Database = {
             columns: ["funcionario_id"]
             isOneToOne: false
             referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "funcionario_turmas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
           {
@@ -972,6 +1104,7 @@ export type Database = {
           salario_base: number
           status: Database["public"]["Enums"]["funcionario_status"]
           telefone: string | null
+          tenant_id: string | null
           tipo: Database["public"]["Enums"]["funcionario_tipo"]
           updated_at: string | null
         }
@@ -994,6 +1127,7 @@ export type Database = {
           salario_base?: number
           status?: Database["public"]["Enums"]["funcionario_status"]
           telefone?: string | null
+          tenant_id?: string | null
           tipo?: Database["public"]["Enums"]["funcionario_tipo"]
           updated_at?: string | null
         }
@@ -1016,6 +1150,7 @@ export type Database = {
           salario_base?: number
           status?: Database["public"]["Enums"]["funcionario_status"]
           telefone?: string | null
+          tenant_id?: string | null
           tipo?: Database["public"]["Enums"]["funcionario_tipo"]
           updated_at?: string | null
         }
@@ -1027,6 +1162,13 @@ export type Database = {
             referencedRelation: "cargos"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "funcionarios_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
         ]
       }
       integration_settings: {
@@ -1036,6 +1178,7 @@ export type Database = {
           id: string
           setting_key: string
           setting_value: Json
+          tenant_id: string | null
           updated_at: string
           updated_by: string | null
         }
@@ -1045,6 +1188,7 @@ export type Database = {
           id?: string
           setting_key: string
           setting_value?: Json
+          tenant_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -1054,10 +1198,19 @@ export type Database = {
           id?: string
           setting_key?: string
           setting_value?: Json
+          tenant_id?: string | null
           updated_at?: string
           updated_by?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "integration_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -1066,6 +1219,7 @@ export type Database = {
           link: string | null
           message: string
           read: boolean | null
+          tenant_id: string | null
           title: string
           type: string
           user_id: string | null
@@ -1076,6 +1230,7 @@ export type Database = {
           link?: string | null
           message: string
           read?: boolean | null
+          tenant_id?: string | null
           title: string
           type?: string
           user_id?: string | null
@@ -1086,11 +1241,20 @@ export type Database = {
           link?: string | null
           message?: string
           read?: boolean | null
+          tenant_id?: string | null
           title?: string
           type?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       pagamentos: {
         Row: {
@@ -1109,6 +1273,7 @@ export type Database = {
           motivo_estorno: string | null
           multa_aplicada: number | null
           referencia: string | null
+          tenant_id: string | null
           tipo: string | null
           valor: number
           valor_original: number | null
@@ -1129,6 +1294,7 @@ export type Database = {
           motivo_estorno?: string | null
           multa_aplicada?: number | null
           referencia?: string | null
+          tenant_id?: string | null
           tipo?: string | null
           valor: number
           valor_original?: number | null
@@ -1149,6 +1315,7 @@ export type Database = {
           motivo_estorno?: string | null
           multa_aplicada?: number | null
           referencia?: string | null
+          tenant_id?: string | null
           tipo?: string | null
           valor?: number
           valor_original?: number | null
@@ -1159,6 +1326,13 @@ export type Database = {
             columns: ["fatura_id"]
             isOneToOne: false
             referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamentos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1209,6 +1383,7 @@ export type Database = {
           retorno_almoco: string | null
           saida: string | null
           saida_almoco: string | null
+          tenant_id: string | null
           tipo_registro: string | null
           updated_at: string | null
           user_agent: string | null
@@ -1231,6 +1406,7 @@ export type Database = {
           retorno_almoco?: string | null
           saida?: string | null
           saida_almoco?: string | null
+          tenant_id?: string | null
           tipo_registro?: string | null
           updated_at?: string | null
           user_agent?: string | null
@@ -1253,6 +1429,7 @@ export type Database = {
           retorno_almoco?: string | null
           saida?: string | null
           saida_almoco?: string | null
+          tenant_id?: string | null
           tipo_registro?: string | null
           updated_at?: string | null
           user_agent?: string | null
@@ -1263,6 +1440,13 @@ export type Database = {
             columns: ["funcionario_id"]
             isOneToOne: false
             referencedRelation: "funcionarios"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ponto_registros_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
             referencedColumns: ["id"]
           },
         ]
@@ -1276,6 +1460,7 @@ export type Database = {
           longitude: number
           nome: string
           raio_metros: number
+          tenant_id: string | null
         }
         Insert: {
           ativo?: boolean
@@ -1285,6 +1470,7 @@ export type Database = {
           longitude: number
           nome: string
           raio_metros?: number
+          tenant_id?: string | null
         }
         Update: {
           ativo?: boolean
@@ -1294,8 +1480,17 @@ export type Database = {
           longitude?: number
           nome?: string
           raio_metros?: number
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pontos_autorizados_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1345,6 +1540,7 @@ export type Database = {
           observacoes: string | null
           stripe_customer_id: string | null
           telefone: string
+          tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1359,6 +1555,7 @@ export type Database = {
           observacoes?: string | null
           stripe_customer_id?: string | null
           telefone: string
+          tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1373,9 +1570,18 @@ export type Database = {
           observacoes?: string | null
           stripe_customer_id?: string | null
           telefone?: string
+          tenant_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "responsaveis_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       setores: {
         Row: {
@@ -1384,6 +1590,7 @@ export type Database = {
           descricao: string | null
           id: string
           nome: string
+          tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -1392,6 +1599,7 @@ export type Database = {
           descricao?: string | null
           id?: string
           nome: string
+          tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -1400,9 +1608,18 @@ export type Database = {
           descricao?: string | null
           id?: string
           nome?: string
+          tenant_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "setores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       subscription_history: {
         Row: {
@@ -1543,6 +1760,7 @@ export type Database = {
           id: string
           nome: string
           serie: string
+          tenant_id: string | null
           turno: string
         }
         Insert: {
@@ -1552,6 +1770,7 @@ export type Database = {
           id?: string
           nome: string
           serie: string
+          tenant_id?: string | null
           turno?: string
         }
         Update: {
@@ -1561,9 +1780,18 @@ export type Database = {
           id?: string
           nome?: string
           serie?: string
+          tenant_id?: string | null
           turno?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "turmas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_preferences: {
         Row: {
@@ -1684,6 +1912,7 @@ export type Database = {
           nome: string
         }[]
       }
+      get_user_tenant_id: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
