@@ -35,20 +35,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     isFetching.current = true;
+    setLoading(true);
     // Only mark as fetched after a successful fetch. If we mark it here and the
     // query errors, we can get stuck with role=null and no retries.
     
     try {
-      const { data, error } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId)
-        .order("role", { ascending: true });
-
-      if (error) throw error;
-
-      // Support multiple roles per user (we always pick the highest privilege).
-      const roles = (data ?? []).map((r) => r.role) as AppRole[];
       const rolePriority: AppRole[] = [
         "platform_admin",
         "admin",
@@ -57,7 +48,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         "staff",
       ];
 
-      const resolvedRole = rolePriority.find((rp) => roles.includes(rp)) ?? null;
+      // IMPORTANT: avoid direct SELECT on user_roles (can fail under RLS/recursion).
+      // Use the SECURITY DEFINER function `has_role(user_id, role)` to resolve the
+      // highest privilege role deterministically.
+      let resolvedRole: AppRole | null = null;
+      for (const candidate of rolePriority) {
+        const { data, error } = await supabase.rpc("has_role", {
+          _user_id: userId,
+          _role: candidate,
+        });
+
+        if (error) throw error;
+        if (data === true) {
+          resolvedRole = candidate;
+          break;
+        }
+      }
+
       setRole(resolvedRole);
       lastFetchedUserId.current = userId;
     } catch (error) {
