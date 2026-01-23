@@ -1,5 +1,5 @@
 import { ReactNode } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
@@ -12,8 +12,12 @@ interface ProtectedRouteProps {
   platformOnly?: boolean;
 }
 
+// Routes that platform_admin can access outside of /platform
+const platformAdminAllowedRoutes = ["/configuracoes"];
+
 export function ProtectedRoute({ children, requiredRole, platformOnly }: ProtectedRouteProps) {
   const { user, loading, hasRole, isPlatformAdmin } = useAuth();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -35,9 +39,16 @@ export function ProtectedRoute({ children, requiredRole, platformOnly }: Protect
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Redirect platform_admin to platform dashboard if trying to access regular routes
+  // Platform admin logic
   if (isPlatformAdmin() && !platformOnly) {
-    return <Navigate to="/platform" replace />;
+    // Allow access to specific routes for platform_admin
+    const isAllowedRoute = platformAdminAllowedRoutes.some(route => 
+      location.pathname.startsWith(route)
+    );
+    
+    if (!isAllowedRoute) {
+      return <Navigate to="/platform" replace />;
+    }
   }
 
   if (requiredRole && !hasRole(requiredRole)) {

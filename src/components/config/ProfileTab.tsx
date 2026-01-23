@@ -23,6 +23,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface ProfileTabProps {
   user: User | null;
@@ -32,6 +33,7 @@ interface ProfileTabProps {
 }
 
 const roleLabels: Record<string, string> = {
+  platform_admin: "Platform Admin",
   admin: "Administrador",
   staff: "Funcionário",
   financeiro: "Financeiro",
@@ -39,10 +41,19 @@ const roleLabels: Record<string, string> = {
 };
 
 const roleColors: Record<string, string> = {
+  platform_admin: "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-600 border-amber-500/30",
   admin: "bg-primary/10 text-primary border-primary/20",
   staff: "bg-blue-500/10 text-blue-600 border-blue-500/20",
   financeiro: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20",
   secretaria: "bg-purple-500/10 text-purple-600 border-purple-500/20",
+};
+
+const accessLevelLabels: Record<string, string> = {
+  platform_admin: "Total",
+  admin: "Completo",
+  staff: "Padrão",
+  financeiro: "Financeiro",
+  secretaria: "Secretaria",
 };
 
 export function ProfileTab({ user, role, avatarUrl, setAvatarUrl }: ProfileTabProps) {
@@ -362,15 +373,31 @@ export function ProfileTab({ user, role, avatarUrl, setAvatarUrl }: ProfileTabPr
 
       {/* Account Stats */}
       <div className="grid sm:grid-cols-3 gap-4">
-        <Card className="border shadow-sm">
+        <Card className={cn(
+          "border shadow-sm",
+          role === "platform_admin" && "border-amber-500/30 bg-gradient-to-br from-amber-500/5 to-orange-500/5"
+        )}>
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-primary/10">
-                <Shield className="h-5 w-5 text-primary" />
+              <div className={cn(
+                "p-3 rounded-full",
+                role === "platform_admin" 
+                  ? "bg-gradient-to-br from-amber-500/20 to-orange-500/20" 
+                  : "bg-primary/10"
+              )}>
+                <Shield className={cn(
+                  "h-5 w-5",
+                  role === "platform_admin" ? "text-amber-600" : "text-primary"
+                )} />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Nível de acesso</p>
-                <p className="text-lg font-semibold">{role ? roleLabels[role] : "Básico"}</p>
+                <p className={cn(
+                  "text-lg font-semibold",
+                  role === "platform_admin" && "text-amber-600"
+                )}>
+                  {role ? accessLevelLabels[role] || roleLabels[role] || "Básico" : "Básico"}
+                </p>
               </div>
             </div>
           </CardContent>
