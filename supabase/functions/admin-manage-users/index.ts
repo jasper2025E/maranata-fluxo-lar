@@ -10,8 +10,9 @@ interface CreateUserRequest {
   email: string;
   password?: string;
   nome: string;
-  role: "admin" | "staff" | "financeiro" | "secretaria";
+  role: "admin" | "staff" | "financeiro" | "secretaria" | "platform_admin";
   userId?: string;
+  tenant_id?: string;
 }
 
 Deno.serve(async (req) => {
@@ -55,14 +56,17 @@ Deno.serve(async (req) => {
     
     const requestingUserId = userData.user.id;
 
-    // Check if requesting user is admin
+    // Check if requesting user is admin or platform_admin
     const { data: roleData, error: roleError } = await supabaseAdmin
       .from("user_roles")
       .select("role")
-      .eq("user_id", requestingUserId)
-      .single();
+      .eq("user_id", requestingUserId);
 
-    if (roleError || roleData?.role !== "admin") {
+    const userRoles = roleData?.map(r => r.role) || [];
+    const isAdmin = userRoles.includes("admin");
+    const isPlatformAdmin = userRoles.includes("platform_admin");
+
+    if (roleError || (!isAdmin && !isPlatformAdmin)) {
       return new Response(
         JSON.stringify({ error: "Only admins can manage users" }),
         { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -70,13 +74,21 @@ Deno.serve(async (req) => {
     }
 
     const body: CreateUserRequest = await req.json();
-    const { action, email, password, nome, role, userId } = body;
+    const { action, email, password, nome, role, userId, tenant_id } = body;
 
     if (action === "create") {
       if (!email || !password || !nome || !role) {
         return new Response(
           JSON.stringify({ error: "Missing required fields" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Only platform_admin can create platform_admin users
+      if (role === "platform_admin" && !isPlatformAdmin) {
+        return new Response(
+          JSON.stringify({ error: "Only platform admins can create platform admin users" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
@@ -95,14 +107,21 @@ Deno.serve(async (req) => {
         );
       }
 
-      // Create profile
+      // Create profile with optional tenant_id
+      const profileData: { id: string; email: string; nome: string; tenant_id?: string } = {
+        id: newUser.user.id,
+        email,
+        nome,
+      };
+      
+      // If tenant_id is provided, include it
+      if (tenant_id) {
+        profileData.tenant_id = tenant_id;
+      }
+
       const { error: profileError } = await supabaseAdmin
         .from("profiles")
-        .insert({
-          id: newUser.user.id,
-          email,
-          nome,
-        });
+        .insert(profileData);
 
       if (profileError) {
         console.error("Error creating profile:", profileError);

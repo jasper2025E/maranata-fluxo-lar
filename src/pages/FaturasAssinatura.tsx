@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   Receipt,
@@ -118,7 +119,8 @@ const planLabels: Record<string, string> = {
 
 export default function FaturasAssinatura() {
   const { t } = useTranslation();
-  const { user } = useAuth();
+  const { user, isPlatformAdmin } = useAuth();
+  const navigate = useNavigate();
   const { data: escola } = useEscola();
   const [tenant, setTenant] = useState<TenantData | null>(null);
   const [events, setEvents] = useState<SubscriptionEvent[]>([]);
@@ -126,6 +128,13 @@ export default function FaturasAssinatura() {
   const [filterType, setFilterType] = useState<string>("all");
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
+
+  // Platform admins should not access this page - redirect them
+  useEffect(() => {
+    if (isPlatformAdmin()) {
+      navigate("/platform/subscriptions");
+    }
+  }, [isPlatformAdmin, navigate]);
 
   // Fetch tenant_id from user's profile
   useEffect(() => {
@@ -143,7 +152,14 @@ export default function FaturasAssinatura() {
           .maybeSingle();
 
         if (error) throw error;
-        setTenantId(profile?.tenant_id ?? null);
+        
+        const fetchedTenantId = profile?.tenant_id ?? null;
+        setTenantId(fetchedTenantId);
+        
+        // If no tenant_id found, stop loading here
+        if (!fetchedTenantId) {
+          setLoading(false);
+        }
       } catch (error) {
         console.error("Error fetching profile:", error);
         setTenantId(null);
