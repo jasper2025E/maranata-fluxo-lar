@@ -13,6 +13,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (requiredRole: AppRole) => boolean;
+  isPlatformAdmin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -125,8 +126,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = (requiredRole: AppRole): boolean => {
     if (!role) return false;
-    if (role === "admin") return true;
+    // Platform admin has access to everything
+    if (role === "platform_admin") return true;
+    // Admin has access to everything except platform_admin-only features
+    if (role === "admin" && requiredRole !== "platform_admin") return true;
     return role === requiredRole;
+  };
+
+  const isPlatformAdmin = (): boolean => {
+    return role === "platform_admin";
   };
 
   return (
@@ -139,6 +147,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signOut,
         hasRole,
+        isPlatformAdmin,
       }}
     >
       {children}

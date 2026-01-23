@@ -29,6 +29,11 @@ import PaymentResult from "./pages/PaymentResult";
 import RH from "./pages/RH";
 import PontoEletronico from "./pages/PontoEletronico";
 
+// Platform Admin Pages
+import PlatformDashboard from "./pages/platform/PlatformDashboard";
+import TenantsList from "./pages/platform/TenantsList";
+import TenantForm from "./pages/platform/TenantForm";
+
 import LandingPage from "./pages/LandingPage";
 import NotFound from "./pages/NotFound";
 
@@ -153,6 +158,40 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <RH />
+              </ProtectedRoute>
+            }
+          />
+          
+          {/* Platform Admin Routes */}
+          <Route
+            path="/platform"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/tenants"
+            element={
+              <ProtectedRoute platformOnly>
+                <TenantsList />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/tenants/new"
+            element={
+              <ProtectedRoute platformOnly>
+                <TenantForm />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/tenants/:id/edit"
+            element={
+              <ProtectedRoute platformOnly>
+                <TenantForm />
               </ProtectedRoute>
             }
           />
