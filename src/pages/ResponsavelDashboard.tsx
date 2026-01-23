@@ -242,9 +242,6 @@ const ResponsavelDashboard = () => {
         {/* Header with Actions */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <p className="text-muted-foreground mt-1 text-sm">
-              Gestão de responsáveis e cobranças
-            </p>
           </div>
           <div className="flex gap-2">
             <Button 

@@ -114,9 +114,6 @@ const Pagamentos = () => {
         {/* Header */}
         <div>
           
-          <p className="text-muted-foreground mt-1 text-sm">
-            {t("payments.description")}
-          </p>
         </div>
 
         {/* Stats Cards */}

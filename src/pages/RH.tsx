@@ -53,9 +53,6 @@ export default function RH() {
         {/* Header */}
         <div>
           
-          <p className="text-muted-foreground mt-1 text-sm">
-            {t("hr.description")}
-          </p>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">

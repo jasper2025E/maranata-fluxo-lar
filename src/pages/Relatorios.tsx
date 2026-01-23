@@ -513,9 +513,6 @@ const Relatorios = () => {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             
-            <p className="text-muted-foreground mt-1 text-sm">
-              Análise completa com insights e exportação
-            </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button variant="outline" size="sm" onClick={exportarResumoFinanceiro} className="gap-2">
