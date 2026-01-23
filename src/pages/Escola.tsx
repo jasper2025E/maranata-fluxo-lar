@@ -1,14 +1,14 @@
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Upload, Save, MapPin, Phone, Mail, Calendar, ChevronRight } from "lucide-react";
+import { Building2, Upload, Save, ChevronRight, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const escolaSchema = z.object({
   nome: z.string().trim().min(1, "Nome é obrigatório").max(200),
@@ -101,7 +101,7 @@ const EscolaPage = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["escola"] });
-      toast.success("Dados da escola salvos com sucesso!");
+      toast.success("Dados salvos com sucesso");
     },
     onError: () => toast.error("Erro ao salvar dados"),
   });
@@ -147,7 +147,7 @@ const EscolaPage = () => {
         .getPublicUrl(filePath);
 
       setLogoUrl(publicUrl);
-      toast.success("Logo enviada com sucesso!");
+      toast.success("Logo atualizada");
     } catch (error) {
       toast.error("Erro ao enviar logo");
     } finally {
@@ -158,8 +158,9 @@ const EscolaPage = () => {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-muted-foreground">Carregando...</p>
+        <div className="max-w-2xl mx-auto space-y-6">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-[400px] w-full rounded-lg" />
         </div>
       </DashboardLayout>
     );
@@ -167,153 +168,141 @@ const EscolaPage = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-2xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">Configurações</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium text-foreground">Dados da Escola</span>
+          <span className="font-medium text-foreground">Escola</span>
         </nav>
 
-        {/* Header */}
-        <div>
-          
-          
-        </div>
-
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Main Info Card */}
-            <Card className="md:col-span-2 border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
-              <CardHeader className="border-b border-border/50 bg-muted/30">
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Building2 className="h-5 w-5 text-primary" />
-                  Informações Básicas
-                </CardTitle>
-                <CardDescription>Dados principais da instituição</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="flex items-start gap-6">
-                  <div className="flex flex-col items-center gap-2">
-                    <div className="w-32 h-32 border-2 border-dashed border-border rounded-xl flex items-center justify-center bg-muted/50 overflow-hidden">
-                      {logoUrl ? (
-                        <img src={logoUrl} alt="Logo" className="w-full h-full object-contain" />
-                      ) : (
-                        <Building2 className="h-12 w-12 text-muted-foreground" />
-                      )}
-                    </div>
-                    <Label htmlFor="logo" className="cursor-pointer">
-                      <div className="flex items-center gap-2 text-sm text-primary hover:underline">
-                        <Upload className="h-4 w-4" />
-                        {uploading ? "Enviando..." : "Enviar Logo"}
-                      </div>
-                      <Input
-                        id="logo"
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleLogoUpload}
-                        disabled={uploading}
-                      />
-                    </Label>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Main Card */}
+          <div className="bg-card border border-border rounded-lg">
+            {/* Logo Section */}
+            <div className="p-6 border-b border-border">
+              <div className="flex items-start gap-5">
+                <div className="relative group">
+                  <div className="w-20 h-20 rounded-lg border border-border bg-muted flex items-center justify-center overflow-hidden">
+                    {logoUrl ? (
+                      <img src={logoUrl} alt="Logo" className="w-full h-full object-cover" />
+                    ) : (
+                      <Building2 className="h-8 w-8 text-muted-foreground" />
+                    )}
                   </div>
-                  <div className="flex-1 grid gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="nome">Nome da Escola *</Label>
-                      <Input
-                        id="nome"
-                        value={formData.nome}
-                        onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                        placeholder="Ex: Escola Maranata"
-                        required
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label htmlFor="cnpj">CNPJ</Label>
-                        <Input
-                          id="cnpj"
-                          value={formData.cnpj}
-                          onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                          placeholder="00.000.000/0001-00"
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label htmlFor="ano_letivo">Ano Letivo *</Label>
-                        <Input
-                          id="ano_letivo"
-                          type="number"
-                          value={formData.ano_letivo}
-                          onChange={(e) => setFormData({ ...formData, ano_letivo: parseInt(e.target.value) })}
-                          required
-                        />
-                      </div>
-                    </div>
+                  <Label 
+                    htmlFor="logo" 
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer rounded-lg"
+                  >
+                    <Camera className="h-5 w-5 text-white" />
+                    <Input
+                      id="logo"
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleLogoUpload}
+                      disabled={uploading}
+                    />
+                  </Label>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="space-y-1">
+                    <Label htmlFor="nome" className="text-sm font-medium">
+                      Nome da escola
+                    </Label>
+                    <Input
+                      id="nome"
+                      value={formData.nome}
+                      onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
+                      placeholder="Nome da instituição"
+                      className="h-9"
+                      required
+                    />
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
 
-            {/* Address Card */}
-            <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
-              <CardHeader className="border-b border-border/50 bg-muted/30">
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <MapPin className="h-5 w-5 text-primary" />
-                  Endereço
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid gap-2">
-                  <Label htmlFor="endereco">Endereço Completo</Label>
+            {/* Details Section */}
+            <div className="p-6 space-y-5">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="cnpj" className="text-sm font-medium">
+                    CNPJ
+                  </Label>
                   <Input
-                    id="endereco"
-                    value={formData.endereco}
-                    onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                    placeholder="Rua, número, bairro, cidade - UF"
+                    id="cnpj"
+                    value={formData.cnpj}
+                    onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
+                    placeholder="00.000.000/0001-00"
+                    className="h-9"
                   />
                 </div>
-              </CardContent>
-            </Card>
+                <div className="space-y-1.5">
+                  <Label htmlFor="ano_letivo" className="text-sm font-medium">
+                    Ano letivo
+                  </Label>
+                  <Input
+                    id="ano_letivo"
+                    type="number"
+                    value={formData.ano_letivo}
+                    onChange={(e) => setFormData({ ...formData, ano_letivo: parseInt(e.target.value) })}
+                    className="h-9"
+                    required
+                  />
+                </div>
+              </div>
 
-            {/* Contact Card */}
-            <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
-              <CardHeader className="border-b border-border/50 bg-muted/30">
-                <CardTitle className="flex items-center gap-2 text-foreground">
-                  <Phone className="h-5 w-5 text-primary" />
-                  Contato
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 space-y-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="telefone">Telefone</Label>
+              <div className="space-y-1.5">
+                <Label htmlFor="endereco" className="text-sm font-medium">
+                  Endereço
+                </Label>
+                <Input
+                  id="endereco"
+                  value={formData.endereco}
+                  onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
+                  placeholder="Rua, número, bairro, cidade - UF"
+                  className="h-9"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="telefone" className="text-sm font-medium">
+                    Telefone
+                  </Label>
                   <Input
                     id="telefone"
                     value={formData.telefone}
                     onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                    placeholder="(99) 99999-9999"
+                    placeholder="(00) 00000-0000"
+                    className="h-9"
                   />
                 </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="email">E-mail</Label>
+                <div className="space-y-1.5">
+                  <Label htmlFor="email" className="text-sm font-medium">
+                    E-mail
+                  </Label>
                   <Input
                     id="email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="contato@escola.com.br"
+                    className="h-9"
                   />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           </div>
 
-          <div className="flex justify-end mt-6">
+          {/* Actions */}
+          <div className="flex justify-end">
             <Button 
               type="submit" 
-              disabled={saveMutation.isPending} 
-              className="min-w-32 bg-blue-600 hover:bg-blue-700 text-white"
+              disabled={saveMutation.isPending}
+              size="sm"
             >
-              <Save className="mr-2 h-4 w-4" />
               {saveMutation.isPending ? "Salvando..." : "Salvar"}
             </Button>
           </div>
