@@ -34,11 +34,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -176,48 +171,60 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
     }
 
     return (
-      <Collapsible open={isExpanded} onOpenChange={() => toggleModule(module.label)}>
-        <CollapsibleTrigger asChild>
-          <button
-            className={cn(
-              "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors",
-              moduleActive
-                ? "text-primary font-medium"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-            )}
+      <div>
+        <button
+          onClick={() => toggleModule(module.label)}
+          className={cn(
+            "flex items-center gap-3 w-full px-3 py-2 rounded-md text-sm transition-colors",
+            moduleActive
+              ? "text-primary font-medium"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+          )}
+        >
+          <module.icon className="h-4 w-4 shrink-0" />
+          <span className="flex-1 text-left">{module.label}</span>
+          <motion.div
+            animate={{ rotate: isExpanded ? 180 : 0 }}
+            transition={{ duration: 0.2, ease: "easeInOut" }}
           >
-            <module.icon className="h-4 w-4 shrink-0" />
-            <span className="flex-1 text-left">{module.label}</span>
-            <ChevronDown 
-              className={cn(
-                "h-4 w-4 opacity-40 transition-transform duration-200",
-                isExpanded && "rotate-180"
-              )} 
-            />
-          </button>
-        </CollapsibleTrigger>
-        <CollapsibleContent>
-          <div className="ml-7 mt-1 space-y-0.5 border-l border-border/50 pl-3">
-            {module.subItems?.map((subItem) => (
-              <button
-                key={subItem.path + subItem.label}
-                onClick={() => {
-                  navigate(subItem.path);
-                  setMobileMenuOpen(false);
-                }}
-                className={cn(
-                  "block w-full text-left px-2 py-1.5 text-sm rounded transition-colors",
-                  isActive(subItem.path)
-                    ? "text-primary font-medium"
-                    : "text-muted-foreground hover:text-foreground"
-                )}
-              >
-                {subItem.label}
-              </button>
-            ))}
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+            <ChevronDown className="h-4 w-4 opacity-40" />
+          </motion.div>
+        </button>
+        <AnimatePresence initial={false}>
+          {isExpanded && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="overflow-hidden"
+            >
+              <div className="ml-7 mt-1 space-y-0.5 border-l border-border/50 pl-3 pb-1">
+                {module.subItems?.map((subItem, index) => (
+                  <motion.button
+                    key={subItem.path + subItem.label}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.15 }}
+                    onClick={() => {
+                      navigate(subItem.path);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={cn(
+                      "block w-full text-left px-2 py-1.5 text-sm rounded transition-colors",
+                      isActive(subItem.path)
+                        ? "text-primary font-medium"
+                        : "text-muted-foreground hover:text-foreground"
+                    )}
+                  >
+                    {subItem.label}
+                  </motion.button>
+                ))}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
     );
   };
 
