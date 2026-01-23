@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -100,27 +100,27 @@ export function SystemTab({ role }: SystemTabProps) {
       </div>
 
       {/* Zona de Perigo */}
-      <div className="bg-card border border-destructive/30 rounded-lg">
-        <div className="px-4 py-3 border-b border-destructive/30">
-          <span className="text-sm font-medium text-destructive">Zona de perigo</span>
+      <div className="bg-card border border-border rounded-lg">
+        <div className="px-4 py-3 border-b border-border">
+          <span className="text-sm font-medium text-foreground">Redefinir dados</span>
         </div>
         <div className="p-4 space-y-4">
           <p className="text-xs text-muted-foreground">
-            Estas ações são irreversíveis e excluirão permanentemente os dados.
+            Ações irreversíveis que excluem dados permanentemente.
           </p>
 
-          <div className="grid sm:grid-cols-2 gap-2">
+          <div className="space-y-1.5">
             {[
-              { label: "Alunos", description: "Remove todos os alunos", tableType: "alunos" as const },
-              { label: "Responsáveis", description: "Remove todos os responsáveis", tableType: "responsaveis" as const },
-              { label: "Faturas", description: "Remove todas as faturas", tableType: "faturas" as const },
-              { label: "Pagamentos", description: "Remove todos os pagamentos", tableType: "pagamentos" as const },
+              { label: "Alunos", tableType: "alunos" as const },
+              { label: "Responsáveis", tableType: "responsaveis" as const },
+              { label: "Faturas", tableType: "faturas" as const },
+              { label: "Pagamentos", tableType: "pagamentos" as const },
             ].map((item) => (
               <AlertDialog key={item.tableType}>
                 <AlertDialogTrigger asChild>
-                  <button className="w-full text-left px-3 py-2.5 rounded-md border border-border hover:border-destructive/50 hover:bg-destructive/5 transition-colors">
-                    <p className="text-sm font-medium text-foreground">{item.label}</p>
-                    <p className="text-xs text-muted-foreground">{item.description}</p>
+                  <button className="w-full flex items-center justify-between px-3 py-2 rounded-md text-left text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors">
+                    <span>Excluir {item.label.toLowerCase()}</span>
+                    <Trash2 className="h-3.5 w-3.5" />
                   </button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
@@ -148,8 +148,8 @@ export function SystemTab({ role }: SystemTabProps) {
           <div className="pt-3 border-t border-border">
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="destructive" size="sm">
-                  Redefinir sistema completo
+                <Button variant="outline" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30">
+                  Redefinir tudo
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
