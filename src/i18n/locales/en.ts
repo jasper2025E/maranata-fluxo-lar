@@ -292,6 +292,8 @@ const en = {
       title: "Invoices",
       subtitle: "Enterprise invoice and billing management system",
       addInvoice: "New Invoice",
+      newInvoice: "New Invoice",
+      printCarne: "Print Booklet",
       invoiceNumber: "Invoice Number",
       dueDate: "Due Date",
       issueDate: "Issue Date",

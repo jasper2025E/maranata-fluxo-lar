@@ -291,6 +291,8 @@ const fr = {
       title: "Factures",
       subtitle: "Système de gestion des factures et de facturation",
       addInvoice: "Nouvelle Facture",
+      newInvoice: "Nouvelle Facture",
+      printCarne: "Imprimer le Carnet",
       invoiceNumber: "Numéro de Facture",
       dueDate: "Date d'Échéance",
       issueDate: "Date d'Émission",

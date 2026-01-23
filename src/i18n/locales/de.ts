@@ -291,6 +291,8 @@ const de = {
       title: "Rechnungen",
       subtitle: "Unternehmens-Rechnungs- und Abrechnungssystem",
       addInvoice: "Neue Rechnung",
+      newInvoice: "Neue Rechnung",
+      printCarne: "Heft drucken",
       invoiceNumber: "Rechnungsnummer",
       dueDate: "Fälligkeitsdatum",
       issueDate: "Ausstellungsdatum",

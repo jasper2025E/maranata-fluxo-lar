@@ -295,6 +295,8 @@ const ptBR = {
       title: "Faturas",
       subtitle: "Sistema enterprise de gestão de faturas e cobrança",
       addInvoice: "Nova Fatura",
+      newInvoice: "Nova Fatura",
+      printCarne: "Imprimir Carnê",
       invoiceNumber: "Número da Fatura",
       dueDate: "Data de Vencimento",
       issueDate: "Data de Emissão",

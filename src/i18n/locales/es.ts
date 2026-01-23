@@ -291,6 +291,8 @@ const es = {
       title: "Facturas",
       subtitle: "Sistema empresarial de gestión de facturas y cobros",
       addInvoice: "Nueva Factura",
+      newInvoice: "Nueva Factura",
+      printCarne: "Imprimir Carné",
       invoiceNumber: "Número de Factura",
       dueDate: "Fecha de Vencimiento",
       issueDate: "Fecha de Emisión",
