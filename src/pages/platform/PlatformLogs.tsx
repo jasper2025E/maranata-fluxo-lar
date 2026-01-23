@@ -230,10 +230,10 @@ export default function PlatformLogs() {
           <div>
             <h1 className="text-3xl font-bold text-white flex items-center gap-3">
               <Activity className="h-8 w-8 text-amber-400" />
-              Logs de Auditoria
+              Registros de Atividade
             </h1>
             <p className="text-slate-400 mt-1">
-              Monitore todas as ações realizadas no sistema
+              Acompanhe todas as ações realizadas na plataforma
             </p>
           </div>
 

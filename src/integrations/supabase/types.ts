@@ -1404,53 +1404,133 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_history: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          event_type: string
+          id: string
+          metadata: Json | null
+          new_status: Database["public"]["Enums"]["subscription_status"] | null
+          old_status: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_event_id: string | null
+          tenant_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json | null
+          new_status?: Database["public"]["Enums"]["subscription_status"] | null
+          old_status?: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_event_id?: string | null
+          tenant_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json | null
+          new_status?: Database["public"]["Enums"]["subscription_status"] | null
+          old_status?: Database["public"]["Enums"]["subscription_status"] | null
+          stripe_event_id?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscription_history_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
+          blocked_at: string | null
+          blocked_reason: string | null
           cnpj: string | null
           created_at: string | null
           data_contrato: string | null
           email: string | null
           endereco: string | null
+          grace_period_ends_at: string | null
           id: string
           limite_alunos: number | null
           limite_usuarios: number | null
           logo_url: string | null
+          monthly_price: number | null
           nome: string
           plano: string | null
           status: string | null
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          subscription_ends_at: string | null
+          subscription_started_at: string | null
+          subscription_status:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
           telefone: string | null
+          trial_ends_at: string | null
           updated_at: string | null
         }
         Insert: {
+          blocked_at?: string | null
+          blocked_reason?: string | null
           cnpj?: string | null
           created_at?: string | null
           data_contrato?: string | null
           email?: string | null
           endereco?: string | null
+          grace_period_ends_at?: string | null
           id?: string
           limite_alunos?: number | null
           limite_usuarios?: number | null
           logo_url?: string | null
+          monthly_price?: number | null
           nome: string
           plano?: string | null
           status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
           telefone?: string | null
+          trial_ends_at?: string | null
           updated_at?: string | null
         }
         Update: {
+          blocked_at?: string | null
+          blocked_reason?: string | null
           cnpj?: string | null
           created_at?: string | null
           data_contrato?: string | null
           email?: string | null
           endereco?: string | null
+          grace_period_ends_at?: string | null
           id?: string
           limite_alunos?: number | null
           limite_usuarios?: number | null
           logo_url?: string | null
+          monthly_price?: number | null
           nome?: string
           plano?: string | null
           status?: string | null
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          subscription_ends_at?: string | null
+          subscription_started_at?: string | null
+          subscription_status?:
+            | Database["public"]["Enums"]["subscription_status"]
+            | null
           telefone?: string | null
+          trial_ends_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1611,7 +1691,9 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_in_grace_period: { Args: { p_tenant_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_tenant_blocked: { Args: { p_tenant_id: string }; Returns: boolean }
       recalcular_fatura: { Args: { p_fatura_id: string }; Returns: undefined }
       registrar_ponto_externo: {
         Args: {
@@ -1655,6 +1737,12 @@ export type Database = {
       contrato_tipo: "clt" | "pj" | "temporario" | "estagio"
       funcionario_status: "ativo" | "inativo" | "afastado" | "ferias"
       funcionario_tipo: "professor" | "administrativo" | "outro"
+      subscription_status:
+        | "trial"
+        | "active"
+        | "past_due"
+        | "cancelled"
+        | "suspended"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1793,6 +1881,13 @@ export const Constants = {
       contrato_tipo: ["clt", "pj", "temporario", "estagio"],
       funcionario_status: ["ativo", "inativo", "afastado", "ferias"],
       funcionario_tipo: ["professor", "administrativo", "outro"],
+      subscription_status: [
+        "trial",
+        "active",
+        "past_due",
+        "cancelled",
+        "suspended",
+      ],
     },
   },
 } as const
