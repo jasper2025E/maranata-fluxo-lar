@@ -3,21 +3,10 @@ import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
-import { 
-  User, 
-  Lock, 
-  Settings, 
-  Receipt,
-  Database,
-  Users,
-  RefreshCw,
-  Building2,
-  ChevronRight,
-} from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 import { 
   ProfileTab, 
   SecurityTab, 
@@ -29,15 +18,18 @@ import {
   GatewayConfigTab,
 } from "@/components/config";
 
-// SECURITY: Integrations tab is ONLY for platform_admin
-// School admins (role === "admin") must NOT access system API credentials
-// Gateway config tab is for school admins to configure their own payment gateways
-
 interface UserPreferences {
   email_notifications: boolean;
   browser_notifications: boolean;
   weekly_report: boolean;
   theme: string;
+}
+
+interface NavItem {
+  id: string;
+  label: string;
+  adminOnly?: boolean;
+  platformAdminOnly?: boolean;
 }
 
 const Configuracoes = () => {
@@ -46,6 +38,7 @@ const Configuracoes = () => {
   const { i18n } = useTranslation();
   const [loadingPrefs, setLoadingPrefs] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("perfil");
   
   const [preferences, setPreferences] = useState<UserPreferences>({
     email_notifications: true,
@@ -54,13 +47,28 @@ const Configuracoes = () => {
     theme: "light",
   });
 
-  // Load user preferences and profile on mount
+  const navItems: NavItem[] = [
+    { id: "perfil", label: "Perfil" },
+    { id: "seguranca", label: "Segurança" },
+    { id: "preferencias", label: "Preferências" },
+    { id: "cobranca", label: "Cobrança", adminOnly: true },
+    { id: "usuarios", label: "Usuários", adminOnly: true },
+    { id: "gateways", label: "Gateways", adminOnly: true },
+    { id: "integracoes", label: "Integrações", platformAdminOnly: true },
+    { id: "sistema", label: "Sistema", adminOnly: true },
+  ];
+
+  const visibleNavItems = navItems.filter(item => {
+    if (item.platformAdminOnly) return isPlatformAdmin();
+    if (item.adminOnly) return role === "admin";
+    return true;
+  });
+
   useEffect(() => {
     const loadData = async () => {
       if (!user) return;
       
       try {
-        // Load preferences
         const { data: prefsData, error: prefsError } = await supabase
           .from("user_preferences")
           .select("*")
@@ -84,7 +92,6 @@ const Configuracoes = () => {
           }
         }
 
-        // Load profile avatar
         const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("avatar_url")
@@ -109,21 +116,59 @@ const Configuracoes = () => {
   if (!user) {
     return (
       <DashboardLayout>
-        <div className="max-w-5xl mx-auto space-y-6">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-72" />
-          <div className="space-y-4">
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-64 w-full" />
+        <div className="max-w-4xl mx-auto space-y-6">
+          <Skeleton className="h-4 w-48" />
+          <div className="flex gap-8">
+            <Skeleton className="h-[300px] w-48" />
+            <Skeleton className="h-[300px] flex-1" />
           </div>
         </div>
       </DashboardLayout>
     );
   }
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case "perfil":
+        return (
+          <ProfileTab 
+            user={user} 
+            role={role} 
+            avatarUrl={avatarUrl} 
+            setAvatarUrl={setAvatarUrl} 
+          />
+        );
+      case "seguranca":
+        return <SecurityTab />;
+      case "preferencias":
+        return (
+          <PreferencesTab
+            user={user}
+            theme={theme}
+            setTheme={setTheme}
+            preferences={preferences}
+            setPreferences={setPreferences}
+            loadingPrefs={loadingPrefs}
+          />
+        );
+      case "cobranca":
+        return role === "admin" ? <ConfiguracoesCobranca /> : null;
+      case "usuarios":
+        return role === "admin" ? <UserManagementTab /> : null;
+      case "gateways":
+        return role === "admin" ? <GatewayConfigTab /> : null;
+      case "integracoes":
+        return isPlatformAdmin() ? <IntegrationsTab /> : null;
+      case "sistema":
+        return role === "admin" ? <SystemTab role={role} /> : null;
+      default:
+        return null;
+    }
+  };
+
   return (
     <DashboardLayout>
-      <div className="max-w-5xl mx-auto space-y-6">
+      <div className="max-w-4xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">Conta</span>
@@ -131,137 +176,34 @@ const Configuracoes = () => {
           <span className="font-medium text-foreground">Configurações</span>
         </nav>
 
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          
-        </motion.div>
+        {/* Two Column Layout */}
+        <div className="flex flex-col md:flex-row gap-8">
+          {/* Sidebar Navigation */}
+          <nav className="md:w-48 shrink-0">
+            <ul className="space-y-0.5">
+              {visibleNavItems.map((item) => (
+                <li key={item.id}>
+                  <button
+                    onClick={() => setActiveTab(item.id)}
+                    className={cn(
+                      "w-full text-left px-3 py-2 text-sm rounded-md transition-colors",
+                      activeTab === item.id
+                        ? "bg-muted font-medium text-foreground"
+                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                    )}
+                  >
+                    {item.label}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
 
-        <Tabs defaultValue="perfil" className="space-y-6">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-          >
-            <TabsList className="bg-muted/50 p-1 h-auto flex-wrap">
-              <TabsTrigger value="perfil" className="gap-2 data-[state=active]:bg-background">
-                <User className="h-4 w-4" />
-                <span className="hidden sm:inline">Perfil</span>
-              </TabsTrigger>
-              <TabsTrigger value="seguranca" className="gap-2 data-[state=active]:bg-background">
-                <Lock className="h-4 w-4" />
-                <span className="hidden sm:inline">Segurança</span>
-              </TabsTrigger>
-              <TabsTrigger value="preferencias" className="gap-2 data-[state=active]:bg-background">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Preferências</span>
-              </TabsTrigger>
-              {role === "admin" && (
-                <TabsTrigger value="cobranca" className="gap-2 data-[state=active]:bg-background">
-                  <Receipt className="h-4 w-4" />
-                  <span className="hidden sm:inline">Cobrança</span>
-                </TabsTrigger>
-              )}
-              {role === "admin" && (
-                <TabsTrigger value="usuarios" className="gap-2 data-[state=active]:bg-background">
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Usuários</span>
-                </TabsTrigger>
-              )}
-              {/* Gateway config for school admins - their own payment gateways */}
-              {role === "admin" && (
-                <TabsTrigger value="gateways" className="gap-2 data-[state=active]:bg-background">
-                  <Building2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Bancos</span>
-                </TabsTrigger>
-              )}
-              {/* SECURITY: Integrações tab is ONLY for platform_admin - NOT for school admins */}
-              {isPlatformAdmin() && (
-                <TabsTrigger value="integracoes" className="gap-2 data-[state=active]:bg-background">
-                  <RefreshCw className="h-4 w-4" />
-                  <span className="hidden sm:inline">Integrações</span>
-                </TabsTrigger>
-              )}
-              {role === "admin" && (
-                <TabsTrigger value="sistema" className="gap-2 data-[state=active]:bg-background">
-                  <Database className="h-4 w-4" />
-                  <span className="hidden sm:inline">Sistema</span>
-                </TabsTrigger>
-              )}
-            </TabsList>
-          </motion.div>
-
-          {/* Perfil Tab */}
-          <TabsContent value="perfil">
-            <ProfileTab 
-              user={user} 
-              role={role} 
-              avatarUrl={avatarUrl} 
-              setAvatarUrl={setAvatarUrl} 
-            />
-          </TabsContent>
-
-          {/* Segurança Tab */}
-          <TabsContent value="seguranca">
-            <SecurityTab />
-          </TabsContent>
-
-          {/* Preferências Tab */}
-          <TabsContent value="preferencias">
-            <PreferencesTab
-              user={user}
-              theme={theme}
-              setTheme={setTheme}
-              preferences={preferences}
-              setPreferences={setPreferences}
-              loadingPrefs={loadingPrefs}
-            />
-          </TabsContent>
-
-          {/* Cobrança Tab - Admin Only */}
-          {role === "admin" && (
-            <TabsContent value="cobranca">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-              >
-                <ConfiguracoesCobranca />
-              </motion.div>
-            </TabsContent>
-          )}
-
-          {/* Usuários Tab - Admin Only */}
-          {role === "admin" && (
-            <TabsContent value="usuarios">
-              <UserManagementTab />
-            </TabsContent>
-          )}
-
-          {/* Gateways Tab - Admin Only (suas próprias integrações de pagamento) */}
-          {role === "admin" && (
-            <TabsContent value="gateways">
-              <GatewayConfigTab />
-            </TabsContent>
-          )}
-
-          {/* Integrações Tab - ONLY Platform Admin (Gestor) */}
-          {isPlatformAdmin() && (
-            <TabsContent value="integracoes">
-              <IntegrationsTab />
-            </TabsContent>
-          )}
-
-          {/* Sistema Tab - Admin Only */}
-          {role === "admin" && (
-            <TabsContent value="sistema">
-              <SystemTab role={role} />
-            </TabsContent>
-          )}
-        </Tabs>
+          {/* Content Area */}
+          <div className="flex-1 min-w-0">
+            {renderContent()}
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
