@@ -156,54 +156,30 @@ export default function TenantsList() {
     if (!selectedTenant) return;
 
     try {
-      // Primeiro, deletar registros dependentes em ordem
-      // 1. Deletar escola vinculada ao tenant
-      const { error: escolaError } = await supabase
-        .from("escola")
-        .delete()
-        .eq("tenant_id", selectedTenant.id);
+      // Usar Edge Function com service role para garantir exclusão completa
+      const { data, error } = await supabase.functions.invoke("delete-tenant", {
+        body: { tenantId: selectedTenant.id },
+      });
 
-      if (escolaError) {
-        console.error("Error deleting escola:", escolaError);
-        // Continuar mesmo se não houver escola (pode não existir)
+      if (error) {
+        console.error("Error from delete-tenant function:", error);
+        throw new Error(error.message || "Erro ao excluir escola");
       }
 
-      // 2. Deletar histórico de assinatura
-      const { error: historyError } = await supabase
-        .from("subscription_history")
-        .delete()
-        .eq("tenant_id", selectedTenant.id);
-
-      if (historyError) {
-        console.error("Error deleting subscription_history:", historyError);
+      if (data?.error) {
+        throw new Error(data.error);
       }
 
-      // 3. Deletar profiles vinculados ao tenant
-      const { error: profilesError } = await supabase
-        .from("profiles")
-        .delete()
-        .eq("tenant_id", selectedTenant.id);
-
-      if (profilesError) {
-        console.error("Error deleting profiles:", profilesError);
-      }
-
-      // 4. Finalmente, deletar o tenant
-      const { error: tenantError } = await supabase
-        .from("tenants")
-        .delete()
-        .eq("id", selectedTenant.id);
-
-      if (tenantError) throw tenantError;
-
-      toast.success("Escola removida com sucesso");
+      toast.success("Escola excluída com sucesso");
       setTenants(tenants.filter(t => t.id !== selectedTenant.id));
     } catch (error) {
       console.error("Error deleting tenant:", error);
-      toast.error("Erro ao remover escola. Verifique se não há dados vinculados.");
+      const errorMessage = error instanceof Error ? error.message : "Erro ao remover escola";
+      toast.error(errorMessage);
     } finally {
       setDeleteDialogOpen(false);
       setSelectedTenant(null);
+      setDeleteConfirmed(false);
     }
   };
 
