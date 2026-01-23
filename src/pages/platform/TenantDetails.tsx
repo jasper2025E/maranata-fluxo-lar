@@ -634,7 +634,7 @@ export default function TenantDetails() {
                         <div className="space-y-3">
                           {subscriptionHistory.map((event, index) => (
                             <motion.div
-                              key={event.id}
+                              key={`${event.id}-${index}`}
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
                               transition={{ delay: index * 0.05 }}
@@ -698,7 +698,7 @@ export default function TenantDetails() {
                             const actionInfo = getActionLabel(log.acao);
                             return (
                               <motion.div
-                                key={log.id}
+                                key={`${log.id}-${index}`}
                                 initial={{ opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: index * 0.02 }}
