@@ -15,6 +15,22 @@ interface ProtectedRouteProps {
 // Routes that platform_admin can access outside of /platform
 const platformAdminAllowedRoutes = ["/configuracoes"];
 
+// School-only routes that platform_admin should NEVER access
+const schoolOnlyRoutes = [
+  "/dashboard",
+  "/escola",
+  "/responsaveis",
+  "/alunos",
+  "/turmas",
+  "/cursos",
+  "/rh",
+  "/faturas",
+  "/pagamentos",
+  "/despesas",
+  "/relatorios",
+  "/assinatura",
+];
+
 export function ProtectedRoute({ children, requiredRole, platformOnly }: ProtectedRouteProps) {
   const { user, loading, hasRole, isPlatformAdmin } = useAuth();
   const location = useLocation();
@@ -39,15 +55,25 @@ export function ProtectedRoute({ children, requiredRole, platformOnly }: Protect
     return <Navigate to="/dashboard" replace />;
   }
 
-  // Platform admin logic
-  if (isPlatformAdmin() && !platformOnly) {
-    // Allow access to specific routes for platform_admin
-    const isAllowedRoute = platformAdminAllowedRoutes.some(route => 
-      location.pathname.startsWith(route)
+  // Platform admin should NEVER access school routes - redirect to platform
+  if (isPlatformAdmin()) {
+    const isSchoolRoute = schoolOnlyRoutes.some(route => 
+      location.pathname === route || location.pathname.startsWith(route + "/")
     );
     
-    if (!isAllowedRoute) {
+    if (isSchoolRoute) {
       return <Navigate to="/platform" replace />;
+    }
+    
+    // For non-platform routes, only allow explicitly allowed ones
+    if (!platformOnly) {
+      const isAllowedRoute = platformAdminAllowedRoutes.some(route => 
+        location.pathname.startsWith(route)
+      );
+      
+      if (!isAllowedRoute) {
+        return <Navigate to="/platform" replace />;
+      }
     }
   }
 
