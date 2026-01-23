@@ -45,6 +45,7 @@ import PlatformSettings from "./pages/platform/PlatformSettings";
 import PlatformSecurity from "./pages/platform/PlatformSecurity";
 
 import LandingPage from "./pages/LandingPage";
+import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 
 // Componente interno que usa o hook de proteção
@@ -286,6 +287,9 @@ function AppContent() {
           
           {/* Public Landing Page */}
           <Route path="/inscricao" element={<LandingPage />} />
+          
+          {/* Public Onboarding - New School Registration */}
+          <Route path="/cadastro" element={<Onboarding />} />
           
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
