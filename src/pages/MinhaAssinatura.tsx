@@ -350,14 +350,6 @@ export default function MinhaAssinatura() {
                       return null;
                     })()}
                   </div>
-                  <Button 
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setUpgradeDialogOpen(true)}
-                    className="text-sm font-medium"
-                  >
-                    Alterar plano
-                  </Button>
                 </div>
               </div>
             </div>
