@@ -35,6 +35,8 @@ interface SubscriptionData {
   monthly_price: number | null;
   subscription_started_at: string | null;
   grace_period_ends_at: string | null;
+  next_billing_date: string | null;
+  billing_day: number | null;
 }
 
 interface SubscriptionEvent {
@@ -181,7 +183,7 @@ export default function MinhaAssinatura() {
     try {
       const { data: tenantData, error: tenantError } = await supabase
         .from("tenants")
-        .select("id, nome, plano, subscription_status, monthly_price, subscription_started_at, grace_period_ends_at")
+        .select("id, nome, plano, subscription_status, monthly_price, subscription_started_at, grace_period_ends_at, next_billing_date, billing_day")
         .eq("id", tenantId)
         .single();
 
@@ -312,6 +314,12 @@ export default function MinhaAssinatura() {
                       <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1.5">
                         <Calendar className="h-3.5 w-3.5" />
                         Assinante desde {format(new Date(subscription.subscription_started_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                      </p>
+                    )}
+                    {subscription.next_billing_date && (
+                      <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1.5">
+                        <Receipt className="h-3.5 w-3.5" />
+                        Próximo faturamento: {format(new Date(subscription.next_billing_date), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
                       </p>
                     )}
                   </div>
