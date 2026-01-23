@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import {
   CreditCard,
   Plus,
@@ -7,16 +6,14 @@ import {
   AlertTriangle,
   Loader2,
   X,
-  RefreshCw,
 } from "lucide-react";
-import { loadStripe, StripeElementsOptions } from "@stripe/stripe-js";
+import { loadStripe } from "@stripe/stripe-js";
 import {
   Elements,
   CardElement,
   useStripe,
   useElements,
 } from "@stripe/react-stripe-js";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -30,17 +27,17 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-// Card brand icons/colors
-const cardBrandConfig: Record<string, { label: string; color: string }> = {
-  visa: { label: "Visa", color: "bg-blue-600" },
-  mastercard: { label: "Mastercard", color: "bg-orange-500" },
-  amex: { label: "American Express", color: "bg-blue-500" },
-  elo: { label: "Elo", color: "bg-yellow-500" },
-  hipercard: { label: "Hipercard", color: "bg-red-600" },
-  discover: { label: "Discover", color: "bg-orange-600" },
-  diners: { label: "Diners Club", color: "bg-gray-600" },
-  jcb: { label: "JCB", color: "bg-green-600" },
-  unionpay: { label: "UnionPay", color: "bg-red-500" },
+// Card brand icons/colors - Shopify style
+const cardBrandConfig: Record<string, { label: string; bgColor: string }> = {
+  visa: { label: "VISA", bgColor: "bg-[#1a1f71]" },
+  mastercard: { label: "MC", bgColor: "bg-[#eb001b]" },
+  amex: { label: "AMEX", bgColor: "bg-[#006fcf]" },
+  elo: { label: "ELO", bgColor: "bg-[#ffcb05]" },
+  hipercard: { label: "HIPER", bgColor: "bg-[#b52b2b]" },
+  discover: { label: "DISC", bgColor: "bg-[#ff6000]" },
+  diners: { label: "DINERS", bgColor: "bg-[#0079be]" },
+  jcb: { label: "JCB", bgColor: "bg-[#0b4ea2]" },
+  unionpay: { label: "UP", bgColor: "bg-[#d71e28]" },
 };
 
 interface PaymentMethod {
@@ -92,7 +89,6 @@ function CardForm({
         throw new Error("Elemento de cartão não encontrado");
       }
 
-      // Confirm SetupIntent with card details
       const { setupIntent, error: confirmError } = await stripe.confirmCardSetup(
         clientSecret,
         {
@@ -110,7 +106,6 @@ function CardForm({
         throw new Error("Não foi possível confirmar o cartão");
       }
 
-      // Save payment method to backend
       const { error: saveError } = await supabase.functions.invoke("stripe-save-payment-method", {
         body: {
           tenantId,
@@ -123,7 +118,7 @@ function CardForm({
         throw new Error(saveError.message || "Erro ao salvar cartão");
       }
 
-      toast.success("Cartão salvo com sucesso!");
+      toast.success("Cartão salvo com sucesso! A cobrança automática foi ativada.");
       onSuccess();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Erro ao processar cartão";
@@ -136,7 +131,7 @@ function CardForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="p-4 border rounded-lg bg-background">
+      <div className="p-4 border border-border rounded-lg bg-background">
         <CardElement
           options={{
             style: {
@@ -167,7 +162,7 @@ function CardForm({
         <Button
           type="submit"
           disabled={!stripe || processing}
-          className="flex-1"
+          className="flex-1 bg-foreground text-background hover:bg-foreground/90"
         >
           {processing ? (
             <>
@@ -193,7 +188,7 @@ function CardForm({
   );
 }
 
-// Main component
+// Main component - Shopify-style layout
 export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps) {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [loading, setLoading] = useState(true);
@@ -204,7 +199,6 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
   } | null>(null);
   const [preparingSetup, setPreparingSetup] = useState(false);
 
-  // Fetch saved payment method
   const fetchPaymentMethod = async () => {
     try {
       const { data, error } = await supabase
@@ -233,7 +227,6 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
     setPreparingSetup(true);
 
     try {
-      // Create SetupIntent
       const { data, error } = await supabase.functions.invoke("stripe-setup-intent", {
         body: { tenantId },
       });
@@ -244,7 +237,6 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
         throw new Error("Não foi possível iniciar configuração de pagamento");
       }
 
-      // Get Stripe publishable key
       const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
       
       if (!stripeKey) {
@@ -274,137 +266,140 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
   };
 
   const brandConfig = paymentMethod 
-    ? cardBrandConfig[paymentMethod.card_brand] || { label: paymentMethod.card_brand, color: "bg-gray-500" }
+    ? cardBrandConfig[paymentMethod.card_brand?.toLowerCase()] || { label: paymentMethod.card_brand?.toUpperCase() || "CARD", bgColor: "bg-muted-foreground" }
     : null;
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <div className="flex items-center gap-3">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            <span className="text-muted-foreground">Carregando...</span>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="bg-background rounded-lg border border-border p-6">
+        <div className="flex items-center gap-3">
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          <span className="text-muted-foreground text-sm">Carregando...</span>
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <CreditCard className="h-5 w-5 text-primary" />
-            Forma de pagamento
-          </CardTitle>
-          <CardDescription>
-            Escolha como você gostaria de pagar sua assinatura
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {paymentMethod ? (
-            // Show saved card
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="border-2 border-primary rounded-lg p-4"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="flex items-center gap-2">
-                    <div className="relative">
-                      <input
-                        type="radio"
-                        checked
-                        readOnly
-                        className="h-4 w-4 text-primary"
-                      />
-                    </div>
-                    <span className="font-medium text-foreground">
-                      Cartão de crédito ou débito
-                    </span>
-                    <Badge variant="secondary" className="text-xs">
-                      Principal
-                    </Badge>
-                  </div>
+      {/* Shopify-style Payment Method Card */}
+      <div className="bg-background rounded-lg border border-border">
+        {/* Header */}
+        <div className="p-5 pb-4">
+          <h3 className="text-sm font-semibold text-foreground">Forma de pagamento</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Escolha como você gostaria de pagar sua assinatura.
+          </p>
+        </div>
+
+        {/* Payment Options */}
+        <div className="px-5 pb-5">
+          {/* Credit Card Option */}
+          <div className="border border-border rounded-lg overflow-hidden">
+            {/* Main Option Row */}
+            <div className="flex items-center gap-3 p-4 bg-background">
+              <div className="flex items-center justify-center w-5 h-5">
+                <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod ? 'border-foreground' : 'border-muted-foreground'}`}>
+                  {paymentMethod && (
+                    <div className="w-2 h-2 rounded-full bg-foreground" />
+                  )}
                 </div>
               </div>
+              <span className="text-sm font-medium text-foreground">
+                Cartão de crédito ou débito
+              </span>
+              {paymentMethod && (
+                <Badge 
+                  variant="secondary" 
+                  className="text-[10px] px-2 py-0.5 bg-muted text-muted-foreground font-medium"
+                >
+                  Principal
+                </Badge>
+              )}
+            </div>
 
-              <div className="mt-4 ml-6 p-3 bg-muted/50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`px-2 py-1 rounded text-xs font-bold text-white uppercase ${brandConfig?.color}`}>
+            {/* Card Details / Add Card Section */}
+            {paymentMethod ? (
+              <div className="px-4 py-3 border-t border-border bg-muted/30">
+                <div className="flex items-center gap-2 pl-8">
+                  <span 
+                    className={`px-1.5 py-0.5 ${brandConfig?.bgColor} text-white text-[10px] font-bold tracking-wider rounded`}
+                  >
                     {brandConfig?.label}
-                  </div>
-                  <span className="text-foreground">
-                    {brandConfig?.label} com final {paymentMethod.card_last_four}
+                  </span>
+                  <span className="text-sm text-foreground">
+                    {paymentMethod.card_brand?.charAt(0).toUpperCase()}{paymentMethod.card_brand?.slice(1)} com final {paymentMethod.card_last_four}
                   </span>
                 </div>
-                <button
-                  onClick={handleAddCard}
-                  disabled={preparingSetup}
-                  className="mt-2 text-sm text-primary hover:underline disabled:opacity-50"
-                >
-                  {preparingSetup ? (
-                    <span className="flex items-center gap-1">
-                      <Loader2 className="h-3 w-3 animate-spin" />
-                      Preparando...
-                    </span>
-                  ) : (
-                    "Substituir cartão de crédito"
-                  )}
-                </button>
+                <div className="pl-8 mt-2">
+                  <button 
+                    onClick={handleAddCard}
+                    disabled={preparingSetup}
+                    className="text-sm text-primary hover:underline font-medium disabled:opacity-50"
+                  >
+                    {preparingSetup ? (
+                      <span className="flex items-center gap-1">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Preparando...
+                      </span>
+                    ) : (
+                      "Substituir cartão de crédito"
+                    )}
+                  </button>
+                </div>
               </div>
+            ) : (
+              <div className="px-4 py-4 border-t border-border bg-muted/30">
+                <div className="flex items-center justify-between pl-8">
+                  <div className="flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm text-muted-foreground">
+                      Nenhum cartão cadastrado
+                    </span>
+                  </div>
+                  <Button 
+                    onClick={handleAddCard}
+                    disabled={preparingSetup}
+                    size="sm"
+                    variant="outline"
+                    className="text-xs"
+                  >
+                    {preparingSetup ? (
+                      <>
+                        <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                        Preparando...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Adicionar Cartão
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
 
-              <p className="mt-3 ml-6 text-xs text-muted-foreground">
-                Expira em {paymentMethod.card_exp_month.toString().padStart(2, "0")}/{paymentMethod.card_exp_year}
-              </p>
-            </motion.div>
-          ) : (
-            // No card saved
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-6 text-center"
-            >
-              <CreditCard className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
-              <p className="text-muted-foreground mb-4">
-                Nenhum cartão cadastrado para cobrança automática
-              </p>
-              <Button onClick={handleAddCard} disabled={preparingSetup}>
-                {preparingSetup ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Preparando...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-4 w-4 mr-2" />
-                    Adicionar Cartão
-                  </>
-                )}
-              </Button>
-            </motion.div>
-          )}
-
+          {/* Success Message */}
           {paymentMethod && (
-            <Alert className="bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800">
-              <Check className="h-4 w-4 text-emerald-600" />
-              <AlertDescription className="text-emerald-700 dark:text-emerald-400">
+            <div className="flex items-start gap-2 mt-4 p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+              <Check className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-emerald-700 dark:text-emerald-400">
                 <strong>Cobrança automática ativa.</strong> Sua assinatura será renovada automaticamente 
-                usando este cartão.
-              </AlertDescription>
-            </Alert>
+                no dia do vencimento usando este cartão.
+              </p>
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {/* Add Card Dialog */}
       <Dialog open={showAddCard} onOpenChange={setShowAddCard}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {paymentMethod ? "Substituir cartão" : "Adicionar cartão"}
+              {paymentMethod ? "Substituir cartão" : "Adicionar cartão de crédito"}
             </DialogTitle>
             <DialogDescription>
               {paymentMethod 
