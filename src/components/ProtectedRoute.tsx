@@ -1,6 +1,8 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTenant, useSubscriptionStatus } from "@/hooks/useTenant";
+import { BlockedTenantScreen } from "@/components/BlockedTenantScreen";
 import { Loader2 } from "lucide-react";
 import type { Database } from "@/integrations/supabase/types";
 
@@ -33,9 +35,12 @@ const schoolOnlyRoutes = [
 
 export function ProtectedRoute({ children, requiredRole, platformOnly }: ProtectedRouteProps) {
   const { user, loading, hasRole, isPlatformAdmin } = useAuth();
+  const { data: tenant, isLoading: tenantLoading } = useTenant();
+  const subscriptionStatus = useSubscriptionStatus();
   const location = useLocation();
 
-  if (loading) {
+  // Show loading while auth or tenant data is loading
+  if (loading || (!isPlatformAdmin() && tenantLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -74,6 +79,34 @@ export function ProtectedRoute({ children, requiredRole, platformOnly }: Protect
       if (!isAllowedRoute) {
         return <Navigate to="/platform" replace />;
       }
+    }
+  }
+
+  // CHECK TENANT SUBSCRIPTION STATUS (for non-platform admins)
+  if (!isPlatformAdmin() && tenant) {
+    // Completely blocked
+    if (tenant.blocked_at || subscriptionStatus?.isSuspended) {
+      return (
+        <BlockedTenantScreen 
+          reason={tenant.blocked_reason || undefined}
+          isPastDue={false}
+        />
+      );
+    }
+
+    // Past due - show warning but allow access during grace period
+    if (subscriptionStatus?.isPastDue && subscriptionStatus.gracePeriodEndsAt) {
+      const now = new Date();
+      if (now > subscriptionStatus.gracePeriodEndsAt) {
+        // Grace period expired - block access
+        return (
+          <BlockedTenantScreen 
+            isPastDue={true}
+            gracePeriodEndsAt={subscriptionStatus.gracePeriodEndsAt}
+          />
+        );
+      }
+      // Still in grace period - show warning banner (handled in DashboardLayout)
     }
   }
 
