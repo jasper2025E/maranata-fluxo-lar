@@ -1719,8 +1719,57 @@ export type Database = {
         }
         Relationships: []
       }
+      tenant_payment_methods: {
+        Row: {
+          card_brand: string
+          card_exp_month: number
+          card_exp_year: number
+          card_last_four: string
+          created_at: string | null
+          id: string
+          is_default: boolean
+          stripe_payment_method_id: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          card_brand: string
+          card_exp_month: number
+          card_exp_year: number
+          card_last_four: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean
+          stripe_payment_method_id: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          card_brand?: string
+          card_exp_month?: number
+          card_exp_year?: number
+          card_last_four?: string
+          created_at?: string | null
+          id?: string
+          is_default?: boolean
+          stripe_payment_method_id?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_payment_methods_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tenants: {
         Row: {
+          auto_billing_enabled: boolean | null
+          billing_day: number | null
           blocked_at: string | null
           blocked_reason: string | null
           cnpj: string | null
@@ -1730,10 +1779,12 @@ export type Database = {
           endereco: string | null
           grace_period_ends_at: string | null
           id: string
+          last_billing_date: string | null
           limite_alunos: number | null
           limite_usuarios: number | null
           logo_url: string | null
           monthly_price: number | null
+          next_billing_date: string | null
           nome: string
           plano: string | null
           status: string | null
@@ -1749,6 +1800,8 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          auto_billing_enabled?: boolean | null
+          billing_day?: number | null
           blocked_at?: string | null
           blocked_reason?: string | null
           cnpj?: string | null
@@ -1758,10 +1811,12 @@ export type Database = {
           endereco?: string | null
           grace_period_ends_at?: string | null
           id?: string
+          last_billing_date?: string | null
           limite_alunos?: number | null
           limite_usuarios?: number | null
           logo_url?: string | null
           monthly_price?: number | null
+          next_billing_date?: string | null
           nome: string
           plano?: string | null
           status?: string | null
@@ -1777,6 +1832,8 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          auto_billing_enabled?: boolean | null
+          billing_day?: number | null
           blocked_at?: string | null
           blocked_reason?: string | null
           cnpj?: string | null
@@ -1786,10 +1843,12 @@ export type Database = {
           endereco?: string | null
           grace_period_ends_at?: string | null
           id?: string
+          last_billing_date?: string | null
           limite_alunos?: number | null
           limite_usuarios?: number | null
           logo_url?: string | null
           monthly_price?: number | null
+          next_billing_date?: string | null
           nome?: string
           plano?: string | null
           status?: string | null
