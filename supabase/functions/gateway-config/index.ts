@@ -404,7 +404,12 @@ serve(async (req) => {
           case "asaas": {
             const apiKey = decryptedSecrets["api_key"];
             if (!apiKey) {
-              throw new Error("API Key não configurada");
+              testResult = {
+                success: false,
+                message: "Configure a API Key antes de testar",
+                environment: config.environment,
+              };
+              break;
             }
 
             const isProduction = config.environment === "production" || !apiKey.includes("sandbox");
@@ -436,7 +441,12 @@ serve(async (req) => {
           case "mercado_pago": {
             const accessToken = decryptedSecrets["access_token"];
             if (!accessToken) {
-              throw new Error("Access Token não configurado");
+              testResult = {
+                success: false,
+                message: "Configure o Access Token antes de testar",
+                environment: config.environment,
+              };
+              break;
             }
 
             const response = await fetch("https://api.mercadopago.com/users/me", {
