@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CheckCircle,
@@ -6,6 +7,10 @@ import {
   Zap,
   Crown,
   Loader2,
+  AlertTriangle,
+  Mail,
+  Building2,
+  ExternalLink,
 } from "lucide-react";
 import {
   Dialog,
@@ -16,9 +21,11 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { formatCurrency } from "@/lib/formatters";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface Plan {
   id: string;
@@ -75,6 +82,14 @@ const plans: Plan[] = [
   },
 ];
 
+interface TenantValidation {
+  isValid: boolean;
+  missingFields: string[];
+  email: string | null;
+  cnpj: string | null;
+  nome: string | null;
+}
+
 interface UpgradePlanDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -90,11 +105,88 @@ export function UpgradePlanDialog({
   tenantId,
   onSuccess,
 }: UpgradePlanDialogProps) {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState<string | null>(null);
+  const [validating, setValidating] = useState(true);
+  const [validation, setValidation] = useState<TenantValidation>({
+    isValid: false,
+    missingFields: [],
+    email: null,
+    cnpj: null,
+    nome: null,
+  });
+
+  // Validate tenant data when dialog opens
+  useEffect(() => {
+    if (open && tenantId) {
+      validateTenantData();
+    }
+  }, [open, tenantId]);
+
+  const validateTenantData = async () => {
+    setValidating(true);
+    try {
+      const { data: tenant, error } = await supabase
+        .from("tenants")
+        .select("nome, email, cnpj")
+        .eq("id", tenantId)
+        .single();
+
+      if (error) {
+        console.error("Erro ao validar tenant:", error);
+        setValidation({
+          isValid: false,
+          missingFields: ["Erro ao carregar dados"],
+          email: null,
+          cnpj: null,
+          nome: null,
+        });
+        return;
+      }
+
+      const missingFields: string[] = [];
+
+      if (!tenant?.email || tenant.email.trim() === "") {
+        missingFields.push("Email da escola");
+      }
+
+      if (!tenant?.cnpj || tenant.cnpj.trim() === "") {
+        missingFields.push("CNPJ da escola");
+      }
+
+      if (!tenant?.nome || tenant.nome.trim() === "") {
+        missingFields.push("Nome da escola");
+      }
+
+      setValidation({
+        isValid: missingFields.length === 0,
+        missingFields,
+        email: tenant?.email || null,
+        cnpj: tenant?.cnpj || null,
+        nome: tenant?.nome || null,
+      });
+    } catch (error) {
+      console.error("Erro na validação:", error);
+      setValidation({
+        isValid: false,
+        missingFields: ["Erro ao validar dados"],
+        email: null,
+        cnpj: null,
+        nome: null,
+      });
+    } finally {
+      setValidating(false);
+    }
+  };
 
   const handleSelectPlan = async (planId: string) => {
     if (planId === currentPlan) {
       toast.info("Você já possui este plano");
+      return;
+    }
+
+    if (!validation.isValid) {
+      toast.error("Complete os dados obrigatórios antes de continuar");
       return;
     }
 
@@ -105,23 +197,6 @@ export function UpgradePlanDialog({
       
       if (!session) {
         toast.error("Sessão expirada. Faça login novamente.");
-        return;
-      }
-
-      // Verificar se o tenant tem email configurado
-      const { data: tenant, error: tenantError } = await supabase
-        .from("tenants")
-        .select("email")
-        .eq("id", tenantId)
-        .single();
-
-      if (tenantError) {
-        console.error("Erro ao buscar tenant:", tenantError);
-        throw new Error("Erro ao buscar dados da escola");
-      }
-
-      if (!tenant?.email) {
-        toast.error("É necessário configurar um email da escola antes de assinar. Vá em Configurações > Dados da Escola.");
         return;
       }
 
@@ -138,7 +213,11 @@ export function UpgradePlanDialog({
         throw new Error(response.error.message || "Erro ao criar checkout");
       }
 
-      const { url } = response.data;
+      const { url, error: checkoutError } = response.data;
+
+      if (checkoutError) {
+        throw new Error(checkoutError);
+      }
 
       if (url) {
         window.location.href = url;
@@ -151,6 +230,11 @@ export function UpgradePlanDialog({
     } finally {
       setLoading(null);
     }
+  };
+
+  const handleGoToSettings = () => {
+    onOpenChange(false);
+    navigate("/escola");
   };
 
   const getPlanOrder = (planId: string) => {
@@ -170,12 +254,73 @@ export function UpgradePlanDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 md:grid-cols-3 mt-4">
+        {/* Validation Alert */}
+        {!validating && !validation.isValid && (
+          <Alert variant="destructive" className="my-4">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>Dados incompletos</AlertTitle>
+            <AlertDescription className="mt-2">
+              <p className="mb-3">
+                Para prosseguir com a assinatura, é necessário preencher os seguintes dados da escola:
+              </p>
+              <ul className="space-y-2 mb-4">
+                {validation.missingFields.map((field, index) => (
+                  <li key={index} className="flex items-center gap-2 text-sm">
+                    {field.includes("Email") ? (
+                      <Mail className="h-4 w-4" />
+                    ) : field.includes("CNPJ") ? (
+                      <Building2 className="h-4 w-4" />
+                    ) : (
+                      <AlertTriangle className="h-4 w-4" />
+                    )}
+                    {field}
+                  </li>
+                ))}
+              </ul>
+              <Button 
+                size="sm" 
+                variant="outline" 
+                className="gap-2"
+                onClick={handleGoToSettings}
+              >
+                <ExternalLink className="h-4 w-4" />
+                Ir para Dados da Escola
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Validation Success */}
+        {!validating && validation.isValid && (
+          <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-lg my-4">
+            <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="text-sm">
+              <span className="font-medium text-emerald-700 dark:text-emerald-300">
+                Dados validados!
+              </span>
+              <span className="text-emerald-600 dark:text-emerald-400 ml-2">
+                {validation.nome} • {validation.email}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Loading validation state */}
+        {validating && (
+          <div className="flex items-center justify-center gap-2 p-4 my-4">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Validando dados...</span>
+          </div>
+        )}
+
+        <div className={cn(
+          "grid gap-4 md:grid-cols-3 mt-4",
+          (!validation.isValid && !validating) && "opacity-50 pointer-events-none"
+        )}>
           {plans.map((plan, index) => {
             const planOrder = getPlanOrder(plan.id);
             const isCurrentPlan = plan.id === currentPlan;
             const isUpgrade = planOrder > currentPlanOrder;
-            const isDowngrade = planOrder < currentPlanOrder;
 
             return (
               <motion.div
@@ -230,7 +375,7 @@ export function UpgradePlanDialog({
                 <Button
                   className="w-full"
                   variant={isCurrentPlan ? "secondary" : isUpgrade ? "default" : "outline"}
-                  disabled={isCurrentPlan || loading !== null}
+                  disabled={isCurrentPlan || loading !== null || !validation.isValid || validating}
                   onClick={() => handleSelectPlan(plan.id)}
                 >
                   {loading === plan.id ? (
