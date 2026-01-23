@@ -1,15 +1,9 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import {
-  CheckCircle,
-  Sparkles,
-  Zap,
-  Crown,
+  Check,
   Loader2,
   AlertTriangle,
-  Mail,
-  Building2,
   ExternalLink,
 } from "lucide-react";
 import {
@@ -20,18 +14,11 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useSubscriptionPlans, getPlanPriceFormatted, SubscriptionPlan } from "@/hooks/useSubscriptionPlans";
-
-const iconMap: Record<string, React.ReactNode> = {
-  Zap: <Zap className="h-5 w-5" />,
-  Sparkles: <Sparkles className="h-5 w-5" />,
-  Crown: <Crown className="h-5 w-5" />,
-};
+import { useSubscriptionPlans, getPlanPriceFormatted } from "@/hooks/useSubscriptionPlans";
 
 interface TenantValidation {
   isValid: boolean;
@@ -68,7 +55,6 @@ export function UpgradePlanDialog({
     nome: null,
   });
 
-  // Validate tenant data when dialog opens
   useEffect(() => {
     if (open && tenantId) {
       validateTenantData();
@@ -198,161 +184,140 @@ export function UpgradePlanDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-2xl">Alterar Plano</DialogTitle>
-          <DialogDescription>
-            Escolha o plano que melhor atende às necessidades da sua escola
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-3xl p-0 overflow-hidden">
+        {/* Header */}
+        <div className="p-6 pb-0">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-semibold text-foreground">
+              Alterar plano
+            </DialogTitle>
+            <DialogDescription className="text-sm text-muted-foreground">
+              Selecione o plano ideal para sua escola
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* Validation Alert */}
-        {!validating && !validation.isValid && (
-          <Alert variant="destructive" className="my-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertTitle>Dados incompletos</AlertTitle>
-            <AlertDescription className="mt-2">
-              <p className="mb-3">
-                Para prosseguir com a assinatura, é necessário preencher os seguintes dados da escola:
-              </p>
-              <ul className="space-y-2 mb-4">
-                {validation.missingFields.map((field, index) => (
-                  <li key={index} className="flex items-center gap-2 text-sm">
-                    {field.includes("Email") ? (
-                      <Mail className="h-4 w-4" />
-                    ) : field.includes("CNPJ") ? (
-                      <Building2 className="h-4 w-4" />
-                    ) : (
-                      <AlertTriangle className="h-4 w-4" />
-                    )}
-                    {field}
-                  </li>
-                ))}
-              </ul>
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="gap-2"
-                onClick={handleGoToSettings}
-              >
-                <ExternalLink className="h-4 w-4" />
-                Ir para Dados da Escola
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+          {/* Validation States */}
+          {validating && (
+            <div className="flex items-center gap-2 mt-4 p-3 bg-muted/50 rounded-lg">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Validando dados...</span>
+            </div>
+          )}
 
-        {/* Validation Success */}
-        {!validating && validation.isValid && (
-          <div className="flex items-center gap-2 p-3 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800/30 rounded-lg my-4">
-            <CheckCircle className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-            <div className="text-sm">
-              <span className="font-medium text-emerald-700 dark:text-emerald-300">
-                Dados validados!
+          {!validating && !validation.isValid && (
+            <Alert variant="destructive" className="mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription className="ml-2">
+                <span className="font-medium">Dados incompletos:</span>{" "}
+                {validation.missingFields.join(", ")}.{" "}
+                <button 
+                  onClick={handleGoToSettings}
+                  className="underline hover:no-underline"
+                >
+                  Completar cadastro
+                </button>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {!validating && validation.isValid && (
+            <div className="flex items-center gap-2 mt-4 p-3 bg-muted/50 rounded-lg border border-border">
+              <Check className="h-4 w-4 text-foreground" />
+              <span className="text-sm text-foreground">
+                {validation.nome}
               </span>
-              <span className="text-emerald-600 dark:text-emerald-400 ml-2">
-                {validation.nome} • {validation.email}
+              <span className="text-sm text-muted-foreground">
+                • {validation.email}
               </span>
             </div>
-          </div>
-        )}
-
-        {/* Loading validation state */}
-        {validating && (
-          <div className="flex items-center justify-center gap-2 p-4 my-4">
-            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">Validando dados...</span>
-          </div>
-        )}
-
-        <div className={cn(
-          "grid gap-4 md:grid-cols-3 mt-4",
-          (!validation.isValid && !validating) && "opacity-50 pointer-events-none"
-        )}>
-          {plans.map((plan, index) => {
-            const planOrder = getPlanOrder(plan.id);
-            const isCurrentPlan = plan.id === currentPlan;
-            const isUpgrade = planOrder > currentPlanOrder;
-
-            return (
-              <motion.div
-                key={plan.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={`relative rounded-xl border-2 p-5 transition-all ${
-                  isCurrentPlan
-                    ? "border-primary bg-primary/5"
-                    : plan.popular
-                    ? "border-primary/50 hover:border-primary"
-                    : "border-border hover:border-primary/30"
-                }`}
-              >
-                {plan.popular && !isCurrentPlan && (
-                  <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground">
-                    Mais Popular
-                  </Badge>
-                )}
-
-                {isCurrentPlan && (
-                  <Badge className="absolute -top-2.5 left-1/2 -translate-x-1/2 bg-emerald-500 text-white">
-                    Plano Atual
-                  </Badge>
-                )}
-
-                <div className="text-center mb-4">
-                  <div
-                    className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${plan.color} text-primary-foreground mb-3`}
-                  >
-                    {iconMap[plan.icon] || <Zap className="h-5 w-5" />}
-                  </div>
-                  <h3 className="font-semibold text-lg text-foreground">{plan.name}</h3>
-                  <div className="mt-2">
-                    <span className="text-3xl font-bold text-foreground">
-                      {getPlanPriceFormatted(plan.price)}
-                    </span>
-                    <span className="text-muted-foreground">/mês</span>
-                  </div>
-                </div>
-
-                <ul className="space-y-2 mb-6">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle className="h-4 w-4 text-emerald-500 shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-
-                <Button
-                  className="w-full"
-                  variant={isCurrentPlan ? "secondary" : isUpgrade ? "default" : "outline"}
-                  disabled={isCurrentPlan || loading !== null || !validation.isValid || validating}
-                  onClick={() => handleSelectPlan(plan.id)}
-                >
-                  {loading === plan.id ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Processando...
-                    </>
-                  ) : isCurrentPlan ? (
-                    "Plano Atual"
-                  ) : isUpgrade ? (
-                    "Fazer Upgrade"
-                  ) : (
-                    "Fazer Downgrade"
-                  )}
-                </Button>
-              </motion.div>
-            );
-          })}
+          )}
         </div>
 
-        <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-          <p className="text-sm text-muted-foreground text-center">
-            💳 Pagamento seguro via Stripe. Você pode cancelar a qualquer momento.
-            <br />
-            A cobrança será proporcional ao tempo restante do seu plano atual.
+        {/* Plans Grid */}
+        <div className={cn(
+          "p-6",
+          (!validation.isValid && !validating) && "opacity-50 pointer-events-none"
+        )}>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {plans.map((plan) => {
+              const planOrder = getPlanOrder(plan.id);
+              const isCurrentPlan = plan.id === currentPlan;
+              const isUpgrade = planOrder > currentPlanOrder;
+
+              return (
+                <div
+                  key={plan.id}
+                  className={cn(
+                    "relative rounded-lg border p-5 transition-all",
+                    isCurrentPlan
+                      ? "border-foreground bg-muted/30"
+                      : "border-border hover:border-muted-foreground/50"
+                  )}
+                >
+                  {/* Current Plan Indicator */}
+                  {isCurrentPlan && (
+                    <div className="absolute -top-2.5 left-4">
+                      <span className="px-2 py-0.5 bg-foreground text-background text-[10px] font-medium rounded">
+                        Plano atual
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Plan Name */}
+                  <div className="mb-4">
+                    <h3 className="text-sm font-semibold text-foreground">{plan.name}</h3>
+                    <div className="mt-2">
+                      <span className="text-2xl font-bold text-foreground">
+                        {getPlanPriceFormatted(plan.price)}
+                      </span>
+                      <span className="text-sm text-muted-foreground">/mês</span>
+                    </div>
+                  </div>
+
+                  {/* Features */}
+                  <ul className="space-y-2 mb-5">
+                    {plan.features.map((feature, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-foreground shrink-0 mt-0.5" />
+                        <span>{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Action Button */}
+                  <Button
+                    className={cn(
+                      "w-full",
+                      isCurrentPlan && "bg-muted text-muted-foreground hover:bg-muted cursor-default",
+                      !isCurrentPlan && isUpgrade && "bg-foreground text-background hover:bg-foreground/90",
+                      !isCurrentPlan && !isUpgrade && "bg-background text-foreground border border-border hover:bg-muted"
+                    )}
+                    disabled={isCurrentPlan || loading !== null || !validation.isValid || validating}
+                    onClick={() => !isCurrentPlan && handleSelectPlan(plan.id)}
+                  >
+                    {loading === plan.id ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        Processando...
+                      </>
+                    ) : isCurrentPlan ? (
+                      "Plano atual"
+                    ) : isUpgrade ? (
+                      "Fazer upgrade"
+                    ) : (
+                      "Fazer downgrade"
+                    )}
+                  </Button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-muted/30 border-t border-border">
+          <p className="text-xs text-muted-foreground text-center">
+            Pagamento seguro via Stripe. Cancele quando quiser. A cobrança é proporcional ao período restante.
           </p>
         </div>
       </DialogContent>
