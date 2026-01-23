@@ -471,14 +471,6 @@ export default function MinhaAssinatura() {
                   >
                     Alterar plano
                   </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate("/assinatura/faturas")}
-                    className="w-full h-11 font-medium rounded-lg"
-                  >
-                    <Receipt className="h-4 w-4 mr-2" />
-                    Ver faturas
-                  </Button>
                 </div>
               </div>
             </div>
