@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   CreditCard,
@@ -19,7 +20,6 @@ import {
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { useAuth } from "@/contexts/AuthContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { formatCurrency } from "@/lib/formatters";
 import { useEscola } from "@/hooks/useEscola";
+import { UpgradePlanDialog } from "@/components/subscription/UpgradePlanDialog";
+import { toast } from "sonner";
 
 interface SubscriptionData {
   id: string;
@@ -125,10 +127,29 @@ const eventTypeLabels: Record<string, { label: string; icon: React.ReactNode }> 
 
 export default function MinhaAssinatura() {
   const { t } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { data: escola } = useEscola();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [history, setHistory] = useState<SubscriptionEvent[]>([]);
   const [loading, setLoading] = useState(true);
+  const [upgradeDialogOpen, setUpgradeDialogOpen] = useState(false);
+
+  // Handle success/cancel from Stripe checkout
+  useEffect(() => {
+    const success = searchParams.get("success");
+    const canceled = searchParams.get("canceled");
+
+    if (success === "true") {
+      toast.success("Assinatura ativada com sucesso! Seu plano foi atualizado.");
+      // Clear URL params
+      setSearchParams({});
+      // Refresh data
+      fetchSubscriptionData();
+    } else if (canceled === "true") {
+      toast.info("Checkout cancelado. Você pode tentar novamente quando quiser.");
+      setSearchParams({});
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchSubscriptionData();
@@ -311,9 +332,13 @@ export default function MinhaAssinatura() {
 
                 {/* Actions */}
                 <div className="flex flex-wrap gap-3">
-                  <Button variant="outline" className="gap-2">
+                  <Button 
+                    variant="default" 
+                    className="gap-2"
+                    onClick={() => setUpgradeDialogOpen(true)}
+                  >
                     <TrendingUp className="h-4 w-4" />
-                    Upgrade do Plano
+                    Alterar Plano
                   </Button>
                   <Button variant="ghost" className="gap-2">
                     <Download className="h-4 w-4" />
@@ -448,6 +473,18 @@ export default function MinhaAssinatura() {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Upgrade Dialog */}
+        <UpgradePlanDialog
+          open={upgradeDialogOpen}
+          onOpenChange={setUpgradeDialogOpen}
+          currentPlan={subscription.plano}
+          tenantId={subscription.id}
+          onSuccess={() => {
+            fetchSubscriptionData();
+            setUpgradeDialogOpen(false);
+          }}
+        />
       </div>
     </DashboardLayout>
   );
