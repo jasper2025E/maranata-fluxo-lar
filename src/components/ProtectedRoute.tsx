@@ -9,10 +9,11 @@ type AppRole = Database["public"]["Enums"]["app_role"];
 interface ProtectedRouteProps {
   children: ReactNode;
   requiredRole?: AppRole;
+  platformOnly?: boolean;
 }
 
-export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { user, loading, hasRole } = useAuth();
+export function ProtectedRoute({ children, requiredRole, platformOnly }: ProtectedRouteProps) {
+  const { user, loading, hasRole, isPlatformAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -27,6 +28,16 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
 
   if (!user) {
     return <Navigate to="/auth" replace />;
+  }
+
+  // Platform-only routes
+  if (platformOnly && !isPlatformAdmin()) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  // Redirect platform_admin to platform dashboard if trying to access regular routes
+  if (isPlatformAdmin() && !platformOnly) {
+    return <Navigate to="/platform" replace />;
   }
 
   if (requiredRole && !hasRole(requiredRole)) {

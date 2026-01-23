@@ -74,6 +74,7 @@ interface SystemUser {
 }
 
 const roleLabels: Record<AppRole, string> = {
+  platform_admin: "Platform Admin",
   admin: "Administrador",
   staff: "Equipe",
   financeiro: "Financeiro",
@@ -81,6 +82,7 @@ const roleLabels: Record<AppRole, string> = {
 };
 
 const roleBadgeVariants: Record<AppRole, string> = {
+  platform_admin: "bg-gradient-to-r from-amber-500 to-orange-500 text-white",
   admin: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
   staff: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
   financeiro: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",

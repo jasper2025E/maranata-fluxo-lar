@@ -144,6 +144,7 @@ export type Database = {
           id: string
           registro_id: string | null
           tabela: string
+          tenant_id: string | null
           user_id: string | null
         }
         Insert: {
@@ -154,6 +155,7 @@ export type Database = {
           id?: string
           registro_id?: string | null
           tabela: string
+          tenant_id?: string | null
           user_id?: string | null
         }
         Update: {
@@ -164,9 +166,18 @@ export type Database = {
           id?: string
           registro_id?: string | null
           tabela?: string
+          tenant_id?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "audit_logs_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cargos: {
         Row: {
@@ -352,6 +363,7 @@ export type Database = {
           multa_percentual_padrao: number | null
           nome: string
           telefone: string | null
+          tenant_id: string | null
           updated_at: string | null
         }
         Insert: {
@@ -371,6 +383,7 @@ export type Database = {
           multa_percentual_padrao?: number | null
           nome: string
           telefone?: string | null
+          tenant_id?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -390,9 +403,18 @@ export type Database = {
           multa_percentual_padrao?: number | null
           nome?: string
           telefone?: string | null
+          tenant_id?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "escola_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       fatura_descontos: {
         Row: {
@@ -1141,6 +1163,33 @@ export type Database = {
           },
         ]
       }
+      platform_settings: {
+        Row: {
+          description: string | null
+          id: string
+          key: string
+          updated_at: string | null
+          updated_by: string | null
+          value: Json
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          key: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value: Json
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          key?: string
+          updated_at?: string | null
+          updated_by?: string | null
+          value?: Json
+        }
+        Relationships: []
+      }
       ponto_registros: {
         Row: {
           accuracy: number | null
@@ -1255,6 +1304,7 @@ export type Database = {
           email: string
           id: string
           nome: string
+          tenant_id: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -1262,6 +1312,7 @@ export type Database = {
           email: string
           id: string
           nome: string
+          tenant_id?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -1269,8 +1320,17 @@ export type Database = {
           email?: string
           id?: string
           nome?: string
+          tenant_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       responsaveis: {
         Row: {
@@ -1340,6 +1400,57 @@ export type Database = {
           descricao?: string | null
           id?: string
           nome?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      tenants: {
+        Row: {
+          cnpj: string | null
+          created_at: string | null
+          data_contrato: string | null
+          email: string | null
+          endereco: string | null
+          id: string
+          limite_alunos: number | null
+          limite_usuarios: number | null
+          logo_url: string | null
+          nome: string
+          plano: string | null
+          status: string | null
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cnpj?: string | null
+          created_at?: string | null
+          data_contrato?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          limite_alunos?: number | null
+          limite_usuarios?: number | null
+          logo_url?: string | null
+          nome: string
+          plano?: string | null
+          status?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cnpj?: string | null
+          created_at?: string | null
+          data_contrato?: string | null
+          email?: string | null
+          endereco?: string | null
+          id?: string
+          limite_alunos?: number | null
+          limite_usuarios?: number | null
+          logo_url?: string | null
+          nome?: string
+          plano?: string | null
+          status?: string | null
+          telefone?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -1500,6 +1611,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
       recalcular_fatura: { Args: { p_fatura_id: string }; Returns: undefined }
       registrar_ponto_externo: {
         Args: {
@@ -1534,7 +1646,12 @@ export type Database = {
     }
     Enums: {
       aluno_status: "ativo" | "trancado" | "cancelado" | "transferido"
-      app_role: "admin" | "staff" | "financeiro" | "secretaria"
+      app_role:
+        | "admin"
+        | "staff"
+        | "financeiro"
+        | "secretaria"
+        | "platform_admin"
       contrato_tipo: "clt" | "pj" | "temporario" | "estagio"
       funcionario_status: "ativo" | "inativo" | "afastado" | "ferias"
       funcionario_tipo: "professor" | "administrativo" | "outro"
@@ -1666,7 +1783,13 @@ export const Constants = {
   public: {
     Enums: {
       aluno_status: ["ativo", "trancado", "cancelado", "transferido"],
-      app_role: ["admin", "staff", "financeiro", "secretaria"],
+      app_role: [
+        "admin",
+        "staff",
+        "financeiro",
+        "secretaria",
+        "platform_admin",
+      ],
       contrato_tipo: ["clt", "pj", "temporario", "estagio"],
       funcionario_status: ["ativo", "inativo", "afastado", "ferias"],
       funcionario_tipo: ["professor", "administrativo", "outro"],
