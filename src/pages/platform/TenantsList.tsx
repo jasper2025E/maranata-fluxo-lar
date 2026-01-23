@@ -52,6 +52,17 @@ interface Tenant {
   created_at: string;
 }
 
+interface TenantDataCounts {
+  alunos: number;
+  faturas: number;
+  responsaveis: number;
+  cursos: number;
+  turmas: number;
+  funcionarios: number;
+  usuarios: number;
+  loading: boolean;
+}
+
 export default function TenantsList() {
   const navigate = useNavigate();
   const { isPlatformAdmin } = useAuth();
@@ -60,6 +71,17 @@ export default function TenantsList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
+  const [dataCounts, setDataCounts] = useState<TenantDataCounts>({
+    alunos: 0,
+    faturas: 0,
+    responsaveis: 0,
+    cursos: 0,
+    turmas: 0,
+    funcionarios: 0,
+    usuarios: 0,
+    loading: false,
+  });
+  const [deleteConfirmed, setDeleteConfirmed] = useState(false);
 
   useEffect(() => {
     if (!isPlatformAdmin()) {
@@ -84,6 +106,50 @@ export default function TenantsList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchTenantDataCounts = async (tenantId: string) => {
+    setDataCounts(prev => ({ ...prev, loading: true }));
+    
+    try {
+      // Buscar contagens em paralelo
+      const [
+        alunosRes,
+        faturasRes,
+        responsaveisRes,
+        cursosRes,
+        funcionariosRes,
+        usuariosRes,
+      ] = await Promise.all([
+        supabase.from("alunos").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId),
+        supabase.from("faturas").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId),
+        supabase.from("responsaveis").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId),
+        supabase.from("cursos").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId),
+        supabase.from("funcionarios").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId),
+        supabase.from("profiles").select("id", { count: "exact", head: true }).eq("tenant_id", tenantId),
+      ]);
+
+      setDataCounts({
+        alunos: alunosRes.count || 0,
+        faturas: faturasRes.count || 0,
+        responsaveis: responsaveisRes.count || 0,
+        cursos: cursosRes.count || 0,
+        turmas: 0,
+        funcionarios: funcionariosRes.count || 0,
+        usuarios: usuariosRes.count || 0,
+        loading: false,
+      });
+    } catch (error) {
+      console.error("Error fetching data counts:", error);
+      setDataCounts(prev => ({ ...prev, loading: false }));
+    }
+  };
+
+  const openDeleteDialog = (tenant: Tenant) => {
+    setSelectedTenant(tenant);
+    setDeleteConfirmed(false);
+    setDeleteDialogOpen(true);
+    fetchTenantDataCounts(tenant.id);
   };
 
   const handleDelete = async () => {
@@ -275,10 +341,7 @@ export default function TenantsList() {
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="text-red-400 hover:text-red-300 focus:text-red-300"
-                              onClick={() => {
-                                setSelectedTenant(tenant);
-                                setDeleteDialogOpen(true);
-                              }}
+                              onClick={() => openDeleteDialog(tenant)}
                             >
                               <Trash2 className="h-4 w-4 mr-2" />
                               Excluir
@@ -296,24 +359,108 @@ export default function TenantsList() {
       </div>
 
       {/* Delete Dialog */}
-      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent className="bg-slate-800 border-slate-700">
+      <AlertDialog open={deleteDialogOpen} onOpenChange={(open) => {
+        setDeleteDialogOpen(open);
+        if (!open) {
+          setDeleteConfirmed(false);
+        }
+      }}>
+        <AlertDialogContent className="bg-slate-800 border-slate-700 max-w-lg">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white">Confirmar exclusão</AlertDialogTitle>
-            <AlertDialogDescription className="text-slate-400">
-              Tem certeza que deseja excluir a escola "{selectedTenant?.nome}"? 
-              Esta ação não pode ser desfeita.
+            <AlertDialogTitle className="text-white flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Confirmar exclusão
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="text-slate-400 space-y-4">
+                <p>
+                  Você está prestes a excluir permanentemente a escola <strong className="text-white">"{selectedTenant?.nome}"</strong>.
+                </p>
+                
+                {dataCounts.loading ? (
+                  <div className="flex items-center justify-center py-4">
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500"></div>
+                    <span className="ml-2 text-sm">Verificando dados...</span>
+                  </div>
+                ) : (
+                  <div className="bg-red-950/30 border border-red-800/50 rounded-lg p-4 space-y-3">
+                    <p className="text-red-400 font-medium text-sm">
+                      Os seguintes dados serão excluídos permanentemente:
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      {dataCounts.alunos > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span>{dataCounts.alunos} aluno(s)</span>
+                        </div>
+                      )}
+                      {dataCounts.faturas > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span>{dataCounts.faturas} fatura(s)</span>
+                        </div>
+                      )}
+                      {dataCounts.responsaveis > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span>{dataCounts.responsaveis} responsável(eis)</span>
+                        </div>
+                      )}
+                      {dataCounts.cursos > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span>{dataCounts.cursos} curso(s)</span>
+                        </div>
+                      )}
+                      {dataCounts.funcionarios > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span>{dataCounts.funcionarios} funcionário(s)</span>
+                        </div>
+                      )}
+                      {dataCounts.usuarios > 0 && (
+                        <div className="flex items-center gap-2">
+                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span>{dataCounts.usuarios} usuário(s)</span>
+                        </div>
+                      )}
+                      {dataCounts.alunos === 0 && dataCounts.faturas === 0 && dataCounts.responsaveis === 0 && 
+                       dataCounts.cursos === 0 && dataCounts.funcionarios === 0 && dataCounts.usuarios === 0 && (
+                        <div className="col-span-2 text-slate-500 italic">
+                          Nenhum dado adicional encontrado
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <label className="flex items-center gap-3 cursor-pointer group">
+                    <input
+                      type="checkbox"
+                      checked={deleteConfirmed}
+                      onChange={(e) => setDeleteConfirmed(e.target.checked)}
+                      className="h-4 w-4 rounded border-slate-600 bg-slate-700 text-red-600 focus:ring-red-500 focus:ring-offset-slate-800"
+                    />
+                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors">
+                      Entendo que esta ação é irreversível e desejo prosseguir
+                    </span>
+                  </label>
+                </div>
+              </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
+          <AlertDialogFooter className="gap-2 sm:gap-0">
             <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
               Cancelar
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              className="bg-red-600 hover:bg-red-700"
+              disabled={!deleteConfirmed || dataCounts.loading}
+              className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Excluir
+              <Trash2 className="h-4 w-4 mr-2" />
+              Excluir Permanentemente
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
