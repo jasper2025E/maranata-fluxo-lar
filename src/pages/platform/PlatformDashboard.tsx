@@ -6,22 +6,25 @@ import {
   Building2, 
   Users, 
   TrendingUp, 
-  Shield, 
-  Settings, 
-  Activity,
+  CreditCard,
+  GraduationCap,
+  Receipt,
   AlertTriangle,
   CheckCircle,
   Clock,
-  BarChart3
+  ArrowRight,
+  RefreshCw
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import PlatformLayout from "@/components/platform/PlatformLayout";
+import { formatCurrency } from "@/lib/formatters";
 
 interface Tenant {
   id: string;
@@ -30,20 +33,34 @@ interface Tenant {
   email: string | null;
   plano: string;
   status: string;
+  subscription_status: string | null;
   data_contrato: string;
   limite_alunos: number;
   limite_usuarios: number;
   created_at: string;
+  monthly_price: number | null;
+  trial_ends_at: string | null;
 }
 
 interface PlatformStats {
   totalTenants: number;
   activeTenants: number;
+  trialTenants: number;
+  overdueTenants: number;
   totalUsers: number;
   totalAlunos: number;
   totalFaturas: number;
   receitaTotal: number;
+  mrr: number; // Monthly Recurring Revenue
 }
+
+const subscriptionStatusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; icon: React.ReactNode }> = {
+  trial: { label: "Período de Teste", variant: "outline", icon: <Clock className="h-3 w-3" /> },
+  active: { label: "Ativa", variant: "default", icon: <CheckCircle className="h-3 w-3" /> },
+  past_due: { label: "Inadimplente", variant: "destructive", icon: <AlertTriangle className="h-3 w-3" /> },
+  cancelled: { label: "Cancelada", variant: "secondary", icon: <Clock className="h-3 w-3" /> },
+  suspended: { label: "Suspensa", variant: "destructive", icon: <AlertTriangle className="h-3 w-3" /> },
+};
 
 export default function PlatformDashboard() {
   const { t } = useTranslation();
@@ -53,12 +70,16 @@ export default function PlatformDashboard() {
   const [stats, setStats] = useState<PlatformStats>({
     totalTenants: 0,
     activeTenants: 0,
+    trialTenants: 0,
+    overdueTenants: 0,
     totalUsers: 0,
     totalAlunos: 0,
     totalFaturas: 0,
     receitaTotal: 0,
+    mrr: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (!isPlatformAdmin()) {
@@ -70,7 +91,7 @@ export default function PlatformDashboard() {
 
   const fetchData = async () => {
     try {
-      // Fetch tenants - platform admin has access via RLS
+      // Fetch tenants with subscription data
       const { data: tenantsData, error: tenantsError } = await supabase
         .from("tenants")
         .select("*")
@@ -81,13 +102,16 @@ export default function PlatformDashboard() {
       }
       setTenants(tenantsData || []);
 
-      // Calculate stats from tenants
-      const activeTenants = tenantsData?.filter(t => t.status === "ativo").length || 0;
+      // Calculate subscription stats
+      const activeTenants = tenantsData?.filter(t => t.subscription_status === "active" || t.status === "ativo").length || 0;
+      const trialTenants = tenantsData?.filter(t => t.subscription_status === "trial").length || 0;
+      const overdueTenants = tenantsData?.filter(t => t.subscription_status === "past_due" || t.subscription_status === "suspended").length || 0;
       
-      // For platform admin, we need to use RPC or direct queries that bypass tenant isolation
-      // Since platform_admin has special RLS policies, these should work
-      
-      // Get user count from profiles (platform admin can view all)
+      // Calculate MRR (Monthly Recurring Revenue)
+      const mrr = tenantsData?.filter(t => t.subscription_status === "active")
+        .reduce((sum, t) => sum + (Number(t.monthly_price) || 0), 0) || 0;
+
+      // Get user count
       const { count: usersCount, error: usersError } = await supabase
         .from("profiles")
         .select("*", { count: "exact", head: true });
@@ -96,35 +120,28 @@ export default function PlatformDashboard() {
         console.error("Error fetching users count:", usersError);
       }
 
-      // For alunos and faturas, platform admin might not have direct access
-      // We'll aggregate from what we can access
+      // Get alunos count
       let totalAlunos = 0;
-      let totalFaturas = 0;
-      let receitaTotal = 0;
-
-      // Try to get alunos count
       const { count: alunosCount, error: alunosError } = await supabase
         .from("alunos")
         .select("*", { count: "exact", head: true });
       
       if (!alunosError) {
         totalAlunos = alunosCount || 0;
-      } else {
-        console.error("Error fetching alunos:", alunosError);
       }
 
-      // Try to get faturas count and revenue
+      // Get faturas count and revenue
+      let totalFaturas = 0;
+      let receitaTotal = 0;
       const { count: faturasCount, error: faturasError } = await supabase
         .from("faturas")
         .select("*", { count: "exact", head: true });
       
       if (!faturasError) {
         totalFaturas = faturasCount || 0;
-      } else {
-        console.error("Error fetching faturas:", faturasError);
       }
 
-      // Get paid invoices for revenue calculation
+      // Get paid invoices for revenue
       const { data: paidFaturas, error: revenueError } = await supabase
         .from("faturas")
         .select("valor_total")
@@ -137,32 +154,54 @@ export default function PlatformDashboard() {
       setStats({
         totalTenants: tenantsData?.length || 0,
         activeTenants,
+        trialTenants,
+        overdueTenants,
         totalUsers: usersCount || 0,
         totalAlunos,
         totalFaturas,
         receitaTotal,
+        mrr,
       });
     } catch (error) {
       console.error("Error fetching platform data:", error);
     } finally {
       setLoading(false);
+      setRefreshing(false);
     }
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants: Record<string, { variant: "default" | "secondary" | "destructive"; icon: React.ReactNode }> = {
-      ativo: { variant: "default", icon: <CheckCircle className="h-3 w-3" /> },
-      inativo: { variant: "secondary", icon: <Clock className="h-3 w-3" /> },
-      suspenso: { variant: "destructive", icon: <AlertTriangle className="h-3 w-3" /> },
-    };
-    const config = variants[status] || variants.inativo;
+  const handleRefresh = () => {
+    setRefreshing(true);
+    fetchData();
+  };
+
+  const getSubscriptionBadge = (status: string | null) => {
+    const config = subscriptionStatusConfig[status || "trial"] || subscriptionStatusConfig.trial;
     return (
       <Badge variant={config.variant} className="flex items-center gap-1">
         {config.icon}
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {config.label}
       </Badge>
     );
   };
+
+  if (loading) {
+    return (
+      <PlatformLayout>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <Skeleton className="h-8 w-64 bg-slate-700" />
+            <Skeleton className="h-4 w-96 bg-slate-700" />
+          </div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-32 bg-slate-800" />
+            ))}
+          </div>
+        </div>
+      </PlatformLayout>
+    );
+  }
 
   return (
     <PlatformLayout>
@@ -171,12 +210,26 @@ export default function PlatformDashboard() {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-2"
+          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
         >
-          <h1 className="text-3xl font-bold tracking-tight">Platform Admin</h1>
-          <p className="text-muted-foreground">
-            Gerencie todas as escolas e configurações da plataforma
-          </p>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-white">
+              Painel do Gestor
+            </h1>
+            <p className="text-slate-400">
+              Visão geral da plataforma e gestão centralizada de escolas
+            </p>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="border-slate-700 text-slate-300 hover:bg-slate-800"
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+            Atualizar
+          </Button>
         </motion.div>
 
         {/* Stats Grid */}
@@ -186,190 +239,241 @@ export default function PlatformDashboard() {
           transition={{ delay: 0.1 }}
           className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
         >
-          <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+          {/* Escolas */}
+          <Card className="bg-gradient-to-br from-amber-500/10 to-amber-600/5 border-amber-500/20 text-white">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Total Escolas</CardTitle>
-              <Building2 className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-medium text-slate-300">Escolas</CardTitle>
+              <Building2 className="h-4 w-4 text-amber-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalTenants}</div>
-              <p className="text-xs text-muted-foreground">
-                {stats.activeTenants} ativas
+              <div className="flex items-center gap-2 text-xs text-slate-400">
+                <span className="text-green-400">{stats.activeTenants} ativas</span>
+                <span>•</span>
+                <span className="text-blue-400">{stats.trialTenants} em teste</span>
+              </div>
+              {stats.overdueTenants > 0 && (
+                <div className="mt-1 text-xs text-red-400">
+                  {stats.overdueTenants} inadimplente{stats.overdueTenants > 1 ? "s" : ""}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* MRR */}
+          <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5 border-green-500/20 text-white">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-slate-300">Receita Mensal (MRR)</CardTitle>
+              <CreditCard className="h-4 w-4 text-green-400" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{formatCurrency(stats.mrr)}</div>
+              <p className="text-xs text-slate-400">
+                Assinaturas ativas
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 border-blue-500/20">
+          {/* Usuários */}
+          <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5 border-blue-500/20 text-white">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Usuários</CardTitle>
-              <Users className="h-4 w-4 text-blue-500" />
+              <CardTitle className="text-sm font-medium text-slate-300">Usuários</CardTitle>
+              <Users className="h-4 w-4 text-blue-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalUsers}</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-400">
                 Em todas as escolas
               </p>
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-500/10 to-green-500/5 border-green-500/20">
+          {/* Alunos */}
+          <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5 border-purple-500/20 text-white">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Alunos</CardTitle>
-              <TrendingUp className="h-4 w-4 text-green-500" />
+              <CardTitle className="text-sm font-medium text-slate-300">Alunos</CardTitle>
+              <GraduationCap className="h-4 w-4 text-purple-400" />
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{stats.totalAlunos}</div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-xs text-slate-400">
                 Cadastrados na plataforma
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-amber-500/10 to-amber-500/5 border-amber-500/20">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium">Faturas</CardTitle>
-              <BarChart3 className="h-4 w-4 text-amber-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.totalFaturas}</div>
-              <p className="text-xs text-muted-foreground">
-                Total emitidas
               </p>
             </CardContent>
           </Card>
         </motion.div>
 
-        {/* Tabs */}
-        <Tabs defaultValue="tenants" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="tenants" className="flex items-center gap-2">
-              <Building2 className="h-4 w-4" />
-              Escolas
-            </TabsTrigger>
-            <TabsTrigger value="activity" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
-              Atividade
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              Configurações
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="tenants">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle>Escolas Cadastradas</CardTitle>
-                    <CardDescription>
-                      Gerencie todas as escolas da plataforma
-                    </CardDescription>
+        {/* Secondary Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="grid gap-4 md:grid-cols-2"
+        >
+          {/* Subscription Overview */}
+          <Card className="bg-slate-800/50 border-slate-700 text-white">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Status das Assinaturas</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Visão geral de todas as escolas
+                  </CardDescription>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => navigate("/platform/subscriptions")}
+                  className="text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                >
+                  Gerenciar
+                  <ArrowRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Ativas</span>
+                  <span className="text-green-400">{stats.activeTenants}</span>
+                </div>
+                <Progress 
+                  value={(stats.activeTenants / (stats.totalTenants || 1)) * 100} 
+                  className="h-2 bg-slate-700"
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-400">Em Teste</span>
+                  <span className="text-blue-400">{stats.trialTenants}</span>
+                </div>
+                <Progress 
+                  value={(stats.trialTenants / (stats.totalTenants || 1)) * 100} 
+                  className="h-2 bg-slate-700"
+                />
+              </div>
+              {stats.overdueTenants > 0 && (
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-400">Inadimplentes</span>
+                    <span className="text-red-400">{stats.overdueTenants}</span>
                   </div>
-                  <Button onClick={() => navigate("/platform/tenants/new")}>
-                    <Building2 className="h-4 w-4 mr-2" />
-                    Nova Escola
-                  </Button>
+                  <Progress 
+                    value={(stats.overdueTenants / (stats.totalTenants || 1)) * 100} 
+                    className="h-2 bg-slate-700"
+                  />
                 </div>
-              </CardHeader>
-              <CardContent>
-                <ScrollArea className="h-[400px]">
-                  <div className="space-y-4">
-                    {loading ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        Carregando...
-                      </div>
-                    ) : tenants.length === 0 ? (
-                      <div className="text-center py-8 text-muted-foreground">
-                        Nenhuma escola cadastrada
-                      </div>
-                    ) : (
-                      tenants.map((tenant) => (
-                        <motion.div
-                          key={tenant.id}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors cursor-pointer"
-                          onClick={() => navigate(`/platform/tenants/${tenant.id}`)}
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                              <Building2 className="h-5 w-5 text-primary" />
-                            </div>
-                            <div>
-                              <p className="font-medium">{tenant.nome}</p>
-                              <p className="text-sm text-muted-foreground">
-                                {tenant.cnpj || "CNPJ não informado"}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            <Badge variant="outline">{tenant.plano}</Badge>
-                            {getStatusBadge(tenant.status)}
-                          </div>
-                        </motion.div>
-                      ))
-                    )}
-                  </div>
-                </ScrollArea>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              )}
+            </CardContent>
+          </Card>
 
-          <TabsContent value="activity">
-            <Card>
-              <CardHeader>
-                <CardTitle>Logs de Atividade</CardTitle>
-                <CardDescription>
-                  Acompanhe todas as ações na plataforma
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Os logs de atividade aparecerão aqui</p>
+          {/* Financial Overview */}
+          <Card className="bg-slate-800/50 border-slate-700 text-white">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg">Resumo Financeiro</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Faturamento consolidado
+                  </CardDescription>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+                <Receipt className="h-5 w-5 text-slate-400" />
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-3 rounded-lg bg-slate-900/50">
+                <div>
+                  <p className="text-sm text-slate-400">Total de Faturas</p>
+                  <p className="text-xl font-semibold">{stats.totalFaturas}</p>
+                </div>
+                <Receipt className="h-8 w-8 text-slate-600" />
+              </div>
+              <div className="flex items-center justify-between p-3 rounded-lg bg-green-500/10 border border-green-500/20">
+                <div>
+                  <p className="text-sm text-slate-400">Receita Total</p>
+                  <p className="text-xl font-semibold text-green-400">{formatCurrency(stats.receitaTotal)}</p>
+                </div>
+                <TrendingUp className="h-8 w-8 text-green-500/50" />
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
 
-          <TabsContent value="settings">
-            <Card>
-              <CardHeader>
-                <CardTitle>Configurações da Plataforma</CardTitle>
-                <CardDescription>
-                  Configurações globais que afetam todas as escolas
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <Button variant="outline" className="justify-start h-auto p-4" onClick={() => navigate("/platform/settings")}>
-                    <div className="flex items-center gap-4">
-                      <Settings className="h-5 w-5" />
-                      <div className="text-left">
-                        <p className="font-medium">Configurações Gerais</p>
-                        <p className="text-sm text-muted-foreground">
-                          Planos, limites e recursos
-                        </p>
-                      </div>
-                    </div>
-                  </Button>
-                  <Button variant="outline" className="justify-start h-auto p-4">
-                    <div className="flex items-center gap-4">
-                      <Shield className="h-5 w-5" />
-                      <div className="text-left">
-                        <p className="font-medium">Segurança</p>
-                        <p className="text-sm text-muted-foreground">
-                          Políticas e auditoria
-                        </p>
-                      </div>
-                    </div>
-                  </Button>
+        {/* Schools List */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <Card className="bg-slate-800/50 border-slate-700">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg text-white">Escolas Recentes</CardTitle>
+                  <CardDescription className="text-slate-400">
+                    Últimas escolas cadastradas na plataforma
+                  </CardDescription>
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+                <Button 
+                  onClick={() => navigate("/platform/tenants")}
+                  className="bg-amber-500 hover:bg-amber-600 text-black"
+                >
+                  <Building2 className="h-4 w-4 mr-2" />
+                  Ver Todas
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <ScrollArea className="h-[320px]">
+                <div className="space-y-3">
+                  {tenants.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Building2 className="h-12 w-12 mx-auto mb-4 text-slate-600" />
+                      <p className="text-slate-400">Nenhuma escola cadastrada</p>
+                      <p className="text-sm text-slate-500 mt-1">
+                        Comece cadastrando a primeira escola da plataforma
+                      </p>
+                      <Button
+                        onClick={() => navigate("/platform/tenants/new")}
+                        className="mt-4 bg-amber-500 hover:bg-amber-600 text-black"
+                      >
+                        Cadastrar Escola
+                      </Button>
+                    </div>
+                  ) : (
+                    tenants.slice(0, 5).map((tenant) => (
+                      <motion.div
+                        key={tenant.id}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="flex items-center justify-between p-4 rounded-lg bg-slate-900/50 border border-slate-700/50 hover:bg-slate-900 transition-colors cursor-pointer"
+                        onClick={() => navigate(`/platform/tenants/${tenant.id}`)}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-lg bg-amber-500/20 flex items-center justify-center">
+                            <Building2 className="h-5 w-5 text-amber-400" />
+                          </div>
+                          <div>
+                            <p className="font-medium text-white">{tenant.nome}</p>
+                            <p className="text-sm text-slate-400">
+                              {tenant.cnpj || "CNPJ não informado"}
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Badge variant="outline" className="border-slate-600 text-slate-300">
+                            {tenant.plano}
+                          </Badge>
+                          {getSubscriptionBadge(tenant.subscription_status)}
+                        </div>
+                      </motion.div>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     </PlatformLayout>
   );

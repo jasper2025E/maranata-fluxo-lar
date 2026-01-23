@@ -74,9 +74,9 @@ interface SystemUser {
 }
 
 const roleLabels: Record<AppRole, string> = {
-  platform_admin: "Platform Admin",
+  platform_admin: "Gestor",
   admin: "Administrador",
-  staff: "Equipe",
+  staff: "Colaborador",
   financeiro: "Financeiro",
   secretaria: "Secretaria",
 };

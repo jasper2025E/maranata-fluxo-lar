@@ -9,7 +9,8 @@ import {
   LogOut,
   Activity,
   Users,
-  UserCog
+  UserCog,
+  CreditCard
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -28,11 +29,12 @@ interface PlatformLayoutProps {
 }
 
 const navItems = [
-  { icon: LayoutDashboard, label: "Dashboard", path: "/platform" },
+  { icon: LayoutDashboard, label: "Visão Geral", path: "/platform" },
   { icon: Building2, label: "Escolas", path: "/platform/tenants" },
-  { icon: UserCog, label: "Acessar Como", path: "/platform/impersonate" },
+  { icon: CreditCard, label: "Assinaturas", path: "/platform/subscriptions" },
   { icon: Users, label: "Usuários", path: "/platform/users" },
-  { icon: Activity, label: "Logs", path: "/platform/logs" },
+  { icon: UserCog, label: "Acessar Como", path: "/platform/impersonate" },
+  { icon: Activity, label: "Atividade", path: "/platform/logs" },
   { icon: Settings, label: "Configurações", path: "/platform/settings" },
   { icon: Shield, label: "Segurança", path: "/platform/security" },
 ];
@@ -68,11 +70,18 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
         animate={{ x: 0, opacity: 1 }}
         className="fixed inset-y-0 left-0 z-50 w-16 flex flex-col bg-slate-950/50 backdrop-blur-xl border-r border-slate-700/50"
       >
-        {/* Logo */}
+        {/* Logo - Gestor */}
         <div className="flex h-16 items-center justify-center border-b border-slate-700/50">
-          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20">
-            <Shield className="h-5 w-5 text-white" />
-          </div>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg shadow-amber-500/20 cursor-pointer">
+                <span className="text-white font-bold text-lg">G</span>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="bg-slate-800 border-slate-700">
+              Painel do Gestor
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         {/* Navigation */}

@@ -36,6 +36,7 @@ import TenantsList from "./pages/platform/TenantsList";
 import TenantForm from "./pages/platform/TenantForm";
 import ImpersonateUser from "./pages/platform/ImpersonateUser";
 import PlatformUsers from "./pages/platform/PlatformUsers";
+import PlatformSubscriptions from "./pages/platform/PlatformSubscriptions";
 import PlatformLogs from "./pages/platform/PlatformLogs";
 import PlatformSettings from "./pages/platform/PlatformSettings";
 import PlatformSecurity from "./pages/platform/PlatformSecurity";
@@ -214,6 +215,14 @@ function AppContent() {
             element={
               <ProtectedRoute platformOnly>
                 <PlatformUsers />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/subscriptions"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformSubscriptions />
               </ProtectedRoute>
             }
           />

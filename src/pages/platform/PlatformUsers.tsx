@@ -83,16 +83,25 @@ interface PlatformUser {
   created_at: string;
 }
 
-// Role labels - Platform Admin is the global system manager (not a school)
+// Role labels - Gestor is the global system manager (not a school)
 const roleLabels: Record<AppRole, string> = {
-  platform_admin: "Platform Admin",
+  platform_admin: "Gestor",
   admin: "Administrador",
-  staff: "Staff",
+  staff: "Colaborador",
   financeiro: "Financeiro",
   secretaria: "Secretaria",
 };
 
-// Roles that can be assigned to schools (Platform Admin cannot be linked to schools)
+// Role descriptions for context
+const roleDescriptions: Record<AppRole, string> = {
+  platform_admin: "Acesso total à plataforma",
+  admin: "Administrador da escola",
+  staff: "Colaborador da escola",
+  financeiro: "Gestão financeira",
+  secretaria: "Gestão de alunos",
+};
+
+// Roles that can be assigned to schools (Gestor cannot be linked to schools)
 const schoolRoles: AppRole[] = ["admin", "staff", "financeiro", "secretaria"];
 
 const roleBadgeVariants: Record<AppRole, string> = {
