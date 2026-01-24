@@ -24,7 +24,6 @@ import { formatCurrency } from "@/lib/formatters";
 import {
   FinancialKPICard,
   FinancialChart,
-  QuickStatsGrid,
   FinancialSummaryCard,
   InadimplenciaCard,
 } from "@/components/dashboard";
@@ -58,14 +57,6 @@ const Dashboard = () => {
     );
   }
 
-  const quickStats = [
-    { label: t("dashboard.guardians"), value: stats.totalResponsaveis ?? 0, icon: UserCheck, variant: "blue" as const },
-    { label: t("dashboard.activeStudentsLabel"), value: stats.alunosAtivos ?? 0, icon: GraduationCap, variant: "violet" as const },
-    { label: t("dashboard.monthInvoices"), value: stats.totalFaturas ?? 0, icon: FileText, variant: "cyan" as const },
-    { label: t("dashboard.paidThisMonth"), value: stats.faturasPagas ?? 0, icon: BadgeCheck, variant: "emerald" as const },
-    { label: t("dashboard.employees"), value: stats.funcionariosAtivos ?? 0, icon: Briefcase, variant: "amber" as const },
-    { label: t("dashboard.defaulters"), value: stats.responsaveisInadimplentes ?? 0, icon: AlertCircle, variant: "rose" as const },
-  ];
 
   return (
     <DashboardLayout>
@@ -85,8 +76,6 @@ const Dashboard = () => {
         >
         </motion.div>
 
-        {/* Quick Stats Row */}
-        <QuickStatsGrid stats={quickStats} />
 
         {/* Main KPIs Grid */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
