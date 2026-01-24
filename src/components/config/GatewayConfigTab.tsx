@@ -338,7 +338,7 @@ export function GatewayConfigTab() {
 
       {/* Info */}
       <div className="bg-muted/50 rounded-lg px-4 py-3">
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground text-center">
           As credenciais são armazenadas com criptografia 
         </p>
       </div>
