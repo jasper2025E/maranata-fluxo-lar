@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { usePlatformAuth } from "@/contexts/PlatformAuthContext";
+import { useSchoolAuth } from "@/contexts/SchoolAuthContext";
 import { Loader2 } from "lucide-react";
 
 interface PlatformGuardProps {
@@ -13,9 +14,10 @@ interface PlatformGuardProps {
  */
 export function PlatformGuard({ children }: PlatformGuardProps) {
   const { user, manager, loading, isAuthenticated } = usePlatformAuth();
+  const { loading: schoolLoading, isAuthenticated: isSchoolAuthenticated, schoolUser } = useSchoolAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (loading || schoolLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950">
         <div className="flex flex-col items-center gap-4">
@@ -29,6 +31,11 @@ export function PlatformGuard({ children }: PlatformGuardProps) {
   // Not authenticated - redirect to platform login
   if (!user) {
     return <Navigate to="/login-gestor" state={{ from: location }} replace />;
+  }
+
+  // Se está logado como usuário de Escola, redireciona para o domínio correto
+  if (isSchoolAuthenticated && schoolUser) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   // Authenticated but not a system manager - block access
