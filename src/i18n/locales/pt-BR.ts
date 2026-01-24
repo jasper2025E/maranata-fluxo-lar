@@ -495,12 +495,34 @@ const ptBR = {
     hr: {
       title: "Recursos Humanos",
       subtitle: "Gerencie funcionários, cargos e folha de pagamento",
+      dashboard: "Dashboard",
       employees: "Funcionários",
       positions: "Cargos",
       departments: "Setores",
       payroll: "Folha de Pagamento",
       timeTracking: "Ponto Eletrônico",
       contracts: "Contratos",
+
+      // Tabs/sections
+      locations: "Locais",
+      reports: "Relatórios",
+
+      // KPIs
+      totalEmployees: "Total de Funcionários",
+      active: "ativos",
+      teachers: "Professores",
+      administrative: "Administrativo",
+      monthlyPayroll: "Folha Mensal",
+      totalSalaries: "Total de salários",
+      paidPayrolls: "Folhas pagas",
+      pendingPayrolls: "Folhas pendentes",
+      hrExpenses: "Gasto com RH",
+      currentMonth: "Mês atual",
+      thisMonth: "Este mês",
+
+      // Actions
+      newEmployee: "Novo funcionário",
+      register: "Cadastrar",
     },
 
     // Settings
