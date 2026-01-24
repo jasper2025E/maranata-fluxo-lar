@@ -139,6 +139,7 @@ export default function RH() {
                 icon={UserPlus}
                 color="blue"
                 index={7}
+                onClick={() => setActiveTab("funcionarios")}
               />
             </div>
           </TabsContent>
