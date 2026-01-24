@@ -1,8 +1,9 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -11,9 +12,10 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
-import { MapPin, Plus, Edit, Trash2, MapPinned, Navigation } from "lucide-react";
+import { MapPin, Plus, Pencil, Trash2, MapPinned, Navigation } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface PontoAutorizado {
   id: string;
@@ -28,6 +30,7 @@ interface PontoAutorizado {
 const queryKey = ['pontos_autorizados'];
 
 export function PontosAutorizadosManager() {
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingPonto, setEditingPonto] = useState<PontoAutorizado | null>(null);
   const [formData, setFormData] = useState({
@@ -175,7 +178,7 @@ export function PontosAutorizadosManager() {
           latitude: position.coords.latitude.toFixed(6),
           longitude: position.coords.longitude.toFixed(6),
         }));
-        toast.success(`Localização obtida! Lat: ${position.coords.latitude.toFixed(4)}, Lng: ${position.coords.longitude.toFixed(4)}`);
+        toast.success(`Localização obtida!`);
         setIsGettingLocation(false);
       },
       (error) => {
@@ -229,10 +232,10 @@ export function PontosAutorizadosManager() {
         setIsGettingLocation(false);
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            toast.error('Permissão negada. Clique no ícone de cadeado na barra de endereço e permita localização.');
+            toast.error('Permissão negada.');
             break;
           case error.POSITION_UNAVAILABLE:
-            toast.error('Localização indisponível. Verifique se o GPS está ativado.');
+            toast.error('Localização indisponível.');
             break;
           case error.TIMEOUT:
             toast.error('Tempo esgotado ao obter localização.');
@@ -255,118 +258,145 @@ export function PontosAutorizadosManager() {
 
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
-            <MapPinned className="h-5 w-5" />
-            Locais Autorizados para Ponto
-          </CardTitle>
-          <div className="flex gap-2">
-            <Button 
-              variant="outline" 
-              onClick={addLocationWithCurrentPosition}
-              disabled={isGettingLocation}
-            >
-              <Navigation className="h-4 w-4 mr-2" />
-              {isGettingLocation ? 'Obtendo...' : 'Usar Minha Localização'}
-            </Button>
-            <Button onClick={() => openDialog()}>
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Local
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {pontos?.length === 0 ? (
-            <EmptyState
-              icon={MapPin}
-              title="Nenhum local cadastrado"
-              description="Cadastre locais autorizados para controle de geolocalização do ponto. Sem locais cadastrados, qualquer localização será aceita."
-            />
-          ) : (
-            <div className="rounded-lg border overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nome</TableHead>
-                    <TableHead>Coordenadas</TableHead>
-                    <TableHead className="text-center">Raio</TableHead>
-                    <TableHead className="text-center">Status</TableHead>
-                    <TableHead className="text-right">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {pontos?.map((ponto) => (
-                    <TableRow key={ponto.id}>
-                      <TableCell className="font-medium">
-                        <div className="flex items-center gap-2">
-                          <MapPin className="h-4 w-4 text-primary" />
-                          {ponto.nome}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <code className="text-xs bg-muted px-2 py-1 rounded">
-                          {ponto.latitude.toFixed(4)}, {ponto.longitude.toFixed(4)}
-                        </code>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant="outline">{ponto.raio_metros}m</Badge>
-                      </TableCell>
-                      <TableCell className="text-center">
-                        <Badge variant={ponto.ativo ? "default" : "secondary"}>
-                          {ponto.ativo ? "Ativo" : "Inativo"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => openDialog(ponto)}
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => deleteMutation.mutate(ponto.id)}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="flex items-center gap-2">
+          <MapPinned className="h-5 w-5 text-primary" />
+          <span className="font-medium text-foreground">Locais Autorizados para Ponto</span>
+        </div>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={addLocationWithCurrentPosition}
+            disabled={isGettingLocation}
+          >
+            <Navigation className="h-4 w-4 mr-2" />
+            {isGettingLocation ? 'Obtendo...' : 'Usar Minha Localização'}
+          </Button>
+          <Button size="sm" onClick={() => openDialog()}>
+            <Plus className="h-4 w-4 mr-2" />
+            Novo Local
+          </Button>
+        </div>
+      </div>
 
-          {pontos?.length === 0 && (
-            <div className="mt-4 p-4 bg-amber-50 rounded-lg border border-amber-200">
-              <p className="text-sm text-amber-800">
-                ⚠️ <strong>Atenção:</strong> Sem locais cadastrados, os funcionários poderão bater ponto de qualquer localização. 
-                Cadastre ao menos um local para ativar a validação de geolocalização.
-              </p>
+      {/* Table Card */}
+      <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+        <CardHeader className="border-b border-border/50 bg-muted/30 py-4">
+          <CardTitle className="text-lg font-semibold text-foreground">
+            Lista de Locais
+          </CardTitle>
+          <CardDescription>
+            {pontos?.length || 0} local(is) cadastrado(s)
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="p-0">
+          {pontos?.length === 0 ? (
+            <div className="py-16">
+              <EmptyState
+                icon={MapPin}
+                title="Nenhum local cadastrado"
+                description="Sem locais cadastrados, qualquer localização será aceita."
+              />
+              <div className="mt-4 mx-6 p-4 bg-amber-500/10 rounded-xl border border-amber-500/20">
+                <p className="text-sm text-amber-700 dark:text-amber-400 text-center">
+                  ⚠️ Cadastre ao menos um local para ativar a validação de geolocalização.
+                </p>
+              </div>
             </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="font-semibold text-foreground">Nome</TableHead>
+                  <TableHead className="font-semibold text-foreground">Coordenadas</TableHead>
+                  <TableHead className="font-semibold text-foreground text-center">Raio</TableHead>
+                  <TableHead className="font-semibold text-foreground text-center">Status</TableHead>
+                  <TableHead className="text-right font-semibold text-foreground">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pontos?.map((ponto, index) => (
+                  <motion.tr
+                    key={ponto.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    className="hover:bg-muted/50 transition-colors border-b border-border/50"
+                  >
+                    <TableCell className="font-medium text-foreground">
+                      <div className="flex items-center gap-2">
+                        <MapPin className="h-4 w-4 text-primary" />
+                        {ponto.nome}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <code className="text-xs bg-muted px-2 py-1 rounded font-mono">
+                        {ponto.latitude.toFixed(4)}, {ponto.longitude.toFixed(4)}
+                      </code>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge variant="outline" className="font-mono">
+                        {ponto.raio_metros}m
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-center">
+                      <Badge 
+                        variant="outline"
+                        className={cn(
+                          "font-medium",
+                          ponto.ativo 
+                            ? "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" 
+                            : "bg-muted text-muted-foreground"
+                        )}
+                      >
+                        {ponto.ativo ? "Ativo" : "Inativo"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                          onClick={() => openDialog(ponto)}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => deleteMutation.mutate(ponto.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </motion.tr>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
 
+      {/* Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
+            <DialogTitle className="text-xl font-semibold">
               {editingPonto ? 'Editar Local' : 'Novo Local Autorizado'}
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4 py-4">
+          <div className="space-y-5 py-4">
             <div className="space-y-2">
               <Label htmlFor="nome">Nome do Local *</Label>
               <Input
@@ -374,6 +404,7 @@ export function PontosAutorizadosManager() {
                 placeholder="Ex: Escola Principal"
                 value={formData.nome}
                 onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                className="h-11"
               />
             </div>
 
@@ -385,6 +416,7 @@ export function PontosAutorizadosManager() {
                   placeholder="-23.5505"
                   value={formData.latitude}
                   onChange={(e) => setFormData(prev => ({ ...prev, latitude: e.target.value }))}
+                  className="h-11"
                 />
               </div>
               <div className="space-y-2">
@@ -394,6 +426,7 @@ export function PontosAutorizadosManager() {
                   placeholder="-46.6333"
                   value={formData.longitude}
                   onChange={(e) => setFormData(prev => ({ ...prev, longitude: e.target.value }))}
+                  className="h-11"
                 />
               </div>
             </div>
@@ -401,7 +434,7 @@ export function PontosAutorizadosManager() {
             <Button
               type="button"
               variant="outline"
-              className="w-full"
+              className="w-full h-11"
               onClick={getCurrentLocation}
               disabled={isGettingLocation}
             >
@@ -417,13 +450,14 @@ export function PontosAutorizadosManager() {
                 placeholder="100"
                 value={formData.raio_metros}
                 onChange={(e) => setFormData(prev => ({ ...prev, raio_metros: e.target.value }))}
+                className="h-11"
               />
               <p className="text-xs text-muted-foreground">
                 Funcionários dentro deste raio poderão bater ponto.
               </p>
             </div>
 
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
               <Label htmlFor="ativo">Local Ativo</Label>
               <Switch
                 id="ativo"
@@ -433,7 +467,7 @@ export function PontosAutorizadosManager() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={closeDialog}>
               Cancelar
             </Button>
