@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSchoolAuth } from "@/contexts/SchoolAuthContext";
 import { usePlatformAuth } from "@/contexts/PlatformAuthContext";
@@ -17,11 +17,41 @@ interface SchoolGuardProps {
  * Bloqueia acesso de gestores do sistema.
  */
 export function SchoolGuard({ children, requiredRole }: SchoolGuardProps) {
-  const { user, schoolUser, tenant, loading, isAuthenticated, hasRole } = useSchoolAuth();
+  const { user, schoolUser, tenant, loading: schoolLoading, isAuthenticated, hasRole } = useSchoolAuth();
   const { loading: platformLoading, isAuthenticated: isPlatformAuthenticated, manager } = usePlatformAuth();
   const location = useLocation();
+  
+  // Estado estável para evitar flickering durante transições
+  const [isReady, setIsReady] = useState(false);
+  const [authState, setAuthState] = useState<'loading' | 'platform_user' | 'not_auth' | 'not_school' | 'blocked' | 'no_role' | 'authorized'>('loading');
 
-  if (loading || platformLoading) {
+  useEffect(() => {
+    // Aguarda ambos os loadings terminarem
+    if (schoolLoading || platformLoading) {
+      setAuthState('loading');
+      return;
+    }
+
+    // Determina o estado de auth de forma estável
+    if (!user) {
+      setAuthState('not_auth');
+    } else if (isPlatformAuthenticated && manager) {
+      setAuthState('platform_user');
+    } else if (!isAuthenticated || !schoolUser) {
+      setAuthState('not_school');
+    } else if (tenant && (tenant.blocked_at || tenant.subscription_status === "suspended")) {
+      setAuthState('blocked');
+    } else if (requiredRole && !hasRole(requiredRole)) {
+      setAuthState('no_role');
+    } else {
+      setAuthState('authorized');
+    }
+    
+    setIsReady(true);
+  }, [schoolLoading, platformLoading, user, isPlatformAuthenticated, manager, isAuthenticated, schoolUser, tenant, requiredRole, hasRole]);
+
+  // Sempre mostra loading até estar pronto
+  if (!isReady || authState === 'loading') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -33,17 +63,17 @@ export function SchoolGuard({ children, requiredRole }: SchoolGuardProps) {
   }
 
   // Not authenticated - redirect to school login
-  if (!user) {
+  if (authState === 'not_auth') {
     return <Navigate to="/login-escola" state={{ from: location }} replace />;
   }
 
   // Se está logado como Gestor, redireciona para o domínio correto
-  if (isPlatformAuthenticated && manager) {
+  if (authState === 'platform_user') {
     return <Navigate to="/platform" replace />;
   }
 
   // Authenticated but not a school user - block access
-  if (!isAuthenticated || !schoolUser) {
+  if (authState === 'not_school') {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-100 via-pink-50 to-blue-100 p-4">
         <div className="bg-white/90 backdrop-blur-xl border border-violet-200 rounded-2xl p-8 max-w-md text-center shadow-xl">
@@ -74,20 +104,18 @@ export function SchoolGuard({ children, requiredRole }: SchoolGuardProps) {
     );
   }
 
-  // Check tenant status
-  if (tenant) {
-    if (tenant.blocked_at || tenant.subscription_status === "suspended") {
-      return (
-        <BlockedTenantScreen 
-          reason={tenant.blocked_reason || undefined}
-          isPastDue={false}
-        />
-      );
-    }
+  // Check tenant status - blocked
+  if (authState === 'blocked' && tenant) {
+    return (
+      <BlockedTenantScreen 
+        reason={tenant.blocked_reason || undefined}
+        isPastDue={false}
+      />
+    );
   }
 
   // Check role permission
-  if (requiredRole && !hasRole(requiredRole)) {
+  if (authState === 'no_role') {
     return <Navigate to="/dashboard" replace />;
   }
 
