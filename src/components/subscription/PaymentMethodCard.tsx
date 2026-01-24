@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   CreditCard,
   Plus,
@@ -6,6 +7,8 @@ import {
   AlertTriangle,
   Loader2,
   X,
+  Link2,
+  Shield,
 } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -20,12 +23,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 // Card brand icons/colors - Shopify style
 const cardBrandConfig: Record<string, { label: string; bgColor: string }> = {
@@ -55,22 +56,25 @@ interface PaymentMethodCardProps {
   onUpdate?: () => void;
 }
 
-// Card form component inside Stripe Elements
+// Card form component inside Stripe Elements - Premium Shopify Style
 function CardForm({ 
   tenantId, 
   clientSecret,
   onSuccess, 
-  onCancel 
+  onCancel,
+  isReplacing,
 }: { 
   tenantId: string;
   clientSecret: string;
   onSuccess: () => void; 
   onCancel: () => void;
+  isReplacing?: boolean;
 }) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [cardComplete, setCardComplete] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -130,61 +134,135 @@ function CardForm({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="p-4 border border-border rounded-lg bg-background">
-        <CardElement
-          options={{
-            style: {
-              base: {
-                fontSize: "16px",
-                color: "hsl(var(--foreground))",
-                "::placeholder": {
-                  color: "hsl(var(--muted-foreground))",
-                },
-              },
-              invalid: {
-                color: "hsl(var(--destructive))",
-              },
-            },
-            hidePostalCode: true,
-          }}
-        />
-      </div>
-
-      {error && (
-        <Alert variant="destructive">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
-
-      <div className="flex gap-2">
-        <Button
-          type="submit"
-          disabled={!stripe || processing}
-          className="flex-1 bg-foreground text-background hover:bg-foreground/90"
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -10 }}
+      className="space-y-5"
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-foreground">
+            {isReplacing ? "Substituir cartão" : "Adicionar cartão de crédito"}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isReplacing 
+              ? "Insira os dados do novo cartão."
+              : "Adicione um cartão para habilitar a cobrança automática mensal."}
+          </p>
+        </div>
+        <button
+          onClick={onCancel}
+          className="h-8 w-8 rounded-lg flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
         >
-          {processing ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Salvando...
-            </>
-          ) : (
-            <>
-              <Check className="h-4 w-4 mr-2" />
-              Salvar Cartão
-            </>
-          )}
-        </Button>
-        <Button type="button" variant="outline" onClick={onCancel}>
           <X className="h-4 w-4" />
-        </Button>
+        </button>
       </div>
 
-      <p className="text-xs text-muted-foreground text-center">
-        🔒 Seus dados são criptografados e processados de forma segura pelo Stripe.
-      </p>
-    </form>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Card Input - Shopify Style */}
+        <div className="relative">
+          <div className={cn(
+            "flex items-center gap-3 p-4 rounded-xl border-2 transition-all bg-muted/30",
+            error 
+              ? "border-destructive/50" 
+              : cardComplete 
+                ? "border-primary/50" 
+                : "border-border hover:border-border/80"
+          )}>
+            <div className="h-8 w-10 rounded-md bg-gradient-to-br from-slate-300 to-slate-400 flex items-center justify-center">
+              <CreditCard className="h-4 w-4 text-slate-600" />
+            </div>
+            <div className="flex-1">
+              <CardElement
+                onChange={(e) => setCardComplete(e.complete)}
+                options={{
+                  style: {
+                    base: {
+                      fontSize: "16px",
+                      fontFamily: "system-ui, -apple-system, sans-serif",
+                      color: "hsl(var(--foreground))",
+                      "::placeholder": {
+                        color: "hsl(var(--muted-foreground))",
+                      },
+                    },
+                    invalid: {
+                      color: "hsl(var(--destructive))",
+                    },
+                  },
+                  hidePostalCode: true,
+                }}
+              />
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="shrink-0 gap-1.5 text-xs font-medium border-primary/30 text-primary hover:bg-primary/5"
+              onClick={() => toast.info("Funcionalidade em breve")}
+            >
+              <Link2 className="h-3 w-3" />
+              Usar link
+            </Button>
+          </div>
+        </div>
+
+        <AnimatePresence>
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <Alert variant="destructive" className="py-2">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertDescription className="text-sm">{error}</AlertDescription>
+              </Alert>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Submit Button - Dark Shopify Style */}
+        <div className="flex gap-2">
+          <Button
+            type="submit"
+            disabled={!stripe || processing || !cardComplete}
+            className={cn(
+              "flex-1 h-11 text-sm font-medium rounded-xl transition-all",
+              "bg-foreground text-background hover:bg-foreground/90",
+              "disabled:bg-muted disabled:text-muted-foreground"
+            )}
+          >
+            {processing ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Salvando...
+              </span>
+            ) : (
+              <span className="flex items-center gap-2">
+                <Check className="h-4 w-4" />
+                Salvar Cartão
+              </span>
+            )}
+          </Button>
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onCancel}
+            className="h-11 w-11 p-0 rounded-xl"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Security Notice */}
+        <div className="flex items-center justify-center gap-2 text-xs text-muted-foreground pt-1">
+          <Shield className="h-3.5 w-3.5 text-emerald-600" />
+          <span>Seus dados são criptografados e processados de forma segura pelo Stripe.</span>
+        </div>
+      </form>
+    </motion.div>
   );
 }
 
@@ -394,20 +472,9 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
         </div>
       </div>
 
-      {/* Add Card Dialog */}
+      {/* Add Card Dialog - Clean Shopify Style */}
       <Dialog open={showAddCard} onOpenChange={setShowAddCard}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>
-              {paymentMethod ? "Substituir cartão" : "Adicionar cartão de crédito"}
-            </DialogTitle>
-            <DialogDescription>
-              {paymentMethod 
-                ? "Insira os dados do novo cartão. O cartão anterior será substituído."
-                : "Adicione um cartão para habilitar a cobrança automática mensal."}
-            </DialogDescription>
-          </DialogHeader>
-
+        <DialogContent className="sm:max-w-md p-6 gap-0">
           {setupData && (
             <Elements 
               stripe={setupData.stripePromise} 
@@ -423,6 +490,7 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
                 clientSecret={setupData.clientSecret}
                 onSuccess={handleSuccess}
                 onCancel={() => setShowAddCard(false)}
+                isReplacing={!!paymentMethod}
               />
             </Elements>
           )}
