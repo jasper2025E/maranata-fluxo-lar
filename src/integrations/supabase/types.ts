@@ -2120,6 +2120,7 @@ export type Database = {
           blocked_reason: string | null
           cnpj: string | null
           created_at: string | null
+          custom_domain: string | null
           data_contrato: string | null
           email: string | null
           endereco: string | null
@@ -2133,6 +2134,9 @@ export type Database = {
           next_billing_date: string | null
           nome: string
           plano: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          slug: string | null
           status: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -2152,6 +2156,7 @@ export type Database = {
           blocked_reason?: string | null
           cnpj?: string | null
           created_at?: string | null
+          custom_domain?: string | null
           data_contrato?: string | null
           email?: string | null
           endereco?: string | null
@@ -2165,6 +2170,9 @@ export type Database = {
           next_billing_date?: string | null
           nome: string
           plano?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          slug?: string | null
           status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -2184,6 +2192,7 @@ export type Database = {
           blocked_reason?: string | null
           cnpj?: string | null
           created_at?: string | null
+          custom_domain?: string | null
           data_contrato?: string | null
           email?: string | null
           endereco?: string | null
@@ -2197,6 +2206,9 @@ export type Database = {
           next_billing_date?: string | null
           nome?: string
           plano?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          slug?: string | null
           status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -2371,8 +2383,29 @@ export type Database = {
           nome: string
         }[]
       }
+      get_escola_public_info_by_tenant: {
+        Args: { p_tenant_id: string }
+        Returns: {
+          logo_url: string
+          nome: string
+          primary_color: string
+          secondary_color: string
+        }[]
+      }
       get_school_user_role: { Args: { _user_id: string }; Returns: string }
       get_school_user_tenant_id: { Args: never; Returns: string }
+      get_tenant_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          blocked_at: string
+          id: string
+          logo_url: string
+          nome: string
+          primary_color: string
+          secondary_color: string
+          status: string
+        }[]
+      }
       get_user_tenant_id: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -2416,6 +2449,10 @@ export type Database = {
           nome_completo: string
           ultimo_registro: Json
         }[]
+      }
+      validate_school_user_for_tenant: {
+        Args: { p_tenant_id: string; p_user_id: string }
+        Returns: boolean
       }
     }
     Enums: {

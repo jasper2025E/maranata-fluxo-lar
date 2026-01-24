@@ -11,6 +11,7 @@ import { useUserLanguage } from "@/hooks/useUserLanguage";
 // Auth Contexts - Domínios Separados
 import { PlatformAuthProvider } from "@/contexts/PlatformAuthContext";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { TenantProvider } from "@/contexts/TenantContext";
 
 // Guards - Isolamento por Domínio
 import { PlatformGuard } from "@/components/guards/PlatformGuard";
@@ -53,6 +54,7 @@ import PlatformPlans from "./pages/platform/PlatformPlans";
 // Pages - Login Separados
 import LoginGestor from "./pages/LoginGestor";
 import LoginEscola from "./pages/LoginEscola";
+import LoginEscolaDinamico from "./pages/LoginEscolaDinamico";
 
 // Pages - Public
 import LandingPage from "./pages/LandingPage";
@@ -89,6 +91,10 @@ function AppContent() {
           {/* Login Separados por Domínio */}
           <Route path="/login-gestor" element={<LoginGestor />} />
           <Route path="/login-escola" element={<LoginEscola />} />
+          
+          {/* Login Dinâmico por Escola (com branding personalizado) */}
+          {/* Formato: /e/nome-da-escola-slug */}
+          <Route path="/e/:slug" element={<LoginEscolaDinamico />} />
           
           {/* Legacy route - redireciona para login da escola */}
           <Route path="/auth" element={<Navigate to="/login-escola" replace />} />
@@ -377,9 +383,12 @@ const App = () => (
         <PlatformAuthProvider>
           {/* AuthProvider aqui é o domínio ESCOLA (compatível com useAuth legado) */}
           <AuthProvider>
-            <TooltipProvider>
-              <AppContent />
-            </TooltipProvider>
+            {/* TenantProvider para branding dinâmico por escola */}
+            <TenantProvider>
+              <TooltipProvider>
+                <AppContent />
+              </TooltipProvider>
+            </TenantProvider>
           </AuthProvider>
         </PlatformAuthProvider>
       </ThemeProvider>
