@@ -142,8 +142,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </div>
 
             <div className="flex items-center gap-2">
-              {/* Language Selector */}
-              <LanguageSelector variant="compact" />
+              {/* Language Selector - disabled for single-language system */}
+              <LanguageSelector />
 
               {/* Notifications */}
               <Popover>
