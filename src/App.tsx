@@ -10,7 +10,7 @@ import { useUserLanguage } from "@/hooks/useUserLanguage";
 
 // Auth Contexts - Domínios Separados
 import { PlatformAuthProvider } from "@/contexts/PlatformAuthContext";
-import { SchoolAuthProvider } from "@/contexts/SchoolAuthContext";
+import { AuthProvider } from "@/contexts/AuthContext";
 
 // Guards - Isolamento por Domínio
 import { PlatformGuard } from "@/components/guards/PlatformGuard";
@@ -375,11 +375,12 @@ const App = () => (
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
         {/* Providers separados para cada domínio de autenticação */}
         <PlatformAuthProvider>
-          <SchoolAuthProvider>
+          {/* AuthProvider aqui é o domínio ESCOLA (compatível com useAuth legado) */}
+          <AuthProvider>
             <TooltipProvider>
               <AppContent />
             </TooltipProvider>
-          </SchoolAuthProvider>
+          </AuthProvider>
         </PlatformAuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
