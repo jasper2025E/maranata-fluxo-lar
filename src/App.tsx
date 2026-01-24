@@ -3,17 +3,20 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useContentProtection } from "@/hooks/useContentProtection";
 import { useUserLanguage } from "@/hooks/useUserLanguage";
 
-// Pages
-import Index from "./pages/Index";
-import RootRedirect from "./components/RootRedirect";
-import Auth from "./pages/Auth";
+// Auth Contexts - Domínios Separados
+import { PlatformAuthProvider } from "@/contexts/PlatformAuthContext";
+import { SchoolAuthProvider } from "@/contexts/SchoolAuthContext";
+
+// Guards - Isolamento por Domínio
+import { PlatformGuard } from "@/components/guards/PlatformGuard";
+import { SchoolGuard } from "@/components/guards/SchoolGuard";
+
+// Pages - School Domain
 import Dashboard from "./pages/Dashboard";
 import ResponsavelDashboard from "./pages/ResponsavelDashboard";
 import Responsaveis from "./pages/Responsaveis";
@@ -33,7 +36,7 @@ import MinhaAssinatura from "./pages/MinhaAssinatura";
 import FaturasAssinatura from "./pages/FaturasAssinatura";
 import PagarFatura from "./pages/PagarFatura";
 
-// Platform Admin Pages
+// Pages - Platform Domain
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
 import TenantsList from "./pages/platform/TenantsList";
 import TenantForm from "./pages/platform/TenantForm";
@@ -47,9 +50,21 @@ import PlatformSecurity from "./pages/platform/PlatformSecurity";
 import PlatformAnalytics from "./pages/platform/PlatformAnalytics";
 import PlatformPlans from "./pages/platform/PlatformPlans";
 
+// Pages - Login Separados
+import LoginGestor from "./pages/LoginGestor";
+import LoginEscola from "./pages/LoginEscola";
+
+// Pages - Public
 import LandingPage from "./pages/LandingPage";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
+
+// Root redirect component
+function RootRedirect() {
+  // Por padrão, redireciona para o login da escola
+  // O gestor deve acessar /login-gestor diretamente
+  return <Navigate to="/login-escola" replace />;
+}
 
 // Componente interno que usa o hook de proteção
 function AppContent() {
@@ -65,246 +80,18 @@ function AppContent() {
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/* ============================================ */}
+          {/* ROTAS PÚBLICAS */}
+          {/* ============================================ */}
+          
           <Route path="/" element={<RootRedirect />} />
-          <Route path="/auth" element={<Auth />} />
-          {/* Legacy route (marketing removido) */}
-          <Route path="/marketing" element={<RootRedirect />} />
           
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/financeiro"
-            element={
-              <ProtectedRoute>
-                <ResponsavelDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/responsaveis"
-            element={
-              <ProtectedRoute>
-                <Responsaveis />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/alunos"
-            element={
-              <ProtectedRoute>
-                <Alunos />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/cursos"
-            element={
-              <ProtectedRoute>
-                <Cursos />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/turmas"
-            element={
-              <ProtectedRoute>
-                <Turmas />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/escola"
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <Escola />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/faturas"
-            element={
-              <ProtectedRoute>
-                <Faturas />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pagamentos"
-            element={
-              <ProtectedRoute>
-                <Pagamentos />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/despesas"
-            element={
-              <ProtectedRoute>
-                <Despesas />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/relatorios"
-            element={
-              <ProtectedRoute>
-                <Relatorios />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/configuracoes"
-            element={
-              <ProtectedRoute>
-                <Configuracoes />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/rh"
-            element={
-              <ProtectedRoute>
-                <RH />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/assinatura"
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <MinhaAssinatura />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/assinatura/faturas"
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <FaturasAssinatura />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/pagar-fatura"
-            element={
-              <ProtectedRoute>
-                <PagarFatura />
-              </ProtectedRoute>
-            }
-          />
+          {/* Login Separados por Domínio */}
+          <Route path="/login-gestor" element={<LoginGestor />} />
+          <Route path="/login-escola" element={<LoginEscola />} />
           
-          {/* Platform Admin Routes */}
-          <Route
-            path="/platform"
-            element={
-              <ProtectedRoute platformOnly>
-                <PlatformDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/tenants"
-            element={
-              <ProtectedRoute platformOnly>
-                <TenantsList />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/tenants/new"
-            element={
-              <ProtectedRoute platformOnly>
-                <TenantForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/tenants/:id"
-            element={
-              <ProtectedRoute platformOnly>
-                <TenantDetails />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/tenants/:id/edit"
-            element={
-              <ProtectedRoute platformOnly>
-                <TenantForm />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/impersonate"
-            element={
-              <ProtectedRoute platformOnly>
-                <ImpersonateUser />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/users"
-            element={
-              <ProtectedRoute platformOnly>
-                <PlatformUsers />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/subscriptions"
-            element={
-              <ProtectedRoute platformOnly>
-                <PlatformSubscriptions />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/logs"
-            element={
-              <ProtectedRoute platformOnly>
-                <PlatformLogs />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/settings"
-            element={
-              <ProtectedRoute platformOnly>
-                <PlatformSettings />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/security"
-            element={
-              <ProtectedRoute platformOnly>
-                <PlatformSecurity />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/analytics"
-            element={
-              <ProtectedRoute platformOnly>
-                <PlatformAnalytics />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/platform/plans"
-            element={
-              <ProtectedRoute platformOnly>
-                <PlatformPlans />
-              </ProtectedRoute>
-            }
-          />
+          {/* Legacy route - redireciona para login da escola */}
+          <Route path="/auth" element={<Navigate to="/login-escola" replace />} />
           
           {/* Public Payment Result Page */}
           <Route path="/pagamento/resultado" element={<PaymentResult />} />
@@ -317,6 +104,250 @@ function AppContent() {
           
           {/* Public Onboarding - New School Registration */}
           <Route path="/cadastro" element={<Onboarding />} />
+          
+          {/* ============================================ */}
+          {/* DOMÍNIO: ESCOLA */}
+          {/* Todas as rotas usam SchoolGuard */}
+          {/* ============================================ */}
+          
+          <Route
+            path="/dashboard"
+            element={
+              <SchoolGuard>
+                <Dashboard />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/dashboard/financeiro"
+            element={
+              <SchoolGuard>
+                <ResponsavelDashboard />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/responsaveis"
+            element={
+              <SchoolGuard>
+                <Responsaveis />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/alunos"
+            element={
+              <SchoolGuard>
+                <Alunos />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/cursos"
+            element={
+              <SchoolGuard>
+                <Cursos />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/turmas"
+            element={
+              <SchoolGuard>
+                <Turmas />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/escola"
+            element={
+              <SchoolGuard requiredRole="admin">
+                <Escola />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/faturas"
+            element={
+              <SchoolGuard>
+                <Faturas />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/pagamentos"
+            element={
+              <SchoolGuard>
+                <Pagamentos />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/despesas"
+            element={
+              <SchoolGuard>
+                <Despesas />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/relatorios"
+            element={
+              <SchoolGuard>
+                <Relatorios />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/configuracoes"
+            element={
+              <SchoolGuard>
+                <Configuracoes />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/rh"
+            element={
+              <SchoolGuard>
+                <RH />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/assinatura"
+            element={
+              <SchoolGuard requiredRole="admin">
+                <MinhaAssinatura />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/assinatura/faturas"
+            element={
+              <SchoolGuard requiredRole="admin">
+                <FaturasAssinatura />
+              </SchoolGuard>
+            }
+          />
+          <Route
+            path="/pagar-fatura"
+            element={
+              <SchoolGuard>
+                <PagarFatura />
+              </SchoolGuard>
+            }
+          />
+          
+          {/* ============================================ */}
+          {/* DOMÍNIO: PLATAFORMA (GESTOR) */}
+          {/* Todas as rotas usam PlatformGuard */}
+          {/* ============================================ */}
+          
+          <Route
+            path="/platform"
+            element={
+              <PlatformGuard>
+                <PlatformDashboard />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/tenants"
+            element={
+              <PlatformGuard>
+                <TenantsList />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/tenants/new"
+            element={
+              <PlatformGuard>
+                <TenantForm />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/tenants/:id"
+            element={
+              <PlatformGuard>
+                <TenantDetails />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/tenants/:id/edit"
+            element={
+              <PlatformGuard>
+                <TenantForm />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/impersonate"
+            element={
+              <PlatformGuard>
+                <ImpersonateUser />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/users"
+            element={
+              <PlatformGuard>
+                <PlatformUsers />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/subscriptions"
+            element={
+              <PlatformGuard>
+                <PlatformSubscriptions />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/logs"
+            element={
+              <PlatformGuard>
+                <PlatformLogs />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/settings"
+            element={
+              <PlatformGuard>
+                <PlatformSettings />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/security"
+            element={
+              <PlatformGuard>
+                <PlatformSecurity />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/analytics"
+            element={
+              <PlatformGuard>
+                <PlatformAnalytics />
+              </PlatformGuard>
+            }
+          />
+          <Route
+            path="/platform/plans"
+            element={
+              <PlatformGuard>
+                <PlatformPlans />
+              </PlatformGuard>
+            }
+          />
           
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
@@ -342,11 +373,14 @@ const App = () => (
   <ErrorBoundary>
     <QueryClientProvider client={queryClient}>
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-        <AuthProvider>
-          <TooltipProvider>
-            <AppContent />
-          </TooltipProvider>
-        </AuthProvider>
+        {/* Providers separados para cada domínio de autenticação */}
+        <PlatformAuthProvider>
+          <SchoolAuthProvider>
+            <TooltipProvider>
+              <AppContent />
+            </TooltipProvider>
+          </SchoolAuthProvider>
+        </PlatformAuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
   </ErrorBoundary>
