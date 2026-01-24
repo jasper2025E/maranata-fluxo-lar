@@ -6,10 +6,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { Badge } from "@/components/ui/badge";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   Search,
   Filter,
-  LayoutGrid,
   List,
   Users,
   Layers,
@@ -109,44 +110,75 @@ export function FaturaFilters({
                 </span>
               )}
             </Button>
-            <div className="flex border rounded-lg overflow-hidden">
-              <Button
-                variant={viewMode === "list" ? "default" : "ghost"}
-                size="icon"
-                className="rounded-none h-9 w-9"
-                onClick={() => onViewModeChange("list")}
-                title="Lista"
+            <TooltipProvider delayDuration={100}>
+              <ToggleGroup 
+                type="single" 
+                value={viewMode} 
+                onValueChange={(value) => value && onViewModeChange(value as ViewMode)}
+                className="bg-muted/50 p-1 rounded-lg"
               >
-                <List className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "status" ? "default" : "ghost"}
-                size="icon"
-                className="rounded-none h-9 w-9"
-                onClick={() => onViewModeChange("status")}
-                title="Por Status"
-              >
-                <Layers className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "aluno" ? "default" : "ghost"}
-                size="icon"
-                className="rounded-none h-9 w-9"
-                onClick={() => onViewModeChange("aluno")}
-                title="Por Aluno"
-              >
-                <Users className="h-4 w-4" />
-              </Button>
-              <Button
-                variant={viewMode === "mes" ? "default" : "ghost"}
-                size="icon"
-                className="rounded-none h-9 w-9"
-                onClick={() => onViewModeChange("mes")}
-                title="Por Mês"
-              >
-                <CalendarIcon className="h-4 w-4" />
-              </Button>
-            </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ToggleGroupItem 
+                      value="list" 
+                      aria-label="Lista"
+                      className={cn(
+                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md transition-all",
+                        "hover:bg-background/50"
+                      )}
+                    >
+                      <List className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">Lista</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ToggleGroupItem 
+                      value="status" 
+                      aria-label="Por Status"
+                      className={cn(
+                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md transition-all",
+                        "hover:bg-background/50"
+                      )}
+                    >
+                      <Layers className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">Por Status</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ToggleGroupItem 
+                      value="aluno" 
+                      aria-label="Por Aluno"
+                      className={cn(
+                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md transition-all",
+                        "hover:bg-background/50"
+                      )}
+                    >
+                      <Users className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">Por Aluno</TooltipContent>
+                </Tooltip>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <ToggleGroupItem 
+                      value="mes" 
+                      aria-label="Por Mês"
+                      className={cn(
+                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md transition-all",
+                        "hover:bg-background/50"
+                      )}
+                    >
+                      <CalendarIcon className="h-4 w-4" />
+                    </ToggleGroupItem>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">Por Mês</TooltipContent>
+                </Tooltip>
+              </ToggleGroup>
+            </TooltipProvider>
           </div>
         </div>
 
