@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, BookOpen, ShieldCheck, ArrowLeft } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { motion } from "framer-motion";
+import { AuthError } from "@supabase/supabase-js";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -270,203 +270,89 @@ const Auth = () => {
     );
   }
 
-  // Dynamic greeting based on time
-  const getGreeting = () => {
-    const hour = new Date().getHours();
-    if (hour >= 5 && hour < 12) return { text: "Bom dia", emoji: "☀️" };
-    if (hour >= 12 && hour < 18) return { text: "Boa tarde", emoji: "🌤️" };
-    return { text: "Boa noite", emoji: "🌙" };
-  };
+  return <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Animated gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-violet-50 to-pink-50" />
+      
+      {/* Floating gradient blobs */}
+      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-gradient-to-br from-violet-400/40 to-blue-400/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/4 animate-pulse" />
+      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gradient-to-tl from-pink-300/50 to-violet-300/40 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
+      <div className="absolute top-1/2 right-1/4 w-[300px] h-[300px] bg-gradient-to-l from-pink-200/60 to-purple-200/40 rounded-full blur-2xl" />
 
-  const greeting = getGreeting();
-
-  return (
-    <div className="min-h-screen flex">
-      {/* Netflix-style Hero Banner - Left Side */}
-      <div className="hidden lg:flex lg:w-1/2 xl:w-3/5 relative overflow-hidden">
-        {/* Background with gradient overlay */}
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900" />
+      {/* Login Card */}
+      <div className="relative w-full max-w-md">
+        <div className="absolute inset-0 bg-gradient-to-br from-pink-100/80 via-violet-100/60 to-white/80 rounded-3xl blur-xl" />
         
-        {/* Animated gradient orbs */}
-        <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-gradient-to-br from-violet-600/30 to-fuchsia-600/20 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-gradient-to-tl from-blue-600/25 to-cyan-500/15 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/2 w-[300px] h-[300px] bg-gradient-to-r from-pink-500/20 to-rose-500/15 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
-
-        {/* Content */}
-        <div className="relative z-10 flex flex-col justify-center px-12 xl:px-20">
-          {/* Greeting Badge */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white/90 text-sm font-medium mb-8 w-fit"
-          >
-            <span className="text-lg">{greeting.emoji}</span>
-            <span>{greeting.text}</span>
-          </motion.div>
-
-          {/* Main Title */}
-          <motion.h1
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl xl:text-5xl font-bold text-white leading-tight mb-6"
-          >
-            Gestão Escolar
-            <br />
-            <span className="bg-gradient-to-r from-violet-400 via-fuchsia-400 to-pink-400 bg-clip-text text-transparent">
-              Simplificada
-            </span>
-          </motion.h1>
-
-          {/* Description */}
-          <motion.p
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg xl:text-xl text-white/70 max-w-md mb-10 leading-relaxed"
-          >
-            Controle financeiro, matrículas, faturas e muito mais em uma única plataforma intuitiva.
-          </motion.p>
-
-          {/* Features List */}
-          <motion.div
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="space-y-4"
-          >
-            {[
-              "Dashboard financeiro em tempo real",
-              "Gestão de alunos e responsáveis",
-              "Faturas e cobranças automatizadas",
-              "Relatórios e análises detalhadas",
-            ].map((feature, i) => (
-              <div key={i} className="flex items-center gap-3 text-white/80">
-                <div className="h-2 w-2 rounded-full bg-gradient-to-r from-violet-400 to-fuchsia-400" />
-                <span className="text-sm xl:text-base">{feature}</span>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-
-        {/* Bottom gradient fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-slate-900 to-transparent" />
-      </div>
-
-      {/* Login Form - Right Side */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 relative bg-gradient-to-br from-slate-50 via-violet-50/30 to-white">
-        {/* Mobile greeting banner */}
-        <div className="lg:hidden absolute top-0 left-0 right-0 py-4 px-6 bg-gradient-to-r from-violet-600 to-fuchsia-600 text-white">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <span>{greeting.emoji}</span>
-            <span>{greeting.text}! Bem-vindo ao Sistema de Gestão Escolar</span>
-          </div>
-        </div>
-
-        <div className="w-full max-w-md lg:mt-0 mt-16">
+        <div className="relative bg-gradient-to-br from-pink-50/90 via-white/95 to-violet-50/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 p-8 md:p-10">
           {/* Logo */}
-          <div className="flex justify-center mb-8">
+          <div className="flex justify-center mb-6">
             {escolaLoading ? (
-              <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse shadow-lg" />
+              <div className="h-28 w-28 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse border-4 border-white shadow-lg" />
             ) : logoUrl ? (
-              <div className="relative h-24 w-24">
+              <div className="relative h-28 w-28">
                 {!logoLoaded && (
-                  <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse" />
+                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse border-4 border-white" />
                 )}
                 <img 
                   src={logoUrl} 
                   alt={escolaNome} 
-                  className={`h-24 w-24 object-contain rounded-2xl shadow-lg transition-opacity duration-300 ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
+                  className={`h-28 w-28 object-contain rounded-full shadow-lg border-4 border-white transition-opacity duration-300 ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
                   onLoad={() => setLogoLoaded(true)}
                   loading="eager"
                 />
               </div>
             ) : (
-              <div className="h-24 w-24 rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-fuchsia-500 flex items-center justify-center shadow-lg">
-                <BookOpen className="h-12 w-12 text-white" />
+              <div className="h-28 w-28 rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg border-4 border-white">
+                <BookOpen className="h-14 w-14 text-white" />
               </div>
             )}
           </div>
 
           {/* Title */}
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold text-foreground mb-2">Acesse sua conta</h1>
-            <p className="text-muted-foreground text-sm">{escolaNome}</p>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Bem-vindo</h1>
+            <p className="text-gray-600">Entre com email e senha</p>
           </div>
 
           {/* Form */}
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground font-medium text-sm">
+              <Label htmlFor="email" className="text-gray-700 font-medium">
                 Email
               </Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="Digite seu email" 
-                value={email} 
-                onChange={e => setEmail(e.target.value)} 
-                className={`h-12 bg-background border-border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 ${errors.email ? "border-destructive" : ""}`} 
-                disabled={loading} 
-                autoComplete="email" 
-              />
-              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+              <Input id="email" type="email" placeholder="Digite seu email" value={email} onChange={e => setEmail(e.target.value)} className={`h-12 bg-white/80 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
+              {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground font-medium text-sm">
+              <Label htmlFor="password" className="text-gray-700 font-medium">
                 Senha
               </Label>
               <div className="relative">
-                <Input 
-                  id="password" 
-                  type={showPassword ? "text" : "password"} 
-                  placeholder="Digite sua senha" 
-                  value={password} 
-                  onChange={e => setPassword(e.target.value)} 
-                  className={`h-12 bg-background border-border rounded-xl focus:ring-2 focus:ring-violet-500 focus:border-violet-500 pr-12 ${errors.password ? "border-destructive" : ""}`} 
-                  disabled={loading} 
-                  autoComplete="current-password" 
-                />
-                <Button 
-                  type="button" 
-                  variant="ghost" 
-                  size="icon" 
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-transparent" 
-                  onClick={() => setShowPassword(!showPassword)}
-                >
+                <Input id="password" type={showPassword ? "text" : "password"} placeholder="Digite sua senha" value={password} onChange={e => setPassword(e.target.value)} className={`h-12 bg-white/80 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 pr-12 ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
+                <Button type="button" variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
+              {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
             </div>
 
-            <Button 
-              type="submit" 
-              disabled={loading} 
-              className="w-full h-12 bg-gradient-to-r from-violet-600 via-purple-600 to-fuchsia-600 hover:from-violet-700 hover:via-purple-700 hover:to-fuchsia-700 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/25 transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/30"
-            >
-              {loading ? (
-                <>
+            <Button type="submit" disabled={loading} className="w-full h-12 bg-gradient-to-r from-violet-500 via-purple-500 to-violet-600 hover:from-violet-600 hover:via-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/40">
+              {loading ? <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Entrando...
-                </>
-              ) : (
-                "Entrar"
-              )}
+                </> : "Entrar"}
             </Button>
           </form>
 
           {/* Footer */}
           <div className="mt-8 text-center">
-            <p className="text-xs text-muted-foreground">
-              Sistema de Gestão Escolar • Todos os direitos reservados
+            <p className="text-sm text-gray-500">
+              Sistema de Gestão Escolar {escolaNome}
             </p>
           </div>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
 export default Auth;
