@@ -13,6 +13,7 @@ import {
   UserCheck,
   Wallet,
   Briefcase,
+  type LucideIcon,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -39,27 +40,36 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-const menuItems = [
-  { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: Wallet },
-  { titleKey: "nav.school", url: "/escola", icon: Building2, roles: ["admin"] },
-  { titleKey: "nav.guardians", url: "/responsaveis", icon: UserCheck },
-  { titleKey: "nav.students", url: "/alunos", icon: Users },
-  { titleKey: "nav.classes", url: "/turmas", icon: GraduationCap },
-  { titleKey: "nav.courses", url: "/cursos", icon: BookOpen },
-  { titleKey: "nav.hr", url: "/rh", icon: Briefcase, roles: ["admin", "staff"] },
+interface MenuItem {
+  titleKey: string;
+  url: string;
+  icon: LucideIcon;
+  roles?: string[];
+  excludePlatformAdmin?: boolean;
+  iconColor?: string;
+  iconBg?: string;
+}
+
+const menuItems: MenuItem[] = [
+  { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard, iconColor: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-100 dark:bg-violet-900/40" },
+  { titleKey: "nav.school", url: "/escola", icon: Building2, roles: ["admin"], iconColor: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-100 dark:bg-blue-900/40" },
+  { titleKey: "nav.guardians", url: "/responsaveis", icon: UserCheck, iconColor: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-100 dark:bg-emerald-900/40" },
+  { titleKey: "nav.students", url: "/alunos", icon: Users, iconColor: "text-cyan-600 dark:text-cyan-400", iconBg: "bg-cyan-100 dark:bg-cyan-900/40" },
+  { titleKey: "nav.classes", url: "/turmas", icon: GraduationCap, iconColor: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-900/40" },
+  { titleKey: "nav.courses", url: "/cursos", icon: BookOpen, iconColor: "text-rose-600 dark:text-rose-400", iconBg: "bg-rose-100 dark:bg-rose-900/40" },
+  { titleKey: "nav.hr", url: "/rh", icon: Briefcase, roles: ["admin", "staff"], iconColor: "text-indigo-600 dark:text-indigo-400", iconBg: "bg-indigo-100 dark:bg-indigo-900/40" },
 ];
 
-const financeItems = [
-  { titleKey: "nav.invoices", url: "/faturas", icon: FileText },
-  { titleKey: "nav.payments", url: "/pagamentos", icon: CreditCard },
-  { titleKey: "nav.expenses", url: "/despesas", icon: Receipt },
-  { titleKey: "nav.reports", url: "/relatorios", icon: BarChart3 },
-  { titleKey: "nav.subscription", url: "/assinatura", icon: CreditCard, roles: ["admin"], excludePlatformAdmin: true },
+const financeItems: MenuItem[] = [
+  { titleKey: "nav.invoices", url: "/faturas", icon: FileText, iconColor: "text-blue-600 dark:text-blue-400", iconBg: "bg-blue-100 dark:bg-blue-900/40" },
+  { titleKey: "nav.payments", url: "/pagamentos", icon: CreditCard, iconColor: "text-emerald-600 dark:text-emerald-400", iconBg: "bg-emerald-100 dark:bg-emerald-900/40" },
+  { titleKey: "nav.expenses", url: "/despesas", icon: Receipt, iconColor: "text-rose-600 dark:text-rose-400", iconBg: "bg-rose-100 dark:bg-rose-900/40" },
+  { titleKey: "nav.reports", url: "/relatorios", icon: BarChart3, iconColor: "text-violet-600 dark:text-violet-400", iconBg: "bg-violet-100 dark:bg-violet-900/40" },
+  { titleKey: "nav.subscription", url: "/assinatura", icon: Wallet, roles: ["admin"], excludePlatformAdmin: true, iconColor: "text-amber-600 dark:text-amber-400", iconBg: "bg-amber-100 dark:bg-amber-900/40" },
 ];
 
-const settingsItems = [
-  { titleKey: "nav.settings", url: "/configuracoes", icon: Settings, roles: ["admin"] },
+const settingsItems: MenuItem[] = [
+  { titleKey: "nav.settings", url: "/configuracoes", icon: Settings, roles: ["admin"], iconColor: "text-slate-600 dark:text-slate-400", iconBg: "bg-slate-100 dark:bg-slate-800/60" },
 ];
 
 export function AppSidebar() {
@@ -95,53 +105,67 @@ export function AppSidebar() {
     });
   };
 
-  const renderMenuItem = (item: typeof menuItems[0]) => (
-    <SidebarMenuItem key={item.titleKey}>
-      {isCollapsed ? (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <SidebarMenuButton asChild>
-              <NavLink
-                to={item.url}
-                end={item.url === "/dashboard"}
-                className={cn(
-                  "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5",
-                  "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                  "transition-all duration-200 ease-out",
-                  "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20",
-                  "active:scale-95"
-                )}
-                activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
-              >
-                <item.icon className="h-5 w-5 shrink-0 transition-transform duration-200" strokeWidth={1.75} />
-              </NavLink>
-            </SidebarMenuButton>
-          </TooltipTrigger>
-          <TooltipContent side="right" className="font-medium">
-            {t(item.titleKey)}
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        <SidebarMenuButton asChild>
-          <NavLink
-            to={item.url}
-            end={item.url === "/dashboard"}
-            className={cn(
-              "flex items-center gap-3 rounded-xl px-3 py-2.5",
-              "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-              "transition-all duration-200 ease-out",
-              "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1",
-              "active:scale-[0.98]"
-            )}
-            activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"
-          >
-            <item.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.75} />
-            <span className="text-sm">{t(item.titleKey)}</span>
-          </NavLink>
-        </SidebarMenuButton>
-      )}
-    </SidebarMenuItem>
-  );
+  const renderMenuItem = (item: MenuItem) => {
+    const IconComponent = item.icon;
+    
+    return (
+      <SidebarMenuItem key={item.titleKey}>
+        {isCollapsed ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <SidebarMenuButton asChild>
+                <NavLink
+                  to={item.url}
+                  end={item.url === "/dashboard"}
+                  className={cn(
+                    "flex items-center justify-center rounded-xl p-2",
+                    "text-sidebar-foreground/60 hover:text-sidebar-foreground",
+                    "transition-all duration-200 ease-out",
+                    "hover:scale-110",
+                    "active:scale-95"
+                  )}
+                  activeClassName="text-sidebar-primary"
+                >
+                  <div className={cn(
+                    "h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-200",
+                    item.iconBg
+                  )}>
+                    <IconComponent className={cn("h-[18px] w-[18px] shrink-0", item.iconColor)} strokeWidth={1.75} />
+                  </div>
+                </NavLink>
+              </SidebarMenuButton>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="font-medium">
+              {t(item.titleKey)}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <SidebarMenuButton asChild>
+            <NavLink
+              to={item.url}
+              end={item.url === "/dashboard"}
+              className={cn(
+                "group flex items-center gap-3 rounded-xl px-2 py-2",
+                "text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                "transition-all duration-200 ease-out",
+                "active:scale-[0.98]"
+              )}
+              activeClassName="bg-sidebar-accent text-sidebar-foreground font-medium"
+            >
+              <div className={cn(
+                "h-9 w-9 rounded-xl flex items-center justify-center transition-all duration-200",
+                "group-hover:scale-105",
+                item.iconBg
+              )}>
+                <IconComponent className={cn("h-[18px] w-[18px] shrink-0", item.iconColor)} strokeWidth={1.75} />
+              </div>
+              <span className="text-sm font-medium">{t(item.titleKey)}</span>
+            </NavLink>
+          </SidebarMenuButton>
+        )}
+      </SidebarMenuItem>
+    );
+  };
 
   return (
     <Sidebar className="border-r-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" collapsible="icon">
@@ -254,14 +278,16 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     onClick={handleLogout}
                     className={cn(
-                      "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                      "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10",
+                      "flex items-center justify-center rounded-xl p-2 w-full",
+                      "text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10",
                       "transition-all duration-200 ease-out",
-                      "hover:scale-110 hover:shadow-lg hover:shadow-red-500/20",
+                      "hover:scale-110",
                       "active:scale-95"
                     )}
                   >
-                    <LogOut className="h-5 w-5 shrink-0 transition-transform duration-200" strokeWidth={1.75} />
+                    <div className="h-9 w-9 rounded-xl flex items-center justify-center bg-destructive/10">
+                      <LogOut className="h-[18px] w-[18px] shrink-0 text-destructive" strokeWidth={1.75} />
+                    </div>
                   </SidebarMenuButton>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="font-medium">
@@ -272,15 +298,16 @@ export function AppSidebar() {
               <SidebarMenuButton
                 onClick={handleLogout}
                 className={cn(
-                  "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                  "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10",
+                  "group flex items-center gap-3 rounded-xl px-2 py-2 w-full",
+                  "text-sidebar-foreground/70 hover:text-destructive hover:bg-destructive/5",
                   "transition-all duration-200 ease-out",
-                  "hover:scale-[1.02] hover:shadow-lg hover:shadow-red-500/15 hover:translate-x-1",
                   "active:scale-[0.98]"
                 )}
               >
-                <LogOut className="h-[18px] w-[18px] shrink-0 transition-transform duration-200" strokeWidth={1.75} />
-                <span className="text-sm">{t("nav.exitSystem")}</span>
+                <div className="h-9 w-9 rounded-xl flex items-center justify-center bg-destructive/10 transition-all duration-200 group-hover:scale-105">
+                  <LogOut className="h-[18px] w-[18px] shrink-0 text-destructive" strokeWidth={1.75} />
+                </div>
+                <span className="text-sm font-medium">{t("nav.exitSystem")}</span>
               </SidebarMenuButton>
             )}
           </SidebarMenuItem>
