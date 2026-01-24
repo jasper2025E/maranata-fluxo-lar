@@ -35,6 +35,23 @@ export function ConfiguracoesCobranca() {
 
   const loadConfig = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+      
+      if (!profile?.tenant_id) {
+        setLoading(false);
+        return;
+      }
+      
       const { data, error } = await supabase
         .from("escola")
         .select(`
@@ -46,7 +63,7 @@ export function ConfiguracoesCobranca() {
           desconto_pontualidade_percentual,
           dias_desconto_pontualidade
         `)
-        .limit(1)
+        .eq("tenant_id", profile.tenant_id)
         .maybeSingle();
 
       if (error) throw error;
@@ -72,10 +89,21 @@ export function ConfiguracoesCobranca() {
   const handleSave = async () => {
     setSaving(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Usuário não autenticado");
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+      
+      if (!profile?.tenant_id) throw new Error("Tenant não encontrado");
+      
       const { data: existing } = await supabase
         .from("escola")
         .select("id")
-        .limit(1)
+        .eq("tenant_id", profile.tenant_id)
         .maybeSingle();
 
       if (existing) {
@@ -87,7 +115,7 @@ export function ConfiguracoesCobranca() {
       } else {
         const { error } = await supabase
           .from("escola")
-          .insert({ nome: "Minha Escola", ...config });
+          .insert({ nome: "Minha Escola", tenant_id: profile.tenant_id, ...config });
         if (error) throw error;
       }
 

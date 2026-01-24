@@ -52,11 +52,26 @@ export function BulkActionsBar({
   const { createPayment } = useAsaas();
   const cancelMutation = useCancelarFatura();
 
-  // Buscar escola para geração do carnê
+  // Buscar escola do tenant atual para geração do carnê
   const { data: escola } = useQuery({
     queryKey: ["escola-bulk"],
     queryFn: async () => {
-      const { data } = await supabase.from("escola").select("*").limit(1).maybeSingle();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+      
+      if (!profile?.tenant_id) return null;
+      
+      const { data } = await supabase
+        .from("escola")
+        .select("*")
+        .eq("tenant_id", profile.tenant_id)
+        .maybeSingle();
       return data;
     },
   });

@@ -57,11 +57,26 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
     enabled: open,
   });
 
-  // Buscar escola
+  // Buscar escola do tenant atual
   const { data: escola } = useQuery({
     queryKey: ["escola-carne"],
     queryFn: async () => {
-      const { data } = await supabase.from("escola").select("*").limit(1).maybeSingle();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+      
+      if (!profile?.tenant_id) return null;
+      
+      const { data } = await supabase
+        .from("escola")
+        .select("*")
+        .eq("tenant_id", profile.tenant_id)
+        .maybeSingle();
       return data;
     },
     enabled: open,
