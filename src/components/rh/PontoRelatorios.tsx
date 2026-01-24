@@ -1,18 +1,18 @@
 import { useState, useMemo } from "react";
+import { useTranslation } from "react-i18next";
 import { useFuncionarios, usePontoRegistros } from "@/hooks/useRH";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
 import { BarChart, Clock, AlertTriangle, TrendingUp, Download, Users, Calendar } from "lucide-react";
-import { format, parseISO, differenceInMinutes, startOfMonth, endOfMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
+import { format, startOfMonth, endOfMonth } from "date-fns";
 import { motion } from "framer-motion";
+import { cn } from "@/lib/utils";
 
 interface FuncionarioResumo {
   id: string;
@@ -25,8 +25,14 @@ interface FuncionarioResumo {
   faltas: number;
 }
 
-const HORA_ENTRADA_ESPERADA = 8 * 60; // 8:00 em minutos
-const CARGA_HORARIA_DIARIA = 8 * 60; // 8 horas em minutos
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+}
+
+const HORA_ENTRADA_ESPERADA = 8 * 60;
+const CARGA_HORARIA_DIARIA = 8 * 60;
 
 function parseTimeToMinutes(time: string | null): number | null {
   if (!time) return null;
@@ -41,10 +47,18 @@ function formatMinutesToHours(minutes: number): string {
 }
 
 export function PontoRelatorios() {
+  const { t } = useTranslation();
   const currentMonth = new Date();
   const [selectedFuncionario, setSelectedFuncionario] = useState<string>("all");
   const [startDate, setStartDate] = useState(format(startOfMonth(currentMonth), "yyyy-MM-dd"));
   const [endDate, setEndDate] = useState(format(endOfMonth(currentMonth), "yyyy-MM-dd"));
+  const [activeTab, setActiveTab] = useState("resumo");
+
+  const navItems: NavItem[] = [
+    { id: "resumo", label: "Resumo por Funcionário", icon: Users },
+    { id: "atrasos", label: "Ranking de Atrasos", icon: AlertTriangle },
+    { id: "extras", label: "Ranking Horas Extras", icon: TrendingUp },
+  ];
 
   const { data: funcionarios, isLoading: loadingFuncionarios } = useFuncionarios();
   const { data: registros, isLoading: loadingRegistros } = usePontoRegistros(
@@ -60,7 +74,6 @@ export function PontoRelatorios() {
 
     const resumoMap = new Map<string, FuncionarioResumo>();
 
-    // Inicializa todos os funcionários ativos
     funcionariosAtivos.forEach(f => {
       resumoMap.set(f.id, {
         id: f.id,
@@ -74,24 +87,20 @@ export function PontoRelatorios() {
       });
     });
 
-    // Processa registros
     registros.forEach(registro => {
       const resumo = resumoMap.get(registro.funcionario_id);
       if (!resumo) return;
 
-      // Conta dia trabalhado se tem entrada
       if (registro.entrada) {
         resumo.diasTrabalhados++;
 
-        // Calcula atraso
         const entradaMinutos = parseTimeToMinutes(registro.entrada);
-        if (entradaMinutos && entradaMinutos > HORA_ENTRADA_ESPERADA + 10) { // 10 min tolerância
+        if (entradaMinutos && entradaMinutos > HORA_ENTRADA_ESPERADA + 10) {
           resumo.atrasos++;
           resumo.minutosAtraso += entradaMinutos - HORA_ENTRADA_ESPERADA;
         }
       }
 
-      // Calcula horas trabalhadas
       if (registro.entrada && registro.saida) {
         const entrada = parseTimeToMinutes(registro.entrada) || 0;
         const saida = parseTimeToMinutes(registro.saida) || 0;
@@ -100,14 +109,12 @@ export function PontoRelatorios() {
 
         let horasTrabalhadas = saida - entrada;
         
-        // Desconta almoço se registrado
         if (saidaAlmoco && retornoAlmoco) {
           horasTrabalhadas -= (retornoAlmoco - saidaAlmoco);
         }
 
         resumo.horasTrabalhadas += horasTrabalhadas;
 
-        // Calcula horas extras
         if (horasTrabalhadas > CARGA_HORARIA_DIARIA) {
           resumo.horasExtras += horasTrabalhadas - CARGA_HORARIA_DIARIA;
         }
@@ -167,24 +174,228 @@ export function PontoRelatorios() {
     return <LoadingState />;
   }
 
+  const renderContent = () => {
+    switch (activeTab) {
+      case "resumo":
+        return (
+          <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/50 bg-muted/30 py-4">
+              <CardTitle className="text-lg font-semibold">Resumo por Funcionário</CardTitle>
+              <CardDescription>{resumosPorFuncionario.length} funcionário(s)</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {loadingRegistros ? (
+                <div className="py-16"><LoadingState /></div>
+              ) : resumosPorFuncionario.length === 0 ? (
+                <div className="py-16">
+                  <EmptyState
+                    icon={BarChart}
+                    title="Nenhum dado encontrado"
+                    description="Não há registros de ponto no período selecionado"
+                  />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="font-semibold text-foreground">Funcionário</TableHead>
+                      <TableHead className="font-semibold text-foreground text-center">Dias</TableHead>
+                      <TableHead className="font-semibold text-foreground text-center">Horas</TableHead>
+                      <TableHead className="font-semibold text-foreground text-center">Extras</TableHead>
+                      <TableHead className="font-semibold text-foreground text-center">Atrasos</TableHead>
+                      <TableHead className="font-semibold text-foreground text-center">Tempo Atraso</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {resumosPorFuncionario.map((resumo, index) => (
+                      <motion.tr
+                        key={resumo.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.03 }}
+                        className="hover:bg-muted/50 transition-colors border-b border-border/50"
+                      >
+                        <TableCell className="font-medium text-foreground">{resumo.nome}</TableCell>
+                        <TableCell className="text-center text-muted-foreground">{resumo.diasTrabalhados}</TableCell>
+                        <TableCell className="text-center text-muted-foreground">
+                          {formatMinutesToHours(resumo.horasTrabalhadas)}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {resumo.horasExtras > 0 ? (
+                            <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 font-mono">
+                              {formatMinutesToHours(resumo.horasExtras)}
+                            </Badge>
+                          ) : "-"}
+                        </TableCell>
+                        <TableCell className="text-center">
+                          {resumo.atrasos > 0 ? (
+                            <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+                              {resumo.atrasos}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">0</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center text-muted-foreground">
+                          {resumo.minutosAtraso > 0 ? formatMinutesToHours(resumo.minutosAtraso) : "-"}
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case "atrasos":
+        return (
+          <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/50 bg-muted/30 py-4">
+              <CardTitle className="text-lg font-semibold">Ranking de Atrasos</CardTitle>
+              <CardDescription>Top 10 funcionários com mais atrasos</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {rankingAtrasos.length === 0 ? (
+                <div className="py-16">
+                  <EmptyState
+                    icon={AlertTriangle}
+                    title="Nenhum atraso"
+                    description="Não há registros de atrasos no período selecionado"
+                  />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="font-semibold text-foreground w-16">#</TableHead>
+                      <TableHead className="font-semibold text-foreground">Funcionário</TableHead>
+                      <TableHead className="font-semibold text-foreground text-center">Quantidade</TableHead>
+                      <TableHead className="font-semibold text-foreground text-center">Tempo Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rankingAtrasos.map((resumo, index) => (
+                      <motion.tr
+                        key={resumo.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="hover:bg-muted/50 transition-colors border-b border-border/50"
+                      >
+                        <TableCell>
+                          <Badge 
+                            variant="outline"
+                            className={cn(
+                              "font-medium",
+                              index < 3 && "bg-destructive/10 text-destructive border-destructive/20"
+                            )}
+                          >
+                            {index + 1}º
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium text-foreground">{resumo.nome}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/20">
+                            {resumo.atrasos} atrasos
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-center text-muted-foreground">
+                          {formatMinutesToHours(resumo.minutosAtraso)}
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      case "extras":
+        return (
+          <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
+            <CardHeader className="border-b border-border/50 bg-muted/30 py-4">
+              <CardTitle className="text-lg font-semibold">Ranking de Horas Extras</CardTitle>
+              <CardDescription>Top 10 funcionários com mais horas extras</CardDescription>
+            </CardHeader>
+            <CardContent className="p-0">
+              {rankingHorasExtras.length === 0 ? (
+                <div className="py-16">
+                  <EmptyState
+                    icon={TrendingUp}
+                    title="Sem horas extras"
+                    description="Não há registros de horas extras no período selecionado"
+                  />
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                      <TableHead className="font-semibold text-foreground w-16">#</TableHead>
+                      <TableHead className="font-semibold text-foreground">Funcionário</TableHead>
+                      <TableHead className="font-semibold text-foreground text-center">Horas Extras</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {rankingHorasExtras.map((resumo, index) => (
+                      <motion.tr
+                        key={resumo.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="hover:bg-muted/50 transition-colors border-b border-border/50"
+                      >
+                        <TableCell>
+                          <Badge 
+                            variant="outline"
+                            className={cn(
+                              "font-medium",
+                              index < 3 && "bg-blue-500/10 text-blue-600 border-blue-500/20"
+                            )}
+                          >
+                            {index + 1}º
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="font-medium text-foreground">{resumo.nome}</TableCell>
+                        <TableCell className="text-center">
+                          <Badge variant="outline" className="bg-blue-500/10 text-blue-600 border-blue-500/20 font-mono">
+                            {formatMinutesToHours(resumo.horasExtras)}
+                          </Badge>
+                        </TableCell>
+                      </motion.tr>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        );
+
+      default:
+        return null;
+    }
+  };
+
   return (
     <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      {/* Filtros */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <BarChart className="h-5 w-5" />
-            Relatórios de Ponto
-          </CardTitle>
+      {/* Filters */}
+      <Card className="border-border/50 shadow-sm rounded-2xl">
+        <CardHeader className="border-b border-border/50 bg-muted/30 py-4">
+          <div className="flex items-center gap-2">
+            <BarChart className="h-5 w-5 text-primary" />
+            <CardTitle className="text-lg font-semibold">Relatórios de Ponto</CardTitle>
+          </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4 flex-wrap">
             <Select value={selectedFuncionario} onValueChange={setSelectedFuncionario}>
-              <SelectTrigger className="w-full sm:w-[250px]">
+              <SelectTrigger className="w-full sm:w-[250px] h-10">
                 <SelectValue placeholder="Todos os funcionários" />
               </SelectTrigger>
               <SelectContent>
@@ -203,18 +414,18 @@ export function PontoRelatorios() {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-auto"
+                className="w-auto h-10"
               />
-              <span className="text-muted-foreground">até</span>
+              <span className="text-muted-foreground text-sm">até</span>
               <Input
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-auto"
+                className="w-auto h-10"
               />
             </div>
 
-            <Button variant="outline" onClick={exportToCSV}>
+            <Button variant="outline" size="sm" onClick={exportToCSV} className="h-10">
               <Download className="h-4 w-4 mr-2" />
               Exportar CSV
             </Button>
@@ -222,222 +433,86 @@ export function PontoRelatorios() {
         </CardContent>
       </Card>
 
-      {/* Cards de Resumo */}
+      {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
+        <Card className="border-border/50 shadow-sm rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-primary/10">
+              <div className="p-3 rounded-xl bg-primary/10">
                 <Users className="h-6 w-6 text-primary" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Funcionários</p>
-                <p className="text-2xl font-bold">{funcionariosAtivos.length}</p>
+                <p className="text-2xl font-bold text-foreground">{funcionariosAtivos.length}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/50 shadow-sm rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-green-500/10">
-                <Clock className="h-6 w-6 text-green-500" />
+              <div className="p-3 rounded-xl bg-emerald-500/10">
+                <Clock className="h-6 w-6 text-emerald-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Horas Trabalhadas</p>
-                <p className="text-2xl font-bold">{formatMinutesToHours(totais.horasTrabalhadas)}</p>
+                <p className="text-2xl font-bold text-foreground">{formatMinutesToHours(totais.horasTrabalhadas)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/50 shadow-sm rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-blue-500/10">
-                <TrendingUp className="h-6 w-6 text-blue-500" />
+              <div className="p-3 rounded-xl bg-blue-500/10">
+                <TrendingUp className="h-6 w-6 text-blue-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Horas Extras</p>
-                <p className="text-2xl font-bold">{formatMinutesToHours(totais.horasExtras)}</p>
+                <p className="text-2xl font-bold text-foreground">{formatMinutesToHours(totais.horasExtras)}</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-border/50 shadow-sm rounded-2xl">
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-full bg-orange-500/10">
-                <AlertTriangle className="h-6 w-6 text-orange-500" />
+              <div className="p-3 rounded-xl bg-amber-500/10">
+                <AlertTriangle className="h-6 w-6 text-amber-600" />
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total de Atrasos</p>
-                <p className="text-2xl font-bold">{totais.atrasos}</p>
+                <p className="text-2xl font-bold text-foreground">{totais.atrasos}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Tabs com Tabelas */}
-      <Tabs defaultValue="resumo" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="resumo">Resumo por Funcionário</TabsTrigger>
-          <TabsTrigger value="atrasos">Ranking de Atrasos</TabsTrigger>
-          <TabsTrigger value="extras">Ranking Horas Extras</TabsTrigger>
-        </TabsList>
+      {/* Sub-navigation */}
+      <div className="flex gap-1 p-1 bg-muted/50 rounded-lg w-fit">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            onClick={() => setActiveTab(item.id)}
+            className={cn(
+              "flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors",
+              activeTab === item.id
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            <item.icon className="h-4 w-4" />
+            {item.label}
+          </button>
+        ))}
+      </div>
 
-        <TabsContent value="resumo">
-          <Card>
-            <CardContent className="pt-6">
-              {loadingRegistros ? (
-                <LoadingState />
-              ) : resumosPorFuncionario.length === 0 ? (
-                <EmptyState
-                  icon={BarChart}
-                  title="Nenhum dado encontrado"
-                  description="Não há registros de ponto no período selecionado"
-                />
-              ) : (
-                <div className="rounded-lg border overflow-x-auto">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Funcionário</TableHead>
-                        <TableHead className="text-center">Dias</TableHead>
-                        <TableHead className="text-center">Horas Trabalhadas</TableHead>
-                        <TableHead className="text-center">Horas Extras</TableHead>
-                        <TableHead className="text-center">Atrasos</TableHead>
-                        <TableHead className="text-center">Tempo Atraso</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {resumosPorFuncionario.map((resumo) => (
-                        <TableRow key={resumo.id}>
-                          <TableCell className="font-medium">{resumo.nome}</TableCell>
-                          <TableCell className="text-center">{resumo.diasTrabalhados}</TableCell>
-                          <TableCell className="text-center">
-                            {formatMinutesToHours(resumo.horasTrabalhadas)}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {resumo.horasExtras > 0 ? (
-                              <Badge variant="default" className="bg-blue-500">
-                                {formatMinutesToHours(resumo.horasExtras)}
-                              </Badge>
-                            ) : (
-                              "-"
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {resumo.atrasos > 0 ? (
-                              <Badge variant="destructive">{resumo.atrasos}</Badge>
-                            ) : (
-                              <Badge variant="outline" className="text-green-600">0</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {resumo.minutosAtraso > 0 ? formatMinutesToHours(resumo.minutosAtraso) : "-"}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="atrasos">
-          <Card>
-            <CardContent className="pt-6">
-              {rankingAtrasos.length === 0 ? (
-                <EmptyState
-                  icon={AlertTriangle}
-                  title="Nenhum atraso"
-                  description="Não há registros de atrasos no período selecionado"
-                />
-              ) : (
-                <div className="rounded-lg border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">#</TableHead>
-                        <TableHead>Funcionário</TableHead>
-                        <TableHead className="text-center">Quantidade</TableHead>
-                        <TableHead className="text-center">Tempo Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rankingAtrasos.map((resumo, index) => (
-                        <TableRow key={resumo.id}>
-                          <TableCell>
-                            <Badge variant={index < 3 ? "destructive" : "outline"}>
-                              {index + 1}º
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">{resumo.nome}</TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="destructive">{resumo.atrasos} atrasos</Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {formatMinutesToHours(resumo.minutosAtraso)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="extras">
-          <Card>
-            <CardContent className="pt-6">
-              {rankingHorasExtras.length === 0 ? (
-                <EmptyState
-                  icon={TrendingUp}
-                  title="Sem horas extras"
-                  description="Não há registros de horas extras no período selecionado"
-                />
-              ) : (
-                <div className="rounded-lg border">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-12">#</TableHead>
-                        <TableHead>Funcionário</TableHead>
-                        <TableHead className="text-center">Horas Extras</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {rankingHorasExtras.map((resumo, index) => (
-                        <TableRow key={resumo.id}>
-                          <TableCell>
-                            <Badge variant={index < 3 ? "default" : "outline"} className={index < 3 ? "bg-blue-500" : ""}>
-                              {index + 1}º
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="font-medium">{resumo.nome}</TableCell>
-                          <TableCell className="text-center">
-                            <Badge variant="default" className="bg-blue-500">
-                              {formatMinutesToHours(resumo.horasExtras)}
-                            </Badge>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      {/* Content */}
+      {renderContent()}
     </motion.div>
   );
 }
