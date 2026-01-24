@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useSchoolAuth } from "@/contexts/SchoolAuthContext";
+import { usePlatformAuth } from "@/contexts/PlatformAuthContext";
 import { BlockedTenantScreen } from "@/components/BlockedTenantScreen";
 import { Loader2 } from "lucide-react";
 
@@ -17,9 +18,10 @@ interface SchoolGuardProps {
  */
 export function SchoolGuard({ children, requiredRole }: SchoolGuardProps) {
   const { user, schoolUser, tenant, loading, isAuthenticated, hasRole } = useSchoolAuth();
+  const { loading: platformLoading, isAuthenticated: isPlatformAuthenticated, manager } = usePlatformAuth();
   const location = useLocation();
 
-  if (loading) {
+  if (loading || platformLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -33,6 +35,11 @@ export function SchoolGuard({ children, requiredRole }: SchoolGuardProps) {
   // Not authenticated - redirect to school login
   if (!user) {
     return <Navigate to="/login-escola" state={{ from: location }} replace />;
+  }
+
+  // Se está logado como Gestor, redireciona para o domínio correto
+  if (isPlatformAuthenticated && manager) {
+    return <Navigate to="/platform" replace />;
   }
 
   // Authenticated but not a school user - block access
