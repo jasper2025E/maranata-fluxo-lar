@@ -9,6 +9,7 @@ interface RHDashboardCardProps {
   icon: LucideIcon;
   color: "blue" | "green" | "red" | "yellow" | "purple" | "indigo";
   index?: number;
+  onClick?: () => void;
 }
 
 const colorVariants = {
@@ -50,7 +51,8 @@ export function RHDashboardCard({
   subtitle, 
   icon: Icon, 
   color,
-  index = 0 
+  index = 0,
+  onClick
 }: RHDashboardCardProps) {
   const colors = colorVariants[color];
 
@@ -60,10 +62,12 @@ export function RHDashboardCard({
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.1, ease: "easeOut" }}
       whileHover={{ y: -4, transition: { duration: 0.2 } }}
+      onClick={onClick}
       className={cn(
         "bg-card rounded-[20px] p-6 shadow-md border transition-all duration-300",
         "hover:shadow-lg",
-        colors.border
+        colors.border,
+        onClick && "cursor-pointer"
       )}
     >
       <div className="flex items-start justify-between">
