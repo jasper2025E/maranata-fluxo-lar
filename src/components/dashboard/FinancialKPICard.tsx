@@ -151,83 +151,85 @@ export function FinancialKPICard({
         }}
       />
 
-      <div className="relative flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0 space-y-2">
+      <div className="relative flex flex-col gap-3">
+        {/* Header: Icon + Title */}
+        <div className="flex items-center gap-3">
+          <motion.div
+            whileHover={{ scale: 1.1, rotate: 8 }}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            className={cn(
+              "flex-shrink-0 rounded-xl",
+              sizes.iconSize,
+              colors.iconBg,
+              "flex items-center justify-center",
+              "shadow-inner",
+              "transition-all duration-300"
+            )}
+          >
+            <Icon
+              className={cn(sizes.iconInner, colors.iconColor)}
+              strokeWidth={1.75}
+            />
+          </motion.div>
           <p className={cn(
             sizes.titleSize,
             "font-semibold text-muted-foreground/80 uppercase tracking-wider"
           )}>
             {title}
           </p>
-
-          <motion.p 
-            className={cn(
-              sizes.valueSize, 
-              "font-bold text-foreground tracking-tight leading-none"
-            )}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.08 + 0.2, duration: 0.3 }}
-          >
-            {value}
-          </motion.p>
-
-          {trend ? (
-            <motion.div 
-              className="flex items-center gap-2 pt-1"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: index * 0.08 + 0.3 }}
-            >
-              <span
-                className={cn(
-                  "inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full",
-                  trend.isPositive 
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" 
-                    : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
-                )}
-              >
-                <motion.span
-                  initial={{ rotate: trend.isPositive ? 45 : -45 }}
-                  animate={{ rotate: 0 }}
-                  transition={{ type: "spring", stiffness: 200 }}
-                >
-                  {trend.isPositive ? "↑" : "↓"}
-                </motion.span>
-                {Math.abs(trend.value).toFixed(1)}%
-              </span>
-              <span className="text-xs text-muted-foreground/70">
-                {trend.label || "vs. mês anterior"}
-              </span>
-            </motion.div>
-          ) : subtitle ? (
-            <p className={cn(
-              sizes.subtitleSize, 
-              "text-muted-foreground/70 pt-1"
-            )}>
-              {subtitle}
-            </p>
-          ) : null}
         </div>
 
-        <motion.div
-          whileHover={{ scale: 1.1, rotate: 8 }}
-          whileTap={{ scale: 0.95 }}
-          transition={{ type: "spring", stiffness: 400, damping: 17 }}
+        {/* Value */}
+        <motion.p 
           className={cn(
-            "flex-shrink-0 rounded-xl",
-            sizes.iconSize,
-            colors.iconBg,
-            "flex items-center justify-center",
-            "shadow-inner",
-            "transition-all duration-300"
+            sizes.valueSize, 
+            "font-bold text-foreground tracking-tight leading-none"
           )}
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: index * 0.08 + 0.2, duration: 0.3 }}
         >
-          <Icon
-            className={cn(sizes.iconInner, colors.iconColor)}
-            strokeWidth={1.75}
-          />
-        </motion.div>
+          {value}
+        </motion.p>
+
+        {/* Trend or Subtitle */}
+        {trend ? (
+          <motion.div 
+            className="flex items-center gap-2"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: index * 0.08 + 0.3 }}
+          >
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 text-xs font-bold px-2 py-0.5 rounded-full",
+                trend.isPositive 
+                  ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" 
+                  : "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+              )}
+            >
+              <motion.span
+                initial={{ rotate: trend.isPositive ? 45 : -45 }}
+                animate={{ rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200 }}
+              >
+                {trend.isPositive ? "↑" : "↓"}
+              </motion.span>
+              {Math.abs(trend.value).toFixed(1)}%
+            </span>
+            <span className="text-xs text-muted-foreground/70">
+              {trend.label || "vs. mês anterior"}
+            </span>
+          </motion.div>
+        ) : subtitle ? (
+          <p className={cn(
+            sizes.subtitleSize, 
+            "text-muted-foreground/70"
+          )}>
+            {subtitle}
+          </p>
+        ) : null}
       </div>
 
       {/* Bottom Glow Effect */}
