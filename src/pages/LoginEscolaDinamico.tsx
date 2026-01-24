@@ -1,7 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSchoolAuth } from "@/contexts/SchoolAuthContext";
-import { useTenantBranding, validateUserForTenant } from "@/hooks/useTenantBranding";
+import { 
+  useTenantBranding, 
+  useTenantByDomain,
+  useCustomDomainDetection,
+  validateUserForTenant,
+  TenantBranding 
+} from "@/hooks/useTenantBranding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,16 +24,27 @@ const loginSchema = z.object({
 
 /**
  * Tela de Login Dinâmica por Escola
- * Carrega branding (logo, cores, nome) baseado no slug da URL
- * Rota: /e/:slug
+ * Suporta:
+ * - Acesso via slug: /e/:slug
+ * - Acesso via domínio customizado: portal.escola.com.br
  */
 const LoginEscolaDinamico = () => {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const { user, schoolUser, loading: authLoading, signIn, isAuthenticated } = useSchoolAuth();
   
-  // Buscar branding do tenant pelo slug
-  const { data: tenant, isLoading: tenantLoading, error: tenantError } = useTenantBranding(slug);
+  // Detectar se é acesso via domínio customizado
+  const { isCustomDomain, customDomain } = useCustomDomainDetection();
+  
+  // Buscar branding: via slug OU via domínio customizado
+  const { data: tenantBySlug, isLoading: slugLoading } = useTenantBranding(slug);
+  const { data: tenantByDomain, isLoading: domainLoading } = useTenantByDomain(
+    isCustomDomain ? customDomain || undefined : undefined
+  );
+  
+  // Usar tenant do slug ou do domínio
+  const tenant: TenantBranding | null = tenantBySlug || tenantByDomain || null;
+  const tenantLoading = slug ? slugLoading : domainLoading;
   
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -190,8 +207,8 @@ const LoginEscolaDinamico = () => {
     );
   }
 
-  // Tenant não encontrado
-  if (!tenant || tenantError) {
+  // Tenant não encontrado (slug inválido ou domínio não configurado)
+  if (!tenant) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-100 via-slate-50 to-gray-100 p-4">
         <motion.div 
@@ -204,15 +221,20 @@ const LoginEscolaDinamico = () => {
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Instituição não encontrada</h1>
           <p className="text-gray-600 mb-6">
-            O endereço que você tentou acessar não corresponde a nenhuma instituição cadastrada.
+            {isCustomDomain 
+              ? `O domínio "${customDomain}" não está configurado para nenhuma instituição.`
+              : "O endereço que você tentou acessar não corresponde a nenhuma instituição cadastrada."
+            }
           </p>
-          <Button 
-            onClick={() => navigate("/login-escola")}
-            variant="outline"
-            className="w-full"
-          >
-            Ir para o login padrão
-          </Button>
+          {!isCustomDomain && (
+            <Button 
+              onClick={() => navigate("/login-escola")}
+              variant="outline"
+              className="w-full"
+            >
+              Ir para o login padrão
+            </Button>
+          )}
         </motion.div>
       </div>
     );
