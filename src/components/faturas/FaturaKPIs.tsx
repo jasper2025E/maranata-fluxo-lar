@@ -123,7 +123,7 @@ export function FaturaKPIs() {
         variant="warning"
         size="sm"
       />
-      <AgingCard aging={kpis.aging} t={t} />
+      
     </div>
   );
 }
