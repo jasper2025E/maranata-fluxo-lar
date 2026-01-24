@@ -104,7 +104,7 @@ const es = {
 
     // Dashboard
     dashboard: {
-      title: "Panel Financiero",
+      title: "Dashboard",
       subtitle: "Visión general del flujo financiero e indicadores de la escuela",
       welcome: "Bienvenido",
       totalStudents: "Total de Estudiantes",

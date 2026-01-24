@@ -105,7 +105,7 @@ const en = {
 
     // Dashboard
     dashboard: {
-      title: "Financial Dashboard",
+      title: "Dashboard",
       subtitle: "Overview of financial flow and school indicators",
       welcome: "Welcome",
       totalStudents: "Total Students",

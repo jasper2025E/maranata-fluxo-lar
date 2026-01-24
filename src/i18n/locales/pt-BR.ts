@@ -108,7 +108,7 @@ const ptBR = {
 
     // Dashboard
     dashboard: {
-      title: "Dashboard Financeiro",
+      title: "Dashboard",
       subtitle: "Visão geral do fluxo financeiro e indicadores da escola",
       welcome: "Bem-vindo",
       totalStudents: "Total de Alunos",
