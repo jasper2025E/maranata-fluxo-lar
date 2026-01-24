@@ -1,7 +1,6 @@
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { usePlatformAuth } from "@/contexts/PlatformAuthContext";
-import { useSchoolAuth } from "@/contexts/SchoolAuthContext";
 import { Loader2 } from "lucide-react";
 
 interface PlatformGuardProps {
@@ -13,52 +12,10 @@ interface PlatformGuardProps {
  * Bloqueia acesso de usuários de escola.
  */
 export function PlatformGuard({ children }: PlatformGuardProps) {
-  const { user, manager, loading: platformLoading, isAuthenticated } = usePlatformAuth();
-  const { loading: schoolLoading, schoolUser } = useSchoolAuth();
+  const { user, manager, loading, isAuthenticated } = usePlatformAuth();
   const location = useLocation();
-  
-  // Estado estável para evitar flickering durante transições
-  const [isReady, setIsReady] = useState(false);
-  const [authState, setAuthState] = useState<'loading' | 'school_user' | 'not_auth' | 'not_manager' | 'authorized'>('loading');
 
-  useEffect(() => {
-    // Aguarda AMBOS os loadings terminarem COMPLETAMENTE
-    if (platformLoading || schoolLoading) {
-      setAuthState('loading');
-      setIsReady(false);
-      return;
-    }
-
-    // Determina o estado de auth de forma estável
-    // IMPORTANTE: Primeiro verifica se NÃO há usuário autenticado
-    if (!user) {
-      setAuthState('not_auth');
-      setIsReady(true);
-      return;
-    }
-    
-    // Se o usuário é um school_user (tem registro em school_users), redireciona
-    // IMPORTANTE: Um gestor NÃO terá schoolUser porque não está em school_users
-    if (schoolUser) {
-      setAuthState('school_user');
-      setIsReady(true);
-      return;
-    }
-    
-    // Verifica se é gestor autenticado (tem registro em system_managers)
-    if (isAuthenticated && manager) {
-      setAuthState('authorized');
-      setIsReady(true);
-      return;
-    }
-    
-    // Usuário autenticado mas não é nem escola nem gestor
-    setAuthState('not_manager');
-    setIsReady(true);
-  }, [platformLoading, schoolLoading, user, schoolUser, isAuthenticated, manager]);
-
-  // Sempre mostra loading até estar pronto
-  if (!isReady || authState === 'loading') {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950">
         <div className="flex flex-col items-center gap-4">
@@ -70,17 +27,12 @@ export function PlatformGuard({ children }: PlatformGuardProps) {
   }
 
   // Not authenticated - redirect to platform login
-  if (authState === 'not_auth') {
+  if (!user) {
     return <Navigate to="/login-gestor" state={{ from: location }} replace />;
   }
 
-  // Se está logado como usuário de Escola, redireciona para o domínio correto
-  if (authState === 'school_user') {
-    return <Navigate to="/dashboard" replace />;
-  }
-
   // Authenticated but not a system manager - block access
-  if (authState === 'not_manager') {
+  if (!isAuthenticated || !manager) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950 p-4">
         <div className="bg-slate-900 border border-red-500/30 rounded-2xl p-8 max-w-md text-center">

@@ -49,20 +49,15 @@ export function PlatformAuthProvider({ children }: { children: ReactNode }) {
         .eq("is_active", true)
         .maybeSingle();
 
-      if (error) {
-        console.error("Error fetching manager:", error);
-        setLoading(false);
-        isFetching.current = false;
-        return;
-      }
-
+      if (error) throw error;
+      
       if (!managerData) {
-        // Not a system manager - just don't set manager data
-        // DON'T sign out - user might be a school user
+        // Not a system manager - sign out and clear state
+        console.warn("User is not a system manager");
+        await supabase.auth.signOut();
+        setUser(null);
+        setSession(null);
         setManager(null);
-        lastFetchedUserId.current = userId;
-        setLoading(false);
-        isFetching.current = false;
         return;
       }
 

@@ -1,16 +1,9 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { SchoolAuthProvider, useSchoolAuth } from "@/contexts/SchoolAuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 
-/**
- * AuthContext (LEGADO) — agora representa APENAS o domínio ESCOLA.
- * Isso evita refatoração massiva imediata (DashboardLayout e outras telas ainda usam useAuth()).
- * O domínio Gestor usa exclusivamente usePlatformAuth().
- */
-
-// Compatibilidade com tipos antigos do app (inclui platform_admin),
-// mas este AuthContext representa APENAS o domínio ESCOLA.
-type AppRole = "admin" | "financeiro" | "secretaria" | "staff" | "platform_admin";
+type AppRole = Database["public"]["Enums"]["app_role"];
 
 interface AuthContextType {
   user: User | null;
@@ -25,10 +18,147 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-function AuthBridge({ children }: { children: ReactNode }) {
-  const { user, session, schoolUser, loading, signIn, signOut, hasRole } = useSchoolAuth();
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [role, setRole] = useState<AppRole | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Prevent duplicate role fetches
+  const lastFetchedUserId = useRef<string | null>(null);
+  const isFetching = useRef(false);
 
-  const role = (schoolUser?.role ?? null) as AppRole | null;
+  const fetchUserRole = useCallback(async (userId: string) => {
+    // Skip if already fetched for this user or currently fetching
+    if (lastFetchedUserId.current === userId || isFetching.current) {
+      return;
+    }
+    
+    isFetching.current = true;
+    setLoading(true);
+    // Only mark as fetched after a successful fetch. If we mark it here and the
+    // query errors, we can get stuck with role=null and no retries.
+    
+    try {
+      const rolePriority: AppRole[] = [
+        "platform_admin",
+        "admin",
+        "financeiro",
+        "secretaria",
+        "staff",
+      ];
+
+      // IMPORTANT: avoid direct SELECT on user_roles (can fail under RLS/recursion).
+      // Use the SECURITY DEFINER function `has_role(user_id, role)` to resolve the
+      // highest privilege role deterministically.
+      let resolvedRole: AppRole | null = null;
+      for (const candidate of rolePriority) {
+        const { data, error } = await supabase.rpc("has_role", {
+          _user_id: userId,
+          _role: candidate,
+        });
+
+        if (error) throw error;
+        if (data === true) {
+          resolvedRole = candidate;
+          break;
+        }
+      }
+
+      setRole(resolvedRole);
+      lastFetchedUserId.current = userId;
+    } catch (error) {
+      console.error("Error fetching user role:", error);
+      setRole(null);
+      // Allow retry on next auth event/page load
+      lastFetchedUserId.current = null;
+    } finally {
+      isFetching.current = false;
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    
+    // Get initial session first
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        fetchUserRole(session.user.id);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Set up auth state listener for changes only
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        if (!mounted) return;
+        
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          // Only fetch role on actual auth changes
+          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            fetchUserRole(session.user.id);
+          }
+        } else {
+          setRole(null);
+          lastFetchedUserId.current = null;
+          setLoading(false);
+        }
+      }
+    );
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
+  }, [fetchUserRole]);
+
+  const signIn = async (email: string, password: string) => {
+    // Reset cache on new sign in attempt
+    lastFetchedUserId.current = null;
+    isFetching.current = false;
+    
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { error: error ? new Error(error.message) : null };
+    } catch (error) {
+      return { error: error as Error };
+    }
+  };
+
+  const signOut = async () => {
+    lastFetchedUserId.current = null;
+    isFetching.current = false;
+    await supabase.auth.signOut();
+    setUser(null);
+    setSession(null);
+    setRole(null);
+  };
+
+  const hasRole = (requiredRole: AppRole): boolean => {
+    if (!role) return false;
+    // Platform admin has access to everything
+    if (role === "platform_admin") return true;
+    // Admin has access to everything except platform_admin-only features
+    if (role === "admin" && requiredRole !== "platform_admin") return true;
+    return role === requiredRole;
+  };
+
+  const isPlatformAdmin = (): boolean => {
+    return role === "platform_admin";
+  };
 
   return (
     <AuthContext.Provider
@@ -37,29 +167,14 @@ function AuthBridge({ children }: { children: ReactNode }) {
         session,
         role,
         loading,
-        signIn: async (email, password) => {
-          const res = await signIn(email, password);
-          return { error: res.error };
-        },
+        signIn,
         signOut,
-        hasRole: (requiredRole: AppRole) => {
-          if (requiredRole === "platform_admin") return false;
-          return hasRole(requiredRole);
-        },
-        // NUNCA true aqui: Gestor é outro domínio/contexto.
-        isPlatformAdmin: () => false,
+        hasRole,
+        isPlatformAdmin,
       }}
     >
       {children}
     </AuthContext.Provider>
-  );
-}
-
-export function AuthProvider({ children }: { children: ReactNode }) {
-  return (
-    <SchoolAuthProvider>
-      <AuthBridge>{children}</AuthBridge>
-    </SchoolAuthProvider>
   );
 }
 

@@ -67,21 +67,16 @@ export function SchoolAuthProvider({ children }: { children: ReactNode }) {
         .eq("is_active", true)
         .maybeSingle();
 
-      if (error) {
-        console.error("Error fetching school user:", error);
-        setLoading(false);
-        isFetching.current = false;
-        return;
-      }
+      if (error) throw error;
       
       if (!schoolUserData) {
-        // Not a school user - just don't set school user data
-        // DON'T sign out - user might be a system manager
+        // Not a school user - sign out and clear state
+        console.warn("User is not a school user");
+        await supabase.auth.signOut();
+        setUser(null);
+        setSession(null);
         setSchoolUser(null);
         setTenant(null);
-        lastFetchedUserId.current = userId;
-        setLoading(false);
-        isFetching.current = false;
         return;
       }
 

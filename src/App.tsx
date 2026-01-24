@@ -10,8 +10,7 @@ import { useUserLanguage } from "@/hooks/useUserLanguage";
 
 // Auth Contexts - Domínios Separados
 import { PlatformAuthProvider } from "@/contexts/PlatformAuthContext";
-import { AuthProvider } from "@/contexts/AuthContext";
-import { TenantProvider } from "@/contexts/TenantContext";
+import { SchoolAuthProvider } from "@/contexts/SchoolAuthContext";
 
 // Guards - Isolamento por Domínio
 import { PlatformGuard } from "@/components/guards/PlatformGuard";
@@ -54,17 +53,17 @@ import PlatformPlans from "./pages/platform/PlatformPlans";
 // Pages - Login Separados
 import LoginGestor from "./pages/LoginGestor";
 import LoginEscola from "./pages/LoginEscola";
-import LoginEscolaDinamico from "./pages/LoginEscolaDinamico";
-import CustomDomainRouter from "./pages/CustomDomainRouter";
 
 // Pages - Public
 import LandingPage from "./pages/LandingPage";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 
-// Root redirect component - agora com detecção de domínio customizado
+// Root redirect component
 function RootRedirect() {
-  return <CustomDomainRouter />;
+  // Por padrão, redireciona para o login da escola
+  // O gestor deve acessar /login-gestor diretamente
+  return <Navigate to="/login-escola" replace />;
 }
 
 // Componente interno que usa o hook de proteção
@@ -90,10 +89,6 @@ function AppContent() {
           {/* Login Separados por Domínio */}
           <Route path="/login-gestor" element={<LoginGestor />} />
           <Route path="/login-escola" element={<LoginEscola />} />
-          
-          {/* Login Dinâmico por Escola (com branding personalizado) */}
-          {/* Formato: /e/nome-da-escola-slug */}
-          <Route path="/e/:slug" element={<LoginEscolaDinamico />} />
           
           {/* Legacy route - redireciona para login da escola */}
           <Route path="/auth" element={<Navigate to="/login-escola" replace />} />
@@ -380,15 +375,11 @@ const App = () => (
       <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
         {/* Providers separados para cada domínio de autenticação */}
         <PlatformAuthProvider>
-          {/* AuthProvider aqui é o domínio ESCOLA (compatível com useAuth legado) */}
-          <AuthProvider>
-            {/* TenantProvider para branding dinâmico por escola */}
-            <TenantProvider>
-              <TooltipProvider>
-                <AppContent />
-              </TooltipProvider>
-            </TenantProvider>
-          </AuthProvider>
+          <SchoolAuthProvider>
+            <TooltipProvider>
+              <AppContent />
+            </TooltipProvider>
+          </SchoolAuthProvider>
         </PlatformAuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
