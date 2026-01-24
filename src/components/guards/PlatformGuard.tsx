@@ -14,7 +14,7 @@ interface PlatformGuardProps {
  */
 export function PlatformGuard({ children }: PlatformGuardProps) {
   const { user, manager, loading: platformLoading, isAuthenticated } = usePlatformAuth();
-  const { loading: schoolLoading, isAuthenticated: isSchoolAuthenticated, schoolUser } = useSchoolAuth();
+  const { loading: schoolLoading, schoolUser } = useSchoolAuth();
   const location = useLocation();
   
   // Estado estável para evitar flickering durante transições
@@ -22,25 +22,40 @@ export function PlatformGuard({ children }: PlatformGuardProps) {
   const [authState, setAuthState] = useState<'loading' | 'school_user' | 'not_auth' | 'not_manager' | 'authorized'>('loading');
 
   useEffect(() => {
-    // Aguarda ambos os loadings terminarem
+    // Aguarda AMBOS os loadings terminarem COMPLETAMENTE
     if (platformLoading || schoolLoading) {
       setAuthState('loading');
+      setIsReady(false);
       return;
     }
 
     // Determina o estado de auth de forma estável
+    // IMPORTANTE: Primeiro verifica se NÃO há usuário autenticado
     if (!user) {
       setAuthState('not_auth');
-    } else if (isSchoolAuthenticated && schoolUser) {
-      setAuthState('school_user');
-    } else if (!isAuthenticated || !manager) {
-      setAuthState('not_manager');
-    } else {
-      setAuthState('authorized');
+      setIsReady(true);
+      return;
     }
     
+    // Se o usuário é um school_user (tem registro em school_users), redireciona
+    // IMPORTANTE: Um gestor NÃO terá schoolUser porque não está em school_users
+    if (schoolUser) {
+      setAuthState('school_user');
+      setIsReady(true);
+      return;
+    }
+    
+    // Verifica se é gestor autenticado (tem registro em system_managers)
+    if (isAuthenticated && manager) {
+      setAuthState('authorized');
+      setIsReady(true);
+      return;
+    }
+    
+    // Usuário autenticado mas não é nem escola nem gestor
+    setAuthState('not_manager');
     setIsReady(true);
-  }, [platformLoading, schoolLoading, user, isSchoolAuthenticated, schoolUser, isAuthenticated, manager]);
+  }, [platformLoading, schoolLoading, user, schoolUser, isAuthenticated, manager]);
 
   // Sempre mostra loading até estar pronto
   if (!isReady || authState === 'loading') {
