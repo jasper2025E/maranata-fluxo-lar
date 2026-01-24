@@ -290,7 +290,22 @@ export function BackupExport() {
 
   // Humanize escola data
   const humanizeEscola = async () => {
-    const { data } = await supabase.from("escola").select("*").limit(1).maybeSingle();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+    
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("tenant_id")
+      .eq("id", user.id)
+      .single();
+    
+    if (!profile?.tenant_id) return [];
+    
+    const { data } = await supabase
+      .from("escola")
+      .select("*")
+      .eq("tenant_id", profile.tenant_id)
+      .maybeSingle();
     if (!data) return [];
 
     return [{
