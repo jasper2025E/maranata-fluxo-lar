@@ -189,6 +189,39 @@ export type Database = {
           },
         ]
       }
+      auth_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          domain: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          domain: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          domain?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cargos: {
         Row: {
           ativo: boolean | null
@@ -1698,6 +1731,56 @@ export type Database = {
           },
         ]
       }
+      school_users: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          last_login_at: string | null
+          nome: string
+          phone: string | null
+          role: string
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          id: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          nome: string
+          phone?: string | null
+          role: string
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          nome?: string
+          phone?: string | null
+          role?: string
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       setores: {
         Row: {
           ativo: boolean | null
@@ -1830,6 +1913,42 @@ export type Database = {
           price?: number
           stripe_price_id?: string | null
           stripe_product_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      system_managers: {
+        Row: {
+          avatar_url: string | null
+          created_at: string | null
+          email: string
+          id: string
+          is_active: boolean | null
+          last_login_at: string | null
+          nome: string
+          phone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email: string
+          id: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          nome: string
+          phone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string | null
+          email?: string
+          id?: string
+          is_active?: boolean | null
+          last_login_at?: string | null
+          nome?: string
+          phone?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -2001,7 +2120,10 @@ export type Database = {
           blocked_reason: string | null
           cnpj: string | null
           created_at: string | null
+          custom_domain: string | null
           data_contrato: string | null
+          domain_verified: boolean | null
+          domain_verified_at: string | null
           email: string | null
           endereco: string | null
           grace_period_ends_at: string | null
@@ -2014,6 +2136,9 @@ export type Database = {
           next_billing_date: string | null
           nome: string
           plano: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          slug: string | null
           status: string | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
@@ -2033,7 +2158,10 @@ export type Database = {
           blocked_reason?: string | null
           cnpj?: string | null
           created_at?: string | null
+          custom_domain?: string | null
           data_contrato?: string | null
+          domain_verified?: boolean | null
+          domain_verified_at?: string | null
           email?: string | null
           endereco?: string | null
           grace_period_ends_at?: string | null
@@ -2046,6 +2174,9 @@ export type Database = {
           next_billing_date?: string | null
           nome: string
           plano?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          slug?: string | null
           status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -2065,7 +2196,10 @@ export type Database = {
           blocked_reason?: string | null
           cnpj?: string | null
           created_at?: string | null
+          custom_domain?: string | null
           data_contrato?: string | null
+          domain_verified?: boolean | null
+          domain_verified_at?: string | null
           email?: string | null
           endereco?: string | null
           grace_period_ends_at?: string | null
@@ -2078,6 +2212,9 @@ export type Database = {
           next_billing_date?: string | null
           nome?: string
           plano?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          slug?: string | null
           status?: string | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
@@ -2252,6 +2389,55 @@ export type Database = {
           nome: string
         }[]
       }
+      get_escola_public_info_by_tenant: {
+        Args: { p_tenant_id: string }
+        Returns: {
+          logo_url: string
+          nome: string
+          primary_color: string
+          secondary_color: string
+        }[]
+      }
+      get_school_user_role: { Args: { _user_id: string }; Returns: string }
+      get_school_user_tenant_id: { Args: never; Returns: string }
+      get_tenant_by_domain: {
+        Args: { p_domain: string }
+        Returns: {
+          blocked_at: string
+          id: string
+          logo_url: string
+          nome: string
+          primary_color: string
+          secondary_color: string
+          slug: string
+          status: string
+        }[]
+      }
+      get_tenant_by_identifier: {
+        Args: { p_identifier: string; p_type?: string }
+        Returns: {
+          blocked_at: string
+          id: string
+          logo_url: string
+          nome: string
+          primary_color: string
+          secondary_color: string
+          slug: string
+          status: string
+        }[]
+      }
+      get_tenant_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          blocked_at: string
+          id: string
+          logo_url: string
+          nome: string
+          primary_color: string
+          secondary_color: string
+          status: string
+        }[]
+      }
       get_user_tenant_id: { Args: never; Returns: string }
       has_role: {
         Args: {
@@ -2262,6 +2448,8 @@ export type Database = {
       }
       is_in_grace_period: { Args: { p_tenant_id: string }; Returns: boolean }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      is_school_user: { Args: { _user_id: string }; Returns: boolean }
+      is_system_manager: { Args: { _user_id: string }; Returns: boolean }
       is_tenant_blocked: { Args: { p_tenant_id: string }; Returns: boolean }
       recalcular_fatura: { Args: { p_fatura_id: string }; Returns: undefined }
       registrar_ponto_externo: {
@@ -2293,6 +2481,10 @@ export type Database = {
           nome_completo: string
           ultimo_registro: Json
         }[]
+      }
+      validate_school_user_for_tenant: {
+        Args: { p_tenant_id: string; p_user_id: string }
+        Returns: boolean
       }
     }
     Enums: {
