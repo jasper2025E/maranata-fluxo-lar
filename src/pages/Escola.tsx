@@ -47,9 +47,23 @@ const EscolaPage = () => {
   const { data: escola, isLoading } = useQuery({
     queryKey: ["escola"],
     queryFn: async () => {
+      // Primeiro, pegar o tenant_id do usuário atual
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("tenant_id")
+        .eq("id", user.id)
+        .single();
+      
+      if (!profile?.tenant_id) return null;
+      
+      // Buscar escola do tenant específico
       const { data, error } = await supabase
         .from("escola")
         .select("*")
+        .eq("tenant_id", profile.tenant_id)
         .maybeSingle();
       if (error) throw error;
       return data as Escola | null;
