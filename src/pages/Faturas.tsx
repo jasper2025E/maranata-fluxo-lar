@@ -3,7 +3,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Plus, Printer, ChevronRight } from "lucide-react";
+import { Plus, Printer, ChevronRight, FileText, Users, Download } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   FaturaKPIs, 
@@ -261,10 +269,47 @@ const Faturas = () => {
             
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => setIsCarneOpen(true)} className="gap-2">
-              <Printer className="h-4 w-4" />
-              {t("invoices.printCarne")}
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" className="gap-2">
+                  <Printer className="h-4 w-4" />
+                  {t("invoices.printCarne")}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  Opções de impressão
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setIsCarneOpen(true)} className="gap-2 cursor-pointer">
+                  <Users className="h-4 w-4" />
+                  Por Responsável
+                  <span className="ml-auto text-xs text-muted-foreground">Selecionar</span>
+                </DropdownMenuItem>
+                {selectedFaturasIds.size > 0 && (
+                  <DropdownMenuItem 
+                    onClick={() => {
+                      toast.info(`Gerando carnê para ${selectedFaturasIds.size} faturas selecionadas...`);
+                    }} 
+                    className="gap-2 cursor-pointer"
+                  >
+                    <FileText className="h-4 w-4" />
+                    Faturas Selecionadas
+                    <span className="ml-auto text-xs font-medium text-primary">{selectedFaturasIds.size}</span>
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => {
+                    toast.info("Exportando relatório de faturas...");
+                  }}
+                  className="gap-2 cursor-pointer"
+                >
+                  <Download className="h-4 w-4" />
+                  Exportar Relatório
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
               {t("invoices.newInvoice")}
