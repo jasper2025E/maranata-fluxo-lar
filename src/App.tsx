@@ -55,17 +55,16 @@ import PlatformPlans from "./pages/platform/PlatformPlans";
 import LoginGestor from "./pages/LoginGestor";
 import LoginEscola from "./pages/LoginEscola";
 import LoginEscolaDinamico from "./pages/LoginEscolaDinamico";
+import CustomDomainRouter from "./pages/CustomDomainRouter";
 
 // Pages - Public
 import LandingPage from "./pages/LandingPage";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 
-// Root redirect component
+// Root redirect component - agora com detecção de domínio customizado
 function RootRedirect() {
-  // Por padrão, redireciona para o login da escola
-  // O gestor deve acessar /login-gestor diretamente
-  return <Navigate to="/login-escola" replace />;
+  return <CustomDomainRouter />;
 }
 
 // Componente interno que usa o hook de proteção

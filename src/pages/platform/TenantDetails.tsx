@@ -18,7 +18,8 @@ import {
   GraduationCap,
   DollarSign,
   History,
-  RefreshCw
+  RefreshCw,
+  Globe
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -38,6 +39,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import PlatformLayout from "@/components/platform/PlatformLayout";
+import { CustomDomainConfig } from "@/components/platform/CustomDomainConfig";
 import { Tables } from "@/integrations/supabase/types";
 
 type Tenant = Tables<"tenants">;
@@ -366,6 +368,10 @@ export default function TenantDetails() {
                 <Building2 className="h-4 w-4" />
                 Dados da Escola
               </TabsTrigger>
+              <TabsTrigger value="domain" className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                Domínio
+              </TabsTrigger>
               <TabsTrigger value="subscription" className="flex items-center gap-2">
                 <CreditCard className="h-4 w-4" />
                 Assinatura
@@ -516,6 +522,16 @@ export default function TenantDetails() {
                       </CardContent>
                     </Card>
                   </form>
+                </motion.div>
+              </TabsContent>
+
+              <TabsContent value="domain" className="mt-6">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                >
+                  <CustomDomainConfig tenantId={id!} />
                 </motion.div>
               </TabsContent>
 
