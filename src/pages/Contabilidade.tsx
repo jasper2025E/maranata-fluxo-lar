@@ -16,7 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import DashboardLayout from "@/components/DashboardLayout";
+import { FinancialLayout } from "@/components/layouts";
 import { PremiumGate } from "@/components/premium";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FinancialKPICard } from "@/components/dashboard";
@@ -108,12 +108,19 @@ const Contabilidade = () => {
   };
 
   return (
-    <DashboardLayout>
+    <FinancialLayout>
       <PremiumGate feature="accounting">
-        <div className="flex min-h-[calc(100vh-4rem)]">
-          {/* Sidebar Navigation */}
-          <aside className="w-56 shrink-0 border-r bg-muted/30 p-4 hidden lg:block">
-            <nav className="space-y-1">
+        <div className="p-6">
+          <div className="max-w-6xl mx-auto space-y-6">
+            {/* Breadcrumb */}
+            <nav className="flex items-center gap-2 text-sm">
+              <span className="text-muted-foreground">{t("nav.finance")}</span>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-foreground">{t("accounting.title")}</span>
+            </nav>
+
+            {/* Tabs for sub-navigation */}
+            <div className="flex gap-2 overflow-x-auto pb-2">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = currentTab === tab.id;
@@ -123,10 +130,10 @@ const Contabilidade = () => {
                     key={tab.id}
                     onClick={() => handleTabChange(tab.id)}
                     className={cn(
-                      "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                      "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all",
                       isActive
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-muted text-muted-foreground hover:text-foreground"
                     )}
                   >
                     <Icon className="h-4 w-4" />
@@ -134,58 +141,24 @@ const Contabilidade = () => {
                   </button>
                 );
               })}
-            </nav>
-          </aside>
 
-          {/* Main Content */}
-          <main className="flex-1 p-6 overflow-auto">
-            <div className="max-w-6xl mx-auto space-y-6">
-              {/* Breadcrumb */}
-              <nav className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">{t("nav.finance")}</span>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                <span className="font-medium text-foreground">{t("accounting.title")}</span>
-              </nav>
+            </div>
 
-              {/* Mobile Tabs */}
-              <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = currentTab === tab.id;
-                  
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => handleTabChange(tab.id)}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all",
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {t(tab.labelKey)}
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* Loading State */}
-              {isLoading && (
-                <div className="bg-card border rounded-2xl p-12">
-                  <div className="flex flex-col items-center justify-center gap-3">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                    <span className="text-sm text-muted-foreground">
-                      {t("common.loading")}
-                    </span>
-                  </div>
+            {/* Loading State */}
+            {isLoading && (
+              <div className="bg-card border rounded-2xl p-12">
+                <div className="flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground">
+                    {t("common.loading")}
+                  </span>
                 </div>
-              )}
+              </div>
+            )}
 
-              {/* Content */}
-              {!isLoading && summary && (
-                <motion.div
+            {/* Content */}
+            {!isLoading && summary && (
+              <motion.div
                   key={currentTab}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -431,14 +404,13 @@ const Contabilidade = () => {
                         </div>
                       </CardContent>
                     </Card>
-                  )}
-                </motion.div>
-              )}
-            </div>
-          </main>
+                )}
+              </motion.div>
+            )}
+          </div>
         </div>
       </PremiumGate>
-    </DashboardLayout>
+    </FinancialLayout>
   );
 };
 
