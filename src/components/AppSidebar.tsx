@@ -167,13 +167,11 @@ export function AppSidebar() {
                 className={cn(
                   "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5",
                   "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                  "transition-all duration-200 ease-out",
-                  "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20",
-                  "active:scale-95"
+                  "transition-colors duration-150"
                 )}
-                activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
+                activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium"
               >
-                <item.icon className="h-5 w-5 shrink-0 transition-transform duration-200" strokeWidth={1.75} />
+                <item.icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
               </NavLink>
             </SidebarMenuButton>
           </TooltipTrigger>
@@ -190,13 +188,11 @@ export function AppSidebar() {
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5",
               "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-              "transition-all duration-200 ease-out",
-              "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1",
-              "active:scale-[0.98]"
+              "transition-colors duration-150"
             )}
-            activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"
+            activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px]"
           >
-            <item.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.75} />
+            <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
             <span className="text-sm flex-1">{t(item.titleKey)}</span>
             {item.premium && <Crown className="h-3.5 w-3.5 text-amber-500" />}
           </NavLink>
@@ -205,28 +201,34 @@ export function AppSidebar() {
     </SidebarMenuItem>
   );
 
+  // Memoize logo component to prevent re-renders
+  const LogoContent = logoUrl ? (
+    <img 
+      src={logoUrl} 
+      alt={escolaNome} 
+      className="h-10 w-10 rounded-xl object-cover shrink-0 shadow-lg"
+      loading="eager"
+    />
+  ) : (
+    <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/20">
+      <GraduationCap className="h-5 w-5 text-white" strokeWidth={2} />
+    </div>
+  );
+
   return (
-    <Sidebar className="border-r-0 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]" collapsible="icon">
-      <SidebarContent className="gradient-sidebar transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]">
+    <Sidebar className="border-r-0" collapsible="icon">
+      <SidebarContent className="gradient-sidebar">
         {/* Logo */}
         <div className={cn(
-          "flex items-center gap-3 px-4 py-6 transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "flex items-center gap-3 px-4 py-6",
           isCollapsed && "justify-center px-3"
         )}>
           {isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                {logoUrl ? (
-                  <img 
-                    src={logoUrl} 
-                    alt={escolaNome} 
-                    className="h-10 w-10 rounded-xl object-cover shrink-0 shadow-lg cursor-pointer"
-                  />
-                ) : (
-                  <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/20 cursor-pointer">
-                    <GraduationCap className="h-5 w-5 text-white" strokeWidth={2} />
-                  </div>
-                )}
+                <div className="cursor-pointer">
+                  {LogoContent}
+                </div>
               </TooltipTrigger>
               <TooltipContent side="right" className="font-medium">
                 <p>{escolaNome}</p>
@@ -235,17 +237,7 @@ export function AppSidebar() {
             </Tooltip>
           ) : (
             <>
-              {logoUrl ? (
-                <img 
-                  src={logoUrl} 
-                  alt={escolaNome} 
-                  className="h-10 w-10 rounded-xl object-cover shrink-0 shadow-lg"
-                />
-              ) : (
-                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-sidebar-primary to-sidebar-primary/80 flex items-center justify-center shrink-0 shadow-lg shadow-sidebar-primary/20">
-                  <GraduationCap className="h-5 w-5 text-white" strokeWidth={2} />
-                </div>
-              )}
+              {LogoContent}
               <div>
                 <h2 className="font-bold text-sidebar-foreground text-lg tracking-tight leading-tight">{escolaNome}</h2>
                 <p className="text-xs text-sidebar-foreground/50 font-medium">{t("nav.financialSystem")}</p>
@@ -275,17 +267,12 @@ export function AppSidebar() {
                           className={cn(
                             isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
                             "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                            "transition-all duration-200 ease-out",
-                            isCollapsed
-                              ? "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20 active:scale-95"
-                              : "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1 active:scale-[0.98]",
-                            isHRActive &&
-                              (isCollapsed
-                                ? "bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
-                                : "bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"),
+                            "transition-colors duration-150",
+                            isHRActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
+                            !isCollapsed && isHRActive && "border-l-2 border-sidebar-primary -ml-[2px]",
                           )}
                         >
-                          <Briefcase className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0 transition-transform duration-200")} strokeWidth={1.75} />
+                          <Briefcase className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
                           {!isCollapsed && (
                             <>
                               <span className="text-sm flex-1 text-left">{t("nav.hr")}</span>
@@ -344,17 +331,12 @@ export function AppSidebar() {
                         className={cn(
                           isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
                           "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                          "transition-all duration-200 ease-out",
-                          isCollapsed
-                            ? "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20 active:scale-95"
-                            : "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1 active:scale-[0.98]",
-                          isOperationsActive &&
-                            (isCollapsed
-                              ? "bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
-                              : "bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"),
+                          "transition-colors duration-150",
+                          isOperationsActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
+                          !isCollapsed && isOperationsActive && "border-l-2 border-sidebar-primary -ml-[2px]",
                         )}
                       >
-                        <Wallet className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0 transition-transform duration-200")} strokeWidth={1.75} />
+                        <Wallet className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
                         {!isCollapsed && (
                           <>
                             <span className="text-sm flex-1 text-left">{t("nav.operations")}</span>
@@ -405,17 +387,12 @@ export function AppSidebar() {
                         className={cn(
                           isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
                           "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                          "transition-all duration-200 ease-out",
-                          isCollapsed
-                            ? "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20 active:scale-95"
-                            : "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1 active:scale-[0.98]",
-                          isAnalysisActive &&
-                            (isCollapsed
-                              ? "bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
-                              : "bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"),
+                          "transition-colors duration-150",
+                          isAnalysisActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
+                          !isCollapsed && isAnalysisActive && "border-l-2 border-sidebar-primary -ml-[2px]",
                         )}
                       >
-                        <BarChart3 className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0 transition-transform duration-200")} strokeWidth={1.75} />
+                        <BarChart3 className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
                         {!isCollapsed && (
                           <>
                             <span className="text-sm flex-1 text-left">{t("nav.analysis")}</span>
@@ -471,17 +448,12 @@ export function AppSidebar() {
                           className={cn(
                             isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
                             "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                            "transition-all duration-200 ease-out",
-                            isCollapsed
-                              ? "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20 active:scale-95"
-                              : "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1 active:scale-[0.98]",
-                            isConfigActive &&
-                              (isCollapsed
-                                ? "bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
-                                : "bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"),
+                            "transition-colors duration-150",
+                            isConfigActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
+                            !isCollapsed && isConfigActive && "border-l-2 border-sidebar-primary -ml-[2px]",
                           )}
                         >
-                          <Settings className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0 transition-transform duration-200")} strokeWidth={1.75} />
+                          <Settings className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
                           {!isCollapsed && (
                             <>
                               <span className="text-sm flex-1 text-left">{t("nav.system")}</span>
@@ -563,13 +535,11 @@ export function AppSidebar() {
                     onClick={handleLogout}
                     className={cn(
                       "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                      "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10",
-                      "transition-all duration-200 ease-out",
-                      "hover:scale-110 hover:shadow-lg hover:shadow-red-500/20",
-                      "active:scale-95"
+                      "text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10",
+                      "transition-colors duration-150"
                     )}
                   >
-                    <LogOut className="h-5 w-5 shrink-0 transition-transform duration-200" strokeWidth={1.75} />
+                    <LogOut className="h-5 w-5 shrink-0" strokeWidth={1.75} />
                   </SidebarMenuButton>
                 </TooltipTrigger>
                 <TooltipContent side="right" className="font-medium">
@@ -581,13 +551,11 @@ export function AppSidebar() {
                 onClick={handleLogout}
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                  "text-sidebar-foreground/50 hover:text-red-400 hover:bg-red-500/10",
-                  "transition-all duration-200 ease-out",
-                  "hover:scale-[1.02] hover:shadow-lg hover:shadow-red-500/15 hover:translate-x-1",
-                  "active:scale-[0.98]"
+                  "text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10",
+                  "transition-colors duration-150"
                 )}
               >
-                <LogOut className="h-[18px] w-[18px] shrink-0 transition-transform duration-200" strokeWidth={1.75} />
+                <LogOut className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
                 <span className="text-sm">{t("nav.exitSystem")}</span>
               </SidebarMenuButton>
             )}

@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useState } from "react";
+import { ReactNode } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
@@ -22,8 +22,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
 import { useTranslation } from "react-i18next";
+import { useProfileData } from "@/hooks/useProfileData";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -33,9 +33,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { user, role, signOut } = useAuth();
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [profileName, setProfileName] = useState<string | null>(null);
   const { notifications, unreadCount, markAsRead, markAllAsRead, loading: loadingNotifications } = useNotifications();
+
+  // Use cached profile data to prevent flickering
+  const { data: profileData } = useProfileData(user?.id);
+  const avatarUrl = profileData?.avatar_url;
+  const profileName = profileData?.nome;
 
   // Get date-fns locale based on current language
   const getDateLocale = () => {
@@ -68,27 +71,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
         return "bg-primary/10";
     }
   };
-
-  useEffect(() => {
-    const loadProfile = async () => {
-      if (!user) return;
-      
-      const { data } = await supabase
-        .from("profiles")
-        .select("avatar_url, nome")
-        .eq("id", user.id)
-        .maybeSingle();
-      
-      if (data?.avatar_url) {
-        setAvatarUrl(data.avatar_url);
-      }
-      if (data?.nome) {
-        setProfileName(data.nome);
-      }
-    };
-
-    loadProfile();
-  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
