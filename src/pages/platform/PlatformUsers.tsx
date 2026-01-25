@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { AnimatePresence } from "framer-motion";
 import { 
   Users, 
   Search, 
@@ -83,7 +83,6 @@ interface PlatformUser {
   created_at: string;
 }
 
-// Role labels - Gestor is the global system manager (not a school)
 const roleLabels: Record<AppRole, string> = {
   platform_admin: "Gestor",
   admin: "Administrador",
@@ -92,7 +91,6 @@ const roleLabels: Record<AppRole, string> = {
   secretaria: "Secretaria",
 };
 
-// Role descriptions for context
 const roleDescriptions: Record<AppRole, string> = {
   platform_admin: "Acesso total à plataforma",
   admin: "Administrador da escola",
@@ -101,15 +99,14 @@ const roleDescriptions: Record<AppRole, string> = {
   secretaria: "Gestão de alunos",
 };
 
-// Roles that can be assigned to schools (Gestor cannot be linked to schools)
 const schoolRoles: AppRole[] = ["admin", "staff", "financeiro", "secretaria"];
 
 const roleBadgeVariants: Record<AppRole, string> = {
-  platform_admin: "bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-400 border-amber-500/30",
-  admin: "bg-purple-500/20 text-purple-400 border-purple-500/30",
-  staff: "bg-blue-500/20 text-blue-400 border-blue-500/30",
-  financeiro: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30",
-  secretaria: "bg-pink-500/20 text-pink-400 border-pink-500/30",
+  platform_admin: "bg-primary/10 text-primary border-primary/30",
+  admin: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30",
+  staff: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30",
+  financeiro: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
+  secretaria: "bg-pink-500/10 text-pink-600 dark:text-pink-400 border-pink-500/30",
 };
 
 export default function PlatformUsers() {
@@ -121,7 +118,6 @@ export default function PlatformUsers() {
   const [selectedTenant, setSelectedTenant] = useState<string>("all");
   const [selectedRole, setSelectedRole] = useState<string>("all");
   
-  // Bulk selection states
   const [selectedUserIds, setSelectedUserIds] = useState<Set<string>>(new Set());
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [bulkActionProgress, setBulkActionProgress] = useState(0);
@@ -129,14 +125,12 @@ export default function PlatformUsers() {
   const [bulkUnlinkDialogOpen, setBulkUnlinkDialogOpen] = useState(false);
   const [bulkTargetTenant, setBulkTargetTenant] = useState("");
   
-  // Dialog states
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<PlatformUser | null>(null);
   const [formLoading, setFormLoading] = useState(false);
   
-  // Form states
   const [formData, setFormData] = useState({
     nome: "",
     email: "",
@@ -223,7 +217,6 @@ export default function PlatformUsers() {
     }
   };
 
-  // Bulk selection handlers
   const toggleUserSelection = (userId: string) => {
     setSelectedUserIds(prev => {
       const next = new Set(prev);
@@ -249,7 +242,6 @@ export default function PlatformUsers() {
     setSelectedUserIds(new Set());
   };
 
-  // Bulk action handlers
   const handleBulkLink = async () => {
     if (!bulkTargetTenant || selectedUserIds.size === 0) return;
 
@@ -458,7 +450,6 @@ export default function PlatformUsers() {
     setSelectedUser(null);
   };
 
-  // Filter users
   const filteredUsers = users.filter(user => {
     const matchesSearch = 
       user.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -476,7 +467,6 @@ export default function PlatformUsers() {
     return matchesSearch && matchesTenant && matchesRole;
   });
 
-  // Stats
   const stats = {
     total: users.length,
     platformAdmins: users.filter(u => u.role === "platform_admin").length,
@@ -484,7 +474,6 @@ export default function PlatformUsers() {
     withoutTenant: users.filter(u => !u.tenant_id).length,
   };
 
-  // Bulk selection stats
   const selectableCount = filteredUsers.filter(u => u.role !== "platform_admin").length;
   const isAllSelected = selectableCount > 0 && selectedUserIds.size === selectableCount;
   const isSomeSelected = selectedUserIds.size > 0;
@@ -497,17 +486,13 @@ export default function PlatformUsers() {
     <PlatformLayout>
       <div className="space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
-        >
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <Users className="h-8 w-8 text-amber-400" />
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+              <Users className="h-6 w-6 text-primary" />
               Usuários Globais
             </h1>
-            <p className="text-slate-400 mt-1">
+            <p className="text-muted-foreground mt-1">
               Gerencie todos os usuários da plataforma
             </p>
           </div>
@@ -517,143 +502,125 @@ export default function PlatformUsers() {
               resetForm();
               setCreateDialogOpen(true);
             }}
-            className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
           >
             <UserPlus className="h-4 w-4 mr-2" />
             Novo Usuário
           </Button>
-        </motion.div>
+        </div>
 
         {/* Bulk Actions Bar */}
         <AnimatePresence>
           {isSomeSelected && (
-            <motion.div
-              initial={{ opacity: 0, y: -10, height: 0 }}
-              animate={{ opacity: 1, y: 0, height: "auto" }}
-              exit={{ opacity: 0, y: -10, height: 0 }}
-              className="overflow-hidden"
-            >
-              <Card className="bg-amber-500/10 border-amber-500/30">
-                <CardContent className="py-3 px-4">
-                  <div className="flex items-center justify-between flex-wrap gap-3">
-                    <div className="flex items-center gap-3">
-                      <Badge variant="outline" className="bg-amber-500/20 text-amber-300 border-amber-500/40">
-                        {selectedUserIds.size} selecionado(s)
-                      </Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={clearSelection}
-                        className="text-slate-400 hover:text-white h-8"
-                      >
-                        <X className="h-4 w-4 mr-1" />
-                        Limpar
-                      </Button>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setBulkLinkDialogOpen(true)}
-                        disabled={bulkActionLoading}
-                        className="text-emerald-400 hover:text-emerald-300 hover:bg-emerald-500/10 h-8"
-                      >
-                        <Link className="h-4 w-4 mr-1" />
-                        Vincular a Escola
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setBulkUnlinkDialogOpen(true)}
-                        disabled={bulkActionLoading}
-                        className="text-red-400 hover:text-red-300 hover:bg-red-500/10 h-8"
-                      >
-                        <Unlink className="h-4 w-4 mr-1" />
-                        Desvincular
-                      </Button>
-                    </div>
+            <Card className="bg-primary/5 border-primary/20">
+              <CardContent className="py-3 px-4">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="bg-primary/10 text-primary border-primary/30">
+                      {selectedUserIds.size} selecionado(s)
+                    </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={clearSelection}
+                      className="text-muted-foreground hover:text-foreground h-8"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Limpar
+                    </Button>
                   </div>
 
-                  {bulkActionLoading && (
-                    <div className="mt-3">
-                      <Progress value={bulkActionProgress} className="h-1 bg-slate-700" />
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setBulkLinkDialogOpen(true)}
+                      disabled={bulkActionLoading}
+                      className="text-green-600 dark:text-green-400 hover:bg-green-500/10 h-8"
+                    >
+                      <Link className="h-4 w-4 mr-1" />
+                      Vincular a Escola
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setBulkUnlinkDialogOpen(true)}
+                      disabled={bulkActionLoading}
+                      className="text-destructive hover:bg-destructive/10 h-8"
+                    >
+                      <Unlink className="h-4 w-4 mr-1" />
+                      Desvincular
+                    </Button>
+                  </div>
+                </div>
+
+                {bulkActionLoading && (
+                  <div className="mt-3">
+                    <Progress value={bulkActionProgress} className="h-1" />
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           )}
         </AnimatePresence>
 
         {/* Stats Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-4 gap-4"
-        >
-          <Card className="bg-slate-800/50 border-slate-700">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Total de Usuários</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Total de Usuários</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-white">{stats.total}</p>
+              <p className="text-2xl font-bold text-foreground">{stats.total}</p>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Platform Admins</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Gestores</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-amber-400">{stats.platformAdmins}</p>
+              <p className="text-2xl font-bold text-primary">{stats.platformAdmins}</p>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Administradores</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Administradores</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-purple-400">{stats.admins}</p>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">{stats.admins}</p>
             </CardContent>
           </Card>
-          <Card className="bg-slate-800/50 border-slate-700">
+          <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-slate-400">Sem Escola</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">Sem Escola</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-2xl font-bold text-slate-300">{stats.withoutTenant}</p>
+              <p className="text-2xl font-bold text-muted-foreground">{stats.withoutTenant}</p>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-col md:flex-row gap-4"
-        >
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por nome ou email..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
+              className="pl-10"
             />
           </div>
 
           <Select value={selectedTenant} onValueChange={setSelectedTenant}>
-            <SelectTrigger className="w-full md:w-[200px] bg-slate-800/50 border-slate-700 text-white">
-              <Building2 className="h-4 w-4 mr-2 text-slate-400" />
+            <SelectTrigger className="w-full md:w-[200px]">
+              <Building2 className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Filtrar por escola" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
-              <SelectItem value="all" className="text-white">Todas as Escolas</SelectItem>
-              <SelectItem value="none" className="text-slate-400">Sem Escola</SelectItem>
+            <SelectContent>
+              <SelectItem value="all">Todas as Escolas</SelectItem>
+              <SelectItem value="none">Sem Escola</SelectItem>
               {tenants.map(tenant => (
-                <SelectItem key={tenant.id} value={tenant.id} className="text-white">
+                <SelectItem key={tenant.id} value={tenant.id}>
                   {tenant.nome}
                 </SelectItem>
               ))}
@@ -661,14 +628,14 @@ export default function PlatformUsers() {
           </Select>
 
           <Select value={selectedRole} onValueChange={setSelectedRole}>
-            <SelectTrigger className="w-full md:w-[180px] bg-slate-800/50 border-slate-700 text-white">
-              <Filter className="h-4 w-4 mr-2 text-slate-400" />
+            <SelectTrigger className="w-full md:w-[180px]">
+              <Filter className="h-4 w-4 mr-2 text-muted-foreground" />
               <SelectValue placeholder="Filtrar por cargo" />
             </SelectTrigger>
-            <SelectContent className="bg-slate-800 border-slate-700">
-              <SelectItem value="all" className="text-white">Todos os Cargos</SelectItem>
+            <SelectContent>
+              <SelectItem value="all">Todos os Cargos</SelectItem>
               {Object.entries(roleLabels).map(([role, label]) => (
-                <SelectItem key={role} value={role} className="text-white">
+                <SelectItem key={role} value={role}>
                   {label}
                 </SelectItem>
               ))}
@@ -679,163 +646,155 @@ export default function PlatformUsers() {
             variant="outline"
             onClick={fetchUsers}
             disabled={loading}
-            className="border-slate-700 text-slate-300 hover:bg-slate-800"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
-        </motion.div>
+        </div>
 
         {/* Users Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-slate-700 hover:bg-transparent">
-                    <TableHead className="w-12 text-slate-400">
-                      <button
-                        onClick={toggleSelectAll}
-                        className="flex items-center justify-center h-8 w-8 hover:bg-slate-700 rounded transition-colors"
-                        disabled={selectableCount === 0}
-                      >
-                        {isAllSelected ? (
-                          <CheckSquare className="h-4 w-4 text-amber-400" />
-                        ) : (
-                          <Square className="h-4 w-4 text-slate-400" />
-                        )}
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-slate-400">Usuário</TableHead>
-                    <TableHead className="text-slate-400">Cargo</TableHead>
-                    <TableHead className="text-slate-400">Escola</TableHead>
-                    <TableHead className="text-slate-400">Criado em</TableHead>
-                    <TableHead className="text-slate-400 text-right">Ações</TableHead>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-12">
+                    <button
+                      onClick={toggleSelectAll}
+                      className="flex items-center justify-center h-8 w-8 hover:bg-muted rounded transition-colors"
+                      disabled={selectableCount === 0}
+                    >
+                      {isAllSelected ? (
+                        <CheckSquare className="h-4 w-4 text-primary" />
+                      ) : (
+                        <Square className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </button>
+                  </TableHead>
+                  <TableHead>Usuário</TableHead>
+                  <TableHead>Cargo</TableHead>
+                  <TableHead>Escola</TableHead>
+                  <TableHead>Criado em</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                      <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
+                      Carregando usuários...
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-slate-400">
-                        <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
-                        Carregando usuários...
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredUsers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-slate-400">
-                        Nenhum usuário encontrado
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredUsers.map((user) => {
-                      const isSelectable = user.role !== "platform_admin";
-                      const isSelected = selectedUserIds.has(user.id);
-                      
-                      return (
-                        <TableRow 
-                          key={user.id} 
-                          className={`border-slate-700 hover:bg-slate-700/50 ${isSelected ? "bg-amber-500/5" : ""}`}
-                        >
-                          <TableCell>
-                            {isSelectable ? (
-                              <Checkbox
-                                checked={isSelected}
-                                onCheckedChange={() => toggleUserSelection(user.id)}
-                                className="border-slate-600 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
-                              />
-                            ) : (
-                              <div className="h-4 w-4" />
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex flex-col">
-                              <span className="font-medium text-white">{user.nome}</span>
-                              <span className="text-sm text-slate-400 flex items-center gap-1">
-                                <Mail className="h-3 w-3" />
-                                {user.email}
-                              </span>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${roleBadgeVariants[user.role]} border`}>
-                              <Shield className="h-3 w-3 mr-1" />
-                              {roleLabels[user.role]}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            {user.tenant_nome ? (
-                              <span className="text-slate-300 flex items-center gap-1">
-                                <Building2 className="h-3 w-3 text-slate-400" />
-                                {user.tenant_nome}
-                              </span>
-                            ) : (
-                              <span className="text-slate-500 italic">Sem escola</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-slate-400 flex items-center gap-1">
-                              <Calendar className="h-3 w-3" />
-                              {format(new Date(user.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                ) : filteredUsers.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                      Nenhum usuário encontrado
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredUsers.map((user) => {
+                    const isSelectable = user.role !== "platform_admin";
+                    const isSelected = selectedUserIds.has(user.id);
+                    
+                    return (
+                      <TableRow 
+                        key={user.id} 
+                        className={isSelected ? "bg-primary/5" : ""}
+                      >
+                        <TableCell>
+                          {isSelectable ? (
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => toggleUserSelection(user.id)}
+                            />
+                          ) : (
+                            <div className="h-4 w-4" />
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="font-medium text-foreground">{user.nome}</span>
+                            <span className="text-sm text-muted-foreground flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {user.email}
                             </span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openEditDialog(user)}
-                                className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-700"
-                              >
-                                <Pencil className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => openDeleteDialog(user)}
-                                disabled={user.role === "platform_admin"}
-                                className="h-8 w-8 text-slate-400 hover:text-red-400 hover:bg-red-500/10 disabled:opacity-50"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
-        </motion.div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${roleBadgeVariants[user.role]} border`}>
+                            <Shield className="h-3 w-3 mr-1" />
+                            {roleLabels[user.role]}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          {user.tenant_nome ? (
+                            <span className="text-foreground flex items-center gap-1">
+                              <Building2 className="h-3 w-3 text-muted-foreground" />
+                              {user.tenant_nome}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground italic">Sem escola</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <span className="text-muted-foreground flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {format(new Date(user.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                          </span>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openEditDialog(user)}
+                              className="h-8 w-8"
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => openDeleteDialog(user)}
+                              disabled={user.role === "platform_admin"}
+                              className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
         {/* Bulk Link Dialog */}
         <Dialog open={bulkLinkDialogOpen} onOpenChange={setBulkLinkDialogOpen}>
-          <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Link className="h-5 w-5 text-emerald-400" />
+                <Link className="h-5 w-5 text-green-600 dark:text-green-400" />
                 Vincular Usuários a Escola
               </DialogTitle>
-              <DialogDescription className="text-slate-400">
+              <DialogDescription>
                 Selecione a escola para vincular os {selectedUserIds.size} usuário(s) selecionado(s).
               </DialogDescription>
             </DialogHeader>
 
             <div className="py-4">
-              <Label className="text-slate-300">Escola de Destino</Label>
+              <Label>Escola de Destino</Label>
               <Select value={bulkTargetTenant} onValueChange={setBulkTargetTenant}>
-                <SelectTrigger className="mt-2 bg-slate-800 border-slate-700 text-white">
+                <SelectTrigger className="mt-2">
                   <SelectValue placeholder="Selecione uma escola" />
                 </SelectTrigger>
-                <SelectContent className="bg-slate-800 border-slate-700">
+                <SelectContent>
                   {tenants.map(tenant => (
-                    <SelectItem key={tenant.id} value={tenant.id} className="text-white">
+                    <SelectItem key={tenant.id} value={tenant.id}>
                       {tenant.nome}
                     </SelectItem>
                   ))}
@@ -847,14 +806,13 @@ export default function PlatformUsers() {
               <Button
                 variant="outline"
                 onClick={() => setBulkLinkDialogOpen(false)}
-                className="border-slate-700 text-slate-300"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleBulkLink}
                 disabled={!bulkTargetTenant || bulkActionLoading}
-                className="bg-emerald-600 hover:bg-emerald-700"
+                className="bg-green-600 hover:bg-green-700 text-white"
               >
                 {bulkActionLoading ? "Vinculando..." : "Vincular"}
               </Button>
@@ -864,25 +822,25 @@ export default function PlatformUsers() {
 
         {/* Bulk Unlink Dialog */}
         <AlertDialog open={bulkUnlinkDialogOpen} onOpenChange={setBulkUnlinkDialogOpen}>
-          <AlertDialogContent className="bg-slate-900 border-slate-700">
+          <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-white flex items-center gap-2">
-                <Unlink className="h-5 w-5 text-red-400" />
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Unlink className="h-5 w-5 text-destructive" />
                 Desvincular Usuários
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-400">
+              <AlertDialogDescription>
                 Tem certeza que deseja desvincular os {selectedUserIds.size} usuário(s) selecionado(s) de suas escolas?
                 Eles ficarão sem escola vinculada.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="border-slate-700 text-slate-300">
+              <AlertDialogCancel>
                 Cancelar
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleBulkUnlink}
                 disabled={bulkActionLoading}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {bulkActionLoading ? "Desvinculando..." : "Desvincular"}
               </AlertDialogAction>
@@ -892,57 +850,53 @@ export default function PlatformUsers() {
 
         {/* Create User Dialog */}
         <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5 text-amber-400" />
+                <UserPlus className="h-5 w-5 text-primary" />
                 Criar Novo Usuário
               </DialogTitle>
-              <DialogDescription className="text-slate-400">
+              <DialogDescription>
                 Preencha os dados para criar um novo usuário na plataforma.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label className="text-slate-300">Nome *</Label>
+                <Label>Nome *</Label>
                 <Input
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
                   placeholder="Nome completo"
-                  className="bg-slate-800 border-slate-700 text-white"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Email *</Label>
+                <Label>Email *</Label>
                 <Input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="email@exemplo.com"
-                  className="bg-slate-800 border-slate-700 text-white"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Senha *</Label>
+                <Label>Senha *</Label>
                 <Input
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="Mínimo 6 caracteres"
-                  className="bg-slate-800 border-slate-700 text-white"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Cargo *</Label>
+                <Label>Cargo *</Label>
                 <Select 
                   value={formData.role} 
                   onValueChange={(value) => {
                     const newRole = value as AppRole;
-                    // Platform Admin cannot be linked to schools
                     if (newRole === "platform_admin") {
                       setFormData({ ...formData, role: newRole, tenant_id: "" });
                     } else {
@@ -950,27 +904,27 @@ export default function PlatformUsers() {
                     }
                   }}
                 >
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectContent>
                     {Object.entries(roleLabels).map(([role, label]) => (
-                      <SelectItem key={role} value={role} className="text-white">
+                      <SelectItem key={role} value={role}>
                         {label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {formData.role === "platform_admin" && (
-                  <p className="text-xs text-amber-400 mt-1">
-                    ⚠️ Platform Admin é o gerenciador global - não pode ser vinculado a escolas
+                  <p className="text-xs text-primary mt-1">
+                    ⚠️ Gestor é o gerenciador global - não pode ser vinculado a escolas
                   </p>
                 )}
               </div>
 
               {formData.role !== "platform_admin" && (
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Escola (opcional)</Label>
+                  <Label>Escola (opcional)</Label>
                   <Select 
                     value={formData.tenant_id} 
                     onValueChange={(value) =>
@@ -980,15 +934,15 @@ export default function PlatformUsers() {
                       })
                     }
                   >
-                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectTrigger>
                       <SelectValue placeholder="Selecione uma escola" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="__none__" className="text-slate-400">
+                    <SelectContent>
+                      <SelectItem value="__none__">
                         Nenhuma
                       </SelectItem>
                       {tenants.map(tenant => (
-                        <SelectItem key={tenant.id} value={tenant.id} className="text-white">
+                        <SelectItem key={tenant.id} value={tenant.id}>
                           {tenant.nome}
                         </SelectItem>
                       ))}
@@ -1002,14 +956,12 @@ export default function PlatformUsers() {
               <Button
                 variant="outline"
                 onClick={() => setCreateDialogOpen(false)}
-                className="border-slate-700 text-slate-300"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleCreateUser}
                 disabled={formLoading}
-                className="bg-gradient-to-r from-amber-500 to-orange-600"
               >
                 {formLoading ? "Criando..." : "Criar Usuário"}
               </Button>
@@ -1019,54 +971,51 @@ export default function PlatformUsers() {
 
         {/* Edit User Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="bg-slate-900 border-slate-700 text-white">
+          <DialogContent>
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Pencil className="h-5 w-5 text-amber-400" />
+                <Pencil className="h-5 w-5 text-primary" />
                 Editar Usuário
               </DialogTitle>
-              <DialogDescription className="text-slate-400">
+              <DialogDescription>
                 Atualize os dados do usuário.
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label className="text-slate-300">Nome</Label>
+                <Label>Nome</Label>
                 <Input
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  className="bg-slate-800 border-slate-700 text-white"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Email</Label>
+                <Label>Email</Label>
                 <Input
                   value={formData.email}
                   disabled
-                  className="bg-slate-800/50 border-slate-700 text-slate-400"
+                  className="bg-muted"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Nova Senha (deixe vazio para manter)</Label>
+                <Label>Nova Senha (deixe vazio para manter)</Label>
                 <Input
                   type="password"
                   value={formData.password}
                   onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                   placeholder="Nova senha"
-                  className="bg-slate-800 border-slate-700 text-white"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label className="text-slate-300">Cargo</Label>
+                <Label>Cargo</Label>
                 <Select 
                   value={formData.role} 
                   onValueChange={(value) => {
                     const newRole = value as AppRole;
-                    // Platform Admin cannot be linked to schools
                     if (newRole === "platform_admin") {
                       setFormData({ ...formData, role: newRole, tenant_id: "" });
                     } else {
@@ -1074,27 +1023,27 @@ export default function PlatformUsers() {
                     }
                   }}
                 >
-                  <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                  <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="bg-slate-800 border-slate-700">
+                  <SelectContent>
                     {Object.entries(roleLabels).map(([role, label]) => (
-                      <SelectItem key={role} value={role} className="text-white">
+                      <SelectItem key={role} value={role}>
                         {label}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {formData.role === "platform_admin" && (
-                  <p className="text-xs text-amber-400 mt-1">
-                    ⚠️ Platform Admin é o gerenciador global - não pode ser vinculado a escolas
+                  <p className="text-xs text-primary mt-1">
+                    ⚠️ Gestor é o gerenciador global - não pode ser vinculado a escolas
                   </p>
                 )}
               </div>
 
               {formData.role !== "platform_admin" && (
                 <div className="space-y-2">
-                  <Label className="text-slate-300">Escola</Label>
+                  <Label>Escola</Label>
                   <Select 
                     value={formData.tenant_id} 
                     onValueChange={(value) =>
@@ -1104,15 +1053,15 @@ export default function PlatformUsers() {
                       })
                     }
                   >
-                    <SelectTrigger className="bg-slate-800 border-slate-700 text-white">
+                    <SelectTrigger>
                       <SelectValue placeholder="Selecione uma escola" />
                     </SelectTrigger>
-                    <SelectContent className="bg-slate-800 border-slate-700">
-                      <SelectItem value="__none__" className="text-slate-400">
+                    <SelectContent>
+                      <SelectItem value="__none__">
                         Nenhuma
                       </SelectItem>
                       {tenants.map(tenant => (
-                        <SelectItem key={tenant.id} value={tenant.id} className="text-white">
+                        <SelectItem key={tenant.id} value={tenant.id}>
                           {tenant.nome}
                         </SelectItem>
                       ))}
@@ -1126,14 +1075,12 @@ export default function PlatformUsers() {
               <Button
                 variant="outline"
                 onClick={() => setEditDialogOpen(false)}
-                className="border-slate-700 text-slate-300"
               >
                 Cancelar
               </Button>
               <Button
                 onClick={handleEditUser}
                 disabled={formLoading}
-                className="bg-gradient-to-r from-amber-500 to-orange-600"
               >
                 {formLoading ? "Salvando..." : "Salvar Alterações"}
               </Button>
@@ -1141,24 +1088,27 @@ export default function PlatformUsers() {
           </DialogContent>
         </Dialog>
 
-        {/* Delete Confirmation */}
+        {/* Delete User Dialog */}
         <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-          <AlertDialogContent className="bg-slate-900 border-slate-700">
+          <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle className="text-white">Excluir Usuário</AlertDialogTitle>
-              <AlertDialogDescription className="text-slate-400">
-                Tem certeza que deseja excluir o usuário <strong className="text-white">{selectedUser?.nome}</strong>?
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Trash2 className="h-5 w-5 text-destructive" />
+                Excluir Usuário
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir o usuário <strong>{selectedUser?.nome}</strong>?
                 Esta ação não pode ser desfeita.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel className="border-slate-700 text-slate-300">
+              <AlertDialogCancel>
                 Cancelar
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteUser}
                 disabled={formLoading}
-                className="bg-red-600 hover:bg-red-700"
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 {formLoading ? "Excluindo..." : "Excluir"}
               </AlertDialogAction>
