@@ -140,6 +140,13 @@ export function useFaturas() {
   return useQuery({
     queryKey: queryKeys.faturas.list(),
     queryFn: async () => {
+      // Validação defensiva: RLS garante isolamento, mas verificamos sessão
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        console.warn("useFaturas: Usuário não autenticado");
+        return [];
+      }
+
       await supabase.rpc("atualizar_status_faturas");
       const { data, error } = await supabase
         .from("faturas")
