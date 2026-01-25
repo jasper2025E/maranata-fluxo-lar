@@ -37,18 +37,6 @@ export function GlobalSearch() {
   const navigate = useNavigate();
   const { t } = useTranslation();
 
-  // Keyboard shortcut (⌘K or Ctrl+K)
-  useEffect(() => {
-    const down = (e: KeyboardEvent) => {
-      if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault();
-        setOpen((open) => !open);
-      }
-    };
-
-    document.addEventListener("keydown", down);
-    return () => document.removeEventListener("keydown", down);
-  }, []);
 
   // Search function
   const performSearch = useCallback(async (searchQuery: string) => {
@@ -219,9 +207,6 @@ export function GlobalSearch() {
           onChange={handleInputChange}
           onKeyDown={handleInputKeyDown}
         />
-        <kbd className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
-          <span className="text-xs">⌘</span>K
-        </kbd>
       </div>
 
       {/* Command Dialog */}
