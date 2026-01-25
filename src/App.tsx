@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
@@ -9,6 +9,7 @@ import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useContentProtection } from "@/hooks/useContentProtection";
 import { useUserLanguage } from "@/hooks/useUserLanguage";
+import { queryClient } from "@/lib/queryClient";
 
 // Pages
 import Index from "./pages/Index";
@@ -373,17 +374,7 @@ function AppContent() {
   );
 }
 
-// Query client with optimized defaults
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 1000 * 60 * 5, // 5 minutes
-      gcTime: 1000 * 60 * 30, // 30 minutes
-      retry: 2,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
+// queryClient agora é importado de @/lib/queryClient
 
 const App = () => (
   <ErrorBoundary>
