@@ -51,11 +51,16 @@ serve(async (req) => {
     // Fetch tenant data
     const { data: tenant, error: tenantError } = await supabase
       .from("tenants")
-      .select("*, subscription_plans!tenants_plano_fkey(stripe_price_id, price)")
+      .select("*")
       .eq("id", tenantId)
       .single();
 
-    if (tenantError || !tenant) {
+    if (tenantError) {
+      console.error("Erro ao buscar tenant:", tenantError);
+      throw new Error("Tenant não encontrado");
+    }
+
+    if (!tenant) {
       throw new Error("Tenant não encontrado");
     }
 
@@ -67,9 +72,9 @@ serve(async (req) => {
       throw new Error("Tenant já possui uma subscription ativa");
     }
 
-    // Get price ID from plan or create a price
-    let priceId = tenant.subscription_plans?.stripe_price_id;
-    const amount = tenant.monthly_price || tenant.subscription_plans?.price || 17000; // default R$170
+    // Get price - use monthly_price from tenant (in centavos)
+    const amount = (tenant.monthly_price || 170) * 100; // Convert to centavos if not already
+    let priceId: string | null = null;
 
     if (!priceId) {
       // Create a price in Stripe
@@ -147,7 +152,7 @@ serve(async (req) => {
         },
         body: new URLSearchParams({
           customer: tenant.stripe_customer_id,
-          "items[0][price]": priceId,
+          "items[0][price]": priceId!,
           payment_behavior: "default_incomplete",
           "payment_settings[save_default_payment_method]": "on_subscription",
           "expand[0]": "latest_invoice.payment_intent",
