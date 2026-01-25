@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   LayoutDashboard,
   Users,
@@ -15,9 +16,13 @@ import {
   Briefcase,
   Activity,
   Crown,
+  ChevronDown,
+  TrendingUp,
+  Calculator,
+  PieChart,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -40,6 +45,11 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 const menuItems = [
   { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
@@ -73,11 +83,17 @@ const settingsItems = [
 
 export function AppSidebar() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { signOut, hasRole, isPlatformAdmin } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const { t } = useTranslation();
   
+  // Check if any analysis route is active
+  const analysisRoutes = ["/relatorios", "/saude-financeira", "/contabilidade"];
+  const isAnalysisActive = analysisRoutes.some(route => location.pathname.startsWith(route));
+  const [isAnalysisOpen, setIsAnalysisOpen] = useState(isAnalysisActive);
+
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
   const escolaNome = escola?.nome || "Maranata";
@@ -229,17 +245,60 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Collapsible Analysis Section */}
         <SidebarGroup className="px-3 mt-4">
-          {!isCollapsed && (
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
-              {t("nav.analysis")}
-            </SidebarGroupLabel>
-          )}
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-0.5">
-              {filterByRole(analysisItems).map(renderMenuItem)}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <Collapsible open={isAnalysisOpen} onOpenChange={setIsAnalysisOpen}>
+            <CollapsibleTrigger asChild>
+              <button
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
+                  "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                  "transition-all duration-200 ease-out",
+                  isAnalysisActive && "text-sidebar-primary font-medium"
+                )}
+              >
+                <BarChart3 className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+                {!isCollapsed && (
+                  <>
+                    <span className="text-sm flex-1 text-left">{t("nav.analysis")}</span>
+                    <ChevronDown 
+                      className={cn(
+                        "h-4 w-4 transition-transform duration-200",
+                        isAnalysisOpen && "rotate-180"
+                      )} 
+                    />
+                  </>
+                )}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+              {!isCollapsed && (
+                <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
+                  {filterByRole(analysisItems).map((item) => {
+                    const isPremium = (item as any).premium;
+                    return (
+                      <SidebarMenuItem key={item.titleKey}>
+                        <SidebarMenuButton asChild>
+                          <NavLink
+                            to={item.url}
+                            className={cn(
+                              "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
+                              "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                              "transition-all duration-150"
+                            )}
+                            activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
+                          >
+                            <span className="flex-1">{t(item.titleKey)}</span>
+                            {isPremium && <Crown className="h-3 w-3 text-amber-500" />}
+                          </NavLink>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
         </SidebarGroup>
 
         <SidebarGroup className="px-3 mt-4">
