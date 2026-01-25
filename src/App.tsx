@@ -36,6 +36,7 @@ import PagarFatura from "./pages/PagarFatura";
 import SaudeFinanceira from "./pages/SaudeFinanceira";
 import Contabilidade from "./pages/Contabilidade";
 import SiteEscolar from "./pages/SiteEscolar";
+import EscolaPublica from "./pages/EscolaPublica";
 
 // Platform Admin Pages
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
@@ -374,6 +375,9 @@ function AppContent() {
           
           {/* Public Onboarding - New School Registration */}
           <Route path="/cadastro" element={<Onboarding />} />
+          
+          {/* Public School Website */}
+          <Route path="/escola/:slug" element={<EscolaPublica />} />
           
           {/* Catch-all */}
           <Route path="*" element={<NotFound />} />
