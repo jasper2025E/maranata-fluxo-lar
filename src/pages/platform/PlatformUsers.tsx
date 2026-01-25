@@ -347,7 +347,18 @@ export default function PlatformUsers() {
       fetchUsers();
     } catch (error: any) {
       console.error("Error creating user:", error);
-      toast.error(error.message || "Erro ao criar usuário");
+      const errorMessage = error.message || "Erro ao criar usuário";
+      
+      // Translate known error messages
+      if (errorMessage.includes("email address has already been registered")) {
+        toast.error("Este e-mail já está cadastrado no sistema");
+      } else if (errorMessage.includes("invalid email")) {
+        toast.error("E-mail inválido");
+      } else if (errorMessage.includes("password")) {
+        toast.error("Senha inválida. Use pelo menos 6 caracteres");
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setFormLoading(false);
     }
