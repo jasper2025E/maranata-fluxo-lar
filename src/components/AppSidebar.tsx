@@ -88,10 +88,10 @@ const analysisItems = [
 ];
 
 // System Sub-items
-const systemItems = [
-  { titleKey: "nav.settings", url: "/configuracoes" },
-  { titleKey: "nav.subscription", url: "/assinatura" },
-];
+  const configItems = [
+    { titleKey: "nav.profile", url: "/configuracoes" },
+    { titleKey: "nav.subscription", url: "/assinatura" },
+  ];
 
 export function AppSidebar() {
   const navigate = useNavigate();
@@ -116,10 +116,10 @@ export function AppSidebar() {
   const [isHROpen, setIsHROpen] = useState(isHRActive);
   const rhTab = new URLSearchParams(location.search).get("tab") || "dashboard";
   
-  // Check if System route is active
-  const systemRoutes = ["/configuracoes", "/assinatura"];
-  const isSystemActive = systemRoutes.some(route => location.pathname.startsWith(route));
-  const [isSystemOpen, setIsSystemOpen] = useState(isSystemActive);
+  // Check if Config route is active
+  const configRoutes = ["/configuracoes", "/assinatura"];
+  const isConfigActive = configRoutes.some(route => location.pathname.startsWith(route));
+  const [isConfigOpen, setIsConfigOpen] = useState(isConfigActive);
 
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
@@ -452,10 +452,10 @@ export function AppSidebar() {
                 </Collapsible>
               </SidebarMenuItem>
 
-              {/* Collapsible System */}
+              {/* Collapsible Configurações */}
               {hasRole("admin") && (
                 <SidebarMenuItem>
-                  <Collapsible open={isSystemOpen} onOpenChange={setIsSystemOpen}>
+                  <Collapsible open={isConfigOpen} onOpenChange={setIsConfigOpen}>
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton asChild tooltip={t("nav.system")}>
                         <button
@@ -467,7 +467,7 @@ export function AppSidebar() {
                             isCollapsed
                               ? "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20 active:scale-95"
                               : "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1 active:scale-[0.98]",
-                            isSystemActive &&
+                            isConfigActive &&
                               (isCollapsed
                                 ? "bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
                                 : "bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"),
@@ -480,7 +480,7 @@ export function AppSidebar() {
                               <ChevronDown
                                 className={cn(
                                   "h-4 w-4 transition-transform duration-200",
-                                  isSystemOpen && "rotate-180"
+                                  isConfigOpen && "rotate-180"
                                 )}
                               />
                             </>
@@ -491,7 +491,7 @@ export function AppSidebar() {
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                       {!isCollapsed && (
                         <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
-                          {systemItems.map((item) => (
+                          {configItems.map((item) => (
                             <SidebarMenuItem key={item.titleKey}>
                               <SidebarMenuButton asChild>
                                 <NavLink
