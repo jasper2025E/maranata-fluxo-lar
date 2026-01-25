@@ -20,6 +20,7 @@ import {
   TrendingUp,
   Calculator,
   PieChart,
+  Globe,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -63,6 +64,7 @@ const menuItems = [
 const escolaItems = [
   { titleKey: "nav.escola.dados", url: "/escola", tab: "dados" },
   { titleKey: "nav.escola.assinatura", url: "/escola?tab=assinatura", tab: "assinatura" },
+  { titleKey: "nav.escola.website", url: "/site-escolar", tab: "website", premium: true },
 ];
 
 // HR Sub-items
@@ -134,9 +136,9 @@ export function AppSidebar() {
   const configTab = new URLSearchParams(location.search).get("tab") || "perfil";
   
   // Check if Escola route is active
-  const isEscolaActive = location.pathname.startsWith("/escola");
+  const isEscolaActive = location.pathname.startsWith("/escola") || location.pathname.startsWith("/site-escolar");
   const [isEscolaOpen, setIsEscolaOpen] = useState(isEscolaActive);
-  const escolaTab = new URLSearchParams(location.search).get("tab") || "dados";
+  const escolaTab = location.pathname.startsWith("/site-escolar") ? "website" : (new URLSearchParams(location.search).get("tab") || "dados");
 
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
@@ -316,6 +318,7 @@ export function AppSidebar() {
                                     activeClassName=""
                                   >
                                     <span className="flex-1">{t(item.titleKey)}</span>
+                                    {item.premium && <Crown className="h-3 w-3 text-amber-500" />}
                                   </NavLink>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
