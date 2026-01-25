@@ -12,6 +12,13 @@ export function useResponsaveis() {
   return useQuery({
     queryKey: queryKeys.responsaveis.list(),
     queryFn: async () => {
+      // Validação defensiva: RLS garante isolamento, mas verificamos sessão
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        console.warn("useResponsaveis: Usuário não autenticado");
+        return [];
+      }
+
       const { data, error } = await supabase
         .from("responsaveis")
         .select(`

@@ -12,6 +12,13 @@ export function useCursos() {
   return useQuery({
     queryKey: queryKeys.cursos.list(),
     queryFn: async () => {
+      // Validação defensiva: RLS garante isolamento, mas verificamos sessão
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        console.warn("useCursos: Usuário não autenticado");
+        return [];
+      }
+
       const { data, error } = await supabase
         .from("cursos")
         .select("*")
