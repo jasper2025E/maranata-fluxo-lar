@@ -37,6 +37,8 @@ export function useEscola() {
     gcTime: 1000 * 60 * 60, // 1 hour cache
     retry: 2,
     refetchOnWindowFocus: false,
+    refetchOnMount: false, // Prevent refetch on component mount during navigation
+    refetchOnReconnect: false,
   });
 }
 
