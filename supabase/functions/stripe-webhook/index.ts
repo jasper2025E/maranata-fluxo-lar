@@ -288,13 +288,20 @@ serve(async (req) => {
           },
         });
 
-        // Garantir status ativo e limpar bloqueios
+        // Calculate next billing date and ensure auto-billing is enabled
+        const nextBillingDate = new Date();
+        nextBillingDate.setMonth(nextBillingDate.getMonth() + 1);
+
+        // Garantir status ativo, limpar bloqueios, e configurar próxima cobrança
         await supabase
           .from("tenants")
           .update({ 
             subscription_status: "active",
             grace_period_ends_at: null,
             blocked_at: null,
+            blocked_reason: null,
+            next_billing_date: nextBillingDate.toISOString().split("T")[0],
+            auto_billing_enabled: true,
           })
           .eq("id", tenantId);
         break;

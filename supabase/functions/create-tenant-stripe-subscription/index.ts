@@ -168,16 +168,23 @@ serve(async (req) => {
 
     console.log("Subscription criada:", subscription.id);
 
-    // Update tenant with subscription ID
+    // Calculate next billing date and billing day
+    const nextBillingDate = subscription.current_period_end 
+      ? new Date(subscription.current_period_end * 1000)
+      : new Date();
+    const billingDay = nextBillingDate.getDate();
+
+    // Update tenant with subscription ID and enable auto-billing
     const { error: updateError } = await supabase
       .from("tenants")
       .update({
         stripe_subscription_id: subscription.id,
         subscription_status: subscription.status === "active" ? "active" : 
-                            subscription.status === "trialing" ? "trial" : "past_due",
-        next_billing_date: subscription.current_period_end 
-          ? new Date(subscription.current_period_end * 1000).toISOString().split("T")[0]
-          : null,
+                            subscription.status === "trialing" ? "trial" : 
+                            subscription.status === "incomplete" ? "active" : "past_due",
+        next_billing_date: nextBillingDate.toISOString().split("T")[0],
+        billing_day: billingDay,
+        auto_billing_enabled: true, // Enable auto-billing when subscription is created
       })
       .eq("id", tenantId);
 
