@@ -64,12 +64,49 @@ serve(async (req) => {
       throw new Error("Tenant não encontrado");
     }
 
-    if (!tenant.stripe_customer_id) {
-      throw new Error("Tenant não possui customer ID no Stripe");
-    }
-
     if (tenant.stripe_subscription_id) {
       throw new Error("Tenant já possui uma subscription ativa");
+    }
+
+    // Create Stripe customer if not exists
+    let stripeCustomerId = tenant.stripe_customer_id;
+    
+    if (!stripeCustomerId) {
+      console.log("Criando customer no Stripe...");
+      
+      // Validate required fields
+      if (!tenant.email) {
+        throw new Error("Email é obrigatório para criar customer no Stripe");
+      }
+      
+      const customerResponse = await fetch("https://api.stripe.com/v1/customers", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${stripeSecretKey}`,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          name: tenant.nome,
+          email: tenant.email,
+          ...(tenant.cnpj && { "metadata[cnpj]": tenant.cnpj }),
+          "metadata[tenant_id]": tenantId,
+        }),
+      });
+
+      const customerData = await customerResponse.json();
+      
+      if (customerData.error) {
+        throw new Error(`Erro ao criar customer: ${customerData.error.message}`);
+      }
+      
+      stripeCustomerId = customerData.id;
+      console.log("Customer criado:", stripeCustomerId);
+
+      // Save customer ID to tenant
+      await supabase
+        .from("tenants")
+        .update({ stripe_customer_id: stripeCustomerId })
+        .eq("id", tenantId);
     }
 
     // Get price - use monthly_price from tenant (in centavos)
@@ -151,7 +188,7 @@ serve(async (req) => {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-          customer: tenant.stripe_customer_id,
+          customer: stripeCustomerId!,
           "items[0][price]": priceId!,
           payment_behavior: "default_incomplete",
           "payment_settings[save_default_payment_method]": "on_subscription",
