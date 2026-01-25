@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { FinancialLayout } from "@/components/financial";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -209,8 +209,8 @@ const Despesas = () => {
   };
 
   return (
-    <FinancialLayout>
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
+    <DashboardLayout>
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -450,7 +450,7 @@ const Despesas = () => {
           </CardContent>
         </Card>
       </div>
-    </FinancialLayout>
+    </DashboardLayout>
   );
 };
 

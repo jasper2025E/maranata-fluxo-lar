@@ -14,6 +14,7 @@ import {
   Wallet,
   Briefcase,
   Activity,
+  Crown,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -42,7 +43,7 @@ import {
 
 const menuItems = [
   { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { titleKey: "nav.financial", url: "/dashboard/financeiro", icon: Wallet },
+  { titleKey: "nav.financialDashboard", url: "/dashboard/financeiro", icon: Wallet },
   { titleKey: "nav.school", url: "/escola", icon: Building2, roles: ["admin"] },
   { titleKey: "nav.guardians", url: "/responsaveis", icon: UserCheck },
   { titleKey: "nav.students", url: "/alunos", icon: Users },
@@ -51,12 +52,23 @@ const menuItems = [
   { titleKey: "nav.hr", url: "/rh", icon: Briefcase, roles: ["admin", "staff"] },
 ];
 
-const financeItems = [
-  { titleKey: "nav.financial", url: "/faturas", icon: Wallet },
+// Financial Operations
+const operationsItems = [
+  { titleKey: "nav.invoices", url: "/faturas", icon: FileText },
+  { titleKey: "nav.payments", url: "/pagamentos", icon: CreditCard },
+  { titleKey: "nav.expenses", url: "/despesas", icon: Receipt },
+];
+
+// Financial Analysis
+const analysisItems = [
+  { titleKey: "nav.reports", url: "/relatorios", icon: BarChart3 },
+  { titleKey: "nav.financialHealth", url: "/saude-financeira", icon: Activity, roles: ["admin"], premium: true },
+  { titleKey: "nav.accounting", url: "/contabilidade", icon: BookOpen, roles: ["admin"], premium: true },
 ];
 
 const settingsItems = [
   { titleKey: "nav.settings", url: "/configuracoes", icon: Settings, roles: ["admin"] },
+  { titleKey: "nav.subscription", url: "/assinatura", icon: CreditCard, roles: ["admin"] },
 ];
 
 export function AppSidebar() {
@@ -92,7 +104,7 @@ export function AppSidebar() {
     });
   };
 
-  const renderMenuItem = (item: typeof menuItems[0]) => (
+  const renderMenuItem = (item: typeof menuItems[0] & { premium?: boolean }) => (
     <SidebarMenuItem key={item.titleKey}>
       {isCollapsed ? (
         <Tooltip>
@@ -114,8 +126,9 @@ export function AppSidebar() {
               </NavLink>
             </SidebarMenuButton>
           </TooltipTrigger>
-          <TooltipContent side="right" className="font-medium">
+          <TooltipContent side="right" className="font-medium flex items-center gap-2">
             {t(item.titleKey)}
+            {item.premium && <Crown className="h-3 w-3 text-amber-500" />}
           </TooltipContent>
         </Tooltip>
       ) : (
@@ -133,7 +146,8 @@ export function AppSidebar() {
             activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"
           >
             <item.icon className="h-[18px] w-[18px] shrink-0 transition-transform duration-200 group-hover:scale-110" strokeWidth={1.75} />
-            <span className="text-sm">{t(item.titleKey)}</span>
+            <span className="text-sm flex-1">{t(item.titleKey)}</span>
+            {item.premium && <Crown className="h-3.5 w-3.5 text-amber-500" />}
           </NavLink>
         </SidebarMenuButton>
       )}
@@ -202,20 +216,33 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="px-3 mt-6">
+        <SidebarGroup className="px-3 mt-4">
           {!isCollapsed && (
             <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
-              {t("nav.finance")}
+              {t("nav.operations")}
             </SidebarGroupLabel>
           )}
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5">
-              {filterByRole(financeItems).map(renderMenuItem)}
+              {filterByRole(operationsItems).map(renderMenuItem)}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        <SidebarGroup className="px-3 mt-6">
+        <SidebarGroup className="px-3 mt-4">
+          {!isCollapsed && (
+            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
+              {t("nav.analysis")}
+            </SidebarGroupLabel>
+          )}
+          <SidebarGroupContent>
+            <SidebarMenu className="space-y-0.5">
+              {filterByRole(analysisItems).map(renderMenuItem)}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup className="px-3 mt-4">
           {!isCollapsed && (
             <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
               {t("nav.system")}
