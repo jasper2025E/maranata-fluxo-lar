@@ -789,18 +789,16 @@ export default function TenantDetails() {
                             <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
                             {syncing ? "Sincronizando..." : "Sincronizar com Stripe"}
                           </Button>
-                          {!tenant.stripe_subscription_id && (
-                            <Button
-                              type="button"
-                              variant="default"
-                              onClick={handleCreateStripeSubscription}
-                              disabled={creatingSubscription}
-                              className="gap-2"
-                            >
-                              <CreditCard className={`h-4 w-4 ${creatingSubscription ? 'animate-pulse' : ''}`} />
-                              {creatingSubscription ? "Criando..." : "Criar Subscription no Stripe"}
-                            </Button>
-                          )}
+                          <Button
+                            type="button"
+                            variant="default"
+                            onClick={handleCreateStripeSubscription}
+                            disabled={creatingSubscription || !!tenant.stripe_subscription_id}
+                            className="gap-2"
+                          >
+                            <CreditCard className={`h-4 w-4 ${creatingSubscription ? 'animate-pulse' : ''}`} />
+                            {creatingSubscription ? "Criando..." : "Criar Assinatura Stripe"}
+                          </Button>
                         </div>
                         <Button onClick={handleSubmit} disabled={saving}>
                           <Save className="h-4 w-4 mr-2" />
