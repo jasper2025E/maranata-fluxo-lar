@@ -9,3 +9,4 @@ export { UserManagementTab } from "./UserManagementTab";
 export { TwoFactorSetup } from "./TwoFactorSetup";
 export { IntegrationsTab } from "./IntegrationsTab";
 export { GatewayConfigTab } from "./GatewayConfigTab";
+export { ColorEditor } from "./ColorEditor";
