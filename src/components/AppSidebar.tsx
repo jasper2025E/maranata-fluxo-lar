@@ -87,9 +87,10 @@ const analysisItems = [
   { titleKey: "nav.accounting", url: "/contabilidade", icon: BookOpen, roles: ["admin"], premium: true },
 ];
 
-const settingsItems = [
-  { titleKey: "nav.settings", url: "/configuracoes", icon: Settings, roles: ["admin"] },
-  { titleKey: "nav.subscription", url: "/assinatura", icon: CreditCard, roles: ["admin"] },
+// System Sub-items
+const systemItems = [
+  { titleKey: "nav.settings", url: "/configuracoes" },
+  { titleKey: "nav.subscription", url: "/assinatura" },
 ];
 
 export function AppSidebar() {
@@ -114,6 +115,11 @@ export function AppSidebar() {
   const isHRActive = location.pathname.startsWith("/rh");
   const [isHROpen, setIsHROpen] = useState(isHRActive);
   const rhTab = new URLSearchParams(location.search).get("tab") || "dashboard";
+  
+  // Check if System route is active
+  const systemRoutes = ["/configuracoes", "/assinatura"];
+  const isSystemActive = systemRoutes.some(route => location.pathname.startsWith(route));
+  const [isSystemOpen, setIsSystemOpen] = useState(isSystemActive);
 
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
@@ -445,18 +451,69 @@ export function AppSidebar() {
                   </CollapsibleContent>
                 </Collapsible>
               </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-        <SidebarGroup className="px-3 mt-2">
-          {!isCollapsed && (
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
-              {t("nav.system")}
-            </SidebarGroupLabel>
-          )}
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-0.5">
-              {filterByRole(settingsItems).map(renderMenuItem)}
+
+              {/* Collapsible System */}
+              {hasRole("admin") && (
+                <SidebarMenuItem>
+                  <Collapsible open={isSystemOpen} onOpenChange={setIsSystemOpen}>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton asChild tooltip={t("nav.system")}>
+                        <button
+                          type="button"
+                          className={cn(
+                            isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
+                            "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                            "transition-all duration-200 ease-out",
+                            isCollapsed
+                              ? "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20 active:scale-95"
+                              : "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1 active:scale-[0.98]",
+                            isSystemActive &&
+                              (isCollapsed
+                                ? "bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
+                                : "bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"),
+                          )}
+                        >
+                          <Settings className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0 transition-transform duration-200")} strokeWidth={1.75} />
+                          {!isCollapsed && (
+                            <>
+                              <span className="text-sm flex-1 text-left">{t("nav.system")}</span>
+                              <ChevronDown
+                                className={cn(
+                                  "h-4 w-4 transition-transform duration-200",
+                                  isSystemOpen && "rotate-180"
+                                )}
+                              />
+                            </>
+                          )}
+                        </button>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+                      {!isCollapsed && (
+                        <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
+                          {systemItems.map((item) => (
+                            <SidebarMenuItem key={item.titleKey}>
+                              <SidebarMenuButton asChild>
+                                <NavLink
+                                  to={item.url}
+                                  className={cn(
+                                    "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
+                                    "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                                    "transition-all duration-150"
+                                  )}
+                                  activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
+                                >
+                                  <span className="flex-1">{t(item.titleKey)}</span>
+                                </NavLink>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
+                        </SidebarMenu>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
