@@ -108,15 +108,14 @@ const ptBR = {
     },
 
     // Financial Module
-  financial: {
-    title: "Financeiro",
-    subtitle: "Gestão financeira",
-    sections: {
-      operations: "Operações",
-      analysis: "Análise",
-      subscription: "Assinatura",
+    financial: {
+      title: "Financeiro",
+      subtitle: "Gestão financeira",
+      sections: {
+        operations: "Operações",
+        analysis: "Análise",
+      },
     },
-  },
 
     // Auth
     auth: {

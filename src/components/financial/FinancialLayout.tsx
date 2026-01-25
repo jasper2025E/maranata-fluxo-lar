@@ -53,12 +53,6 @@ const navigation: NavSection[] = [
       { icon: BookOpen, labelKey: "nav.accounting", path: "/contabilidade", premium: true },
     ],
   },
-  {
-    titleKey: "financial.sections.subscription",
-    items: [
-      { icon: CreditCard, labelKey: "nav.subscription", path: "/assinatura" },
-    ],
-  },
 ];
 
 export default function FinancialLayout({ children }: FinancialLayoutProps) {

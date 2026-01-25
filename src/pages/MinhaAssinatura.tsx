@@ -18,7 +18,7 @@ import { PaymentMethodCard } from "@/components/subscription/PaymentMethodCard";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
-import { FinancialLayout } from "@/components/financial";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -218,17 +218,17 @@ export default function MinhaAssinatura() {
 
   if (loading) {
     return (
-      <FinancialLayout>
+      <DashboardLayout>
         <div className="min-h-[60vh] flex items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
-      </FinancialLayout>
+      </DashboardLayout>
     );
   }
 
   if (!subscription || !tenantId) {
     return (
-      <FinancialLayout>
+      <DashboardLayout>
         <div className="flex flex-col items-center justify-center py-20">
           <CreditCard className="h-16 w-16 text-muted-foreground/50 mb-4" />
           <h2 className="text-xl font-semibold text-foreground">Informações não disponíveis</h2>
@@ -247,7 +247,7 @@ export default function MinhaAssinatura() {
             </Button>
           )}
         </div>
-      </FinancialLayout>
+      </DashboardLayout>
     );
   }
 
@@ -256,7 +256,7 @@ export default function MinhaAssinatura() {
   const monthlyPrice = subscription.monthly_price || 0;
 
   return (
-    <FinancialLayout>
+    <DashboardLayout>
       <div className="max-w-6xl mx-auto">
         {/* Header Breadcrumb */}
         <div className="flex items-center gap-2 text-sm mb-6">
@@ -486,6 +486,6 @@ export default function MinhaAssinatura() {
           }}
         />
       </div>
-    </FinancialLayout>
+    </DashboardLayout>
   );
 }
