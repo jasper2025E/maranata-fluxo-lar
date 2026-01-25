@@ -1,6 +1,7 @@
 import { ThemeProvider as NextThemesProvider, useTheme } from "next-themes";
 import { type ComponentProps, useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useThemeConfig, clearThemeConfigCache } from "@/hooks/useThemeConfig";
 
 type ThemeProviderProps = ComponentProps<typeof NextThemesProvider>;
 
@@ -18,6 +19,9 @@ function ThemeBootstrap({
 }) {
   const { setTheme } = useTheme();
   const lastFetchedUserId = useRef<string | null>(null);
+
+  // Apply custom theme config (colors, layout, typography)
+  useThemeConfig(userId);
 
   useEffect(() => {
     let cancelled = false;
@@ -102,6 +106,7 @@ export function ThemeProvider({ children, ...props }: ThemeProviderProps) {
         setUserId(session?.user?.id ?? null);
         if (!session?.user?.id) {
           themeCache.clear();
+          clearThemeConfigCache();
         }
       }
     });

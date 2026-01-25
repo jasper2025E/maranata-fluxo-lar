@@ -7,6 +7,7 @@ import { Loader2, RotateCcw, Palette, Check, Type, Layout, Sun, Moon } from "luc
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { updateThemeConfigCache } from "@/hooks/useThemeConfig";
 import {
   Popover,
   PopoverContent,
@@ -249,6 +250,9 @@ export function ColorEditor({ userId }: ColorEditorProps) {
           .insert([{ user_id: userId, custom_colors: colorData }]);
         if (error) throw error;
       }
+
+      // Update global cache so theme persists across page navigations
+      updateThemeConfigCache(config);
 
       toast.success("Personalização salva!");
     } catch (error) {
