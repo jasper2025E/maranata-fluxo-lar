@@ -52,13 +52,7 @@ const menuItems = [
 ];
 
 const financeItems = [
-  { titleKey: "nav.invoices", url: "/faturas", icon: FileText },
-  { titleKey: "nav.payments", url: "/pagamentos", icon: CreditCard },
-  { titleKey: "nav.expenses", url: "/despesas", icon: Receipt },
-  { titleKey: "nav.reports", url: "/relatorios", icon: BarChart3 },
-  { titleKey: "nav.accounting", url: "/contabilidade", icon: BookOpen, roles: ["admin", "financeiro"] },
-  { titleKey: "nav.financialHealth", url: "/saude-financeira", icon: Activity, roles: ["admin", "financeiro"] },
-  { titleKey: "nav.subscription", url: "/assinatura", icon: CreditCard, roles: ["admin"], excludePlatformAdmin: true },
+  { titleKey: "nav.financial", url: "/faturas", icon: Wallet },
 ];
 
 const settingsItems = [
