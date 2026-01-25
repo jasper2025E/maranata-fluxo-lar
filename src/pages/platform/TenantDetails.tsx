@@ -196,8 +196,8 @@ export default function TenantDetails() {
   };
 
   const handleSyncStripe = async () => {
-    if (!id || !tenant?.stripe_subscription_id) {
-      toast.error("Nenhuma assinatura Stripe para sincronizar");
+    if (!id) {
+      toast.error("ID do tenant não encontrado");
       return;
     }
 
@@ -226,6 +226,8 @@ export default function TenantDetails() {
             toast.info(action.message);
           }
         });
+      } else {
+        toast.info("Nenhuma ação necessária - tenant não possui assinatura Stripe ativa");
       }
 
       // Reload data
@@ -740,7 +742,7 @@ export default function TenantDetails() {
                           type="button"
                           variant="outline"
                           onClick={handleSyncStripe}
-                          disabled={syncing || !tenant.stripe_subscription_id}
+                          disabled={syncing}
                           className="gap-2"
                         >
                           <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
