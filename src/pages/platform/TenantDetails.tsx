@@ -252,8 +252,9 @@ export default function TenantDetails() {
       return;
     }
 
-    if (!tenant?.stripe_customer_id) {
-      toast.error("Este tenant não possui um Customer ID no Stripe");
+    // Validate email is required for Stripe customer creation
+    if (!tenant?.email) {
+      toast.error("Email é obrigatório para criar assinatura no Stripe");
       return;
     }
 
@@ -788,7 +789,7 @@ export default function TenantDetails() {
                             <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
                             {syncing ? "Sincronizando..." : "Sincronizar com Stripe"}
                           </Button>
-                          {!tenant.stripe_subscription_id && tenant.stripe_customer_id && (
+                          {!tenant.stripe_subscription_id && (
                             <Button
                               type="button"
                               variant="default"
