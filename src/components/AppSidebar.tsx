@@ -89,6 +89,11 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const { t } = useTranslation();
   
+  // Check if any operations route is active
+  const operationsRoutes = ["/faturas", "/pagamentos", "/despesas"];
+  const isOperationsActive = operationsRoutes.some(route => location.pathname.startsWith(route));
+  const [isOperationsOpen, setIsOperationsOpen] = useState(isOperationsActive);
+  
   // Check if any analysis route is active
   const analysisRoutes = ["/relatorios", "/saude-financeira", "/contabilidade"];
   const isAnalysisActive = analysisRoutes.some(route => location.pathname.startsWith(route));
@@ -232,17 +237,56 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
+        {/* Collapsible Operations Section */}
         <SidebarGroup className="px-3 mt-4">
-          {!isCollapsed && (
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
-              {t("nav.operations")}
-            </SidebarGroupLabel>
-          )}
-          <SidebarGroupContent>
-            <SidebarMenu className="space-y-0.5">
-              {filterByRole(operationsItems).map(renderMenuItem)}
-            </SidebarMenu>
-          </SidebarGroupContent>
+          <Collapsible open={isOperationsOpen} onOpenChange={setIsOperationsOpen}>
+            <CollapsibleTrigger asChild>
+              <button
+                className={cn(
+                  "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
+                  "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                  "transition-all duration-200 ease-out",
+                  isOperationsActive && "text-sidebar-primary font-medium"
+                )}
+              >
+                <Wallet className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
+                {!isCollapsed && (
+                  <>
+                    <span className="text-sm flex-1 text-left">{t("nav.operations")}</span>
+                    <ChevronDown 
+                      className={cn(
+                        "h-4 w-4 transition-transform duration-200",
+                        isOperationsOpen && "rotate-180"
+                      )} 
+                    />
+                  </>
+                )}
+              </button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+              {!isCollapsed && (
+                <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
+                  {filterByRole(operationsItems).map((item) => (
+                    <SidebarMenuItem key={item.titleKey}>
+                      <SidebarMenuButton asChild>
+                        <NavLink
+                          to={item.url}
+                          className={cn(
+                            "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
+                            "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                            "transition-all duration-150"
+                          )}
+                          activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
+                        >
+                          <span className="flex-1">{t(item.titleKey)}</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              )}
+            </CollapsibleContent>
+          </Collapsible>
         </SidebarGroup>
 
         {/* Collapsible Analysis Section */}
