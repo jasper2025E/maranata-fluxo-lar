@@ -495,7 +495,11 @@ export function AppSidebar() {
                                   activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
                                 >
                                   <span className="flex-1">{t(item.titleKey)}</span>
-                                  {item.premium && <Crown className="h-3.5 w-3.5 text-amber-500" />}
+                                  {item.premium && (
+                                    <span className="flex items-center justify-center bg-amber-500/20 rounded px-1.5 py-0.5">
+                                      <Crown className="h-3 w-3 text-amber-500" />
+                                    </span>
+                                  )}
                                 </NavLink>
                               </SidebarMenuButton>
                             </SidebarMenuItem>
