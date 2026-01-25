@@ -4,12 +4,12 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { LanguageSelector } from "./LanguageSelector";
 import { GracePeriodBanner } from "./GracePeriodBanner";
-import { Bell, Search, Clock, Info, AlertTriangle, CheckCircle2, Check } from "lucide-react";
+import { GlobalSearch } from "./GlobalSearch";
+import { Bell, Clock, Info, AlertTriangle, CheckCircle2, Check } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR, enUS, es, fr, de } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -132,13 +132,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             <div className="flex items-center gap-4">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
               
-              <div className="hidden md:flex relative w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  placeholder={t("common.searchPlaceholder")}
-                  className="pl-10 h-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/20"
-                />
-              </div>
+              <GlobalSearch />
             </div>
 
             <div className="flex items-center gap-2">
