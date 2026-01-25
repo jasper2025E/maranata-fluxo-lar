@@ -13,6 +13,7 @@ import {
   UserCheck,
   Wallet,
   Briefcase,
+  Activity,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate } from "react-router-dom";
@@ -55,6 +56,7 @@ const financeItems = [
   { titleKey: "nav.payments", url: "/pagamentos", icon: CreditCard },
   { titleKey: "nav.expenses", url: "/despesas", icon: Receipt },
   { titleKey: "nav.reports", url: "/relatorios", icon: BarChart3 },
+  { titleKey: "nav.financialHealth", url: "/saude-financeira", icon: Activity, roles: ["admin", "financeiro"] },
   { titleKey: "nav.subscription", url: "/assinatura", icon: CreditCard, roles: ["admin"], excludePlatformAdmin: true },
 ];
 

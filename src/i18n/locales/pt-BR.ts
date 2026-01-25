@@ -103,6 +103,7 @@ const ptBR = {
       system: "Sistema",
       exitSystem: "Sair do Sistema",
       financialSystem: "Sistema Financeiro",
+      financialHealth: "Saúde Financeira",
     },
 
     // Auth
@@ -859,6 +860,22 @@ const ptBR = {
       // Recommendations
       recommendations: "Recomendações Inteligentes",
       recommendationsDescription: "Sugestões baseadas nos seus dados",
+    },
+
+    // Financial Health Page
+    financialHealth: {
+      title: "Saúde Financeira",
+      subtitle: "Análise preditiva e projeções do seu negócio",
+      quickSummary: "Resumo Rápido",
+      keyMetrics: "Métricas principais do período",
+      delinquencyRate: "Taxa de Inadimplência",
+      runway: "Reserva Financeira",
+      tabs: {
+        overview: "Visão Geral",
+        scenarios: "Cenários",
+        alerts: "Alertas",
+        recommendations: "Recomendações",
+      },
     },
   },
 };
