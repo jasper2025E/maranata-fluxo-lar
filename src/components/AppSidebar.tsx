@@ -290,7 +290,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Collapsible Analysis Section */}
-        <SidebarGroup className="px-3 mt-4">
+        <SidebarGroup className="px-3 mt-1">
           <Collapsible open={isAnalysisOpen} onOpenChange={setIsAnalysisOpen}>
             <CollapsibleTrigger asChild>
               <button
