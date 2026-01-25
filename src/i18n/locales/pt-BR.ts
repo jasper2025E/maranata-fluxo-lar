@@ -517,14 +517,50 @@ const ptBR = {
       title: "Despesas",
       subtitle: "Gerencie as despesas da escola",
       addExpense: "Nova Despesa",
+      newExpense: "Nova Despesa",
       editExpense: "Editar Despesa",
+      fillData: "Preencha os dados da despesa",
       expenseTitle: "Título",
+      titlePlaceholder: "Ex: Aluguel, Energia, Material...",
       category: "Categoria",
+      selectCategory: "Selecione a categoria",
+      value: "Valor",
       dueDate: "Data de Vencimento",
       paymentDate: "Data de Pagamento",
+      observations: "Observações",
+      observationsPlaceholder: "Observações adicionais sobre a despesa",
+      status: "Status",
       paid: "Pago",
       unpaid: "Não Pago",
-      recurring: "Recorrente",
+      pending: "Pendente",
+      recurring: "Despesa recorrente",
+      recurringLabel: "recorrente",
+      
+      // Categories
+      fixed: "Fixa",
+      variable: "Variável",
+      oneTime: "Única",
+      
+      // KPIs
+      totalExpenses: "Total de Despesas",
+      expensesCount: "despesa(s)",
+      
+      // List
+      expenseList: "Lista de Despesas",
+      noExpensesFound: "Nenhuma despesa encontrada",
+      noExpensesDescription: "Cadastre a primeira despesa clicando no botão acima.",
+      
+      // Actions
+      markAsPaid: "Marcar como pago",
+      markedAsPaid: "Despesa marcada como paga!",
+      
+      // Messages
+      createSuccess: "Despesa cadastrada com sucesso!",
+      createError: "Erro ao cadastrar despesa",
+      updateSuccess: "Despesa atualizada com sucesso!",
+      updateError: "Erro ao atualizar despesa",
+      deleteSuccess: "Despesa removida com sucesso!",
+      deleteError: "Erro ao remover despesa",
     },
 
     // HR
