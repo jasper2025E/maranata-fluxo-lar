@@ -2750,6 +2750,7 @@ export type Database = {
         Row: {
           browser_notifications: boolean | null
           created_at: string | null
+          custom_colors: Json | null
           email_notifications: boolean | null
           id: string
           language: string | null
@@ -2761,6 +2762,7 @@ export type Database = {
         Insert: {
           browser_notifications?: boolean | null
           created_at?: string | null
+          custom_colors?: Json | null
           email_notifications?: boolean | null
           id?: string
           language?: string | null
@@ -2772,6 +2774,7 @@ export type Database = {
         Update: {
           browser_notifications?: boolean | null
           created_at?: string | null
+          custom_colors?: Json | null
           email_notifications?: boolean | null
           id?: string
           language?: string | null
