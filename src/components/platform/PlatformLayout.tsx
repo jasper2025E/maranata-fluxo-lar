@@ -89,18 +89,20 @@ const navigation: NavSection[] = [
       },
       { 
         icon: Activity, 
-        label: "Analytics", 
-        path: "/platform/analytics"
+        label: "Monitoramento", 
+        path: "/platform/monitoring"
       },
       { 
         icon: BarChart3, 
-        label: "Relatórios", 
-        path: "/platform/logs"
+        label: "Analytics", 
+        path: "/platform/analytics"
       },
       { 
         icon: MoreHorizontal, 
         label: "Mais", 
         subItems: [
+          { label: "Módulos", path: "/platform/modules" },
+          { label: "Logs", path: "/platform/logs" },
           { label: "Configurações", path: "/platform/settings" },
           { label: "Segurança", path: "/platform/security" },
         ]
