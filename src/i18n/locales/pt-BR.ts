@@ -78,13 +78,6 @@ const ptBR = {
       registered: "cadastrado(s)",
     },
 
-    // Financial Layout
-    financial: {
-      operations: "Operações",
-      analysis: "Análise",
-      account: "Conta",
-    },
-
     // Navigation
     nav: {
       home: "Início",

@@ -12,7 +12,7 @@ import {
 } from "@/components/dashboard/projection";
 import { Loader2, TrendingUp, ChevronRight, Activity, Target, AlertCircle, Lightbulb, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FinancialLayout } from "@/components/layouts";
+import DashboardLayout from "@/components/DashboardLayout";
 import { useSearchParams } from "react-router-dom";
 import { PremiumGate } from "@/components/premium";
 
@@ -38,9 +38,37 @@ const SaudeFinanceira = () => {
   };
 
   return (
-    <FinancialLayout>
+    <DashboardLayout>
       <PremiumGate feature="financialHealth">
-        <div className="p-6">
+        <div className="flex min-h-[calc(100vh-4rem)]">
+        {/* Sidebar Navigation */}
+        <aside className="w-56 shrink-0 border-r bg-muted/30 p-4 hidden lg:block">
+          <nav className="space-y-1">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = currentTab === tab.id;
+              
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => handleTabChange(tab.id)}
+                  className={cn(
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  )}
+                >
+                  <Icon className="h-4 w-4" />
+                  {t(tab.labelKey)}
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6 overflow-auto">
           <div className="max-w-6xl mx-auto space-y-6">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-sm">
@@ -49,8 +77,8 @@ const SaudeFinanceira = () => {
               <span className="font-medium text-foreground">{t("financialHealth.title")}</span>
             </nav>
 
-            {/* Tabs for sub-navigation */}
-            <div className="flex gap-2 overflow-x-auto pb-2">
+            {/* Mobile Tabs */}
+            <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = currentTab === tab.id;
@@ -207,9 +235,10 @@ const SaudeFinanceira = () => {
               </motion.div>
             )}
           </div>
-        </div>
+        </main>
+      </div>
       </PremiumGate>
-    </FinancialLayout>
+    </DashboardLayout>
   );
 };
 
