@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { FinancialLayout } from "@/components/financial";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -209,7 +209,7 @@ const Despesas = () => {
   };
 
   return (
-    <FinancialLayout>
+    <DashboardLayout>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
@@ -220,7 +220,9 @@ const Despesas = () => {
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div />
+          <div>
+            
+          </div>
           <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsOpen(open); }}>
             <DialogTrigger asChild>
               <Button size="sm">
@@ -426,20 +428,21 @@ const Despesas = () => {
                           <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                             onClick={() => handleEdit(despesa)}
                           >
                             <Pencil className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                             onClick={() => {
                               if (confirm(t("expenses.confirmDelete"))) {
                                 deleteMutation.mutate(despesa.id);
                               }
                             }}
+                            disabled={deleteMutation.isPending}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -453,7 +456,7 @@ const Despesas = () => {
           </CardContent>
         </Card>
       </div>
-    </FinancialLayout>
+    </DashboardLayout>
   );
 };
 
