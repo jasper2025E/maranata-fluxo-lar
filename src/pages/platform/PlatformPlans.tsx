@@ -87,9 +87,11 @@ export default function PlatformPlans() {
             <div
               key={plan.id}
               className={`
-                bg-background border rounded-lg p-5
+                bg-background border rounded-lg p-5 cursor-pointer
+                transition-all duration-200 ease-out
+                hover:shadow-md hover:-translate-y-0.5
                 ${!plan.active ? "opacity-50" : ""}
-                ${plan.popular ? "border-foreground" : "border-border"}
+                ${plan.popular ? "border-foreground" : "border-border hover:border-foreground/50"}
               `}
             >
               {editingPlan === plan.id ? (
