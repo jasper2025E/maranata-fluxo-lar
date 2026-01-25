@@ -177,25 +177,36 @@ serve(async (req) => {
       console.log("Price criado:", priceId);
     }
 
-    // Create subscription
-    console.log("Criando subscription no Stripe...");
-    const subscriptionResponse = await fetch(
-      "https://api.stripe.com/v1/subscriptions",
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${stripeSecretKey}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          customer: stripeCustomerId!,
-          "items[0][price]": priceId!,
-          payment_behavior: "default_incomplete",
-          "payment_settings[save_default_payment_method]": "on_subscription",
-          "expand[0]": "latest_invoice.payment_intent",
-        }),
-      }
-    );
+  // Prepare trial_end from tenant's next_billing_date
+  let subscriptionParams: Record<string, string> = {
+    customer: stripeCustomerId!,
+    "items[0][price]": priceId!,
+    payment_behavior: "default_incomplete",
+    "payment_settings[save_default_payment_method]": "on_subscription",
+    "expand[0]": "latest_invoice.payment_intent",
+  };
+
+  // Use next_billing_date as trial_end to control first charge date
+  if (tenant.next_billing_date) {
+    const targetDate = new Date(tenant.next_billing_date);
+    const trialEndTimestamp = Math.floor(targetDate.getTime() / 1000);
+    subscriptionParams["trial_end"] = String(trialEndTimestamp);
+    console.log(`Definindo primeira cobrança para: ${tenant.next_billing_date} (${trialEndTimestamp})`);
+  }
+
+  // Create subscription
+  console.log("Criando subscription no Stripe...");
+  const subscriptionResponse = await fetch(
+    "https://api.stripe.com/v1/subscriptions",
+    {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${stripeSecretKey}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams(subscriptionParams),
+    }
+  );
 
     const subscription = await subscriptionResponse.json();
 
