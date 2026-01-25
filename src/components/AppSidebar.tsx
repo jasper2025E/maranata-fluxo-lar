@@ -243,7 +243,9 @@ export function AppSidebar() {
                         "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
                         "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                         "transition-all duration-200 ease-out",
-                        isOperationsActive && "text-sidebar-primary font-medium"
+                        "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1",
+                        "active:scale-[0.98]",
+                        isOperationsActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium"
                       )}
                     >
                       <Wallet className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
@@ -295,7 +297,9 @@ export function AppSidebar() {
                         "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
                         "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                         "transition-all duration-200 ease-out",
-                        isAnalysisActive && "text-sidebar-primary font-medium"
+                        "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1",
+                        "active:scale-[0.98]",
+                        isAnalysisActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium"
                       )}
                     >
                       <BarChart3 className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
