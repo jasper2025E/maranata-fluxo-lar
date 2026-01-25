@@ -35,6 +35,7 @@ import FaturasAssinatura from "./pages/FaturasAssinatura";
 import PagarFatura from "./pages/PagarFatura";
 import SaudeFinanceira from "./pages/SaudeFinanceira";
 import Contabilidade from "./pages/Contabilidade";
+import SiteEscolar from "./pages/SiteEscolar";
 
 // Platform Admin Pages
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
@@ -203,6 +204,14 @@ function AppContent() {
             element={
               <ProtectedRoute requiredRole="admin">
                 <Contabilidade />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/site-escolar"
+            element={
+              <ProtectedRoute requiredRole="admin">
+                <SiteEscolar />
               </ProtectedRoute>
             }
           />
