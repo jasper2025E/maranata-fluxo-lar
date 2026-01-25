@@ -79,7 +79,7 @@ export function SystemTab({ role }: SystemTabProps) {
             </div>
             <div>
               <p className="text-xs text-muted-foreground mb-0.5">Versão</p>
-              <p className="text-sm font-medium text-foreground">1.0.0</p>
+              <p className="text-sm font-medium text-foreground">2.5.0</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground mb-0.5">Uptime</p>
