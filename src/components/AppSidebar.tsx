@@ -54,11 +54,11 @@ import {
 const menuItems = [
   { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
   { titleKey: "nav.financialDashboard", url: "/dashboard/financeiro", icon: Wallet },
-  { titleKey: "nav.school", url: "/escola", icon: Building2, roles: ["admin"] },
   { titleKey: "nav.guardians", url: "/responsaveis", icon: UserCheck },
   { titleKey: "nav.students", url: "/alunos", icon: Users },
   { titleKey: "nav.classes", url: "/turmas", icon: GraduationCap },
   { titleKey: "nav.courses", url: "/cursos", icon: BookOpen },
+  { titleKey: "nav.school", url: "/escola", icon: Building2, roles: ["admin"] },
 ];
 
 // HR Sub-items
