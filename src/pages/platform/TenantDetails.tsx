@@ -247,15 +247,32 @@ export default function TenantDetails() {
       return;
     }
 
-    if (tenant?.stripe_subscription_id) {
-      toast.error("Este tenant já possui uma subscription ativa");
-      return;
-    }
-
     // Validate email is required for Stripe customer creation
     if (!tenant?.email) {
       toast.error("Email é obrigatório para criar assinatura no Stripe");
       return;
+    }
+
+    // If subscription exists, ask for confirmation to recreate
+    if (tenant?.stripe_subscription_id) {
+      const confirmed = window.confirm(
+        "Já existe uma assinatura Stripe. Deseja limpar e criar uma nova?"
+      );
+      if (!confirmed) return;
+
+      // Clear existing subscription data
+      const { error: clearError } = await supabase
+        .from("tenants")
+        .update({
+          stripe_customer_id: null,
+          stripe_subscription_id: null,
+        })
+        .eq("id", id);
+
+      if (clearError) {
+        toast.error("Erro ao limpar assinatura anterior");
+        return;
+      }
     }
 
     setCreatingSubscription(true);
@@ -793,11 +810,11 @@ export default function TenantDetails() {
                             type="button"
                             variant="default"
                             onClick={handleCreateStripeSubscription}
-                            disabled={creatingSubscription || !!tenant.stripe_subscription_id}
+                            disabled={creatingSubscription}
                             className="gap-2"
                           >
                             <CreditCard className={`h-4 w-4 ${creatingSubscription ? 'animate-pulse' : ''}`} />
-                            {creatingSubscription ? "Criando..." : "Criar Assinatura Stripe"}
+                            {creatingSubscription ? "Criando..." : tenant.stripe_subscription_id ? "Recriar Assinatura Stripe" : "Criar Assinatura Stripe"}
                           </Button>
                         </div>
                         <Button onClick={handleSubmit} disabled={saving}>
