@@ -16,7 +16,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FinancialLayout } from "@/components/financial";
+import DashboardLayout from "@/components/DashboardLayout";
 import { PremiumGate } from "@/components/premium";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FinancialKPICard } from "@/components/dashboard";
@@ -108,9 +108,9 @@ const Contabilidade = () => {
   };
 
   return (
-    <FinancialLayout>
+    <DashboardLayout>
       <PremiumGate feature="accounting">
-        <div className="max-w-5xl mx-auto p-6 space-y-6">
+        <div className="max-w-6xl mx-auto p-6 space-y-6">
           {/* Mobile Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
             {tabs.map((tab) => {
@@ -134,30 +134,6 @@ const Contabilidade = () => {
               );
             })}
           </div>
-
-              {/* Mobile Tabs */}
-              <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
-                {tabs.map((tab) => {
-                  const Icon = tab.icon;
-                  const isActive = currentTab === tab.id;
-                  
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => handleTabChange(tab.id)}
-                      className={cn(
-                        "flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all",
-                        isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground hover:text-foreground"
-                      )}
-                    >
-                      <Icon className="h-4 w-4" />
-                      {t(tab.labelKey)}
-                    </button>
-                  );
-                })}
-              </div>
 
               {/* Loading State */}
               {isLoading && (
@@ -424,7 +400,7 @@ const Contabilidade = () => {
               )}
             </div>
           </PremiumGate>
-        </FinancialLayout>
+        </DashboardLayout>
   );
 };
 

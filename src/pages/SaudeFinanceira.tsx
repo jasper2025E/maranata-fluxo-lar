@@ -12,7 +12,7 @@ import {
 } from "@/components/dashboard/projection";
 import { Loader2, TrendingUp, ChevronRight, Activity, Target, AlertCircle, Lightbulb, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { FinancialLayout } from "@/components/financial";
+import DashboardLayout from "@/components/DashboardLayout";
 import { useSearchParams } from "react-router-dom";
 import { PremiumGate } from "@/components/premium";
 
@@ -38,9 +38,9 @@ const SaudeFinanceira = () => {
   };
 
   return (
-    <FinancialLayout>
+    <DashboardLayout>
       <PremiumGate feature="financialHealth">
-        <div className="max-w-5xl mx-auto p-6 space-y-6">
+        <div className="max-w-6xl mx-auto p-6 space-y-6">
           {/* Mobile Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
             {tabs.map((tab) => {
@@ -224,7 +224,7 @@ const SaudeFinanceira = () => {
             )}
           </div>
         </PremiumGate>
-      </FinancialLayout>
+      </DashboardLayout>
   );
 };
 

@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { FinancialLayout } from "@/components/financial";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Plus, Printer, ChevronRight, FileText, Users, Download } from "lucide-react";
 import {
@@ -253,8 +253,8 @@ const Faturas = () => {
   };
 
   return (
-    <FinancialLayout>
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
+    <DashboardLayout>
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -392,7 +392,7 @@ const Faturas = () => {
           fatura={selectedFatura}
         />
       </div>
-    </FinancialLayout>
+    </DashboardLayout>
   );
 };
 

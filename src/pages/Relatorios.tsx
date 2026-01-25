@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import { FinancialLayout } from "@/components/financial";
+import DashboardLayout from "@/components/DashboardLayout";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -336,8 +336,8 @@ const Relatorios = () => {
   };
 
   return (
-    <FinancialLayout>
-      <div className="max-w-5xl mx-auto p-6 space-y-6">
+    <DashboardLayout>
+      <div className="max-w-6xl mx-auto p-6 space-y-6">
 
         {/* Filters Bar */}
         <div className="bg-card border border-border rounded-lg">
@@ -759,7 +759,7 @@ const Relatorios = () => {
           )}
         </div>
       </div>
-    </FinancialLayout>
+    </DashboardLayout>
   );
 };
 

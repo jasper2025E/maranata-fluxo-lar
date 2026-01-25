@@ -1,2 +1,1 @@
-export { FinancialLayout } from './FinancialLayout';
-export { FinancialSidebar } from './FinancialSidebar';
+export { FinancialLayout } from "./FinancialLayout";
