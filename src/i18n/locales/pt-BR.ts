@@ -107,6 +107,16 @@ const ptBR = {
       accounting: "Contabilidade",
     },
 
+    // Financial Module
+    financial: {
+      title: "Financeiro",
+      subtitle: "Gestão financeira",
+      sections: {
+        operations: "Operações",
+        analysis: "Análise",
+      },
+    },
+
     // Auth
     auth: {
       login: "Entrar",
