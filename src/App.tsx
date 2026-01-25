@@ -177,13 +177,14 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          {/* Redirect old subscription route to escola */}
           <Route
             path="/assinatura"
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <MinhaAssinatura />
-              </ProtectedRoute>
-            }
+            element={<Navigate to="/escola?tab=assinatura" replace />}
+          />
+          <Route
+            path="/assinatura/faturas"
+            element={<Navigate to="/escola/faturas" replace />}
           />
           <Route
             path="/saude-financeira"
@@ -201,8 +202,9 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          {/* Escola Faturas */}
           <Route
-            path="/assinatura/faturas"
+            path="/escola/faturas"
             element={
               <ProtectedRoute requiredRole="admin">
                 <FaturasAssinatura />

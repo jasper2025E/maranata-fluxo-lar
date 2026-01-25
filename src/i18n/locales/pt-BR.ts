@@ -115,6 +115,10 @@ const ptBR = {
         integrations: "Integrações",
         system: "Sistema",
       },
+      escola: {
+        dados: "Dados da Escola",
+        assinatura: "Assinatura",
+      },
       exitSystem: "Sair do Sistema",
       financialSystem: "Sistema Financeiro",
       financialHealth: "Saúde Financeira",
