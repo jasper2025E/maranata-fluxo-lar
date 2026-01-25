@@ -200,6 +200,7 @@ const ptBR = {
       activeStudents: "Alunos Ativos",
       lockedStudents: "Alunos Trancados",
       cancelledStudents: "Cancelados/Transferidos",
+      canceledStudents: "Cancelados/Transferidos",
       noStudentsRegistered: "Nenhum aluno cadastrado",
       noStudentsFound: "Nenhum aluno encontrado",
       noStudentsDescription: "Cadastre o primeiro aluno clicando no botão acima.",
