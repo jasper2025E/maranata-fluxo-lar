@@ -26,13 +26,6 @@ interface UserPreferences {
   theme: string;
 }
 
-interface NavItem {
-  id: string;
-  label: string;
-  adminOnly?: boolean;
-  platformAdminOnly?: boolean;
-}
-
 const Configuracoes = () => {
   const { user, role, isPlatformAdmin } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -51,22 +44,6 @@ const Configuracoes = () => {
     theme: "light",
   });
 
-  const navItems: NavItem[] = [
-    { id: "perfil", label: "Perfil" },
-    { id: "seguranca", label: "Segurança" },
-    { id: "preferencias", label: "Preferências" },
-    { id: "cobranca", label: "Cobrança", adminOnly: true },
-    { id: "usuarios", label: "Usuários", adminOnly: true },
-    { id: "gateways", label: "Gateways", adminOnly: true },
-    { id: "integracoes", label: "Integrações", platformAdminOnly: true },
-    { id: "sistema", label: "Sistema", adminOnly: true },
-  ];
-
-  const visibleNavItems = navItems.filter(item => {
-    if (item.platformAdminOnly) return isPlatformAdmin();
-    if (item.adminOnly) return role === "admin";
-    return true;
-  });
 
   useEffect(() => {
     const loadData = async () => {
@@ -180,33 +157,9 @@ const Configuracoes = () => {
           <span className="font-medium text-foreground">Configurações</span>
         </nav>
 
-        {/* Two Column Layout */}
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Sidebar Navigation */}
-          <nav className="md:w-48 shrink-0">
-            <ul className="space-y-0.5">
-              {visibleNavItems.map((item) => (
-                <li key={item.id}>
-                  <button
-                    onClick={() => setSearchParams({ tab: item.id })}
-                    className={cn(
-                      "w-full text-left px-3 py-2 text-sm rounded-md transition-colors",
-                      activeTab === item.id
-                        ? "bg-muted font-medium text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Content Area */}
-          <div className="flex-1 min-w-0">
-            {renderContent()}
-          </div>
+        {/* Content Area */}
+        <div className="flex-1 min-w-0">
+          {renderContent()}
         </div>
       </div>
     </DashboardLayout>
