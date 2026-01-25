@@ -189,6 +189,56 @@ export type Database = {
           },
         ]
       }
+      auditoria_contabil: {
+        Row: {
+          acao: string
+          created_at: string
+          dados_anteriores: Json | null
+          dados_novos: Json | null
+          id: string
+          ip_address: string | null
+          registro_id: string
+          tabela: string
+          tenant_id: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          acao: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          ip_address?: string | null
+          registro_id: string
+          tabela: string
+          tenant_id: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          acao?: string
+          created_at?: string
+          dados_anteriores?: Json | null
+          dados_novos?: Json | null
+          id?: string
+          ip_address?: string | null
+          registro_id?: string
+          tabela?: string
+          tenant_id?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "auditoria_contabil_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       auth_logs: {
         Row: {
           action: string
@@ -221,6 +271,92 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      bens_patrimoniais: {
+        Row: {
+          categoria: string
+          codigo: string
+          created_at: string | null
+          created_by: string
+          data_aquisicao: string
+          data_baixa: string | null
+          depreciacao_acumulada: number | null
+          descricao: string
+          fornecedor: string | null
+          id: string
+          localizacao: string | null
+          motivo_baixa: string | null
+          nota_fiscal: string | null
+          numero_serie: string | null
+          responsavel: string | null
+          status: string
+          taxa_depreciacao_anual: number
+          tenant_id: string
+          updated_at: string | null
+          valor_aquisicao: number
+          valor_contabil_atual: number | null
+          valor_residual: number | null
+          vida_util_meses: number
+        }
+        Insert: {
+          categoria: string
+          codigo: string
+          created_at?: string | null
+          created_by: string
+          data_aquisicao: string
+          data_baixa?: string | null
+          depreciacao_acumulada?: number | null
+          descricao: string
+          fornecedor?: string | null
+          id?: string
+          localizacao?: string | null
+          motivo_baixa?: string | null
+          nota_fiscal?: string | null
+          numero_serie?: string | null
+          responsavel?: string | null
+          status?: string
+          taxa_depreciacao_anual?: number
+          tenant_id: string
+          updated_at?: string | null
+          valor_aquisicao: number
+          valor_contabil_atual?: number | null
+          valor_residual?: number | null
+          vida_util_meses?: number
+        }
+        Update: {
+          categoria?: string
+          codigo?: string
+          created_at?: string | null
+          created_by?: string
+          data_aquisicao?: string
+          data_baixa?: string | null
+          depreciacao_acumulada?: number | null
+          descricao?: string
+          fornecedor?: string | null
+          id?: string
+          localizacao?: string | null
+          motivo_baixa?: string | null
+          nota_fiscal?: string | null
+          numero_serie?: string | null
+          responsavel?: string | null
+          status?: string
+          taxa_depreciacao_anual?: number
+          tenant_id?: string
+          updated_at?: string | null
+          valor_aquisicao?: number
+          valor_contabil_atual?: number | null
+          valor_residual?: number | null
+          vida_util_meses?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bens_patrimoniais_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cargos: {
         Row: {
@@ -266,6 +402,104 @@ export type Database = {
           },
           {
             foreignKeyName: "cargos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categorias_contabeis: {
+        Row: {
+          ativo: boolean
+          categoria_pai_id: string | null
+          codigo: string
+          created_at: string | null
+          id: string
+          natureza: string
+          nivel: number
+          nome: string
+          tenant_id: string | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          categoria_pai_id?: string | null
+          codigo: string
+          created_at?: string | null
+          id?: string
+          natureza: string
+          nivel?: number
+          nome: string
+          tenant_id?: string | null
+          tipo: string
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          categoria_pai_id?: string | null
+          codigo?: string
+          created_at?: string | null
+          id?: string
+          natureza?: string
+          nivel?: number
+          nome?: string
+          tenant_id?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categorias_contabeis_categoria_pai_id_fkey"
+            columns: ["categoria_pai_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_contabeis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "categorias_contabeis_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      centros_custo: {
+        Row: {
+          ativo: boolean
+          codigo: string
+          created_at: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean
+          codigo: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean
+          codigo?: string
+          created_at?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "centros_custo_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -370,6 +604,67 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "cursos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      depreciacao_mensal: {
+        Row: {
+          ano_referencia: number
+          bem_id: string
+          created_at: string | null
+          depreciacao_acumulada: number
+          id: string
+          lancamento_id: string | null
+          mes_referencia: number
+          tenant_id: string
+          valor_contabil: number
+          valor_depreciacao: number
+        }
+        Insert: {
+          ano_referencia: number
+          bem_id: string
+          created_at?: string | null
+          depreciacao_acumulada: number
+          id?: string
+          lancamento_id?: string | null
+          mes_referencia: number
+          tenant_id: string
+          valor_contabil: number
+          valor_depreciacao: number
+        }
+        Update: {
+          ano_referencia?: number
+          bem_id?: string
+          created_at?: string | null
+          depreciacao_acumulada?: number
+          id?: string
+          lancamento_id?: string | null
+          mes_referencia?: number
+          tenant_id?: string
+          valor_contabil?: number
+          valor_depreciacao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depreciacao_mensal_bem_id_fkey"
+            columns: ["bem_id"]
+            isOneToOne: false
+            referencedRelation: "bens_patrimoniais"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depreciacao_mensal_lancamento_id_fkey"
+            columns: ["lancamento_id"]
+            isOneToOne: false
+            referencedRelation: "lancamentos_contabeis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depreciacao_mensal_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1309,6 +1604,65 @@ export type Database = {
           },
         ]
       }
+      impostos_estimados: {
+        Row: {
+          aliquota: number
+          ano_referencia: number
+          base_calculo: number
+          created_at: string | null
+          data_vencimento: string | null
+          id: string
+          mes_referencia: number
+          observacoes: string | null
+          status: string
+          tenant_id: string
+          tipo_imposto: string
+          updated_at: string | null
+          valor_estimado: number
+          valor_pago: number | null
+        }
+        Insert: {
+          aliquota: number
+          ano_referencia: number
+          base_calculo: number
+          created_at?: string | null
+          data_vencimento?: string | null
+          id?: string
+          mes_referencia: number
+          observacoes?: string | null
+          status?: string
+          tenant_id: string
+          tipo_imposto: string
+          updated_at?: string | null
+          valor_estimado: number
+          valor_pago?: number | null
+        }
+        Update: {
+          aliquota?: number
+          ano_referencia?: number
+          base_calculo?: number
+          created_at?: string | null
+          data_vencimento?: string | null
+          id?: string
+          mes_referencia?: number
+          observacoes?: string | null
+          status?: string
+          tenant_id?: string
+          tipo_imposto?: string
+          updated_at?: string | null
+          valor_estimado?: number
+          valor_pago?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "impostos_estimados_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       integration_settings: {
         Row: {
           created_at: string
@@ -1343,6 +1697,128 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "integration_settings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lancamentos_contabeis: {
+        Row: {
+          categoria_id: string
+          centro_custo_id: string | null
+          created_at: string
+          created_by: string
+          data_competencia: string
+          data_lancamento: string
+          despesa_id: string | null
+          documento_referencia: string | null
+          estornado: boolean
+          estornado_em: string | null
+          estornado_por: string | null
+          estorno_de: string | null
+          fatura_id: string | null
+          historico: string
+          id: string
+          natureza: string
+          numero_lancamento: string
+          pagamento_id: string | null
+          tenant_id: string
+          tipo: string
+          valor: number
+        }
+        Insert: {
+          categoria_id: string
+          centro_custo_id?: string | null
+          created_at?: string
+          created_by: string
+          data_competencia: string
+          data_lancamento?: string
+          despesa_id?: string | null
+          documento_referencia?: string | null
+          estornado?: boolean
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_de?: string | null
+          fatura_id?: string | null
+          historico: string
+          id?: string
+          natureza: string
+          numero_lancamento: string
+          pagamento_id?: string | null
+          tenant_id: string
+          tipo: string
+          valor: number
+        }
+        Update: {
+          categoria_id?: string
+          centro_custo_id?: string | null
+          created_at?: string
+          created_by?: string
+          data_competencia?: string
+          data_lancamento?: string
+          despesa_id?: string | null
+          documento_referencia?: string | null
+          estornado?: boolean
+          estornado_em?: string | null
+          estornado_por?: string | null
+          estorno_de?: string | null
+          fatura_id?: string | null
+          historico?: string
+          id?: string
+          natureza?: string
+          numero_lancamento?: string
+          pagamento_id?: string | null
+          tenant_id?: string
+          tipo?: string
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lancamentos_contabeis_categoria_id_fkey"
+            columns: ["categoria_id"]
+            isOneToOne: false
+            referencedRelation: "categorias_contabeis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_contabeis_centro_custo_id_fkey"
+            columns: ["centro_custo_id"]
+            isOneToOne: false
+            referencedRelation: "centros_custo"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_contabeis_despesa_id_fkey"
+            columns: ["despesa_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_contabeis_estorno_de_fkey"
+            columns: ["estorno_de"]
+            isOneToOne: false
+            referencedRelation: "lancamentos_contabeis"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_contabeis_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_contabeis_pagamento_id_fkey"
+            columns: ["pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "pagamentos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lancamentos_contabeis_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"

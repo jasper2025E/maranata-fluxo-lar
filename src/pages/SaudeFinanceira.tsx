@@ -14,6 +14,7 @@ import { Loader2, TrendingUp, ChevronRight, Activity, Target, AlertCircle, Light
 import { cn } from "@/lib/utils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useSearchParams } from "react-router-dom";
+import { PremiumGate } from "@/components/premium";
 
 type TabType = "overview" | "scenarios" | "alerts" | "recommendations";
 
@@ -38,7 +39,8 @@ const SaudeFinanceira = () => {
 
   return (
     <DashboardLayout>
-      <div className="flex min-h-[calc(100vh-4rem)]">
+      <PremiumGate feature="financialHealth">
+        <div className="flex min-h-[calc(100vh-4rem)]">
         {/* Sidebar Navigation */}
         <aside className="w-56 shrink-0 border-r bg-muted/30 p-4 hidden lg:block">
           <nav className="space-y-1">
@@ -235,6 +237,7 @@ const SaudeFinanceira = () => {
           </div>
         </main>
       </div>
+      </PremiumGate>
     </DashboardLayout>
   );
 };
