@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, useRef, useCallback, ReactNode } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { clearQueryCache } from "@/lib/queryClient";
 import type { Database } from "@/integrations/supabase/types";
 
 type AppRole = Database["public"]["Enums"]["app_role"];
@@ -100,6 +101,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         if (!mounted) return;
         
+        // CRITICAL: Se o usuário mudou, limpar cache para evitar vazamento de dados
+        const previousUserId = lastFetchedUserId.current;
+        const newUserId = session?.user?.id;
+        
+        if (previousUserId && newUserId && previousUserId !== newUserId) {
+          console.log("[Auth] Usuário mudou, limpando cache de dados");
+          clearQueryCache();
+        }
+        
         setSession(session);
         setUser(session?.user ?? null);
         
@@ -109,6 +119,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             fetchUserRole(session.user.id);
           }
         } else {
+          // Usuário deslogou - limpar cache
+          if (previousUserId) {
+            clearQueryCache();
+          }
           setRole(null);
           lastFetchedUserId.current = null;
           setLoading(false);
@@ -139,6 +153,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // CRITICAL: Limpar cache ANTES de fazer logout para evitar vazamento de dados
+    clearQueryCache();
+    
     lastFetchedUserId.current = null;
     isFetching.current = false;
     await supabase.auth.signOut();
