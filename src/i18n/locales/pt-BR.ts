@@ -769,6 +769,42 @@ const ptBR = {
       quickActions: "Ações Rápidas",
       quickActionsDesc: "Acesse as principais funcionalidades",
     },
+
+    // Subscription
+    subscription: {
+      // Payment Method Card
+      paymentMethod: "Forma de pagamento",
+      paymentMethodDescription: "Escolha como você gostaria de pagar sua assinatura.",
+      creditOrDebitCard: "Cartão de crédito ou débito",
+      primary: "Principal",
+      noCardRegistered: "Nenhum cartão cadastrado",
+      addCard: "Adicionar Cartão",
+      replaceCard: "Substituir cartão",
+      addCreditCard: "Adicionar cartão de crédito",
+      enterNewCardData: "Insira os dados do novo cartão.",
+      addCardDescription: "Adicione um cartão para habilitar a cobrança automática mensal.",
+      saveCard: "Salvar Cartão",
+      saving: "Salvando...",
+      preparing: "Preparando...",
+      expires: "Expira em",
+      
+      // Auto-billing
+      autoBillingActive: "Cobrança automática ativa",
+      autoBillingDescription: "Sua assinatura será renovada automaticamente no dia do vencimento usando este cartão.",
+      
+      // Security
+      securityNotice: "Seus dados são criptografados e processados de forma segura pelo Stripe.",
+      
+      // Success/Error messages
+      cardSavedSuccess: "Cartão salvo com sucesso! A cobrança automática foi ativada.",
+      cardElementNotFound: "Elemento de cartão não encontrado",
+      cardConfirmError: "Não foi possível confirmar o cartão",
+      saveCardError: "Erro ao salvar cartão",
+      processCardError: "Erro ao processar cartão",
+      setupError: "Não foi possível iniciar configuração de pagamento",
+      stripeNotConfigured: "Stripe não está configurado",
+      initError: "Erro ao iniciar",
+    },
   },
 };
 
