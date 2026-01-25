@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   Building2, 
   Plus, 
@@ -208,130 +207,100 @@ export default function TenantsList() {
     <PlatformLayout>
       <div className="space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between"
-        >
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-white">Escolas</h1>
-            <p className="text-slate-400">
+            <h1 className="text-2xl font-semibold text-foreground">Escolas</h1>
+            <p className="text-sm text-muted-foreground">
               Gerencie todas as escolas cadastradas na plataforma
             </p>
           </div>
-          <Button 
-            onClick={() => navigate("/platform/tenants/new")}
-            className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
-          >
+          <Button onClick={() => navigate("/platform/tenants/new")}>
             <Plus className="h-4 w-4 mr-2" />
             Nova Escola
           </Button>
-        </motion.div>
+        </div>
 
         {/* Search */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Buscar por nome, CNPJ ou email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 bg-slate-800/50 border-slate-700 text-white placeholder:text-slate-500"
-            />
-          </div>
-        </motion.div>
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nome, CNPJ ou email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
 
         {/* List */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardHeader>
-              <CardTitle className="text-white">Lista de Escolas</CardTitle>
-              <CardDescription className="text-slate-400">
-                {filteredTenants.length} escola(s) encontrada(s)
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="text-center py-8 text-slate-400">
-                  Carregando...
-                </div>
-              ) : filteredTenants.length === 0 ? (
-                <div className="text-center py-8 text-slate-400">
-                  <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Nenhuma escola encontrada</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {filteredTenants.map((tenant, index) => (
-                    <motion.div
-                      key={tenant.id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      className="flex items-center justify-between p-4 rounded-lg border border-slate-700 bg-slate-900/50 hover:bg-slate-800/50 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="h-12 w-12 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                          <Building2 className="h-6 w-6 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-white">{tenant.nome}</p>
-                          <p className="text-sm text-slate-400">
-                            {tenant.cnpj || "CNPJ não informado"} • {tenant.email || "Email não informado"}
-                          </p>
-                        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Lista de Escolas</CardTitle>
+            <CardDescription>
+              {filteredTenants.length} escola(s) encontrada(s)
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+              <div className="text-center py-8 text-muted-foreground">
+                Carregando...
+              </div>
+            ) : filteredTenants.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Nenhuma escola encontrada</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {filteredTenants.map((tenant) => (
+                  <div
+                    key={tenant.id}
+                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-4">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <Building2 className="h-5 w-5 text-primary" />
                       </div>
-                      <div className="flex items-center gap-4">
-                        <Badge variant="outline" className="border-slate-600 text-slate-300">
-                          {tenant.plano}
-                        </Badge>
-                        {getStatusBadge(tenant.status)}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white">
-                              <MoreVertical className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="bg-slate-800 border-slate-700">
-                            <DropdownMenuItem 
-                              className="text-slate-300 hover:text-white focus:text-white"
-                              onClick={() => navigate(`/platform/tenants/${tenant.id}`)}
-                            >
-                              <Eye className="h-4 w-4 mr-2" />
-                              Visualizar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-slate-300 hover:text-white focus:text-white"
-                              onClick={() => navigate(`/platform/tenants/${tenant.id}/edit`)}
-                            >
-                              <Edit className="h-4 w-4 mr-2" />
-                              Editar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem 
-                              className="text-red-400 hover:text-red-300 focus:text-red-300"
-                              onClick={() => openDeleteDialog(tenant)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Excluir
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                      <div>
+                        <p className="font-medium text-foreground">{tenant.nome}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {tenant.cnpj || "CNPJ não informado"} • {tenant.email || "Email não informado"}
+                        </p>
                       </div>
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Badge variant="outline">{tenant.plano}</Badge>
+                      {getStatusBadge(tenant.status)}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => navigate(`/platform/tenants/${tenant.id}`)}>
+                            <Eye className="h-4 w-4 mr-2" />
+                            Visualizar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/platform/tenants/${tenant.id}/edit`)}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Editar
+                          </DropdownMenuItem>
+                          <DropdownMenuItem 
+                            className="text-destructive"
+                            onClick={() => openDeleteDialog(tenant)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       {/* Delete Dialog */}
@@ -341,68 +310,68 @@ export default function TenantsList() {
           setDeleteConfirmed(false);
         }
       }}>
-        <AlertDialogContent className="bg-slate-800 border-slate-700 max-w-lg">
+        <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-red-500" />
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
               Confirmar exclusão
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
-              <div className="text-slate-400 space-y-4">
+              <div className="space-y-4">
                 <p>
-                  Você está prestes a excluir permanentemente a escola <strong className="text-white">"{selectedTenant?.nome}"</strong>.
+                  Você está prestes a excluir permanentemente a escola <strong className="text-foreground">"{selectedTenant?.nome}"</strong>.
                 </p>
                 
                 {dataCounts.loading ? (
                   <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-amber-500"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary"></div>
                     <span className="ml-2 text-sm">Verificando dados...</span>
                   </div>
                 ) : (
-                  <div className="bg-red-950/30 border border-red-800/50 rounded-lg p-4 space-y-3">
-                    <p className="text-red-400 font-medium text-sm">
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 space-y-3">
+                    <p className="text-destructive font-medium text-sm">
                       Os seguintes dados serão excluídos permanentemente:
                     </p>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       {dataCounts.alunos > 0 && (
                         <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span className="h-2 w-2 rounded-full bg-destructive"></span>
                           <span>{dataCounts.alunos} aluno(s)</span>
                         </div>
                       )}
                       {dataCounts.faturas > 0 && (
                         <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span className="h-2 w-2 rounded-full bg-destructive"></span>
                           <span>{dataCounts.faturas} fatura(s)</span>
                         </div>
                       )}
                       {dataCounts.responsaveis > 0 && (
                         <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span className="h-2 w-2 rounded-full bg-destructive"></span>
                           <span>{dataCounts.responsaveis} responsável(eis)</span>
                         </div>
                       )}
                       {dataCounts.cursos > 0 && (
                         <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span className="h-2 w-2 rounded-full bg-destructive"></span>
                           <span>{dataCounts.cursos} curso(s)</span>
                         </div>
                       )}
                       {dataCounts.funcionarios > 0 && (
                         <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span className="h-2 w-2 rounded-full bg-destructive"></span>
                           <span>{dataCounts.funcionarios} funcionário(s)</span>
                         </div>
                       )}
                       {dataCounts.usuarios > 0 && (
                         <div className="flex items-center gap-2">
-                          <span className="h-2 w-2 rounded-full bg-red-500"></span>
+                          <span className="h-2 w-2 rounded-full bg-destructive"></span>
                           <span>{dataCounts.usuarios} usuário(s)</span>
                         </div>
                       )}
                       {dataCounts.alunos === 0 && dataCounts.faturas === 0 && dataCounts.responsaveis === 0 && 
                        dataCounts.cursos === 0 && dataCounts.funcionarios === 0 && dataCounts.usuarios === 0 && (
-                        <div className="col-span-2 text-slate-500 italic">
+                        <div className="col-span-2 text-muted-foreground italic">
                           Nenhum dado adicional encontrado
                         </div>
                       )}
@@ -416,9 +385,9 @@ export default function TenantsList() {
                       type="checkbox"
                       checked={deleteConfirmed}
                       onChange={(e) => setDeleteConfirmed(e.target.checked)}
-                      className="h-4 w-4 rounded border-slate-600 bg-slate-700 text-red-600 focus:ring-red-500 focus:ring-offset-slate-800"
+                      className="h-4 w-4 rounded border-input"
                     />
-                    <span className="text-sm text-slate-300 group-hover:text-white transition-colors">
+                    <span className="text-sm text-muted-foreground group-hover:text-foreground transition-colors">
                       Entendo que esta ação é irreversível e desejo prosseguir
                     </span>
                   </label>
@@ -426,14 +395,12 @@ export default function TenantsList() {
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="gap-2 sm:gap-0">
-            <AlertDialogCancel className="bg-slate-700 border-slate-600 text-white hover:bg-slate-600">
-              Cancelar
-            </AlertDialogCancel>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
               disabled={!deleteConfirmed || dataCounts.loading}
-              className="bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-destructive hover:bg-destructive/90"
             >
               <Trash2 className="h-4 w-4 mr-2" />
               Excluir Permanentemente
