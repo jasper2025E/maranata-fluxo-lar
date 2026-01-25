@@ -280,8 +280,84 @@ serve(async (req) => {
       result.actions.push({ type: "success", message: "Cobrança retomada no Stripe" });
     }
 
-    // Fetch updated subscription status and sync back to DB
+    // Sync billing configuration TO Stripe (push local data to Stripe)
     if (action !== "cancel") {
+      // If local billing_day is set, update Stripe subscription billing cycle
+      if (tenant.billing_day && tenant.next_billing_date) {
+        console.log(`Atualizando ciclo de cobrança no Stripe para dia ${tenant.billing_day}...`);
+        
+        // Calculate the next billing anchor based on local billing_day
+        const today = new Date();
+        let nextAnchor = new Date(today.getFullYear(), today.getMonth(), tenant.billing_day);
+        
+        // If the billing day has passed this month, move to next month
+        if (nextAnchor <= today) {
+          nextAnchor.setMonth(nextAnchor.getMonth() + 1);
+        }
+        
+        const anchorTimestamp = Math.floor(nextAnchor.getTime() / 1000);
+        
+        // Update subscription with new billing cycle anchor
+        const updateBillingResponse = await fetch(
+          `https://api.stripe.com/v1/subscriptions/${tenant.stripe_subscription_id}`,
+          {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${stripeSecretKey}`,
+              "Content-Type": "application/x-www-form-urlencoded",
+            },
+            body: new URLSearchParams({
+              "billing_cycle_anchor": String(anchorTimestamp),
+              "proration_behavior": "none", // Don't charge prorated amounts
+            }),
+          }
+        );
+
+        const updateBillingResult = await updateBillingResponse.json();
+        
+        if (updateBillingResult.error) {
+          // If billing_cycle_anchor update fails (common for active subscriptions),
+          // try updating the subscription schedule instead
+          console.log("Não foi possível atualizar anchor diretamente, tentando trial_end...");
+          
+          // Alternative: Use trial_end to shift the billing date
+          const trialEndResponse = await fetch(
+            `https://api.stripe.com/v1/subscriptions/${tenant.stripe_subscription_id}`,
+            {
+              method: "POST",
+              headers: {
+                "Authorization": `Bearer ${stripeSecretKey}`,
+                "Content-Type": "application/x-www-form-urlencoded",
+              },
+              body: new URLSearchParams({
+                "trial_end": String(anchorTimestamp),
+                "proration_behavior": "none",
+              }),
+            }
+          );
+          
+          const trialEndResult = await trialEndResponse.json();
+          
+          if (trialEndResult.error) {
+            result.actions.push({ 
+              type: "warning", 
+              message: `Não foi possível alterar data de cobrança: ${trialEndResult.error.message}. Considere cancelar e recriar a subscription.` 
+            });
+          } else {
+            result.actions.push({ 
+              type: "success", 
+              message: `Próxima cobrança ajustada para ${nextAnchor.toISOString().split("T")[0]}` 
+            });
+          }
+        } else {
+          result.actions.push({ 
+            type: "success", 
+            message: `Ciclo de cobrança atualizado no Stripe para dia ${tenant.billing_day}` 
+          });
+        }
+      }
+
+      // Fetch updated subscription status from Stripe
       const updatedSubResponse = await fetch(
         `https://api.stripe.com/v1/subscriptions/${tenant.stripe_subscription_id}`,
         {
@@ -301,42 +377,36 @@ serve(async (req) => {
         else if (updatedSub.status === "canceled") mappedStatus = "canceled";
         else if (updatedSub.status === "trialing") mappedStatus = "trialing";
 
-        // Calculate next billing date and billing day from Stripe
-        const nextBillingDate = updatedSub.current_period_end 
+        // Get next billing date FROM Stripe (after our updates)
+        const stripeNextBillingDate = updatedSub.current_period_end 
           ? new Date(updatedSub.current_period_end * 1000)
           : null;
-        
-        const billingDay = nextBillingDate ? nextBillingDate.getDate() : tenant.billing_day;
-
-        // Get subscription start date for reference
-        const subscriptionStartedAt = updatedSub.start_date
-          ? new Date(updatedSub.start_date * 1000).toISOString()
-          : tenant.subscription_started_at;
 
         // Get current price from Stripe
         const monthlyPrice = updatedSub.items?.data?.[0]?.price?.unit_amount
           ? updatedSub.items.data[0].price.unit_amount / 100
           : tenant.monthly_price;
 
+        // Update local DB with Stripe's confirmed dates
         await supabase
           .from("tenants")
           .update({
             subscription_status: mappedStatus,
-            next_billing_date: nextBillingDate ? nextBillingDate.toISOString().split("T")[0] : null,
-            billing_day: billingDay,
-            subscription_started_at: subscriptionStartedAt,
+            next_billing_date: stripeNextBillingDate ? stripeNextBillingDate.toISOString().split("T")[0] : tenant.next_billing_date,
+            billing_day: stripeNextBillingDate ? stripeNextBillingDate.getDate() : tenant.billing_day,
             monthly_price: monthlyPrice,
             auto_billing_enabled: updatedSub.status === "active" || updatedSub.status === "trialing",
           })
           .eq("id", tenantId);
 
         result.stripeStatus = updatedSub.status;
-        result.nextBillingDate = nextBillingDate ? nextBillingDate.toISOString().split("T")[0] : null;
-        result.billingDay = billingDay;
+        result.nextBillingDate = stripeNextBillingDate ? stripeNextBillingDate.toISOString().split("T")[0] : null;
+        result.billingDay = stripeNextBillingDate ? stripeNextBillingDate.getDate() : tenant.billing_day;
         result.monthlyPrice = monthlyPrice;
+        
         result.actions.push({ 
-          type: "success", 
-          message: `Dados sincronizados: próxima cobrança ${nextBillingDate ? nextBillingDate.toISOString().split("T")[0] : 'N/A'}, dia ${billingDay}` 
+          type: "info", 
+          message: `Status Stripe: ${updatedSub.status}, Próxima cobrança: ${result.nextBillingDate || 'N/A'}` 
         });
       }
     }
