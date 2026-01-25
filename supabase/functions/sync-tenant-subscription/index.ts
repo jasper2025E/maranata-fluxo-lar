@@ -281,7 +281,7 @@ serve(async (req) => {
     }
 
     // Sync billing configuration TO Stripe (push local data to Stripe)
-    if (action !== "cancel") {
+    if (action !== "cancel" && stripeSubscription.status !== "incomplete") {
       // If local billing_day is set, update Stripe subscription billing cycle
       if (tenant.billing_day && tenant.next_billing_date) {
         console.log(`Atualizando ciclo de cobrança no Stripe para dia ${tenant.billing_day}...`);
@@ -356,7 +356,15 @@ serve(async (req) => {
           });
         }
       }
+    } else if (stripeSubscription.status === "incomplete") {
+      result.actions.push({ 
+        type: "warning", 
+        message: "Assinatura está incompleta no Stripe. Complete o pagamento inicial antes de alterar o ciclo de cobrança." 
+      });
+    }
 
+    // Always fetch current status from Stripe
+    if (action !== "cancel") {
       // Fetch updated subscription status from Stripe
       const updatedSubResponse = await fetch(
         `https://api.stripe.com/v1/subscriptions/${tenant.stripe_subscription_id}`,
