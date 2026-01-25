@@ -8,7 +8,6 @@ import {
   Loader2,
   X,
   Shield,
-  Sparkles,
   RefreshCw,
   Trash2,
 } from "lucide-react";
@@ -21,7 +20,6 @@ import {
 } from "@stripe/react-stripe-js";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -149,172 +147,110 @@ function CardForm({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ duration: 0.2 }}
-      className="space-y-6"
-    >
-      {/* Header */}
-      <div className="flex items-start justify-between">
-        <div className="flex items-center gap-3">
-          <motion.div 
-            initial={{ rotate: -10 }}
-            animate={{ rotate: 0 }}
-            className="h-12 w-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center"
-          >
-            <CreditCard className="h-6 w-6 text-primary" />
-          </motion.div>
-          <div>
-            <h2 className="text-lg font-semibold text-foreground">
-              {isReplacing ? t("subscription.replaceCard") : t("subscription.addCreditCard")}
-            </h2>
-            <p className="text-sm text-muted-foreground">
-              {isReplacing 
-                ? t("subscription.enterNewCardData")
-                : t("subscription.addCardDescription")}
-            </p>
-          </div>
+    <div className="space-y-5">
+      {/* Header - Clean Professional */}
+      <div className="flex items-start justify-between pb-4 border-b border-border">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">
+            {isReplacing ? t("subscription.replaceCard") : t("subscription.addCreditCard")}
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {isReplacing 
+              ? t("subscription.enterNewCardData")
+              : t("subscription.addCardDescription")}
+          </p>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.1 }}
-          whileTap={{ scale: 0.95 }}
+        <button
+          type="button"
           onClick={onCancel}
-          className="h-9 w-9 rounded-xl flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 rounded-md flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
         >
           <X className="h-4 w-4" />
-        </motion.button>
+        </button>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Card Input - Premium Style */}
-        <div className="relative">
-          <motion.div 
-            animate={{ 
-              boxShadow: focused 
-                ? "0 0 0 3px hsl(var(--primary) / 0.1)" 
-                : "0 0 0 0px transparent"
-            }}
+      <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Card Input - Stripe-like Clean Style */}
+        <div className="space-y-2">
+          <label className="text-sm font-medium text-foreground">
+            Dados do cartão
+          </label>
+          <div 
             className={cn(
-              "flex items-center gap-4 p-4 rounded-2xl border-2 transition-all bg-muted/20",
+              "relative p-3 rounded-md border transition-all bg-background",
               error 
-                ? "border-destructive/50 bg-destructive/5" 
-                : cardComplete 
-                  ? "border-primary/50 bg-primary/5" 
-                  : "border-border hover:border-muted-foreground/30"
+                ? "border-destructive" 
+                : focused 
+                  ? "border-foreground ring-1 ring-foreground" 
+                  : "border-input hover:border-muted-foreground/50"
             )}
           >
-            {/* Card Icon */}
-            <div className="h-12 w-16 rounded-xl bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 flex items-center justify-center shadow-inner relative overflow-hidden">
-              <div className="absolute inset-0 bg-[linear-gradient(135deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)]" />
-              <CreditCard className="h-6 w-6 text-slate-500 dark:text-slate-400" />
-            </div>
-            
-            <div className="flex-1">
-              <CardElement
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                onChange={(e) => setCardComplete(e.complete)}
-                options={{
-                  style: {
-                    base: {
-                      fontSize: "16px",
-                      fontFamily: "system-ui, -apple-system, sans-serif",
-                      fontWeight: "500",
-                      color: "hsl(var(--foreground))",
-                      "::placeholder": {
-                        color: "hsl(var(--muted-foreground))",
-                      },
-                    },
-                    invalid: {
-                      color: "hsl(var(--destructive))",
+            <CardElement
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              onChange={(e) => setCardComplete(e.complete)}
+              options={{
+                style: {
+                  base: {
+                    fontSize: "14px",
+                    fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                    fontWeight: "400",
+                    color: "#1a1a1a",
+                    "::placeholder": {
+                      color: "#6b7280",
                     },
                   },
-                  hidePostalCode: true,
-                }}
-              />
-            </div>
-
-            {/* Status indicator */}
-            <AnimatePresence mode="wait">
-              {cardComplete && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0 }}
-                  className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center"
-                >
-                  <Check className="h-4 w-4 text-primary" />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                  invalid: {
+                    color: "#dc2626",
+                  },
+                },
+                hidePostalCode: true,
+              }}
+            />
+          </div>
         </div>
 
-        <AnimatePresence>
-          {error && (
-            <motion.div
-              initial={{ opacity: 0, height: 0, y: -10 }}
-              animate={{ opacity: 1, height: "auto", y: 0 }}
-              exit={{ opacity: 0, height: 0, y: -10 }}
-            >
-              <Alert variant="destructive" className="py-3 rounded-xl">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertDescription className="text-sm">{error}</AlertDescription>
-              </Alert>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {/* Error Message */}
+        {error && (
+          <div className="flex items-center gap-2 p-3 rounded-md bg-destructive/10 border border-destructive/20">
+            <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
+            <p className="text-sm text-destructive">{error}</p>
+          </div>
+        )}
 
-        {/* Submit Button - Premium Dark Style */}
-        <div className="flex gap-3">
-          <motion.div className="flex-1" whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-            <Button
-              type="submit"
-              disabled={!stripe || processing || !cardComplete}
-              className={cn(
-                "w-full h-12 text-sm font-semibold rounded-xl transition-all",
-                "bg-foreground text-background hover:bg-foreground/90",
-                "disabled:bg-muted disabled:text-muted-foreground",
-                "shadow-lg shadow-foreground/10"
-              )}
-            >
-              {processing ? (
-                <span className="flex items-center gap-2">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("subscription.saving")}
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Sparkles className="h-4 w-4" />
-                  {t("subscription.saveCard")}
-                </span>
-              )}
-            </Button>
-          </motion.div>
+        {/* Actions - Clean Layout */}
+        <div className="flex gap-3 pt-2">
+          <Button
+            type="submit"
+            disabled={!stripe || processing || !cardComplete}
+            className="flex-1 h-10 bg-foreground text-background hover:bg-foreground/90 font-medium"
+          >
+            {processing ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                {t("subscription.saving")}
+              </>
+            ) : (
+              t("subscription.saveCard")
+            )}
+          </Button>
           <Button 
             type="button" 
             variant="outline" 
             onClick={onCancel}
-            className="h-12 w-12 p-0 rounded-xl"
+            className="h-10 px-4"
           >
-            <X className="h-4 w-4" />
+            {t("common.cancel")}
           </Button>
         </div>
 
-        {/* Security Notice - Enhanced */}
-        <motion.div 
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.2 }}
-          className="flex items-center justify-center gap-2 text-xs text-muted-foreground bg-muted/30 rounded-xl py-3 px-4"
-        >
-          <Shield className="h-4 w-4 text-emerald-500" />
+        {/* Security Notice - Subtle */}
+        <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2">
+          <Shield className="h-3.5 w-3.5" />
           <span>{t("subscription.securityNotice")}</span>
-        </motion.div>
+        </div>
       </form>
-    </motion.div>
+    </div>
   );
 }
 
@@ -438,219 +374,137 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
 
   if (loading) {
     return (
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="bg-card rounded-2xl border border-border p-6"
-      >
+      <div className="bg-card rounded-lg border border-border p-5">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-xl bg-muted animate-pulse" />
-          <div className="space-y-2 flex-1">
-            <div className="h-4 w-32 bg-muted animate-pulse rounded" />
-            <div className="h-3 w-48 bg-muted animate-pulse rounded" />
-          </div>
+          <div className="h-5 w-24 bg-muted animate-pulse rounded" />
         </div>
-      </motion.div>
+        <div className="mt-4 space-y-2">
+          <div className="h-4 w-48 bg-muted animate-pulse rounded" />
+          <div className="h-3 w-32 bg-muted animate-pulse rounded" />
+        </div>
+      </div>
     );
   }
 
   return (
     <>
-      {/* Premium Payment Method Card */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-card rounded-2xl border border-border overflow-hidden shadow-sm"
-      >
+      {/* Payment Method Card - Professional Clean Design */}
+      <div className="bg-card rounded-lg border border-border">
         {/* Header */}
-        <div className="p-6 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center">
-              <CreditCard className="h-5 w-5 text-primary" />
-            </div>
-            <div>
-              <h3 className="text-base font-semibold text-foreground">{t("subscription.paymentMethod")}</h3>
-              <p className="text-sm text-muted-foreground">
-                {t("subscription.paymentMethodDescription")}
-              </p>
-            </div>
-          </div>
+        <div className="p-5 border-b border-border">
+          <h3 className="text-sm font-semibold text-foreground">{t("subscription.paymentMethod")}</h3>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            {t("subscription.paymentMethodDescription")}
+          </p>
         </div>
 
-        {/* Payment Options */}
-        <div className="px-6 pb-6">
-          {/* Credit Card Option */}
-          <motion.div 
-            whileHover={{ scale: 1.005 }}
-            className="border border-border rounded-xl overflow-hidden bg-muted/20"
-          >
-            {/* Main Option Row */}
-            <div className="flex items-center gap-4 p-4">
-              <motion.div 
-                animate={{ scale: paymentMethod ? 1 : 0.95 }}
-                className="flex items-center justify-center w-6 h-6"
-              >
+        {/* Content */}
+        <div className="p-5">
+          {paymentMethod ? (
+            /* Card Registered State */
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                {/* Card Brand Badge */}
                 <div className={cn(
-                  "w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all",
-                  paymentMethod ? 'border-primary bg-primary/5' : 'border-muted-foreground/30'
+                  "px-2 py-1 rounded text-[10px] font-bold tracking-wider",
+                  brandConfig?.gradient ? `bg-gradient-to-r ${brandConfig.gradient}` : "bg-muted",
+                  brandConfig?.textColor || "text-foreground"
                 )}>
-                  {paymentMethod && (
-                    <motion.div 
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      className="w-2.5 h-2.5 rounded-full bg-primary" 
-                    />
-                  )}
+                  {brandConfig?.label}
                 </div>
-              </motion.div>
-              <span className="text-sm font-medium text-foreground flex-1">
-                {t("subscription.creditOrDebitCard")}
-              </span>
-              {paymentMethod && (
-                <Badge 
-                  variant="secondary" 
-                  className="text-[10px] px-2.5 py-1 bg-primary/10 text-primary font-semibold"
-                >
+                
+                <div className="flex-1">
+                  <p className="text-sm font-medium text-foreground">
+                    •••• •••• •••• {paymentMethod.card_last_four}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {t("subscription.expires")} {String(paymentMethod.card_exp_month).padStart(2, '0')}/{paymentMethod.card_exp_year}
+                  </p>
+                </div>
+
+                <Badge variant="secondary" className="text-[10px] bg-muted">
                   {t("subscription.primary")}
                 </Badge>
-              )}
-            </div>
-
-            {/* Card Details / Add Card Section */}
-            <AnimatePresence mode="wait">
-              {paymentMethod ? (
-                <motion.div 
-                  key="card-details"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="px-4 py-4 border-t border-border bg-background"
+              </div>
+              
+              {/* Actions */}
+              <div className="flex items-center gap-4 pt-2 border-t border-border">
+                <button 
+                  onClick={handleAddCard}
+                  disabled={preparingSetup}
+                  className="text-sm text-primary hover:underline font-medium disabled:opacity-50 flex items-center gap-1.5"
                 >
-                  <div className="flex items-center gap-3 pl-10">
-                    {/* Card Brand Badge */}
-                    <motion.div 
-                      whileHover={{ scale: 1.05 }}
-                      className={cn(
-                        "px-2.5 py-1.5 rounded-lg bg-gradient-to-r text-[10px] font-bold tracking-wider shadow-sm",
-                        brandConfig?.gradient,
-                        brandConfig?.textColor
-                      )}
-                    >
-                      {brandConfig?.label}
-                    </motion.div>
-                    
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-foreground">
-                        •••• •••• •••• {paymentMethod.card_last_four}
-                      </span>
-                      <span className="text-xs text-muted-foreground">
-                        {t("subscription.expires")} {String(paymentMethod.card_exp_month).padStart(2, '0')}/{paymentMethod.card_exp_year}
-                      </span>
-                    </div>
-                  </div>
-                  
-                  <div className="pl-10 mt-3 flex items-center gap-4">
-                    <motion.button 
-                      whileHover={{ x: 2 }}
-                      onClick={handleAddCard}
-                      disabled={preparingSetup}
-                      className="text-sm text-primary hover:text-primary/80 font-medium disabled:opacity-50 flex items-center gap-1.5 transition-colors"
-                    >
-                      {preparingSetup ? (
-                        <>
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          {t("subscription.preparing")}
-                        </>
-                      ) : (
-                        <>
-                          <RefreshCw className="h-3.5 w-3.5" />
-                          {t("subscription.replaceCard")}
-                        </>
-                      )}
-                    </motion.button>
-                    <motion.button 
-                      whileHover={{ x: 2 }}
-                      onClick={() => setShowDeleteConfirm(true)}
-                      className="text-sm text-destructive hover:text-destructive/80 font-medium flex items-center gap-1.5 transition-colors"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                      {t("subscription.deleteCard")}
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ) : (
-                <motion.div 
-                  key="add-card"
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="px-4 py-4 border-t border-border bg-background"
+                  {preparingSetup ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      {t("subscription.preparing")}
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      {t("subscription.replaceCard")}
+                    </>
+                  )}
+                </button>
+                <button 
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="text-sm text-destructive hover:underline font-medium flex items-center gap-1.5"
                 >
-                  <div className="flex items-center justify-between pl-10">
-                    <div className="flex items-center gap-2.5">
-                      <div className="h-8 w-12 rounded-lg bg-muted flex items-center justify-center">
-                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                      </div>
-                      <span className="text-sm text-muted-foreground">
-                        {t("subscription.noCardRegistered")}
-                      </span>
-                    </div>
-                    <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                      <Button 
-                        onClick={handleAddCard}
-                        disabled={preparingSetup}
-                        size="sm"
-                        className="bg-foreground text-background hover:bg-foreground/90 rounded-xl h-9 px-4 font-medium shadow-sm"
-                      >
-                        {preparingSetup ? (
-                          <>
-                            <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                            {t("subscription.preparing")}
-                          </>
-                        ) : (
-                          <>
-                            <Plus className="h-3.5 w-3.5 mr-1.5" />
-                            {t("subscription.addCard")}
-                          </>
-                        )}
-                      </Button>
-                    </motion.div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+                  <Trash2 className="h-3.5 w-3.5" />
+                  {t("subscription.deleteCard")}
+                </button>
+              </div>
 
-          {/* Success Message - Enhanced */}
-          <AnimatePresence>
-            {paymentMethod && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ delay: 0.1 }}
-                className="flex items-start gap-3 mt-4 p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 rounded-xl"
-              >
-                <div className="h-8 w-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 flex items-center justify-center flex-shrink-0">
-                  <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
+              {/* Auto-billing notice */}
+              <div className="flex items-center gap-2 p-3 rounded-md bg-muted/50 border border-border">
+                <Check className="h-4 w-4 text-primary flex-shrink-0" />
                 <div>
-                  <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  <p className="text-sm font-medium text-foreground">
                     {t("subscription.autoBillingActive")}
                   </p>
-                  <p className="text-xs text-emerald-600/80 dark:text-emerald-400/80 mt-0.5">
+                  <p className="text-xs text-muted-foreground">
                     {t("subscription.autoBillingDescription")}
                   </p>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              </div>
+            </div>
+          ) : (
+            /* No Card State */
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-14 rounded border border-border bg-muted/50 flex items-center justify-center">
+                  <CreditCard className="h-5 w-5 text-muted-foreground" />
+                </div>
+                <span className="text-sm text-muted-foreground">
+                  {t("subscription.noCardRegistered")}
+                </span>
+              </div>
+              <Button 
+                onClick={handleAddCard}
+                disabled={preparingSetup}
+                size="sm"
+                className="bg-foreground text-background hover:bg-foreground/90 h-9"
+              >
+                {preparingSetup ? (
+                  <>
+                    <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                    {t("subscription.preparing")}
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-3.5 w-3.5 mr-1.5" />
+                    {t("subscription.addCard")}
+                  </>
+                )}
+              </Button>
+            </div>
+          )}
         </div>
-      </motion.div>
+      </div>
 
-      {/* Add Card Dialog - Premium Style */}
+      {/* Add Card Dialog - Clean Professional Style */}
       <Dialog open={showAddCard} onOpenChange={setShowAddCard}>
-        <DialogContent className="sm:max-w-lg p-6 gap-0 rounded-2xl">
+        <DialogContent className="sm:max-w-md p-5 gap-0">
           {setupData && (
             <Elements 
               stripe={setupData.stripePromise} 
