@@ -31,6 +31,7 @@ interface SearchResult {
 export function GlobalSearch() {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [inputValue, setInputValue] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -180,16 +181,43 @@ export function GlobalSearch() {
     return acc;
   }, {} as Record<string, SearchResult[]>);
 
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" && inputValue.trim().length >= 2) {
+      setQuery(inputValue);
+      setOpen(true);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setInputValue(e.target.value);
+  };
+
+  // Sync query when dialog opens with input value
+  useEffect(() => {
+    if (open && inputValue.trim().length >= 2) {
+      setQuery(inputValue);
+    }
+  }, [open, inputValue]);
+
+  // Clear input when dialog closes
+  useEffect(() => {
+    if (!open) {
+      setInputValue("");
+      setQuery("");
+    }
+  }, [open]);
+
   return (
     <>
-      {/* Search Input Trigger */}
+      {/* Search Input */}
       <div className="hidden md:flex relative w-80">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
           placeholder={t("common.searchPlaceholder")}
-          className="pl-10 h-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/20 cursor-pointer"
-          onClick={() => setOpen(true)}
-          readOnly
+          className="pl-10 h-10 bg-muted/50 border-0 focus-visible:ring-1 focus-visible:ring-primary/20"
+          value={inputValue}
+          onChange={handleInputChange}
+          onKeyDown={handleInputKeyDown}
         />
         <kbd className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-muted px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
           <span className="text-xs">⌘</span>K
