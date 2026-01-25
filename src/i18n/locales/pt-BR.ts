@@ -833,6 +833,14 @@ const ptBR = {
       setupError: "Não foi possível iniciar configuração de pagamento",
       stripeNotConfigured: "Stripe não está configurado",
       initError: "Erro ao iniciar",
+      
+      // Delete card
+      deleteCard: "Remover cartão",
+      deleteCardTitle: "Remover cartão de crédito",
+      deleteCardDescription: "Tem certeza que deseja remover este cartão? A cobrança automática será desativada e você precisará adicionar um novo cartão para reativá-la.",
+      deleting: "Removendo...",
+      cardDeletedSuccess: "Cartão removido com sucesso!",
+      cardDeleteError: "Erro ao remover cartão",
     },
 
     // Financial Projection Module
