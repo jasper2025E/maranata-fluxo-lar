@@ -72,6 +72,7 @@ export default function TenantDetails() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [creatingSubscription, setCreatingSubscription] = useState(false);
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [subscriptionHistory, setSubscriptionHistory] = useState<SubscriptionHistory[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -237,6 +238,44 @@ export default function TenantDetails() {
       toast.error(error instanceof Error ? error.message : "Erro ao sincronizar com Stripe");
     } finally {
       setSyncing(false);
+    }
+  };
+
+  const handleCreateStripeSubscription = async () => {
+    if (!id) {
+      toast.error("ID do tenant não encontrado");
+      return;
+    }
+
+    if (tenant?.stripe_subscription_id) {
+      toast.error("Este tenant já possui uma subscription ativa");
+      return;
+    }
+
+    if (!tenant?.stripe_customer_id) {
+      toast.error("Este tenant não possui um Customer ID no Stripe");
+      return;
+    }
+
+    setCreatingSubscription(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("create-tenant-stripe-subscription", {
+        body: { tenantId: id },
+      });
+
+      if (error) throw error;
+
+      if (data?.success) {
+        toast.success(`Subscription criada: ${data.subscription_id}`);
+        await fetchTenantData();
+      } else {
+        throw new Error(data?.error || "Erro desconhecido");
+      }
+    } catch (error) {
+      console.error("Erro ao criar subscription:", error);
+      toast.error(error instanceof Error ? error.message : "Erro ao criar subscription");
+    } finally {
+      setCreatingSubscription(false);
     }
   };
 
@@ -738,16 +777,30 @@ export default function TenantDetails() {
 
                       {/* Ações */}
                       <div className="flex justify-between items-center pt-4 border-t">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={handleSyncStripe}
-                          disabled={syncing}
-                          className="gap-2"
-                        >
-                          <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
-                          {syncing ? "Sincronizando..." : "Sincronizar com Stripe"}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            onClick={handleSyncStripe}
+                            disabled={syncing || !tenant.stripe_subscription_id}
+                            className="gap-2"
+                          >
+                            <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                            {syncing ? "Sincronizando..." : "Sincronizar com Stripe"}
+                          </Button>
+                          {!tenant.stripe_subscription_id && tenant.stripe_customer_id && (
+                            <Button
+                              type="button"
+                              variant="default"
+                              onClick={handleCreateStripeSubscription}
+                              disabled={creatingSubscription}
+                              className="gap-2"
+                            >
+                              <CreditCard className={`h-4 w-4 ${creatingSubscription ? 'animate-pulse' : ''}`} />
+                              {creatingSubscription ? "Criando..." : "Criar Subscription no Stripe"}
+                            </Button>
+                          )}
+                        </div>
                         <Button onClick={handleSubmit} disabled={saving}>
                           <Save className="h-4 w-4 mr-2" />
                           {saving ? "Salvando..." : "Salvar alterações"}
