@@ -108,6 +108,10 @@ const ptBR = {
       financialSystem: "Sistema Financeiro",
       financialHealth: "Saúde Financeira",
       accounting: "Contabilidade",
+      hrEmployees: "Funcionários",
+      hrPositions: "Cargos",
+      hrTimeTracking: "Ponto",
+      hrPayroll: "Folha",
     },
 
     // Auth

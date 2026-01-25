@@ -59,7 +59,14 @@ const menuItems = [
   { titleKey: "nav.students", url: "/alunos", icon: Users },
   { titleKey: "nav.classes", url: "/turmas", icon: GraduationCap },
   { titleKey: "nav.courses", url: "/cursos", icon: BookOpen },
-  { titleKey: "nav.hr", url: "/rh", icon: Briefcase, roles: ["admin", "staff"] },
+];
+
+// HR Sub-items
+const hrItems = [
+  { titleKey: "nav.hrEmployees", url: "/rh?tab=funcionarios", roles: ["admin", "staff"] },
+  { titleKey: "nav.hrPositions", url: "/rh?tab=cargos", roles: ["admin", "staff"] },
+  { titleKey: "nav.hrTimeTracking", url: "/rh?tab=ponto", roles: ["admin", "staff"] },
+  { titleKey: "nav.hrPayroll", url: "/rh?tab=folha", roles: ["admin", "staff"] },
 ];
 
 // Financial Operations
@@ -98,6 +105,10 @@ export function AppSidebar() {
   const analysisRoutes = ["/relatorios", "/saude-financeira", "/contabilidade"];
   const isAnalysisActive = analysisRoutes.some(route => location.pathname.startsWith(route));
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(isAnalysisActive);
+  
+  // Check if HR route is active
+  const isHRActive = location.pathname.startsWith("/rh");
+  const [isHROpen, setIsHROpen] = useState(isHRActive);
 
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
@@ -233,6 +244,69 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5">
               {filterByRole(menuItems).map(renderMenuItem)}
+
+              {/* Collapsible HR */}
+              {(hasRole("admin") || hasRole("staff")) && (
+                <SidebarMenuItem>
+                  <Collapsible open={isHROpen} onOpenChange={setIsHROpen}>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton asChild tooltip={t("nav.hr")}>
+                        <button
+                          type="button"
+                          className={cn(
+                            isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
+                            "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                            "transition-all duration-200 ease-out",
+                            isCollapsed
+                              ? "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20 active:scale-95"
+                              : "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1 active:scale-[0.98]",
+                            isHRActive &&
+                              (isCollapsed
+                                ? "bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
+                                : "bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"),
+                          )}
+                        >
+                          <Briefcase className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0 transition-transform duration-200")} strokeWidth={1.75} />
+                          {!isCollapsed && (
+                            <>
+                              <span className="text-sm flex-1 text-left">{t("nav.hr")}</span>
+                              <ChevronDown
+                                className={cn(
+                                  "h-4 w-4 transition-transform duration-200",
+                                  isHROpen && "rotate-180"
+                                )}
+                              />
+                            </>
+                          )}
+                        </button>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+                      {!isCollapsed && (
+                        <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
+                          {hrItems.map((item) => (
+                            <SidebarMenuItem key={item.titleKey}>
+                              <SidebarMenuButton asChild>
+                                <NavLink
+                                  to={item.url}
+                                  className={cn(
+                                    "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
+                                    "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                                    "transition-all duration-150"
+                                  )}
+                                  activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
+                                >
+                                  <span className="flex-1">{t(item.titleKey)}</span>
+                                </NavLink>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          ))}
+                        </SidebarMenu>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                </SidebarMenuItem>
+              )}
               
               {/* Collapsible Operations */}
               <SidebarMenuItem>
