@@ -155,7 +155,7 @@ export function AppSidebar() {
     }
   };
 
-  const filterByRole = (items: Array<{ titleKey: string; url: string; icon?: any; roles?: string[]; excludePlatformAdmin?: boolean }>) => {
+  const filterByRole = (items: Array<{ titleKey: string; url: string; icon?: any; roles?: string[]; excludePlatformAdmin?: boolean; premium?: boolean }>) => {
     return items.filter((item) => {
       // Exclude items marked as excludePlatformAdmin for platform admins
       if (item.excludePlatformAdmin && isPlatformAdmin()) return false;
@@ -482,7 +482,6 @@ export function AppSidebar() {
                     {!isCollapsed && (
                       <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
                         {filterByRole(analysisItems).map((item) => {
-                          const isPremium = (item as any).premium;
                           return (
                             <SidebarMenuItem key={item.titleKey}>
                               <SidebarMenuButton asChild>
@@ -496,7 +495,7 @@ export function AppSidebar() {
                                   activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
                                 >
                                   <span className="flex-1">{t(item.titleKey)}</span>
-                                  {isPremium && <Crown className="h-3 w-3 text-amber-500" />}
+                                  {item.premium && <Crown className="h-3.5 w-3.5 text-amber-500" />}
                                 </NavLink>
                               </SidebarMenuButton>
                             </SidebarMenuItem>
