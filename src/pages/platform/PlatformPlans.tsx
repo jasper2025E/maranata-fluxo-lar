@@ -9,11 +9,11 @@ import {
   X,
   Check,
   Loader2,
-  Plus,
-  Trash2,
+  Users,
+  GraduationCap,
 } from "lucide-react";
 import PlatformLayout from "@/components/platform/PlatformLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,12 +21,11 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAllSubscriptionPlans, useUpdateSubscriptionPlan, getPlanPriceFormatted, SubscriptionPlan } from "@/hooks/useSubscriptionPlans";
-import { toast } from "sonner";
 
 const iconMap: Record<string, React.ReactNode> = {
-  Zap: <Zap className="h-5 w-5" />,
-  Sparkles: <Sparkles className="h-5 w-5" />,
-  Crown: <Crown className="h-5 w-5" />,
+  Zap: <Zap className="h-6 w-6" />,
+  Sparkles: <Sparkles className="h-6 w-6" />,
+  Crown: <Crown className="h-6 w-6" />,
 };
 
 export default function PlatformPlans() {
@@ -86,19 +85,22 @@ export default function PlatformPlans() {
 
   return (
     <PlatformLayout>
-      <div className="space-y-6">
+      <div className="space-y-8">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col gap-1"
         >
-          <h2 className="text-2xl font-bold tracking-tight text-foreground">
-            Gestão de Planos
-          </h2>
-          <p className="text-muted-foreground mt-1">
-            Configure os planos de assinatura disponíveis para as escolas
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+            Planos de assinatura
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Gerencie os planos disponíveis para as escolas
           </p>
         </motion.div>
 
+        {/* Plans Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {plans.map((plan, index) => (
             <motion.div
@@ -106,112 +108,131 @@ export default function PlatformPlans() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: index * 0.1 }}
+              className="group"
             >
-              <Card className={`relative ${!plan.active ? "opacity-60" : ""}`}>
-                <div className={`h-2 bg-gradient-to-r ${plan.color}`} />
-                
+              <Card 
+                className={`
+                  relative overflow-hidden border-border/60 
+                  transition-all duration-300 hover:shadow-lg hover:border-border
+                  ${!plan.active ? "opacity-50" : ""}
+                  ${plan.popular ? "ring-2 ring-primary/20" : ""}
+                `}
+              >
+                {/* Popular Badge */}
                 {plan.popular && (
-                  <Badge className="absolute top-4 right-4 bg-primary text-primary-foreground">
-                    Popular
-                  </Badge>
+                  <div className="absolute top-0 right-0">
+                    <div className="bg-primary text-primary-foreground text-xs font-medium px-3 py-1 rounded-bl-lg">
+                      Mais popular
+                    </div>
+                  </div>
                 )}
-                
+
+                {/* Inactive Badge */}
                 {!plan.active && (
-                  <Badge className="absolute top-4 right-4 bg-muted text-muted-foreground">
+                  <Badge 
+                    variant="secondary" 
+                    className="absolute top-3 right-3 bg-muted text-muted-foreground"
+                  >
                     Inativo
                   </Badge>
                 )}
 
-                <CardHeader>
-                  <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-lg bg-gradient-to-br ${plan.color} text-primary-foreground`}>
-                      {iconMap[plan.icon] || <Zap className="h-5 w-5" />}
-                    </div>
-                    <div>
-                      <CardTitle className="text-lg">{plan.name}</CardTitle>
-                      <CardDescription>ID: {plan.id}</CardDescription>
-                    </div>
-                  </div>
-                </CardHeader>
-
-                <CardContent className="space-y-4">
+                <CardContent className="p-6">
                   {editingPlan === plan.id ? (
-                    // Edit Mode
+                    /* Edit Mode */
                     <div className="space-y-4">
                       <div className="space-y-2">
-                        <Label>Nome</Label>
+                        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Nome do plano
+                        </Label>
                         <Input
                           value={editForm.name || ""}
                           onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
+                          className="h-9"
                         />
                       </div>
                       
                       <div className="space-y-2">
-                        <Label>Preço (em centavos)</Label>
+                        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Preço (centavos)
+                        </Label>
                         <Input
                           type="number"
                           value={editForm.price || 0}
                           onChange={(e) => setEditForm(prev => ({ ...prev, price: parseInt(e.target.value) }))}
+                          className="h-9"
                         />
                         <p className="text-xs text-muted-foreground">
-                          = {getPlanPriceFormatted(editForm.price || 0)}
+                          Exibido como: {getPlanPriceFormatted(editForm.price || 0)}/mês
                         </p>
                       </div>
 
-                      <div className="space-y-2">
-                        <Label>Limite de alunos</Label>
-                        <Input
-                          type="number"
-                          value={editForm.limite_alunos || ""}
-                          placeholder="Ilimitado"
-                          onChange={(e) => setEditForm(prev => ({ 
-                            ...prev, 
-                            limite_alunos: e.target.value ? parseInt(e.target.value) : null 
-                          }))}
-                        />
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            Limite alunos
+                          </Label>
+                          <Input
+                            type="number"
+                            value={editForm.limite_alunos || ""}
+                            placeholder="∞"
+                            onChange={(e) => setEditForm(prev => ({ 
+                              ...prev, 
+                              limite_alunos: e.target.value ? parseInt(e.target.value) : null 
+                            }))}
+                            className="h-9"
+                          />
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            Limite usuários
+                          </Label>
+                          <Input
+                            type="number"
+                            value={editForm.limite_usuarios || ""}
+                            placeholder="∞"
+                            onChange={(e) => setEditForm(prev => ({ 
+                              ...prev, 
+                              limite_usuarios: e.target.value ? parseInt(e.target.value) : null 
+                            }))}
+                            className="h-9"
+                          />
+                        </div>
                       </div>
 
                       <div className="space-y-2">
-                        <Label>Limite de usuários</Label>
-                        <Input
-                          type="number"
-                          value={editForm.limite_usuarios || ""}
-                          placeholder="Ilimitado"
-                          onChange={(e) => setEditForm(prev => ({ 
-                            ...prev, 
-                            limite_usuarios: e.target.value ? parseInt(e.target.value) : null 
-                          }))}
-                        />
-                      </div>
-
-                      <div className="space-y-2">
-                        <Label>Recursos (um por linha)</Label>
+                        <Label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                          Recursos (um por linha)
+                        </Label>
                         <Textarea
                           rows={5}
                           value={(editForm.features || []).join("\n")}
                           onChange={(e) => handleFeaturesChange(e.target.value)}
+                          className="text-sm resize-none"
                         />
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <Label>Popular</Label>
+                      <div className="flex items-center justify-between py-2">
+                        <Label className="text-sm">Marcar como popular</Label>
                         <Switch
                           checked={editForm.popular || false}
                           onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, popular: checked }))}
                         />
                       </div>
 
-                      <div className="flex items-center justify-between">
-                        <Label>Ativo</Label>
+                      <div className="flex items-center justify-between py-2">
+                        <Label className="text-sm">Plano ativo</Label>
                         <Switch
                           checked={editForm.active !== false}
                           onCheckedChange={(checked) => setEditForm(prev => ({ ...prev, active: checked }))}
                         />
                       </div>
 
-                      <div className="flex gap-2 pt-2">
+                      <div className="flex gap-2 pt-3 border-t">
                         <Button
-                          className="flex-1"
+                          size="sm"
+                          className="flex-1 h-9"
                           onClick={() => handleSave(plan.id)}
                           disabled={updatePlan.isPending}
                         >
@@ -219,55 +240,90 @@ export default function PlatformPlans() {
                             <Loader2 className="h-4 w-4 animate-spin" />
                           ) : (
                             <>
-                              <Save className="h-4 w-4 mr-2" />
+                              <Save className="h-4 w-4 mr-1.5" />
                               Salvar
                             </>
                           )}
                         </Button>
-                        <Button variant="outline" onClick={handleCancel}>
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          onClick={handleCancel}
+                          className="h-9 px-3"
+                        >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                     </div>
                   ) : (
-                    // View Mode
-                    <>
-                      <div className="text-center py-2">
-                        <span className="text-3xl font-bold text-foreground">
-                          {getPlanPriceFormatted(plan.price)}
-                        </span>
-                        <span className="text-muted-foreground">/mês</span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-sm">
-                        <div className="text-muted-foreground">Limite alunos:</div>
-                        <div className="font-medium text-right">
-                          {plan.limite_alunos || "Ilimitado"}
-                        </div>
-                        <div className="text-muted-foreground">Limite usuários:</div>
-                        <div className="font-medium text-right">
-                          {plan.limite_usuarios || "Ilimitado"}
+                    /* View Mode */
+                    <div className="space-y-5">
+                      {/* Plan Header */}
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className={`
+                            p-2.5 rounded-xl bg-gradient-to-br ${plan.color} 
+                            text-white shadow-sm
+                          `}>
+                            {iconMap[plan.icon] || <Zap className="h-6 w-6" />}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-foreground">{plan.name}</h3>
+                            <p className="text-xs text-muted-foreground font-mono">{plan.id}</p>
+                          </div>
                         </div>
                       </div>
 
-                      <ul className="space-y-1">
+                      {/* Price */}
+                      <div className="pt-2">
+                        <div className="flex items-baseline gap-1">
+                          <span className="text-3xl font-bold tracking-tight text-foreground">
+                            {getPlanPriceFormatted(plan.price)}
+                          </span>
+                          <span className="text-sm text-muted-foreground">/mês</span>
+                        </div>
+                      </div>
+
+                      {/* Limits */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
+                          <GraduationCap className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {plan.limite_alunos ? `${plan.limite_alunos} alunos` : "Ilimitado"}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
+                          <Users className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm font-medium">
+                            {plan.limite_usuarios ? `${plan.limite_usuarios} usuários` : "Ilimitado"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Features */}
+                      <div className="space-y-2 pt-2">
                         {plan.features.map((feature, i) => (
-                          <li key={i} className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Check className="h-3 w-3 text-emerald-500 shrink-0" />
-                            {feature}
-                          </li>
+                          <div 
+                            key={i} 
+                            className="flex items-start gap-2.5 text-sm text-muted-foreground"
+                          >
+                            <Check className="h-4 w-4 text-emerald-500 shrink-0 mt-0.5" />
+                            <span>{feature}</span>
+                          </div>
                         ))}
-                      </ul>
+                      </div>
 
+                      {/* Edit Button */}
                       <Button
                         variant="outline"
-                        className="w-full"
+                        size="sm"
+                        className="w-full mt-4 h-9 text-sm font-medium"
                         onClick={() => handleEdit(plan)}
                       >
-                        <Edit2 className="h-4 w-4 mr-2" />
-                        Editar Plano
+                        <Edit2 className="h-3.5 w-3.5 mr-1.5" />
+                        Editar plano
                       </Button>
-                    </>
+                    </div>
                   )}
                 </CardContent>
               </Card>
