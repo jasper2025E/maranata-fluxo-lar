@@ -4,35 +4,102 @@ import { useAuth } from "@/contexts/AuthContext";
 export type PlanTier = "basic" | "pro" | "enterprise";
 export type FeatureAccess = "full" | "partial" | "none";
 
+/**
+ * Mapeamento de funcionalidades por plano:
+ * 
+ * BASIC (Profissional 4 - R$99,99):
+ * - Até 50 alunos, 3 usuários
+ * - Gestão de matrículas
+ * - Gestão de faturas
+ * - Relatórios básicos
+ * - Suporte por email
+ * 
+ * PRO (Profissional - R$170,99):
+ * - Até 200 alunos, 10 usuários
+ * - Tudo do plano Básico
+ * - Integração Asaas/PIX
+ * - Relatórios avançados
+ * - Gestão de RH completa
+ * - Gestão de turmas
+ * - Suporte prioritário
+ * 
+ * ENTERPRISE (R$499,99):
+ * - Alunos ilimitados, usuários ilimitados
+ * - Tudo do plano Profissional
+ * - Contabilidade avançada
+ * - Projeção financeira (Saúde Financeira)
+ * - API personalizada
+ * - Site escolar incluso
+ * - Suporte dedicado 24/7
+ */
+
 interface PremiumFeatureConfig {
-  accounting: FeatureAccess;
-  financialHealth: FeatureAccess;
-  advancedReports: FeatureAccess;
-  apiAccess: FeatureAccess;
-  hrManagement: FeatureAccess;
+  // Módulos Premium Enterprise
+  accounting: FeatureAccess;         // Contabilidade avançada
+  financialHealth: FeatureAccess;    // Projeção/Saúde Financeira
+  apiAccess: FeatureAccess;          // API personalizada
+  schoolWebsite: FeatureAccess;      // Site escolar
+  
+  // Módulos Pro
+  advancedReports: FeatureAccess;    // Relatórios avançados
+  hrManagement: FeatureAccess;       // Gestão de RH completa
+  asaasIntegration: FeatureAccess;   // Integração Asaas/PIX
+  classManagement: FeatureAccess;    // Gestão de turmas
+  
+  // Módulos Básicos (todos têm acesso)
+  basicReports: FeatureAccess;       // Relatórios básicos
+  enrollmentManagement: FeatureAccess; // Gestão de matrículas
+  invoiceManagement: FeatureAccess;  // Gestão de faturas
 }
 
 const planFeatures: Record<PlanTier, PremiumFeatureConfig> = {
   basic: {
+    // Enterprise
     accounting: "none",
     financialHealth: "none",
-    advancedReports: "none",
     apiAccess: "none",
-    hrManagement: "partial",
+    schoolWebsite: "none",
+    // Pro
+    advancedReports: "none",
+    hrManagement: "partial",      // Básico do RH
+    asaasIntegration: "none",
+    classManagement: "partial",   // Visualização apenas
+    // Básico
+    basicReports: "full",
+    enrollmentManagement: "full",
+    invoiceManagement: "full",
   },
   pro: {
-    accounting: "partial",
-    financialHealth: "partial",
-    advancedReports: "full",
+    // Enterprise
+    accounting: "partial",        // Visão básica
+    financialHealth: "partial",   // Indicadores básicos
     apiAccess: "none",
+    schoolWebsite: "none",
+    // Pro
+    advancedReports: "full",
     hrManagement: "full",
+    asaasIntegration: "full",
+    classManagement: "full",
+    // Básico
+    basicReports: "full",
+    enrollmentManagement: "full",
+    invoiceManagement: "full",
   },
   enterprise: {
+    // Enterprise
     accounting: "full",
     financialHealth: "full",
-    advancedReports: "full",
     apiAccess: "full",
+    schoolWebsite: "full",
+    // Pro
+    advancedReports: "full",
     hrManagement: "full",
+    asaasIntegration: "full",
+    classManagement: "full",
+    // Básico
+    basicReports: "full",
+    enrollmentManagement: "full",
+    invoiceManagement: "full",
   },
 };
 
@@ -51,6 +118,7 @@ export function usePremiumFeatures() {
       isPremium: true,
       isEnterprise: true,
       requiresUpgrade: () => false,
+      getPlanLimits: () => ({ students: null, users: null }),
     };
   }
 
@@ -69,6 +137,11 @@ export function usePremiumFeatures() {
     return features[feature] === "none";
   };
 
+  const getPlanLimits = () => ({
+    students: tenant?.limite_alunos ?? null,
+    users: tenant?.limite_usuarios ?? null,
+  });
+
   return {
     isLoading: tenantLoading,
     currentPlan,
@@ -78,12 +151,13 @@ export function usePremiumFeatures() {
     isPremium: currentPlan === "pro" || currentPlan === "enterprise",
     isEnterprise: currentPlan === "enterprise",
     requiresUpgrade,
+    getPlanLimits,
   };
 }
 
 // Hook para verificar acesso a funcionalidade específica
 export function useFeatureAccess(feature: keyof PremiumFeatureConfig) {
-  const { canAccess, getAccessLevel, requiresUpgrade, isLoading, currentPlan } = usePremiumFeatures();
+  const { canAccess, getAccessLevel, requiresUpgrade, isLoading, currentPlan, getPlanLimits } = usePremiumFeatures();
 
   return {
     isLoading,
@@ -93,5 +167,6 @@ export function useFeatureAccess(feature: keyof PremiumFeatureConfig) {
     currentPlan,
     isPartial: getAccessLevel(feature) === "partial",
     isFull: getAccessLevel(feature) === "full",
+    limits: getPlanLimits(),
   };
 }

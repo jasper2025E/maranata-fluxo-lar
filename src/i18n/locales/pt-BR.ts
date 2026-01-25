@@ -984,28 +984,40 @@ const ptBR = {
       
       features: {
         accounting: {
-          title: "Módulo de Contabilidade",
-          description: "Este recurso está disponível apenas nos planos Profissional e Enterprise.",
+          title: "Contabilidade Avançada",
+          description: "Módulo contábil completo com DRE, balanço patrimonial e controle de bens. Disponível apenas no plano Enterprise.",
         },
         financialHealth: {
           title: "Saúde Financeira",
-          description: "Projeções e análises avançadas estão disponíveis nos planos superiores.",
+          description: "Projeções financeiras, análises preditivas e recomendações inteligentes. Disponível apenas no plano Enterprise.",
         },
         advancedReports: {
           title: "Relatórios Avançados",
-          description: "Relatórios detalhados para tomada de decisão.",
+          description: "Relatórios detalhados com análises de inadimplência, aging e comparativos anuais. Disponível a partir do plano Profissional.",
         },
         apiAccess: {
-          title: "Acesso à API",
-          description: "Integração via API disponível apenas no plano Enterprise.",
+          title: "API Personalizada",
+          description: "Integração via API REST para conectar seus sistemas. Disponível apenas no plano Enterprise.",
         },
         hrManagement: {
-          title: "Gestão de RH",
-          description: "Recursos completos de gestão de funcionários.",
+          title: "Gestão de RH Completa",
+          description: "Gestão completa de funcionários, cargos, contratos, folha de pagamento e ponto eletrônico. Disponível a partir do plano Profissional.",
+        },
+        asaasIntegration: {
+          title: "Integração Asaas/PIX",
+          description: "Geração automática de boletos e PIX via Asaas para cobrança de mensalidades. Disponível a partir do plano Profissional.",
+        },
+        classManagement: {
+          title: "Gestão de Turmas",
+          description: "Gestão completa de turmas, enturmação de alunos e controle de professores. Disponível a partir do plano Profissional.",
+        },
+        schoolWebsite: {
+          title: "Site Escolar Incluso",
+          description: "Site institucional profissional para sua escola com landing page e formulário de pré-matrícula. Disponível apenas no plano Enterprise.",
         },
         default: {
           title: "Recurso Premium",
-          description: "Este recurso requer um plano superior.",
+          description: "Este recurso requer um plano superior para ser acessado.",
         },
       },
       
