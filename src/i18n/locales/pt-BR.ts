@@ -104,6 +104,7 @@ const ptBR = {
       exitSystem: "Sair do Sistema",
       financialSystem: "Sistema Financeiro",
       financialHealth: "Saúde Financeira",
+      accounting: "Contabilidade",
     },
 
     // Auth
@@ -875,6 +876,111 @@ const ptBR = {
         scenarios: "Cenários",
         alerts: "Alertas",
         recommendations: "Recomendações",
+      },
+    },
+
+    // Accounting Module
+    accounting: {
+      title: "Contabilidade",
+      subtitle: "Gestão contábil profissional do seu negócio",
+      
+      // KPIs
+      totalRevenue: "Receitas Totais",
+      totalExpenses: "Despesas Totais",
+      netResult: "Resultado Líquido",
+      netMargin: "Margem Líquida",
+      assetValue: "Valor Patrimonial",
+      depreciation: "Depreciação",
+      estimatedTaxes: "Impostos Estimados",
+      entries: "Lançamentos",
+      
+      // Subtitles
+      yearToDate: "Ano corrente",
+      profitability: "Rentabilidade",
+      registeredAssets: "bens cadastrados",
+      accumulated: "Acumulada",
+      pending: "pendentes",
+      
+      // Tabs
+      tabs: {
+        overview: "Visão Geral",
+        entries: "Lançamentos",
+        dre: "DRE",
+        assets: "Patrimônio",
+        taxes: "Impostos",
+      },
+      
+      // Actions
+      newEntry: "Novo Lançamento",
+      newEntryDesc: "Registrar receita ou despesa",
+      viewDRE: "Ver DRE",
+      viewDREDesc: "Demonstração de resultados",
+      manageAssets: "Gerenciar Bens",
+      manageAssetsDesc: "Patrimônio e depreciação",
+      
+      // DRE
+      incomeStatement: "Demonstração do Resultado do Exercício",
+      grossRevenue: "Receita Bruta",
+      operatingExpenses: "Despesas Operacionais",
+      
+      // Descriptions
+      entriesDescription: "Histórico completo de lançamentos contábeis",
+      dreDescription: "Demonstração do resultado do exercício",
+      assetsDescription: "Cadastro e controle de bens patrimoniais",
+      taxesDescription: "Estimativa e controle de tributos",
+      
+      // Empty states
+      noEntries: "Nenhum lançamento registrado. Cadastre receitas e despesas.",
+      noAssets: "Nenhum bem patrimonial cadastrado.",
+      noTaxes: "Nenhum imposto estimado para este período.",
+      
+      // Disclaimer
+      disclaimer: "Módulo auxiliar de gestão",
+      disclaimerDesc: "Este módulo auxilia na organização contábil mas não substitui um contador profissional. Consulte sempre um especialista para obrigações fiscais.",
+    },
+
+    // Premium Features
+    premium: {
+      partialAccess: "Acesso Parcial",
+      upgradeForFull: "Faça upgrade para recursos completos",
+      upgrade: "Fazer Upgrade",
+      upgradeToPremium: "Upgrade para Premium",
+      currentPlan: "Plano atual",
+      includedInPremium: "Incluído no plano Premium",
+      
+      features: {
+        accounting: {
+          title: "Módulo de Contabilidade",
+          description: "Este recurso está disponível apenas nos planos Profissional e Enterprise.",
+        },
+        financialHealth: {
+          title: "Saúde Financeira",
+          description: "Projeções e análises avançadas estão disponíveis nos planos superiores.",
+        },
+        advancedReports: {
+          title: "Relatórios Avançados",
+          description: "Relatórios detalhados para tomada de decisão.",
+        },
+        apiAccess: {
+          title: "Acesso à API",
+          description: "Integração via API disponível apenas no plano Enterprise.",
+        },
+        hrManagement: {
+          title: "Gestão de RH",
+          description: "Recursos completos de gestão de funcionários.",
+        },
+        default: {
+          title: "Recurso Premium",
+          description: "Este recurso requer um plano superior.",
+        },
+      },
+      
+      benefits: {
+        accounting: "Módulo contábil completo (DRE, balanço, patrimônio)",
+        projections: "Projeções financeiras de 30 dias a 12 meses",
+        alerts: "Alertas automáticos de saúde financeira",
+        recommendations: "Recomendações inteligentes baseadas em dados",
+        reports: "Relatórios avançados para contador externo",
       },
     },
   },
