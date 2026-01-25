@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
-import { RHDashboardCard } from "@/components/rh/RHDashboardCard";
+import { FinancialKPICard } from "@/components/dashboard";
 import { useRHStats } from "@/hooks/useRH";
 import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
@@ -24,6 +24,7 @@ import { PontosAutorizadosManager } from "@/components/rh/PontosAutorizadosManag
 import { FolhaTab } from "@/components/rh/FolhaTab";
 import { ContratosTab } from "@/components/rh/ContratosTab";
 import { LoadingState } from "@/components/LoadingState";
+import { motion } from "framer-motion";
 
 interface NavItem {
   id: string;
@@ -60,73 +61,118 @@ export default function RH() {
       case "dashboard":
         return (
           <div className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <RHDashboardCard
+            {/* Main KPIs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <FinancialKPICard
                 title={t("hr.totalEmployees")}
                 value={stats?.totalFuncionarios || 0}
                 subtitle={`${stats?.funcionariosAtivos || 0} ${t("hr.active")}`}
                 icon={Users}
-                color="blue"
+                variant="info"
                 index={0}
               />
-              <RHDashboardCard
+              <FinancialKPICard
                 title={t("hr.teachers")}
                 value={stats?.professores || 0}
+                subtitle={t("hr.inTeam")}
                 icon={GraduationCap}
-                color="purple"
+                variant="premium"
                 index={1}
               />
-              <RHDashboardCard
+              <FinancialKPICard
                 title={t("hr.administrative")}
                 value={stats?.administrativos || 0}
+                subtitle={t("hr.inTeam")}
                 icon={Building2}
-                color="indigo"
+                variant="default"
                 index={2}
               />
-              <RHDashboardCard
+              <FinancialKPICard
                 title={t("hr.monthlyPayroll")}
                 value={formatCurrency(stats?.totalSalarios || 0)}
                 subtitle={t("hr.totalSalaries")}
                 icon={Wallet}
-                color="green"
+                variant="success"
                 index={3}
               />
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <RHDashboardCard
+            {/* Secondary KPIs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <FinancialKPICard
                 title={t("hr.paidPayrolls")}
                 value={stats?.folhasPagas || 0}
                 subtitle={t("hr.thisMonth")}
                 icon={CheckCircle}
-                color="green"
+                variant="success"
+                size="sm"
                 index={4}
               />
-              <RHDashboardCard
+              <FinancialKPICard
                 title={t("hr.pendingPayrolls")}
                 value={stats?.folhasPendentes || 0}
                 subtitle={t("hr.thisMonth")}
                 icon={Clock}
-                color="yellow"
+                variant="warning"
+                size="sm"
                 index={5}
               />
-              <RHDashboardCard
+              <FinancialKPICard
                 title={t("hr.hrExpenses")}
                 value={formatCurrency(stats?.gastoMesAtual || 0)}
                 subtitle={t("hr.currentMonth")}
                 icon={Briefcase}
-                color="red"
+                variant="danger"
+                size="sm"
                 index={6}
               />
-              <RHDashboardCard
-                title={t("hr.newEmployee")}
-                value="+"
-                subtitle={t("hr.register")}
-                icon={UserPlus}
-                color="blue"
-                index={7}
+              
+              {/* Action Card - Novo Funcionário */}
+              <motion.div
+                initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{
+                  duration: 0.4,
+                  delay: 7 * 0.08,
+                  ease: [0.25, 0.46, 0.45, 0.94],
+                }}
+                whileHover={{
+                  y: -4,
+                  scale: 1.01,
+                  transition: { duration: 0.2, ease: "easeOut" },
+                }}
                 onClick={() => setActiveTab("funcionarios")}
-              />
+                className={cn(
+                  "group relative overflow-hidden cursor-pointer",
+                  "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent",
+                  "backdrop-blur-sm rounded-2xl p-4",
+                  "border-2 border-dashed border-primary/30 hover:border-primary/50",
+                  "transition-all duration-300 ease-out",
+                  "hover:shadow-xl hover:shadow-primary/10"
+                )}
+              >
+                {/* Subtle Pattern */}
+                <div className="absolute inset-0 opacity-[0.02]"
+                  style={{
+                    backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+                    backgroundSize: '20px 20px'
+                  }}
+                />
+                
+                <div className="relative flex flex-col items-center justify-center text-center gap-3 py-2">
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 90 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    className="h-12 w-12 rounded-xl bg-primary/20 flex items-center justify-center"
+                  >
+                    <UserPlus className="h-6 w-6 text-primary" strokeWidth={1.75} />
+                  </motion.div>
+                  <div>
+                    <p className="text-sm font-semibold text-foreground">{t("hr.newEmployee")}</p>
+                    <p className="text-xs text-muted-foreground">{t("hr.register")}</p>
+                  </div>
+                </div>
+              </motion.div>
             </div>
           </div>
         );
