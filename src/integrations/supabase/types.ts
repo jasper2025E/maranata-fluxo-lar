@@ -2116,6 +2116,68 @@ export type Database = {
           },
         ]
       }
+      prematricula_leads: {
+        Row: {
+          created_at: string
+          curso_interesse: string | null
+          data_nascimento: string | null
+          email: string
+          id: string
+          ip_address: string | null
+          mensagem: string | null
+          nome_aluno: string
+          nome_responsavel: string
+          origem: string | null
+          status: string | null
+          telefone: string | null
+          tenant_id: string
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          curso_interesse?: string | null
+          data_nascimento?: string | null
+          email: string
+          id?: string
+          ip_address?: string | null
+          mensagem?: string | null
+          nome_aluno: string
+          nome_responsavel: string
+          origem?: string | null
+          status?: string | null
+          telefone?: string | null
+          tenant_id: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          curso_interesse?: string | null
+          data_nascimento?: string | null
+          email?: string
+          id?: string
+          ip_address?: string | null
+          mensagem?: string | null
+          nome_aluno?: string
+          nome_responsavel?: string
+          origem?: string | null
+          status?: string | null
+          telefone?: string | null
+          tenant_id?: string
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prematricula_leads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null

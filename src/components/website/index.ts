@@ -2,3 +2,7 @@ export { WebsiteEditorGeneral } from "./WebsiteEditorGeneral";
 export { WebsiteEditorContent } from "./WebsiteEditorContent";
 export { WebsiteEditorStyle } from "./WebsiteEditorStyle";
 export { WebsiteEditorSEO } from "./WebsiteEditorSEO";
+export { WebsiteEditorGallery } from "./WebsiteEditorGallery";
+export { WebsiteEditorTestimonials } from "./WebsiteEditorTestimonials";
+export { WebsitePreview } from "./WebsitePreview";
+export { PreMatriculaForm } from "./PreMatriculaForm";
