@@ -409,6 +409,9 @@ export default function TenantDetails() {
           </div>
           <div className="flex items-center gap-2">
             {getSubscriptionStatusBadge(tenant.subscription_status)}
+            <Button variant="outline" size="sm" onClick={() => navigate(`/platform/tenants/${id}/data`)}>
+              Ver dados
+            </Button>
             <Button variant="outline" size="sm" onClick={fetchTenantData}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Atualizar

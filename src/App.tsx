@@ -40,6 +40,7 @@ import PlatformDashboard from "./pages/platform/PlatformDashboard";
 import TenantsList from "./pages/platform/TenantsList";
 import TenantForm from "./pages/platform/TenantForm";
 import TenantDetails from "./pages/platform/TenantDetails";
+import TenantData from "./pages/platform/TenantData";
 import ImpersonateUser from "./pages/platform/ImpersonateUser";
 import PlatformUsers from "./pages/platform/PlatformUsers";
 import PlatformSubscriptions from "./pages/platform/PlatformSubscriptions";
@@ -48,6 +49,8 @@ import PlatformSettings from "./pages/platform/PlatformSettings";
 import PlatformSecurity from "./pages/platform/PlatformSecurity";
 import PlatformAnalytics from "./pages/platform/PlatformAnalytics";
 import PlatformPlans from "./pages/platform/PlatformPlans";
+import PlatformModules from "./pages/platform/PlatformModules";
+import PlatformMonitoring from "./pages/platform/PlatformMonitoring";
 
 import LandingPage from "./pages/LandingPage";
 import Onboarding from "./pages/Onboarding";
@@ -322,6 +325,30 @@ function AppContent() {
             element={
               <ProtectedRoute platformOnly>
                 <PlatformPlans />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/modules"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformModules />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/monitoring"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformMonitoring />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/tenants/:id/data"
+            element={
+              <ProtectedRoute platformOnly>
+                <TenantData />
               </ProtectedRoute>
             }
           />
