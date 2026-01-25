@@ -53,7 +53,6 @@ import {
 
 const menuItems = [
   { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { titleKey: "nav.financialDashboard", url: "/dashboard/financeiro", icon: Wallet },
   { titleKey: "nav.guardians", url: "/responsaveis", icon: UserCheck },
   { titleKey: "nav.students", url: "/alunos", icon: Users },
   { titleKey: "nav.classes", url: "/turmas", icon: GraduationCap },
@@ -87,6 +86,7 @@ const operationsItems = [
 
 // Financial Analysis
 const analysisItems = [
+  { titleKey: "nav.financialDashboard", url: "/dashboard/financeiro", icon: Wallet },
   { titleKey: "nav.reports", url: "/relatorios", icon: BarChart3 },
   { titleKey: "nav.financialHealth", url: "/saude-financeira", icon: Activity, roles: ["admin"], premium: true },
   { titleKey: "nav.accounting", url: "/contabilidade", icon: BookOpen, roles: ["admin"], premium: true },
@@ -118,7 +118,7 @@ export function AppSidebar() {
   const [isOperationsOpen, setIsOperationsOpen] = useState(isOperationsActive);
   
   // Check if any analysis route is active
-  const analysisRoutes = ["/relatorios", "/saude-financeira", "/contabilidade"];
+  const analysisRoutes = ["/dashboard/financeiro", "/relatorios", "/saude-financeira", "/contabilidade"];
   const isAnalysisActive = analysisRoutes.some(route => location.pathname.startsWith(route));
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(isAnalysisActive);
   
