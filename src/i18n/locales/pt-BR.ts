@@ -62,6 +62,18 @@ const ptBR = {
       saving: "Salvando...",
       deleting: "Excluindo...",
       months: "meses",
+      january: "Janeiro",
+      february: "Fevereiro",
+      march: "Março",
+      april: "Abril",
+      may: "Maio",
+      june: "Junho",
+      july: "Julho",
+      august: "Agosto",
+      september: "Setembro",
+      october: "Outubro",
+      november: "Novembro",
+      december: "Dezembro",
       of: "de",
       registered: "cadastrado(s)",
     },
@@ -463,6 +475,28 @@ const ptBR = {
     // Payments
     payments: {
       title: "Pagamentos",
+      history: "Histórico de Pagamentos",
+      paymentsCount: "pagamento(s)",
+
+      // KPIs
+      totalPayments: "Total de Pagamentos",
+      totalReceived: "Total Recebido",
+      viaAsaas: "Via Asaas",
+      manual: "Manuais",
+
+      // Table
+      date: "Data",
+      student: "Aluno",
+      reference: "Referência",
+      value: "Valor",
+      method: "Método",
+      gateway: "Gateway",
+
+      // Badges/labels used in UI
+      card: "Cartão",
+      cash: "Dinheiro",
+
+      // Legacy / generic labels
       paymentDate: "Data do Pagamento",
       paymentMethod: "Método de Pagamento",
       methods: {
@@ -475,6 +509,7 @@ const ptBR = {
       },
       receipt: "Recibo",
       sendReceipt: "Enviar Recibo",
+      noPaymentsFound: "Nenhum pagamento encontrado",
     },
 
     // Expenses
