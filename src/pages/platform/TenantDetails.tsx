@@ -71,6 +71,7 @@ export default function TenantDetails() {
   const { isPlatformAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
   const [tenant, setTenant] = useState<Tenant | null>(null);
   const [subscriptionHistory, setSubscriptionHistory] = useState<SubscriptionHistory[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
@@ -191,6 +192,49 @@ export default function TenantDetails() {
       toast.error("Erro ao salvar escola");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleSyncStripe = async () => {
+    if (!id || !tenant?.stripe_subscription_id) {
+      toast.error("Nenhuma assinatura Stripe para sincronizar");
+      return;
+    }
+
+    setSyncing(true);
+    try {
+      // First save local changes
+      await handleSubmit({ preventDefault: () => {} } as React.FormEvent);
+
+      // Then sync with Stripe
+      const { data, error } = await supabase.functions.invoke("sync-tenant-subscription", {
+        body: {
+          tenantId: id,
+          action: form.subscription_status === "cancelled" ? "cancel" : "update_plan",
+        },
+      });
+
+      if (error) throw error;
+
+      if (data?.actions?.length > 0) {
+        data.actions.forEach((action: { type: string; message: string }) => {
+          if (action.type === "success") {
+            toast.success(action.message);
+          } else if (action.type === "warning") {
+            toast.warning(action.message);
+          } else {
+            toast.info(action.message);
+          }
+        });
+      }
+
+      // Reload data
+      await fetchTenantData();
+    } catch (error) {
+      console.error("Erro ao sincronizar:", error);
+      toast.error(error instanceof Error ? error.message : "Erro ao sincronizar com Stripe");
+    } finally {
+      setSyncing(false);
     }
   };
 
@@ -674,16 +718,34 @@ export default function TenantDetails() {
                       {/* Info adicional (read-only) */}
                       <div className="pt-4 border-t">
                         <h4 className="text-sm font-medium text-foreground mb-4">Informações do Stripe</h4>
-                        <div className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/50">
-                          <span className="text-sm text-muted-foreground">Stripe Customer ID</span>
-                          <span className="font-mono text-sm">
-                            {tenant.stripe_customer_id || "—"}
-                          </span>
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/50">
+                            <span className="text-sm text-muted-foreground">Stripe Customer ID</span>
+                            <span className="font-mono text-sm">
+                              {tenant.stripe_customer_id || "—"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/50">
+                            <span className="text-sm text-muted-foreground">Stripe Subscription ID</span>
+                            <span className="font-mono text-sm">
+                              {tenant.stripe_subscription_id || "—"}
+                            </span>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Save button */}
-                      <div className="flex justify-end pt-4 border-t">
+                      {/* Ações */}
+                      <div className="flex justify-between items-center pt-4 border-t">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={handleSyncStripe}
+                          disabled={syncing || !tenant.stripe_subscription_id}
+                          className="gap-2"
+                        >
+                          <RefreshCw className={`h-4 w-4 ${syncing ? 'animate-spin' : ''}`} />
+                          {syncing ? "Sincronizando..." : "Sincronizar com Stripe"}
+                        </Button>
                         <Button onClick={handleSubmit} disabled={saving}>
                           <Save className="h-4 w-4 mr-2" />
                           {saving ? "Salvando..." : "Salvar alterações"}
