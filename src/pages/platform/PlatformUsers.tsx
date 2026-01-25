@@ -327,7 +327,7 @@ export default function PlatformUsers() {
 
     setFormLoading(true);
     try {
-      const { data, error } = await supabase.functions.invoke("admin-manage-users", {
+      const response = await supabase.functions.invoke("admin-manage-users", {
         body: {
           action: "create",
           email: formData.email,
@@ -338,8 +338,29 @@ export default function PlatformUsers() {
         },
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
+      // Handle edge function errors properly
+      if (response.error) {
+        // Try to get the actual error message from the response
+        let errorMessage = "Erro ao criar usuário";
+        
+        // Check if there's a context with body (FunctionsHttpError)
+        if (response.error.context?.body) {
+          try {
+            const body = JSON.parse(response.error.context.body);
+            errorMessage = body.error || errorMessage;
+          } catch {
+            errorMessage = response.error.message || errorMessage;
+          }
+        } else {
+          errorMessage = response.error.message || errorMessage;
+        }
+        
+        throw new Error(errorMessage);
+      }
+      
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
 
       toast.success("Usuário criado com sucesso!");
       setCreateDialogOpen(false);
