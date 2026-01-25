@@ -238,7 +238,7 @@ export function AppSidebar() {
         </SidebarGroup>
 
         {/* Collapsible Operations Section */}
-        <SidebarGroup className="px-3 py-0 p-0">
+        <div className="px-3">
           <Collapsible open={isOperationsOpen} onOpenChange={setIsOperationsOpen}>
             <CollapsibleTrigger asChild>
               <button
@@ -287,10 +287,10 @@ export function AppSidebar() {
               )}
             </CollapsibleContent>
           </Collapsible>
-        </SidebarGroup>
+        </div>
 
         {/* Collapsible Analysis Section */}
-        <SidebarGroup className="px-3 py-0 p-0">
+        <div className="px-3">
           <Collapsible open={isAnalysisOpen} onOpenChange={setIsAnalysisOpen}>
             <CollapsibleTrigger asChild>
               <button
@@ -343,9 +343,9 @@ export function AppSidebar() {
               )}
             </CollapsibleContent>
           </Collapsible>
-        </SidebarGroup>
+        </div>
 
-        <SidebarGroup className="px-3 mt-4">
+        <SidebarGroup className="px-3 mt-2">
           {!isCollapsed && (
             <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
               {t("nav.system")}
