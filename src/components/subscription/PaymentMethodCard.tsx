@@ -10,6 +10,7 @@ import {
   Shield,
   Sparkles,
   RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { loadStripe } from "@stripe/stripe-js";
 import {
@@ -25,6 +26,16 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -313,6 +324,8 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod | null>(null);
   const [loading, setLoading] = useState(true);
   const [showAddCard, setShowAddCard] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [setupData, setSetupData] = useState<{
     clientSecret: string;
     stripePromise: ReturnType<typeof loadStripe>;
@@ -383,6 +396,36 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
     setSetupData(null);
     fetchPaymentMethod();
     onUpdate?.();
+  };
+
+  const handleDeleteCard = async () => {
+    if (!paymentMethod) return;
+    
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("tenant_payment_methods")
+        .delete()
+        .eq("id", paymentMethod.id);
+
+      if (error) throw error;
+
+      // Also disable auto billing on tenant
+      await supabase
+        .from("tenants")
+        .update({ auto_billing_enabled: false })
+        .eq("id", tenantId);
+
+      setPaymentMethod(null);
+      setShowDeleteConfirm(false);
+      toast.success(t("subscription.cardDeletedSuccess"));
+      onUpdate?.();
+    } catch (error) {
+      console.error("Error deleting payment method:", error);
+      toast.error(t("subscription.cardDeleteError"));
+    } finally {
+      setDeleting(false);
+    }
   };
 
   const brandConfig = paymentMethod 
@@ -506,7 +549,7 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
                     </div>
                   </div>
                   
-                  <div className="pl-10 mt-3">
+                  <div className="pl-10 mt-3 flex items-center gap-4">
                     <motion.button 
                       whileHover={{ x: 2 }}
                       onClick={handleAddCard}
@@ -524,6 +567,14 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
                           {t("subscription.replaceCard")}
                         </>
                       )}
+                    </motion.button>
+                    <motion.button 
+                      whileHover={{ x: 2 }}
+                      onClick={() => setShowDeleteConfirm(true)}
+                      className="text-sm text-destructive hover:text-destructive/80 font-medium flex items-center gap-1.5 transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                      {t("subscription.deleteCard")}
                     </motion.button>
                   </div>
                 </motion.div>
@@ -621,6 +672,40 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Card Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent className="rounded-2xl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>{t("subscription.deleteCardTitle")}</AlertDialogTitle>
+            <AlertDialogDescription>
+              {t("subscription.deleteCardDescription")}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>
+              {t("common.cancel")}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCard}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  {t("subscription.deleting")}
+                </>
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  {t("common.delete")}
+                </>
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
