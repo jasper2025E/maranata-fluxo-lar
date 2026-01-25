@@ -108,10 +108,14 @@ const ptBR = {
       financialSystem: "Sistema Financeiro",
       financialHealth: "Saúde Financeira",
       accounting: "Contabilidade",
+      hrDashboard: "Dashboard",
       hrEmployees: "Funcionários",
       hrPositions: "Cargos",
       hrTimeTracking: "Ponto",
+      hrLocations: "Locais",
+      hrReports: "Relatórios",
       hrPayroll: "Folha",
+      hrContracts: "Contratos",
     },
 
     // Auth

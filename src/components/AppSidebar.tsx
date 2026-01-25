@@ -63,10 +63,14 @@ const menuItems = [
 
 // HR Sub-items
 const hrItems = [
-  { titleKey: "nav.hrEmployees", url: "/rh?tab=funcionarios", roles: ["admin", "staff"] },
-  { titleKey: "nav.hrPositions", url: "/rh?tab=cargos", roles: ["admin", "staff"] },
-  { titleKey: "nav.hrTimeTracking", url: "/rh?tab=ponto", roles: ["admin", "staff"] },
-  { titleKey: "nav.hrPayroll", url: "/rh?tab=folha", roles: ["admin", "staff"] },
+  { titleKey: "nav.hrDashboard", url: "/rh" },
+  { titleKey: "nav.hrEmployees", url: "/rh?tab=funcionarios" },
+  { titleKey: "nav.hrPositions", url: "/rh?tab=cargos" },
+  { titleKey: "nav.hrTimeTracking", url: "/rh?tab=ponto" },
+  { titleKey: "nav.hrLocations", url: "/rh?tab=locais" },
+  { titleKey: "nav.hrReports", url: "/rh?tab=relatorios" },
+  { titleKey: "nav.hrPayroll", url: "/rh?tab=folha" },
+  { titleKey: "nav.hrContracts", url: "/rh?tab=contratos" },
 ];
 
 // Financial Operations
