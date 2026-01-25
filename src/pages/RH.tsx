@@ -26,6 +26,7 @@ import { ContratosTab } from "@/components/rh/ContratosTab";
 import { LoadingState } from "@/components/LoadingState";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { PremiumGate } from "@/components/premium";
 
 export default function RH() {
   const { t } = useTranslation();
@@ -221,19 +222,21 @@ export default function RH() {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">{t("nav.management")}</span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium text-foreground">{t("hr.title")}</span>
-        </nav>
+      <PremiumGate feature="hrManagement">
+        <div className="max-w-6xl mx-auto space-y-6">
+          {/* Breadcrumb */}
+          <nav className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">{t("nav.management")}</span>
+            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium text-foreground">{t("hr.title")}</span>
+          </nav>
 
-        {/* Content Area - Full Width */}
-        <div className="min-w-0">
-          {renderContent()}
+          {/* Content Area - Full Width */}
+          <div className="min-w-0">
+            {renderContent()}
+          </div>
         </div>
-      </div>
+      </PremiumGate>
     </DashboardLayout>
   );
 }

@@ -8,7 +8,18 @@ import { useFeatureAccess } from "@/hooks/usePremiumFeatures";
 import { cn } from "@/lib/utils";
 
 interface PremiumGateProps {
-  feature: "accounting" | "financialHealth" | "advancedReports" | "apiAccess" | "hrManagement";
+  feature: 
+    | "accounting" 
+    | "financialHealth" 
+    | "advancedReports" 
+    | "apiAccess" 
+    | "hrManagement"
+    | "asaasIntegration"
+    | "classManagement"
+    | "schoolWebsite"
+    | "basicReports"
+    | "enrollmentManagement"
+    | "invoiceManagement";
   children: ReactNode;
   fallback?: ReactNode;
   showPartialContent?: boolean;
@@ -113,6 +124,18 @@ function PremiumUpgradeWall({ feature, currentPlan }: PremiumUpgradeWallProps) {
     hrManagement: {
       title: t("premium.features.hrManagement.title"),
       description: t("premium.features.hrManagement.description"),
+    },
+    asaasIntegration: {
+      title: t("premium.features.asaasIntegration.title"),
+      description: t("premium.features.asaasIntegration.description"),
+    },
+    classManagement: {
+      title: t("premium.features.classManagement.title"),
+      description: t("premium.features.classManagement.description"),
+    },
+    schoolWebsite: {
+      title: t("premium.features.schoolWebsite.title"),
+      description: t("premium.features.schoolWebsite.description"),
     },
   };
 
