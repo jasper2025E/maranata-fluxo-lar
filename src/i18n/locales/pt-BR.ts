@@ -806,6 +806,60 @@ const ptBR = {
       stripeNotConfigured: "Stripe não está configurado",
       initError: "Erro ao iniciar",
     },
+
+    // Financial Projection Module
+    projection: {
+      title: "Projeção Financeira",
+      subtitle: "Análise preditiva e saúde financeira do negócio",
+      loading: "Analisando dados financeiros...",
+      loadError: "Erro ao carregar projeções",
+      
+      // KPIs
+      avgRevenue: "Receita Média Mensal",
+      avgExpenses: "Despesas Média Mensal",
+      avgProfit: "Lucro Médio Mensal",
+      profitMargin: "Margem de Lucro",
+      financialReserve: "Reserva Financeira",
+      breakEven: "Ponto de Equilíbrio",
+      growthTrend: "Tendência de Crescimento",
+      dataBase: "Base de Dados",
+      
+      // Subtitles
+      basedOnMonths: "Baseado em {{count}} meses",
+      monthlyAvg: "Média mensal",
+      healthy: "Saudável",
+      needsAttention: "Precisa de atenção",
+      survivalTime: "Tempo de sobrevivência",
+      minimumRevenue: "Receita mínima necessária",
+      monthlyGrowth: "Crescimento mensal",
+      analyzedHistory: "Histórico analisado",
+      
+      // Health Indicators
+      financialHealth: "Saúde Financeira",
+      healthDescription: "Indicadores-chave do seu negócio",
+      
+      // Scenarios
+      scenarios: "Cenários Financeiros",
+      scenariosDescription: "Compare projeções para diferentes cenários",
+      period: "Período",
+      projectedRevenue: "Receita Projetada",
+      projectedExpenses: "Despesas Projetadas",
+      projectedProfit: "Lucro Projetado",
+      margin: "Margem",
+      
+      // Chart
+      revenueProjection: "Projeção de Receitas",
+      next12Months: "Próximos 12 meses",
+      
+      // Alerts
+      alerts: "Alertas e Cuidados",
+      activeAlerts: "alertas ativos",
+      noAlerts: "Nenhum alerta no momento. Seu negócio está saudável!",
+      
+      // Recommendations
+      recommendations: "Recomendações Inteligentes",
+      recommendationsDescription: "Sugestões baseadas nos seus dados",
+    },
   },
 };
 
