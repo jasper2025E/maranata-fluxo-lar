@@ -56,6 +56,13 @@ interface TenantFormData {
   limite_usuarios: number;
   monthly_price: number;
   subscription_status: string;
+  // Subscription dates
+  subscription_started_at: string;
+  subscription_ends_at: string;
+  trial_ends_at: string;
+  grace_period_ends_at: string;
+  next_billing_date: string;
+  billing_day: number;
 }
 
 export default function TenantDetails() {
@@ -80,6 +87,12 @@ export default function TenantDetails() {
     limite_usuarios: 5,
     monthly_price: 0,
     subscription_status: "trial",
+    subscription_started_at: "",
+    subscription_ends_at: "",
+    trial_ends_at: "",
+    grace_period_ends_at: "",
+    next_billing_date: "",
+    billing_day: 1,
   });
 
   useEffect(() => {
@@ -118,6 +131,12 @@ export default function TenantDetails() {
         limite_usuarios: tenantData.limite_usuarios || 5,
         monthly_price: tenantData.monthly_price || 0,
         subscription_status: tenantData.subscription_status || "trial",
+        subscription_started_at: tenantData.subscription_started_at || "",
+        subscription_ends_at: tenantData.subscription_ends_at || "",
+        trial_ends_at: tenantData.trial_ends_at || "",
+        grace_period_ends_at: tenantData.grace_period_ends_at || "",
+        next_billing_date: tenantData.next_billing_date || "",
+        billing_day: tenantData.billing_day || 1,
       });
 
       setSubscriptionHistory(historyRes.data || []);
@@ -155,6 +174,12 @@ export default function TenantDetails() {
           limite_usuarios: form.limite_usuarios,
           monthly_price: form.monthly_price,
           subscription_status: form.subscription_status as any,
+          subscription_started_at: form.subscription_started_at || null,
+          subscription_ends_at: form.subscription_ends_at || null,
+          trial_ends_at: form.trial_ends_at || null,
+          grace_period_ends_at: form.grace_period_ends_at || null,
+          next_billing_date: form.next_billing_date || null,
+          billing_day: form.billing_day || null,
         })
         .eq("id", id);
 
@@ -531,70 +556,22 @@ export default function TenantDetails() {
                     <CardHeader>
                       <CardTitle className="text-foreground flex items-center gap-2">
                         <CreditCard className="h-5 w-5" />
-                        Status da Assinatura
+                        Configuração da Assinatura
                       </CardTitle>
                       <CardDescription>
-                        Gerencie a assinatura desta escola
+                        Edite plano, datas e status da assinatura
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="grid gap-6 md:grid-cols-2">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between py-2 border-b">
-                            <span className="text-muted-foreground">Status atual</span>
-                            {getSubscriptionStatusBadge(tenant.subscription_status)}
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b">
-                            <span className="text-muted-foreground">Início da assinatura</span>
-                            <span className="font-medium">
-                              {tenant.subscription_started_at 
-                                ? format(new Date(tenant.subscription_started_at), "dd/MM/yyyy", { locale: ptBR })
-                                : "—"}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b">
-                            <span className="text-muted-foreground">Término previsto</span>
-                            <span className="font-medium">
-                              {tenant.subscription_ends_at 
-                                ? format(new Date(tenant.subscription_ends_at), "dd/MM/yyyy", { locale: ptBR })
-                                : "—"}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between py-2 border-b">
-                            <span className="text-muted-foreground">Período de teste</span>
-                            <span className="font-medium">
-                              {tenant.trial_ends_at 
-                                ? format(new Date(tenant.trial_ends_at), "dd/MM/yyyy", { locale: ptBR })
-                                : "—"}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b">
-                            <span className="text-muted-foreground">Carência (atraso)</span>
-                            <span className="font-medium">
-                              {tenant.grace_period_ends_at 
-                                ? format(new Date(tenant.grace_period_ends_at), "dd/MM/yyyy", { locale: ptBR })
-                                : "—"}
-                            </span>
-                          </div>
-                          <div className="flex items-center justify-between py-2 border-b">
-                            <span className="text-muted-foreground">Stripe Customer ID</span>
-                            <span className="font-mono text-sm">
-                              {tenant.stripe_customer_id || "—"}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="mt-6 pt-6 border-t">
-                        <Label className="mb-3 block">Alterar status da assinatura</Label>
-                        <div className="flex gap-2">
+                    <CardContent className="space-y-6">
+                      {/* Status & Plano */}
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div className="space-y-2">
+                          <Label>Status da assinatura</Label>
                           <Select 
                             value={form.subscription_status} 
                             onValueChange={(v) => setForm({ ...form, subscription_status: v })}
                           >
-                            <SelectTrigger className="w-48">
+                            <SelectTrigger>
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -605,10 +582,112 @@ export default function TenantDetails() {
                               <SelectItem value="suspended">Suspensa</SelectItem>
                             </SelectContent>
                           </Select>
-                          <Button onClick={handleSubmit} disabled={saving}>
-                            Aplicar
-                          </Button>
                         </div>
+                        <div className="space-y-2">
+                          <Label>Plano</Label>
+                          <Select value={form.plano} onValueChange={(v) => setForm({ ...form, plano: v })}>
+                            <SelectTrigger>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="basic">Basic</SelectItem>
+                              <SelectItem value="pro">Pro</SelectItem>
+                              <SelectItem value="enterprise">Enterprise</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Mensalidade (R$)</Label>
+                          <Input
+                            type="number"
+                            step="0.01"
+                            value={form.monthly_price}
+                            onChange={(e) => setForm({ ...form, monthly_price: parseFloat(e.target.value) || 0 })}
+                          />
+                        </div>
+                      </div>
+
+                      {/* Datas de Assinatura */}
+                      <div className="pt-4 border-t">
+                        <h4 className="text-sm font-medium text-foreground mb-4">Datas da Assinatura</h4>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label>Início da assinatura</Label>
+                            <Input
+                              type="date"
+                              value={form.subscription_started_at ? form.subscription_started_at.split('T')[0] : ""}
+                              onChange={(e) => setForm({ ...form, subscription_started_at: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Término da assinatura</Label>
+                            <Input
+                              type="date"
+                              value={form.subscription_ends_at ? form.subscription_ends_at.split('T')[0] : ""}
+                              onChange={(e) => setForm({ ...form, subscription_ends_at: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Fim do período de teste</Label>
+                            <Input
+                              type="date"
+                              value={form.trial_ends_at ? form.trial_ends_at.split('T')[0] : ""}
+                              onChange={(e) => setForm({ ...form, trial_ends_at: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Fim do período de carência</Label>
+                            <Input
+                              type="date"
+                              value={form.grace_period_ends_at ? form.grace_period_ends_at.split('T')[0] : ""}
+                              onChange={(e) => setForm({ ...form, grace_period_ends_at: e.target.value })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Faturamento */}
+                      <div className="pt-4 border-t">
+                        <h4 className="text-sm font-medium text-foreground mb-4">Configuração de Faturamento</h4>
+                        <div className="grid gap-4 md:grid-cols-2">
+                          <div className="space-y-2">
+                            <Label>Próxima data de cobrança</Label>
+                            <Input
+                              type="date"
+                              value={form.next_billing_date ? form.next_billing_date.split('T')[0] : ""}
+                              onChange={(e) => setForm({ ...form, next_billing_date: e.target.value })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>Dia de faturamento (1-28)</Label>
+                            <Input
+                              type="number"
+                              min={1}
+                              max={28}
+                              value={form.billing_day}
+                              onChange={(e) => setForm({ ...form, billing_day: parseInt(e.target.value) || 1 })}
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Info adicional (read-only) */}
+                      <div className="pt-4 border-t">
+                        <h4 className="text-sm font-medium text-foreground mb-4">Informações do Stripe</h4>
+                        <div className="flex items-center justify-between py-2 px-3 rounded-md bg-muted/50">
+                          <span className="text-sm text-muted-foreground">Stripe Customer ID</span>
+                          <span className="font-mono text-sm">
+                            {tenant.stripe_customer_id || "—"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Save button */}
+                      <div className="flex justify-end pt-4 border-t">
+                        <Button onClick={handleSubmit} disabled={saving}>
+                          <Save className="h-4 w-4 mr-2" />
+                          {saving ? "Salvando..." : "Salvar alterações"}
+                        </Button>
                       </div>
                     </CardContent>
                   </Card>
