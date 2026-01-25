@@ -238,28 +238,35 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <Collapsible open={isOperationsOpen} onOpenChange={setIsOperationsOpen}>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                        "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                        "transition-all duration-200 ease-out",
-                        "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1",
-                        "active:scale-[0.98]",
-                        isOperationsActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium"
-                      )}
-                    >
-                      <Wallet className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
-                      {!isCollapsed && (
-                        <>
-                          <span className="text-sm flex-1 text-left">{t("nav.operations")}</span>
-                          <ChevronDown 
-                            className={cn(
-                              "h-4 w-4 transition-transform duration-200",
-                              isOperationsOpen && "rotate-180"
-                            )} 
-                          />
-                        </>
-                      )}
+                    <SidebarMenuButton asChild tooltip={t("nav.operations")}>
+                      <button
+                        type="button"
+                        className={cn(
+                          isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
+                          "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                          "transition-all duration-200 ease-out",
+                          isCollapsed
+                            ? "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20 active:scale-95"
+                            : "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1 active:scale-[0.98]",
+                          isOperationsActive &&
+                            (isCollapsed
+                              ? "bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
+                              : "bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"),
+                        )}
+                      >
+                        <Wallet className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0 transition-transform duration-200")} strokeWidth={1.75} />
+                        {!isCollapsed && (
+                          <>
+                            <span className="text-sm flex-1 text-left">{t("nav.operations")}</span>
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 transition-transform duration-200",
+                                isOperationsOpen && "rotate-180"
+                              )}
+                            />
+                          </>
+                        )}
+                      </button>
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
@@ -292,28 +299,35 @@ export function AppSidebar() {
               <SidebarMenuItem>
                 <Collapsible open={isAnalysisOpen} onOpenChange={setIsAnalysisOpen}>
                   <CollapsibleTrigger asChild>
-                    <SidebarMenuButton
-                      className={cn(
-                        "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                        "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
-                        "transition-all duration-200 ease-out",
-                        "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1",
-                        "active:scale-[0.98]",
-                        isAnalysisActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium"
-                      )}
-                    >
-                      <BarChart3 className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
-                      {!isCollapsed && (
-                        <>
-                          <span className="text-sm flex-1 text-left">{t("nav.analysis")}</span>
-                          <ChevronDown 
-                            className={cn(
-                              "h-4 w-4 transition-transform duration-200",
-                              isAnalysisOpen && "rotate-180"
-                            )} 
-                          />
-                        </>
-                      )}
+                    <SidebarMenuButton asChild tooltip={t("nav.analysis")}>
+                      <button
+                        type="button"
+                        className={cn(
+                          isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
+                          "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                          "transition-all duration-200 ease-out",
+                          isCollapsed
+                            ? "hover:scale-110 hover:shadow-lg hover:shadow-sidebar-primary/20 active:scale-95"
+                            : "hover:scale-[1.02] hover:shadow-lg hover:shadow-sidebar-primary/15 hover:translate-x-1 active:scale-[0.98]",
+                          isAnalysisActive &&
+                            (isCollapsed
+                              ? "bg-sidebar-primary/10 text-sidebar-primary font-medium shadow-md shadow-sidebar-primary/15"
+                              : "bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px] shadow-md shadow-sidebar-primary/10"),
+                        )}
+                      >
+                        <BarChart3 className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0 transition-transform duration-200")} strokeWidth={1.75} />
+                        {!isCollapsed && (
+                          <>
+                            <span className="text-sm flex-1 text-left">{t("nav.analysis")}</span>
+                            <ChevronDown
+                              className={cn(
+                                "h-4 w-4 transition-transform duration-200",
+                                isAnalysisOpen && "rotate-180"
+                              )}
+                            />
+                          </>
+                        )}
+                      </button>
                     </SidebarMenuButton>
                   </CollapsibleTrigger>
                   <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
