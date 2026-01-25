@@ -63,14 +63,14 @@ const menuItems = [
 
 // HR Sub-items
 const hrItems = [
-  { titleKey: "nav.hrDashboard", url: "/rh" },
-  { titleKey: "nav.hrEmployees", url: "/rh?tab=funcionarios" },
-  { titleKey: "nav.hrPositions", url: "/rh?tab=cargos" },
-  { titleKey: "nav.hrTimeTracking", url: "/rh?tab=ponto" },
-  { titleKey: "nav.hrLocations", url: "/rh?tab=locais" },
-  { titleKey: "nav.hrReports", url: "/rh?tab=relatorios" },
-  { titleKey: "nav.hrPayroll", url: "/rh?tab=folha" },
-  { titleKey: "nav.hrContracts", url: "/rh?tab=contratos" },
+  { titleKey: "nav.hrDashboard", url: "/rh", tab: "dashboard" },
+  { titleKey: "nav.hrEmployees", url: "/rh?tab=funcionarios", tab: "funcionarios" },
+  { titleKey: "nav.hrPositions", url: "/rh?tab=cargos", tab: "cargos" },
+  { titleKey: "nav.hrTimeTracking", url: "/rh?tab=ponto", tab: "ponto" },
+  { titleKey: "nav.hrLocations", url: "/rh?tab=locais", tab: "locais" },
+  { titleKey: "nav.hrReports", url: "/rh?tab=relatorios", tab: "relatorios" },
+  { titleKey: "nav.hrPayroll", url: "/rh?tab=folha", tab: "folha" },
+  { titleKey: "nav.hrContracts", url: "/rh?tab=contratos", tab: "contratos" },
 ];
 
 // Financial Operations
@@ -113,6 +113,7 @@ export function AppSidebar() {
   // Check if HR route is active
   const isHRActive = location.pathname.startsWith("/rh");
   const [isHROpen, setIsHROpen] = useState(isHRActive);
+  const rhTab = new URLSearchParams(location.search).get("tab") || "dashboard";
 
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
@@ -288,23 +289,30 @@ export function AppSidebar() {
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                       {!isCollapsed && (
                         <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
-                          {hrItems.map((item) => (
+                          {hrItems.map((item) => {
+                            const isTabActive = isHRActive && rhTab === item.tab;
+                            return (
                             <SidebarMenuItem key={item.titleKey}>
                               <SidebarMenuButton asChild>
                                 <NavLink
                                   to={item.url}
                                   className={cn(
                                     "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
-                                    "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                                    isTabActive
+                                      ? "text-sidebar-primary font-medium bg-sidebar-primary/5"
+                                      : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
                                     "transition-all duration-150"
                                   )}
-                                  activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
+                                  // React Router NavLink considers only pathname for active state.
+                                  // We disable it here and drive the active styling by `tab`.
+                                  activeClassName=""
                                 >
                                   <span className="flex-1">{t(item.titleKey)}</span>
                                 </NavLink>
                               </SidebarMenuButton>
                             </SidebarMenuItem>
-                          ))}
+                            );
+                          })}
                         </SidebarMenu>
                       )}
                     </CollapsibleContent>
