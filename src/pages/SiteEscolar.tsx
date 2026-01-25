@@ -1,0 +1,237 @@
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
+import { motion } from "framer-motion";
+import { 
+  Globe, 
+  Eye, 
+  EyeOff, 
+  Settings, 
+  Palette, 
+  Layout, 
+  FileText, 
+  Share2, 
+  ExternalLink,
+  Copy,
+  Check,
+  Sparkles
+} from "lucide-react";
+import DashboardLayout from "@/components/DashboardLayout";
+import { PageHeader } from "@/components/PageLayout";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { PremiumGate } from "@/components/premium/PremiumGate";
+import { useSchoolWebsite, useCreateSchoolWebsite, useToggleSchoolWebsite } from "@/hooks/useSchoolWebsite";
+import { useTenant } from "@/hooks/useTenant";
+import { useEscola } from "@/hooks/useEscola";
+import { WebsiteEditorGeneral } from "@/components/website/WebsiteEditorGeneral";
+import { WebsiteEditorContent } from "@/components/website/WebsiteEditorContent";
+import { WebsiteEditorStyle } from "@/components/website/WebsiteEditorStyle";
+import { WebsiteEditorSEO } from "@/components/website/WebsiteEditorSEO";
+import { toast } from "sonner";
+
+export default function SiteEscolar() {
+  const { t } = useTranslation();
+  const { data: website, isLoading } = useSchoolWebsite();
+  const { data: tenant } = useTenant();
+  const { data: escola } = useEscola();
+  const createWebsite = useCreateSchoolWebsite();
+  const toggleWebsite = useToggleSchoolWebsite();
+  const [copied, setCopied] = useState(false);
+
+  const baseUrl = window.location.origin;
+  const publicUrl = website?.slug ? `${baseUrl}/escola/${website.slug}` : null;
+
+  const handleCopyUrl = () => {
+    if (publicUrl) {
+      navigator.clipboard.writeText(publicUrl);
+      setCopied(true);
+      toast.success("URL copiada!");
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const handleTogglePublish = () => {
+    if (website) {
+      toggleWebsite.mutate(!website.enabled);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <DashboardLayout>
+        <div className="container max-w-6xl mx-auto px-4 py-8">
+          <PageHeader
+            title={t("siteEscolar.title", "Site Escolar")}
+            description={t("siteEscolar.description", "Gerencie a landing page pública da sua escola")}
+          />
+          <div className="space-y-6 mt-6">
+            <Skeleton className="h-32 w-full" />
+            <Skeleton className="h-64 w-full" />
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Se não existe configuração, mostrar tela de criação
+  if (!website) {
+    return (
+      <DashboardLayout>
+        <div className="container max-w-6xl mx-auto px-4 py-8">
+          <PageHeader
+            title={t("siteEscolar.title", "Site Escolar")}
+            description={t("siteEscolar.description", "Gerencie a landing page pública da sua escola")}
+          />
+          <div className="mt-6">
+            <PremiumGate feature="schoolWebsite">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col items-center justify-center min-h-[400px] text-center"
+              >
+                <div className="p-6 rounded-full bg-primary/10 mb-6">
+                  <Globe className="h-12 w-12 text-primary" />
+                </div>
+                <h2 className="text-2xl font-bold mb-2">Crie o Site da Sua Escola</h2>
+                <p className="text-muted-foreground mb-6 max-w-md">
+                  Configure uma landing page profissional com formulário de pré-matrícula 
+                  para atrair novos alunos.
+                </p>
+                <Button 
+                  size="lg" 
+                  onClick={() => createWebsite.mutate()}
+              disabled={createWebsite.isPending}
+            >
+              <Sparkles className="mr-2 h-5 w-5" />
+              {createWebsite.isPending ? "Criando..." : "Criar Site Escolar"}
+              </Button>
+            </motion.div>
+          </PremiumGate>
+          </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  return (
+    <DashboardLayout>
+      <div className="container max-w-6xl mx-auto px-4 py-8">
+        <PageHeader
+          title={t("siteEscolar.title", "Site Escolar")}
+          description={t("siteEscolar.description", "Gerencie a landing page pública da sua escola")}
+        />
+      <PremiumGate feature="schoolWebsite">
+        <div className="space-y-6">
+          {/* Status Card */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-xl ${website.enabled ? 'bg-green-500/10' : 'bg-muted'}`}>
+                    {website.enabled ? (
+                      <Eye className="h-6 w-6 text-green-600" />
+                    ) : (
+                      <EyeOff className="h-6 w-6 text-muted-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-semibold">
+                        {escola?.nome || tenant?.nome || "Sua Escola"}
+                      </h3>
+                      <Badge variant={website.enabled ? "default" : "secondary"}>
+                        {website.enabled ? "Publicado" : "Rascunho"}
+                      </Badge>
+                    </div>
+                    {publicUrl && (
+                      <div className="flex items-center gap-2 mt-1">
+                        <code className="text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded">
+                          {publicUrl}
+                        </code>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-6 w-6"
+                          onClick={handleCopyUrl}
+                        >
+                          {copied ? (
+                            <Check className="h-3 w-3 text-green-600" />
+                          ) : (
+                            <Copy className="h-3 w-3" />
+                          )}
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  {website.enabled && publicUrl && (
+                    <Button variant="outline" size="sm" asChild>
+                      <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="mr-2 h-4 w-4" />
+                        Visualizar
+                      </a>
+                    </Button>
+                  )}
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm text-muted-foreground">
+                      {website.enabled ? "Online" : "Offline"}
+                    </span>
+                    <Switch
+                      checked={website.enabled}
+                      onCheckedChange={handleTogglePublish}
+                      disabled={toggleWebsite.isPending}
+                    />
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Editor Tabs */}
+          <Tabs defaultValue="general" className="space-y-6">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="general" className="gap-2">
+                <Settings className="h-4 w-4" />
+                <span className="hidden sm:inline">Geral</span>
+              </TabsTrigger>
+              <TabsTrigger value="content" className="gap-2">
+                <Layout className="h-4 w-4" />
+                <span className="hidden sm:inline">Conteúdo</span>
+              </TabsTrigger>
+              <TabsTrigger value="style" className="gap-2">
+                <Palette className="h-4 w-4" />
+                <span className="hidden sm:inline">Estilo</span>
+              </TabsTrigger>
+              <TabsTrigger value="seo" className="gap-2">
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">SEO</span>
+              </TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="general">
+              <WebsiteEditorGeneral config={website} />
+            </TabsContent>
+
+            <TabsContent value="content">
+              <WebsiteEditorContent config={website} />
+            </TabsContent>
+
+            <TabsContent value="style">
+              <WebsiteEditorStyle config={website} />
+            </TabsContent>
+
+            <TabsContent value="seo">
+              <WebsiteEditorSEO config={website} />
+            </TabsContent>
+          </Tabs>
+        </div>
+      </PremiumGate>
+      </div>
+    </DashboardLayout>
+  );
+}
