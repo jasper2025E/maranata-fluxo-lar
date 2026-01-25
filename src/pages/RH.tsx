@@ -1,5 +1,5 @@
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { FinancialKPICard } from "@/components/dashboard";
 import { useRHStats } from "@/hooks/useRH";
@@ -25,28 +25,14 @@ import { FolhaTab } from "@/components/rh/FolhaTab";
 import { ContratosTab } from "@/components/rh/ContratosTab";
 import { LoadingState } from "@/components/LoadingState";
 import { motion } from "framer-motion";
-
-interface NavItem {
-  id: string;
-  label: string;
-  icon?: React.ComponentType<{ className?: string }>;
-}
+import { useNavigate } from "react-router-dom";
 
 export default function RH() {
   const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const activeTab = searchParams.get("tab") || "dashboard";
   const { data: stats, isLoading } = useRHStats();
-
-  const navItems: NavItem[] = [
-    { id: "dashboard", label: t("hr.dashboard") },
-    { id: "funcionarios", label: t("hr.employees") },
-    { id: "cargos", label: t("hr.positions") },
-    { id: "ponto", label: t("hr.timeTracking") },
-    { id: "locais", label: t("hr.locations") },
-    { id: "relatorios", label: t("hr.reports") },
-    { id: "folha", label: t("hr.payroll") },
-    { id: "contratos", label: t("hr.contracts") },
-  ];
 
   if (isLoading) {
     return (
@@ -141,7 +127,7 @@ export default function RH() {
                   scale: 1.01,
                   transition: { duration: 0.2, ease: "easeOut" },
                 }}
-                onClick={() => setActiveTab("funcionarios")}
+                onClick={() => navigate("/rh?tab=funcionarios")}
                 className={cn(
                   "group relative overflow-hidden cursor-pointer",
                   "bg-gradient-to-br from-primary/10 via-primary/5 to-transparent",
@@ -191,7 +177,45 @@ export default function RH() {
       case "contratos":
         return <ContratosTab />;
       default:
-        return null;
+        return (
+          <div className="space-y-6">
+            {/* Main KPIs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <FinancialKPICard
+                title={t("hr.totalEmployees")}
+                value={stats?.totalFuncionarios || 0}
+                subtitle={`${stats?.funcionariosAtivos || 0} ${t("hr.active")}`}
+                icon={Users}
+                variant="info"
+                index={0}
+              />
+              <FinancialKPICard
+                title={t("hr.teachers")}
+                value={stats?.professores || 0}
+                subtitle={t("hr.inTeam")}
+                icon={GraduationCap}
+                variant="premium"
+                index={1}
+              />
+              <FinancialKPICard
+                title={t("hr.administrative")}
+                value={stats?.administrativos || 0}
+                subtitle={t("hr.inTeam")}
+                icon={Building2}
+                variant="default"
+                index={2}
+              />
+              <FinancialKPICard
+                title={t("hr.monthlyPayroll")}
+                value={formatCurrency(stats?.totalSalarios || 0)}
+                subtitle={t("hr.totalSalaries")}
+                icon={Wallet}
+                variant="success"
+                index={3}
+              />
+            </div>
+          </div>
+        );
     }
   };
 
@@ -205,33 +229,9 @@ export default function RH() {
           <span className="font-medium text-foreground">{t("hr.title")}</span>
         </nav>
 
-        {/* Two Column Layout */}
-        <div className="flex flex-col md:flex-row gap-8">
-          {/* Sidebar Navigation */}
-          <nav className="md:w-48 shrink-0">
-            <ul className="space-y-0.5">
-              {navItems.map((item) => (
-                <li key={item.id}>
-                  <button
-                    onClick={() => setActiveTab(item.id)}
-                    className={cn(
-                      "w-full text-left px-3 py-2 text-sm rounded-md transition-colors",
-                      activeTab === item.id
-                        ? "bg-muted font-medium text-foreground"
-                        : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
-                    )}
-                  >
-                    {item.label}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </nav>
-
-          {/* Content Area */}
-          <div className="flex-1 min-w-0">
-            {renderContent()}
-          </div>
+        {/* Content Area - Full Width */}
+        <div className="min-w-0">
+          {renderContent()}
         </div>
       </div>
     </DashboardLayout>
