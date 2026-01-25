@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import DashboardLayout from "@/components/DashboardLayout";
+import { FinancialLayout } from "@/components/financial";
 import { Button } from "@/components/ui/button";
 import { Plus, Printer, ChevronRight, FileText, Users, Download } from "lucide-react";
 import {
@@ -137,12 +137,10 @@ const Faturas = () => {
   };
 
   const handlePaymentLink = async (fatura: Fatura) => {
-    // Links de pagamento são gerados via Asaas
     if (fatura.payment_url) {
       navigator.clipboard.writeText(fatura.payment_url);
       toast.success(t("invoices.linkCopied"));
     } else if (fatura.asaas_payment_id) {
-      // Buscar link do Asaas
       toast.info(t("invoices.generatingLink"));
       try {
         const response = await supabase.functions.invoke("asaas-get-payment", {
@@ -253,7 +251,7 @@ const Faturas = () => {
   };
 
   return (
-    <DashboardLayout>
+    <FinancialLayout>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
@@ -264,10 +262,7 @@ const Faturas = () => {
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            
-            
-          </div>
+          <div />
           <div className="flex gap-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -398,7 +393,7 @@ const Faturas = () => {
           fatura={selectedFatura}
         />
       </div>
-    </DashboardLayout>
+    </FinancialLayout>
   );
 };
 
