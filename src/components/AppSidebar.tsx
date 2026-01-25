@@ -58,7 +58,12 @@ const menuItems = [
   { titleKey: "nav.students", url: "/alunos", icon: Users },
   { titleKey: "nav.classes", url: "/turmas", icon: GraduationCap },
   { titleKey: "nav.courses", url: "/cursos", icon: BookOpen },
-  { titleKey: "nav.school", url: "/escola", icon: Building2, roles: ["admin"] },
+];
+
+// Escola Sub-items
+const escolaItems = [
+  { titleKey: "nav.escola.dados", url: "/escola", tab: "dados" },
+  { titleKey: "nav.escola.assinatura", url: "/escola?tab=assinatura", tab: "assinatura" },
 ];
 
 // HR Sub-items
@@ -88,17 +93,16 @@ const analysisItems = [
 ];
 
 // System Sub-items
-  const configItems = [
-    { titleKey: "nav.config.profile", url: "/configuracoes", tab: "perfil" },
-    { titleKey: "nav.config.security", url: "/configuracoes?tab=seguranca", tab: "seguranca" },
-    { titleKey: "nav.config.preferences", url: "/configuracoes?tab=preferencias", tab: "preferencias" },
-    { titleKey: "nav.config.billing", url: "/configuracoes?tab=cobranca", tab: "cobranca", adminOnly: true },
-    { titleKey: "nav.config.users", url: "/configuracoes?tab=usuarios", tab: "usuarios", adminOnly: true },
-    { titleKey: "nav.config.gateways", url: "/configuracoes?tab=gateways", tab: "gateways", adminOnly: true },
-    { titleKey: "nav.config.integrations", url: "/configuracoes?tab=integracoes", tab: "integracoes", platformAdminOnly: true },
-    { titleKey: "nav.config.system", url: "/configuracoes?tab=sistema", tab: "sistema", adminOnly: true },
-    { titleKey: "nav.subscription", url: "/assinatura", tab: null, adminOnly: true },
-  ];
+const configItems = [
+  { titleKey: "nav.config.profile", url: "/configuracoes", tab: "perfil" },
+  { titleKey: "nav.config.security", url: "/configuracoes?tab=seguranca", tab: "seguranca" },
+  { titleKey: "nav.config.preferences", url: "/configuracoes?tab=preferencias", tab: "preferencias" },
+  { titleKey: "nav.config.billing", url: "/configuracoes?tab=cobranca", tab: "cobranca", adminOnly: true },
+  { titleKey: "nav.config.users", url: "/configuracoes?tab=usuarios", tab: "usuarios", adminOnly: true },
+  { titleKey: "nav.config.gateways", url: "/configuracoes?tab=gateways", tab: "gateways", adminOnly: true },
+  { titleKey: "nav.config.integrations", url: "/configuracoes?tab=integracoes", tab: "integracoes", platformAdminOnly: true },
+  { titleKey: "nav.config.system", url: "/configuracoes?tab=sistema", tab: "sistema", adminOnly: true },
+];
 
 export function AppSidebar() {
   const navigate = useNavigate();
@@ -124,10 +128,15 @@ export function AppSidebar() {
   const rhTab = new URLSearchParams(location.search).get("tab") || "dashboard";
   
   // Check if Config route is active
-  const configRoutes = ["/configuracoes", "/assinatura"];
+  const configRoutes = ["/configuracoes"];
   const isConfigActive = configRoutes.some(route => location.pathname.startsWith(route));
   const [isConfigOpen, setIsConfigOpen] = useState(isConfigActive);
   const configTab = new URLSearchParams(location.search).get("tab") || "perfil";
+  
+  // Check if Escola route is active
+  const isEscolaActive = location.pathname.startsWith("/escola");
+  const [isEscolaOpen, setIsEscolaOpen] = useState(isEscolaActive);
+  const escolaTab = new URLSearchParams(location.search).get("tab") || "dados";
 
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
@@ -146,10 +155,10 @@ export function AppSidebar() {
     }
   };
 
-  const filterByRole = (items: typeof menuItems) => {
+  const filterByRole = (items: Array<{ titleKey: string; url: string; icon?: any; roles?: string[]; excludePlatformAdmin?: boolean }>) => {
     return items.filter((item) => {
       // Exclude items marked as excludePlatformAdmin for platform admins
-      if ((item as any).excludePlatformAdmin && isPlatformAdmin()) return false;
+      if (item.excludePlatformAdmin && isPlatformAdmin()) return false;
       if (!item.roles) return true;
       return item.roles.some((role) => hasRole(role as any));
     });
@@ -256,7 +265,69 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-0.5">
               {filterByRole(menuItems).map(renderMenuItem)}
 
-              {/* Collapsible HR */}
+              {/* Collapsible Escola */}
+              {hasRole("admin") && (
+                <SidebarMenuItem>
+                  <Collapsible open={isEscolaOpen} onOpenChange={setIsEscolaOpen}>
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton asChild tooltip={t("nav.school")}>
+                        <button
+                          type="button"
+                          className={cn(
+                            isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
+                            "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                            "transition-colors duration-150",
+                            isEscolaActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
+                            !isCollapsed && isEscolaActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                          )}
+                        >
+                          <Building2 className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
+                          {!isCollapsed && (
+                            <>
+                              <span className="text-sm flex-1 text-left">{t("nav.school")}</span>
+                              <ChevronDown
+                                className={cn(
+                                  "h-4 w-4 transition-transform duration-200",
+                                  isEscolaOpen && "rotate-180"
+                                )}
+                              />
+                            </>
+                          )}
+                        </button>
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
+                      {!isCollapsed && (
+                        <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
+                          {escolaItems.map((item) => {
+                            const isTabActive = isEscolaActive && escolaTab === item.tab;
+                            return (
+                              <SidebarMenuItem key={item.titleKey}>
+                                <SidebarMenuButton asChild>
+                                  <NavLink
+                                    to={item.url}
+                                    className={cn(
+                                      "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
+                                      isTabActive
+                                        ? "text-sidebar-primary font-medium bg-sidebar-primary/5"
+                                        : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                                      "transition-all duration-150"
+                                    )}
+                                    activeClassName=""
+                                  >
+                                    <span className="flex-1">{t(item.titleKey)}</span>
+                                  </NavLink>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            );
+                          })}
+                        </SidebarMenu>
+                      )}
+                    </CollapsibleContent>
+                  </Collapsible>
+                </SidebarMenuItem>
+              )}
+
               {(hasRole("admin") || hasRole("staff")) && (
                 <SidebarMenuItem>
                   <Collapsible open={isHROpen} onOpenChange={setIsHROpen}>
