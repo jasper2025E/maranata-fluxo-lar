@@ -89,8 +89,15 @@ const analysisItems = [
 
 // System Sub-items
   const configItems = [
-    { titleKey: "nav.profile", url: "/configuracoes" },
-    { titleKey: "nav.subscription", url: "/assinatura" },
+    { titleKey: "nav.config.profile", url: "/configuracoes", tab: "perfil" },
+    { titleKey: "nav.config.security", url: "/configuracoes?tab=seguranca", tab: "seguranca" },
+    { titleKey: "nav.config.preferences", url: "/configuracoes?tab=preferencias", tab: "preferencias" },
+    { titleKey: "nav.config.billing", url: "/configuracoes?tab=cobranca", tab: "cobranca", adminOnly: true },
+    { titleKey: "nav.config.users", url: "/configuracoes?tab=usuarios", tab: "usuarios", adminOnly: true },
+    { titleKey: "nav.config.gateways", url: "/configuracoes?tab=gateways", tab: "gateways", adminOnly: true },
+    { titleKey: "nav.config.integrations", url: "/configuracoes?tab=integracoes", tab: "integracoes", platformAdminOnly: true },
+    { titleKey: "nav.config.system", url: "/configuracoes?tab=sistema", tab: "sistema", adminOnly: true },
+    { titleKey: "nav.subscription", url: "/assinatura", tab: null, adminOnly: true },
   ];
 
 export function AppSidebar() {
@@ -120,6 +127,7 @@ export function AppSidebar() {
   const configRoutes = ["/configuracoes", "/assinatura"];
   const isConfigActive = configRoutes.some(route => location.pathname.startsWith(route));
   const [isConfigOpen, setIsConfigOpen] = useState(isConfigActive);
+  const configTab = new URLSearchParams(location.search).get("tab") || "perfil";
 
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
@@ -491,23 +499,36 @@ export function AppSidebar() {
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                       {!isCollapsed && (
                         <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
-                          {configItems.map((item) => (
-                            <SidebarMenuItem key={item.titleKey}>
-                              <SidebarMenuButton asChild>
-                                <NavLink
-                                  to={item.url}
-                                  className={cn(
-                                    "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
-                                    "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
-                                    "transition-all duration-150"
-                                  )}
-                                  activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
-                                >
-                                  <span className="flex-1">{t(item.titleKey)}</span>
-                                </NavLink>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          ))}
+                          {configItems
+                            .filter(item => {
+                              if (item.platformAdminOnly) return isPlatformAdmin();
+                              if (item.adminOnly) return hasRole("admin");
+                              return true;
+                            })
+                            .map((item) => {
+                              const isTabActive = item.tab 
+                                ? (location.pathname === "/configuracoes" && configTab === item.tab)
+                                : location.pathname === "/assinatura";
+                              return (
+                                <SidebarMenuItem key={item.titleKey}>
+                                  <SidebarMenuButton asChild>
+                                    <NavLink
+                                      to={item.url}
+                                      className={cn(
+                                        "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
+                                        "transition-all duration-150",
+                                        isTabActive 
+                                          ? "text-sidebar-primary font-medium bg-sidebar-primary/5" 
+                                          : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                                      )}
+                                      activeClassName=""
+                                    >
+                                      <span className="flex-1">{t(item.titleKey)}</span>
+                                    </NavLink>
+                                  </SidebarMenuButton>
+                                </SidebarMenuItem>
+                              );
+                            })}
                         </SidebarMenu>
                       )}
                     </CollapsibleContent>

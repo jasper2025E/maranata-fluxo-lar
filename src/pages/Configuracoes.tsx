@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "react-i18next";
+import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
@@ -36,9 +37,12 @@ const Configuracoes = () => {
   const { user, role, isPlatformAdmin } = useAuth();
   const { theme, setTheme } = useTheme();
   const { i18n } = useTranslation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [loadingPrefs, setLoadingPrefs] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("perfil");
+  
+  // Sync tab with URL params
+  const activeTab = searchParams.get("tab") || "perfil";
   
   const [preferences, setPreferences] = useState<UserPreferences>({
     email_notifications: true,
@@ -184,7 +188,7 @@ const Configuracoes = () => {
               {visibleNavItems.map((item) => (
                 <li key={item.id}>
                   <button
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => setSearchParams({ tab: item.id })}
                     className={cn(
                       "w-full text-left px-3 py-2 text-sm rounded-md transition-colors",
                       activeTab === item.id
