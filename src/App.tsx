@@ -32,6 +32,7 @@ import PontoEletronico from "./pages/PontoEletronico";
 import MinhaAssinatura from "./pages/MinhaAssinatura";
 import FaturasAssinatura from "./pages/FaturasAssinatura";
 import PagarFatura from "./pages/PagarFatura";
+import SaudeFinanceira from "./pages/SaudeFinanceira";
 
 // Platform Admin Pages
 import PlatformDashboard from "./pages/platform/PlatformDashboard";
@@ -180,6 +181,14 @@ function AppContent() {
             element={
               <ProtectedRoute requiredRole="admin">
                 <MinhaAssinatura />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/saude-financeira"
+            element={
+              <ProtectedRoute>
+                <SaudeFinanceira />
               </ProtectedRoute>
             }
           />

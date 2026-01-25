@@ -26,7 +26,6 @@ import {
   FinancialChart,
   FinancialSummaryCard,
   InadimplenciaCard,
-  FinancialProjectionSection,
 } from "@/components/dashboard";
 import { motion } from "framer-motion";
 
@@ -208,9 +207,6 @@ const Dashboard = () => {
           type="area"
           height={250}
         />
-
-        {/* Financial Projection Section */}
-        <FinancialProjectionSection />
       </div>
     </DashboardLayout>
   );
