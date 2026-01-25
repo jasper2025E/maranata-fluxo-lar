@@ -2257,6 +2257,111 @@ export type Database = {
           },
         ]
       }
+      security_access_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          is_cross_tenant_attempt: boolean | null
+          is_platform_admin: boolean | null
+          metadata: Json | null
+          operation: string
+          request_path: string | null
+          resource_id: string | null
+          resource_type: string
+          status: string
+          tenant_id: string | null
+          user_agent: string | null
+          user_email: string | null
+          user_id: string | null
+          user_tenant_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          is_cross_tenant_attempt?: boolean | null
+          is_platform_admin?: boolean | null
+          metadata?: Json | null
+          operation: string
+          request_path?: string | null
+          resource_id?: string | null
+          resource_type: string
+          status: string
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          user_tenant_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          is_cross_tenant_attempt?: boolean | null
+          is_platform_admin?: boolean | null
+          metadata?: Json | null
+          operation?: string
+          request_path?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          status?: string
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_email?: string | null
+          user_id?: string | null
+          user_tenant_id?: string | null
+        }
+        Relationships: []
+      }
+      security_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string | null
+          description: string | null
+          id: string
+          metadata: Json | null
+          resolved_at: string | null
+          resolved_by: string | null
+          severity: string
+          tenant_id: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity: string
+          tenant_id?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          severity?: string
+          tenant_id?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       setores: {
         Row: {
           ativo: boolean | null
@@ -2844,10 +2949,31 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      security_summary: {
+        Row: {
+          allowed_requests: number | null
+          cross_tenant_attempts: number | null
+          denied_requests: number | null
+          suspicious_requests: number | null
+          total_requests: number | null
+          unique_tenants: number | null
+          unique_users: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       atualizar_status_faturas: { Args: never; Returns: undefined }
+      detect_suspicious_patterns: {
+        Args: { p_minutes?: number; p_user_id: string }
+        Returns: {
+          cross_tenant_attempts: number
+          denied_requests: number
+          is_suspicious: boolean
+          total_requests: number
+          unique_tenants_accessed: number
+        }[]
+      }
       generate_ponto_token: {
         Args: { p_funcionario_id: string }
         Returns: string
@@ -2930,6 +3056,19 @@ export type Database = {
       is_school_user: { Args: { _user_id: string }; Returns: boolean }
       is_system_manager: { Args: { _user_id: string }; Returns: boolean }
       is_tenant_blocked: { Args: { p_tenant_id: string }; Returns: boolean }
+      log_security_access: {
+        Args: {
+          p_action: string
+          p_error_message?: string
+          p_metadata?: Json
+          p_operation?: string
+          p_resource_id?: string
+          p_resource_type: string
+          p_status?: string
+          p_target_tenant_id?: string
+        }
+        Returns: string
+      }
       recalcular_fatura: { Args: { p_fatura_id: string }; Returns: undefined }
       registrar_ponto_externo: {
         Args: {
