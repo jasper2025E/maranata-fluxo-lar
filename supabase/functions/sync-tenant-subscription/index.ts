@@ -301,20 +301,43 @@ serve(async (req) => {
         else if (updatedSub.status === "canceled") mappedStatus = "canceled";
         else if (updatedSub.status === "trialing") mappedStatus = "trialing";
 
+        // Calculate next billing date and billing day from Stripe
         const nextBillingDate = updatedSub.current_period_end 
-          ? new Date(updatedSub.current_period_end * 1000).toISOString().split("T")[0]
+          ? new Date(updatedSub.current_period_end * 1000)
           : null;
+        
+        const billingDay = nextBillingDate ? nextBillingDate.getDate() : tenant.billing_day;
+
+        // Get subscription start date for reference
+        const subscriptionStartedAt = updatedSub.start_date
+          ? new Date(updatedSub.start_date * 1000).toISOString()
+          : tenant.subscription_started_at;
+
+        // Get current price from Stripe
+        const monthlyPrice = updatedSub.items?.data?.[0]?.price?.unit_amount
+          ? updatedSub.items.data[0].price.unit_amount / 100
+          : tenant.monthly_price;
 
         await supabase
           .from("tenants")
           .update({
             subscription_status: mappedStatus,
-            next_billing_date: nextBillingDate,
+            next_billing_date: nextBillingDate ? nextBillingDate.toISOString().split("T")[0] : null,
+            billing_day: billingDay,
+            subscription_started_at: subscriptionStartedAt,
+            monthly_price: monthlyPrice,
+            auto_billing_enabled: updatedSub.status === "active" || updatedSub.status === "trialing",
           })
           .eq("id", tenantId);
 
         result.stripeStatus = updatedSub.status;
-        result.nextBillingDate = nextBillingDate;
+        result.nextBillingDate = nextBillingDate ? nextBillingDate.toISOString().split("T")[0] : null;
+        result.billingDay = billingDay;
+        result.monthlyPrice = monthlyPrice;
+        result.actions.push({ 
+          type: "success", 
+          message: `Dados sincronizados: próxima cobrança ${nextBillingDate ? nextBillingDate.toISOString().split("T")[0] : 'N/A'}, dia ${billingDay}` 
+        });
       }
     }
 
