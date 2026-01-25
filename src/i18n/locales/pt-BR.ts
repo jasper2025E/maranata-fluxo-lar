@@ -118,6 +118,7 @@ const ptBR = {
       escola: {
         dados: "Dados da Escola",
         assinatura: "Assinatura",
+        website: "Site Escolar",
       },
       exitSystem: "Sair do Sistema",
       financialSystem: "Sistema Financeiro",
