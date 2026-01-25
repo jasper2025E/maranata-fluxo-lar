@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
-import DashboardLayout from "@/components/DashboardLayout";
+import { FinancialLayout } from "@/components/financial";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -102,14 +102,8 @@ const Pagamentos = () => {
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
   return (
-    <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">{t("nav.financial")}</span>
-          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-          <span className="font-medium text-foreground">{t("payments.title")}</span>
-        </nav>
+    <FinancialLayout>
+      <div className="max-w-5xl mx-auto p-6 space-y-6">
 
         {/* Header */}
         <div>
@@ -227,7 +221,7 @@ const Pagamentos = () => {
           </CardContent>
         </Card>
       </div>
-    </DashboardLayout>
+    </FinancialLayout>
   );
 };
 
