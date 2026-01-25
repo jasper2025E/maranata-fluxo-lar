@@ -50,11 +50,13 @@ export function GlobalSearch() {
       const searchResults: SearchResult[] = [];
 
       // Search alunos
-      const { data: alunos } = await supabase
+      const { data: alunos, error: alunosError } = await supabase
         .from("alunos")
         .select("id, nome_completo, email_responsavel")
         .ilike("nome_completo", `%${searchQuery}%`)
         .limit(5);
+
+      console.log("Alunos search:", { query: searchQuery, data: alunos, error: alunosError });
 
       if (alunos) {
         alunos.forEach((aluno) => {
@@ -68,11 +70,13 @@ export function GlobalSearch() {
       }
 
       // Search responsaveis
-      const { data: responsaveis } = await supabase
+      const { data: responsaveis, error: respError } = await supabase
         .from("responsaveis")
         .select("id, nome, email")
         .or(`nome.ilike.%${searchQuery}%,email.ilike.%${searchQuery}%`)
         .limit(5);
+
+      console.log("Responsaveis search:", { data: responsaveis, error: respError });
 
       if (responsaveis) {
         responsaveis.forEach((resp) => {
@@ -86,11 +90,13 @@ export function GlobalSearch() {
       }
 
       // Search faturas by codigo
-      const { data: faturas } = await supabase
+      const { data: faturas, error: faturasError } = await supabase
         .from("faturas")
         .select("id, codigo_sequencial, valor, alunos(nome_completo)")
         .ilike("codigo_sequencial", `%${searchQuery}%`)
         .limit(5);
+
+      console.log("Faturas search:", { data: faturas, error: faturasError });
 
       if (faturas) {
         faturas.forEach((fatura) => {
@@ -103,6 +109,8 @@ export function GlobalSearch() {
           });
         });
       }
+
+      console.log("Total results:", searchResults.length);
 
       setResults(searchResults);
     } catch (error) {
