@@ -1,8 +1,5 @@
 import { useState } from "react";
 import {
-  Zap,
-  Sparkles,
-  Crown,
   Edit2,
   Save,
   X,
@@ -20,12 +17,6 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAllSubscriptionPlans, useUpdateSubscriptionPlan, getPlanPriceFormatted, SubscriptionPlan } from "@/hooks/useSubscriptionPlans";
 
-const iconMap: Record<string, React.ReactNode> = {
-  Zap: <Zap className="h-5 w-5" />,
-  Sparkles: <Sparkles className="h-5 w-5" />,
-  Crown: <Crown className="h-5 w-5" />,
-};
-
 export default function PlatformPlans() {
   const { data: plans = [], isLoading, refetch } = useAllSubscriptionPlans();
   const updatePlan = useUpdateSubscriptionPlan();
@@ -42,8 +33,6 @@ export default function PlatformPlans() {
       limite_usuarios: plan.limite_usuarios,
       popular: plan.popular,
       active: plan.active,
-      color: plan.color,
-      icon: plan.icon,
     });
   };
 
@@ -215,14 +204,9 @@ export default function PlatformPlans() {
                 <div className="space-y-4">
                   {/* Header */}
                   <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className="p-2 rounded-md bg-muted text-muted-foreground">
-                        {iconMap[plan.icon] || <Zap className="h-5 w-5" />}
-                      </div>
-                      <div>
-                        <h3 className="font-medium text-foreground">{plan.name}</h3>
-                        <p className="text-xs text-muted-foreground font-mono">{plan.id}</p>
-                      </div>
+                    <div>
+                      <h3 className="font-medium text-foreground">{plan.name}</h3>
+                      <p className="text-xs text-muted-foreground mt-0.5">{plan.id}</p>
                     </div>
                     {plan.popular && (
                       <Badge variant="secondary" className="text-xs">
