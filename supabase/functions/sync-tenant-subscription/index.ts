@@ -36,14 +36,11 @@ serve(async (req) => {
       throw new Error("Usuário não autenticado");
     }
 
-    // Check if user is platform admin
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .single();
+    // Check if user is platform admin using the database function
+    const { data: isAdmin, error: roleError } = await supabase
+      .rpc("is_platform_admin", { _user_id: user.id });
 
-    if (profile?.role !== "platform_admin") {
+    if (roleError || !isAdmin) {
       throw new Error("Acesso negado: apenas administradores da plataforma");
     }
 
