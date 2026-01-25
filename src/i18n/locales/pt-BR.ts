@@ -584,16 +584,17 @@ const ptBR = {
       active: "ativos",
       teachers: "Professores",
       administrative: "Administrativo",
+      inTeam: "na equipe",
       monthlyPayroll: "Folha Mensal",
       totalSalaries: "Total de salários",
-      paidPayrolls: "Folhas pagas",
-      pendingPayrolls: "Folhas pendentes",
+      paidPayrolls: "Folhas Pagas",
+      pendingPayrolls: "Folhas Pendentes",
       hrExpenses: "Gasto com RH",
       currentMonth: "Mês atual",
       thisMonth: "Este mês",
 
       // Actions
-      newEmployee: "Novo funcionário",
+      newEmployee: "Novo Funcionário",
       register: "Cadastrar",
     },
 
