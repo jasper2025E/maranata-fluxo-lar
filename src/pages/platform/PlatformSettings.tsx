@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { 
   Settings, 
   Save,
@@ -146,17 +145,13 @@ export default function PlatformSettings() {
     <PlatformLayout>
       <div className="space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
-        >
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-white flex items-center gap-3">
-              <Settings className="h-8 w-8 text-amber-400" />
+            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
+              <Settings className="h-6 w-6 text-primary" />
               Configurações Globais
             </h1>
-            <p className="text-slate-400 mt-1">
+            <p className="text-muted-foreground mt-1">
               Configure as opções globais da plataforma
             </p>
           </div>
@@ -166,7 +161,6 @@ export default function PlatformSettings() {
               variant="outline"
               onClick={fetchSettings}
               disabled={loading}
-              className="border-slate-700 text-slate-300 hover:bg-slate-800"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
               Recarregar
@@ -174,206 +168,176 @@ export default function PlatformSettings() {
             <Button
               onClick={saveSettings}
               disabled={saving}
-              className="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700"
             >
               <Save className="h-4 w-4 mr-2" />
               {saving ? "Salvando..." : "Salvar"}
             </Button>
           </div>
-        </motion.div>
+        </div>
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <RefreshCw className="h-8 w-8 animate-spin text-amber-400" />
+            <RefreshCw className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2">
             {/* General Settings */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
-            >
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Globe className="h-5 w-5 text-amber-400" />
-                    Configurações Gerais
-                  </CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Informações básicas da plataforma
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Nome da Plataforma</Label>
-                    <Input
-                      value={config.platform_name}
-                      onChange={(e) => updateConfig("platform_name", e.target.value)}
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Email de Suporte</Label>
-                    <Input
-                      type="email"
-                      value={config.support_email}
-                      onChange={(e) => updateConfig("support_email", e.target.value)}
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Globe className="h-5 w-5 text-primary" />
+                  Configurações Gerais
+                </CardTitle>
+                <CardDescription>
+                  Informações básicas da plataforma
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Nome da Plataforma</Label>
+                  <Input
+                    value={config.platform_name}
+                    onChange={(e) => updateConfig("platform_name", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Email de Suporte</Label>
+                  <Input
+                    type="email"
+                    value={config.support_email}
+                    onChange={(e) => updateConfig("support_email", e.target.value)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Limits Settings */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-            >
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Database className="h-5 w-5 text-blue-400" />
-                    Limites do Sistema
-                  </CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Configure os limites de uso
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Máximo de Escolas</Label>
-                    <Input
-                      type="number"
-                      value={config.max_schools}
-                      onChange={(e) => updateConfig("max_schools", parseInt(e.target.value))}
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Usuários por Escola</Label>
-                    <Input
-                      type="number"
-                      value={config.max_users_per_school}
-                      onChange={(e) => updateConfig("max_users_per_school", parseInt(e.target.value))}
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-slate-300">Alunos por Escola</Label>
-                    <Input
-                      type="number"
-                      value={config.max_students_per_school}
-                      onChange={(e) => updateConfig("max_students_per_school", parseInt(e.target.value))}
-                      className="bg-slate-800 border-slate-700 text-white"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  Limites do Sistema
+                </CardTitle>
+                <CardDescription>
+                  Configure os limites de uso
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label>Máximo de Escolas</Label>
+                  <Input
+                    type="number"
+                    value={config.max_schools}
+                    onChange={(e) => updateConfig("max_schools", parseInt(e.target.value))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Usuários por Escola</Label>
+                  <Input
+                    type="number"
+                    value={config.max_users_per_school}
+                    onChange={(e) => updateConfig("max_users_per_school", parseInt(e.target.value))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Alunos por Escola</Label>
+                  <Input
+                    type="number"
+                    value={config.max_students_per_school}
+                    onChange={(e) => updateConfig("max_students_per_school", parseInt(e.target.value))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Features Settings */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-emerald-400" />
-                    Funcionalidades
-                  </CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Ative ou desative recursos
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-slate-300">Novas Inscrições</Label>
-                      <p className="text-xs text-slate-500">Permitir registro de novas escolas</p>
-                    </div>
-                    <Switch
-                      checked={config.enable_new_registrations}
-                      onCheckedChange={(checked) => updateConfig("enable_new_registrations", checked)}
-                    />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  Funcionalidades
+                </CardTitle>
+                <CardDescription>
+                  Ative ou desative recursos
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Novas Inscrições</Label>
+                    <p className="text-xs text-muted-foreground">Permitir registro de novas escolas</p>
                   </div>
-                  <Separator className="bg-slate-700" />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-slate-300 flex items-center gap-2">
-                        <Mail className="h-4 w-4" />
-                        Notificações por Email
-                      </Label>
-                      <p className="text-xs text-slate-500">Enviar emails automatizados</p>
-                    </div>
-                    <Switch
-                      checked={config.enable_email_notifications}
-                      onCheckedChange={(checked) => updateConfig("enable_email_notifications", checked)}
-                    />
+                  <Switch
+                    checked={config.enable_new_registrations}
+                    onCheckedChange={(checked) => updateConfig("enable_new_registrations", checked)}
+                  />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      Notificações por Email
+                    </Label>
+                    <p className="text-xs text-muted-foreground">Enviar emails automatizados</p>
                   </div>
-                  <Separator className="bg-slate-700" />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-slate-300 flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-red-400" />
-                        Modo Manutenção
-                      </Label>
-                      <p className="text-xs text-slate-500">Bloquear acesso ao sistema</p>
-                    </div>
-                    <Switch
-                      checked={config.enable_maintenance_mode}
-                      onCheckedChange={(checked) => updateConfig("enable_maintenance_mode", checked)}
-                    />
+                  <Switch
+                    checked={config.enable_email_notifications}
+                    onCheckedChange={(checked) => updateConfig("enable_email_notifications", checked)}
+                  />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-destructive" />
+                      Modo Manutenção
+                    </Label>
+                    <p className="text-xs text-muted-foreground">Bloquear acesso ao sistema</p>
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <Switch
+                    checked={config.enable_maintenance_mode}
+                    onCheckedChange={(checked) => updateConfig("enable_maintenance_mode", checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Payments Settings */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <Card className="bg-slate-800/50 border-slate-700">
-                <CardHeader>
-                  <CardTitle className="text-white flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-purple-400" />
-                    Integrações de Pagamento
-                  </CardTitle>
-                  <CardDescription className="text-slate-400">
-                    Configure os gateways de pagamento
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-slate-300">Stripe</Label>
-                      <p className="text-xs text-slate-500">Cartões internacionais</p>
-                    </div>
-                    <Switch
-                      checked={config.stripe_enabled}
-                      onCheckedChange={(checked) => updateConfig("stripe_enabled", checked)}
-                    />
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                  Integrações de Pagamento
+                </CardTitle>
+                <CardDescription>
+                  Configure os gateways de pagamento
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Stripe</Label>
+                    <p className="text-xs text-muted-foreground">Cartões internacionais</p>
                   </div>
-                  <Separator className="bg-slate-700" />
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label className="text-slate-300">Asaas</Label>
-                      <p className="text-xs text-slate-500">PIX e Boleto</p>
-                    </div>
-                    <Switch
-                      checked={config.asaas_enabled}
-                      onCheckedChange={(checked) => updateConfig("asaas_enabled", checked)}
-                    />
+                  <Switch
+                    checked={config.stripe_enabled}
+                    onCheckedChange={(checked) => updateConfig("stripe_enabled", checked)}
+                  />
+                </div>
+                <Separator />
+                <div className="flex items-center justify-between">
+                  <div className="space-y-0.5">
+                    <Label>Asaas</Label>
+                    <p className="text-xs text-muted-foreground">PIX e Boleto</p>
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
+                  <Switch
+                    checked={config.asaas_enabled}
+                    onCheckedChange={(checked) => updateConfig("asaas_enabled", checked)}
+                  />
+                </div>
+              </CardContent>
+            </Card>
           </div>
         )}
       </div>

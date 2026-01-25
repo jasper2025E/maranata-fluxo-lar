@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { 
   Activity, 
   Search, 
@@ -66,10 +65,10 @@ interface AuditLog {
 }
 
 const actionLabels: Record<string, { label: string; color: string }> = {
-  INSERT: { label: "Criação", color: "bg-emerald-500/20 text-emerald-400 border-emerald-500/30" },
-  UPDATE: { label: "Atualização", color: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
-  DELETE: { label: "Exclusão", color: "bg-red-500/20 text-red-400 border-red-500/30" },
-  alteracao: { label: "Alteração", color: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+  INSERT: { label: "Criação", color: "bg-green-500/10 text-green-600 dark:text-green-400 border-green-500/30" },
+  UPDATE: { label: "Atualização", color: "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30" },
+  DELETE: { label: "Exclusão", color: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/30" },
+  alteracao: { label: "Alteração", color: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30" },
 };
 
 export default function PlatformLogs() {
@@ -82,11 +81,9 @@ export default function PlatformLogs() {
   const [selectedTable, setSelectedTable] = useState<string>("all");
   const [selectedAction, setSelectedAction] = useState<string>("all");
   
-  // Detail dialog
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [selectedLog, setSelectedLog] = useState<AuditLog | null>(null);
 
-  // Available tables for filtering
   const [tables, setTables] = useState<string[]>([]);
 
   useEffect(() => {
@@ -113,7 +110,6 @@ export default function PlatformLogs() {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // Fetch audit logs
       const { data: logsData, error: logsError } = await supabase
         .from("audit_logs")
         .select("*")
@@ -122,11 +118,9 @@ export default function PlatformLogs() {
 
       if (logsError) throw logsError;
 
-      // Get unique user IDs and tenant IDs
       const userIds = [...new Set((logsData || []).map(l => l.user_id).filter(Boolean))];
       const tenantIds = [...new Set((logsData || []).map(l => l.tenant_id).filter(Boolean))];
 
-      // Fetch profiles for user info
       let profilesMap = new Map<string, { nome: string; email: string }>();
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
@@ -139,7 +133,6 @@ export default function PlatformLogs() {
         });
       }
 
-      // Fetch tenants for tenant names
       let tenantsMap = new Map<string, string>();
       if (tenantIds.length > 0) {
         const { data: tenantsData } = await supabase
@@ -152,7 +145,6 @@ export default function PlatformLogs() {
         });
       }
 
-      // Combine data
       const enrichedLogs: AuditLog[] = (logsData || []).map(log => ({
         ...log,
         user_nome: log.user_id ? profilesMap.get(log.user_id)?.nome : undefined,
@@ -162,7 +154,6 @@ export default function PlatformLogs() {
 
       setLogs(enrichedLogs);
 
-      // Extract unique tables
       const uniqueTables = [...new Set(enrichedLogs.map(l => l.tabela))].sort();
       setTables(uniqueTables);
     } catch (error: any) {
@@ -178,7 +169,6 @@ export default function PlatformLogs() {
     setDetailDialogOpen(true);
   };
 
-  // Filter logs
   const filteredLogs = logs.filter(log => {
     const matchesSearch = 
       log.tabela.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -201,7 +191,6 @@ export default function PlatformLogs() {
     return matchesSearch && matchesTenant && matchesTable && matchesAction;
   });
 
-  // Stats
   const stats = {
     total: logs.length,
     today: logs.filter(l => {
@@ -222,11 +211,7 @@ export default function PlatformLogs() {
     <PlatformLayout>
       <div className="space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
-        >
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
               <Activity className="h-6 w-6 text-primary" />
@@ -245,15 +230,10 @@ export default function PlatformLogs() {
             <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
             Atualizar
           </Button>
-        </motion.div>
+        </div>
 
         {/* Stats Cards */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="grid grid-cols-2 md:grid-cols-5 gap-4"
-        >
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm text-muted-foreground">Total</CardTitle>
@@ -294,15 +274,10 @@ export default function PlatformLogs() {
               <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.deletes}</p>
             </CardContent>
           </Card>
-        </motion.div>
+        </div>
 
         {/* Filters */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="flex flex-col md:flex-row gap-4"
-        >
+        <div className="flex flex-col md:flex-row gap-4">
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
@@ -355,121 +330,115 @@ export default function PlatformLogs() {
               <SelectItem value="DELETE">Exclusão</SelectItem>
             </SelectContent>
           </Select>
-        </motion.div>
+        </div>
 
         {/* Logs Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-        >
-          <Card className="bg-slate-800/50 border-slate-700">
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-slate-700 hover:bg-transparent">
-                    <TableHead className="text-slate-400">Data/Hora</TableHead>
-                    <TableHead className="text-slate-400">Usuário</TableHead>
-                    <TableHead className="text-slate-400">Ação</TableHead>
-                    <TableHead className="text-slate-400">Tabela</TableHead>
-                    <TableHead className="text-slate-400">Escola</TableHead>
-                    <TableHead className="text-slate-400 text-right">Detalhes</TableHead>
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Data/Hora</TableHead>
+                  <TableHead>Usuário</TableHead>
+                  <TableHead>Ação</TableHead>
+                  <TableHead>Tabela</TableHead>
+                  <TableHead>Escola</TableHead>
+                  <TableHead className="text-right">Detalhes</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {loading ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                      <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
+                      Carregando logs...
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {loading ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-slate-400">
-                        <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
-                        Carregando logs...
-                      </TableCell>
-                    </TableRow>
-                  ) : filteredLogs.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10 text-slate-400">
-                        Nenhum log encontrado
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredLogs.slice(0, 100).map((log) => {
-                      const actionStyle = actionLabels[log.acao] || { label: log.acao, color: "bg-slate-500/20 text-slate-400 border-slate-500/30" };
-                      
-                      return (
-                        <TableRow key={log.id} className="border-slate-700 hover:bg-slate-700/50">
-                          <TableCell>
+                ) : filteredLogs.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-10 text-muted-foreground">
+                      Nenhum log encontrado
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  filteredLogs.slice(0, 100).map((log) => {
+                    const actionStyle = actionLabels[log.acao] || { label: log.acao, color: "bg-muted text-muted-foreground border-border" };
+                    
+                    return (
+                      <TableRow key={log.id}>
+                        <TableCell>
+                          <div className="flex flex-col">
+                            <span className="text-foreground flex items-center gap-1">
+                              <Calendar className="h-3 w-3 text-muted-foreground" />
+                              {format(new Date(log.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                            </span>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {format(new Date(log.created_at), "HH:mm:ss")}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {log.user_nome ? (
                             <div className="flex flex-col">
-                              <span className="text-white flex items-center gap-1">
-                                <Calendar className="h-3 w-3 text-slate-400" />
-                                {format(new Date(log.created_at), "dd/MM/yyyy", { locale: ptBR })}
+                              <span className="text-foreground flex items-center gap-1">
+                                <User className="h-3 w-3 text-muted-foreground" />
+                                {log.user_nome}
                               </span>
-                              <span className="text-xs text-slate-400 flex items-center gap-1">
-                                <Clock className="h-3 w-3" />
-                                {format(new Date(log.created_at), "HH:mm:ss")}
-                              </span>
+                              <span className="text-xs text-muted-foreground">{log.user_email}</span>
                             </div>
-                          </TableCell>
-                          <TableCell>
-                            {log.user_nome ? (
-                              <div className="flex flex-col">
-                                <span className="text-white flex items-center gap-1">
-                                  <User className="h-3 w-3 text-slate-400" />
-                                  {log.user_nome}
-                                </span>
-                                <span className="text-xs text-slate-500">{log.user_email}</span>
-                              </div>
-                            ) : (
-                              <span className="text-slate-500 italic">Sistema</span>
-                            )}
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${actionStyle.color} border`}>
-                              {actionStyle.label}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-slate-300 font-mono text-sm">{log.tabela}</span>
-                          </TableCell>
-                          <TableCell>
-                            {log.tenant_nome ? (
-                              <span className="text-slate-300 flex items-center gap-1">
-                                <Building2 className="h-3 w-3 text-slate-400" />
-                                {log.tenant_nome}
-                              </span>
-                            ) : (
-                              <span className="text-slate-500 italic">Global</span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => openDetailDialog(log)}
-                              className="h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-700"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </TableCell>
-                        </TableRow>
-                      );
-                    })
-                  )}
-                </TableBody>
-              </Table>
-              {filteredLogs.length > 100 && (
-                <div className="p-4 text-center text-slate-400 border-t border-slate-700">
-                  Exibindo 100 de {filteredLogs.length} logs. Use os filtros para refinar a busca.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+                          ) : (
+                            <span className="text-muted-foreground italic">Sistema</span>
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          <Badge className={`${actionStyle.color} border`}>
+                            {actionStyle.label}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <span className="font-mono text-sm">{log.tabela}</span>
+                        </TableCell>
+                        <TableCell>
+                          {log.tenant_nome ? (
+                            <span className="flex items-center gap-1">
+                              <Building2 className="h-3 w-3 text-muted-foreground" />
+                              {log.tenant_nome}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground italic">Global</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => openDetailDialog(log)}
+                            className="h-8 w-8"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
+                )}
+              </TableBody>
+            </Table>
+            {filteredLogs.length > 100 && (
+              <div className="p-4 text-center text-muted-foreground border-t">
+                Exibindo 100 de {filteredLogs.length} logs. Use os filtros para refinar a busca.
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Detail Dialog */}
         <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-          <DialogContent className="bg-slate-900 border-slate-700 text-white max-w-2xl">
+          <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <Eye className="h-5 w-5 text-amber-400" />
+                <Eye className="h-5 w-5 text-primary" />
                 Detalhes do Log
               </DialogTitle>
             </DialogHeader>
@@ -478,38 +447,38 @@ export default function PlatformLogs() {
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Data/Hora</p>
-                    <p className="text-white">
+                    <p className="text-xs text-muted-foreground mb-1">Data/Hora</p>
+                    <p className="text-foreground">
                       {format(new Date(selectedLog.created_at), "dd/MM/yyyy HH:mm:ss", { locale: ptBR })}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Usuário</p>
-                    <p className="text-white">{selectedLog.user_nome || "Sistema"}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Usuário</p>
+                    <p className="text-foreground">{selectedLog.user_nome || "Sistema"}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Ação</p>
-                    <p className="text-white">{selectedLog.acao}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Ação</p>
+                    <p className="text-foreground">{selectedLog.acao}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Tabela</p>
-                    <p className="text-white font-mono">{selectedLog.tabela}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Tabela</p>
+                    <p className="font-mono">{selectedLog.tabela}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">ID do Registro</p>
-                    <p className="text-white font-mono text-sm">{selectedLog.registro_id || "-"}</p>
+                    <p className="text-xs text-muted-foreground mb-1">ID do Registro</p>
+                    <p className="font-mono text-sm">{selectedLog.registro_id || "-"}</p>
                   </div>
                   <div>
-                    <p className="text-xs text-slate-400 mb-1">Escola</p>
-                    <p className="text-white">{selectedLog.tenant_nome || "Global"}</p>
+                    <p className="text-xs text-muted-foreground mb-1">Escola</p>
+                    <p className="text-foreground">{selectedLog.tenant_nome || "Global"}</p>
                   </div>
                 </div>
 
                 {selectedLog.dados_anteriores && (
                   <div>
-                    <p className="text-xs text-slate-400 mb-2">Dados Anteriores</p>
-                    <ScrollArea className="h-32 bg-slate-800 rounded-lg p-3">
-                      <pre className="text-xs text-slate-300 whitespace-pre-wrap">
+                    <p className="text-xs text-muted-foreground mb-2">Dados Anteriores</p>
+                    <ScrollArea className="h-32 bg-muted rounded-lg p-3">
+                      <pre className="text-xs whitespace-pre-wrap">
                         {JSON.stringify(selectedLog.dados_anteriores, null, 2)}
                       </pre>
                     </ScrollArea>
@@ -518,9 +487,9 @@ export default function PlatformLogs() {
 
                 {selectedLog.dados_novos && (
                   <div>
-                    <p className="text-xs text-slate-400 mb-2">Dados Novos</p>
-                    <ScrollArea className="h-32 bg-slate-800 rounded-lg p-3">
-                      <pre className="text-xs text-slate-300 whitespace-pre-wrap">
+                    <p className="text-xs text-muted-foreground mb-2">Dados Novos</p>
+                    <ScrollArea className="h-32 bg-muted rounded-lg p-3">
+                      <pre className="text-xs whitespace-pre-wrap">
                         {JSON.stringify(selectedLog.dados_novos, null, 2)}
                       </pre>
                     </ScrollArea>

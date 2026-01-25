@@ -1,6 +1,5 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   TrendingUp, 
   TrendingDown,
@@ -74,11 +73,7 @@ export default function PlatformAnalytics() {
     <PlatformLayout>
       <div className="space-y-6">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4"
-        >
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
             <p className="text-muted-foreground">
@@ -93,7 +88,7 @@ export default function PlatformAnalytics() {
             <RefreshCw className="h-4 w-4 mr-2" />
             Atualizar
           </Button>
-        </motion.div>
+        </div>
 
         {/* Primary KPIs */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -171,48 +166,18 @@ export default function PlatformAnalytics() {
         </div>
 
         {/* MRR Evolution Chart */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-        >
-          <MrrChart data={analytics.monthlyMetrics} />
-        </motion.div>
+        <MrrChart data={analytics.monthlyMetrics} />
 
         {/* Charts Grid */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.25 }}
-          >
-            <GrowthChart data={analytics.monthlyMetrics} />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-          >
-            <ActivityFeed events={analytics.recentEvents} />
-          </motion.div>
+          <GrowthChart data={analytics.monthlyMetrics} />
+          <ActivityFeed events={analytics.recentEvents} />
         </div>
 
         {/* Bottom Charts */}
         <div className="grid gap-6 lg:grid-cols-2">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.35 }}
-          >
-            <ChurnChart data={analytics.monthlyMetrics} />
-          </motion.div>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <ConversionChart data={analytics.monthlyMetrics} />
-          </motion.div>
+          <ChurnChart data={analytics.monthlyMetrics} />
+          <ConversionChart data={analytics.monthlyMetrics} />
         </div>
       </div>
     </PlatformLayout>
