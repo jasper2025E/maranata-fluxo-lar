@@ -19,7 +19,11 @@ import {
   Server,
   Database,
   Wifi,
-  WifiOff
+  WifiOff,
+  Shield,
+  ShieldAlert,
+  ShieldX,
+  Eye
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -78,6 +82,24 @@ interface RecentActivity {
   value?: number;
 }
 
+interface SecurityMetrics {
+  totalRequests: number;
+  allowedRequests: number;
+  deniedRequests: number;
+  crossTenantAttempts: number;
+  uniqueUsers: number;
+}
+
+interface SecurityAlert {
+  id: string;
+  alertType: string;
+  severity: string;
+  title: string;
+  description: string;
+  createdAt: Date;
+  userEmail?: string;
+}
+
 export default function PlatformMonitoring() {
   const { isPlatformAdmin } = useAuth();
   const [loading, setLoading] = useState(true);
@@ -105,7 +127,14 @@ export default function PlatformMonitoring() {
     dbStatus: "healthy",
   });
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-
+  const [securityMetrics, setSecurityMetrics] = useState<SecurityMetrics>({
+    totalRequests: 0,
+    allowedRequests: 0,
+    deniedRequests: 0,
+    crossTenantAttempts: 0,
+    uniqueUsers: 0,
+  });
+  const [securityAlerts, setSecurityAlerts] = useState<SecurityAlert[]>([]);
   useEffect(() => {
     if (isPlatformAdmin()) {
       fetchData();
@@ -136,7 +165,9 @@ export default function PlatformMonitoring() {
         faturasRes,
         pagamentosHojeRes,
         pagamentosMesRes,
-        auditRes
+        auditRes,
+        securityLogsRes,
+        securityAlertsRes
       ] = await Promise.all([
         supabase.from("tenants").select("*"),
         supabase.from("profiles").select("id, created_at"),
@@ -144,7 +175,9 @@ export default function PlatformMonitoring() {
         supabase.from("faturas").select("id, status, valor_total, data_vencimento, created_at"),
         supabase.from("pagamentos").select("valor").gte("data_pagamento", today.toISOString()),
         supabase.from("pagamentos").select("valor").gte("data_pagamento", monthStart.toISOString()),
-        supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(20)
+        supabase.from("audit_logs").select("*").order("created_at", { ascending: false }).limit(20),
+        supabase.from("security_access_logs").select("*").gte("created_at", subDays(now, 1).toISOString()),
+        supabase.from("security_alerts").select("*").is("resolved_at", null).order("created_at", { ascending: false }).limit(10)
       ]);
 
       const tenants = tenantsRes.data || [];
@@ -182,6 +215,27 @@ export default function PlatformMonitoring() {
         timestamp: new Date(log.created_at!),
       }));
 
+      // Calculate security metrics
+      const secLogs = securityLogsRes.data || [];
+      const secMetrics: SecurityMetrics = {
+        totalRequests: secLogs.length,
+        allowedRequests: secLogs.filter((l: any) => l.status === 'allowed').length,
+        deniedRequests: secLogs.filter((l: any) => l.status === 'denied').length,
+        crossTenantAttempts: secLogs.filter((l: any) => l.is_cross_tenant_attempt).length,
+        uniqueUsers: new Set(secLogs.map((l: any) => l.user_id)).size,
+      };
+
+      // Map security alerts
+      const alerts: SecurityAlert[] = (securityAlertsRes.data || []).map((a: any) => ({
+        id: a.id,
+        alertType: a.alert_type,
+        severity: a.severity,
+        title: a.title,
+        description: a.description || '',
+        createdAt: new Date(a.created_at),
+        userEmail: a.metadata?.user_email,
+      }));
+
       setMetrics({
         totalTenants: tenants.length,
         activeTenants,
@@ -205,6 +259,8 @@ export default function PlatformMonitoring() {
       });
 
       setRecentActivity(activity);
+      setSecurityMetrics(secMetrics);
+      setSecurityAlerts(alerts);
 
     } catch (error) {
       console.error("Error fetching metrics:", error);
@@ -542,11 +598,112 @@ export default function PlatformMonitoring() {
           </motion.div>
         </div>
 
-        {/* Quick Stats */}
+        {/* Security Monitoring Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.25 }}
+        >
+          <Card className="border-2 border-dashed border-muted">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-primary" />
+                Monitoramento de Segurança
+              </CardTitle>
+              <CardDescription>
+                Rastreamento de acessos e detecção de tentativas cross-tenant (últimas 24h)
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-5 mb-6">
+                <div className="text-center p-4 rounded-lg bg-muted/50">
+                  <Eye className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-2xl font-bold">{securityMetrics.totalRequests}</p>
+                  <p className="text-xs text-muted-foreground">Total Acessos</p>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-green-50 dark:bg-green-950/30">
+                  <CheckCircle className="h-5 w-5 mx-auto mb-2 text-green-600" />
+                  <p className="text-2xl font-bold text-green-700 dark:text-green-400">{securityMetrics.allowedRequests}</p>
+                  <p className="text-xs text-muted-foreground">Permitidos</p>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-red-50 dark:bg-red-950/30">
+                  <ShieldX className="h-5 w-5 mx-auto mb-2 text-red-600" />
+                  <p className="text-2xl font-bold text-red-700 dark:text-red-400">{securityMetrics.deniedRequests}</p>
+                  <p className="text-xs text-muted-foreground">Negados</p>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-amber-50 dark:bg-amber-950/30">
+                  <ShieldAlert className="h-5 w-5 mx-auto mb-2 text-amber-600" />
+                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{securityMetrics.crossTenantAttempts}</p>
+                  <p className="text-xs text-muted-foreground">Cross-Tenant</p>
+                </div>
+                <div className="text-center p-4 rounded-lg bg-muted/50">
+                  <Users className="h-5 w-5 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-2xl font-bold">{securityMetrics.uniqueUsers}</p>
+                  <p className="text-xs text-muted-foreground">Usuários Únicos</p>
+                </div>
+              </div>
+
+              {/* Security Alerts */}
+              {securityAlerts.length > 0 && (
+                <div className="space-y-3">
+                  <h4 className="text-sm font-medium flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-500" />
+                    Alertas de Segurança Ativos
+                  </h4>
+                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                    {securityAlerts.map((alert) => (
+                      <div
+                        key={alert.id}
+                        className={`p-3 rounded-lg border ${
+                          alert.severity === 'critical' ? 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-900' :
+                          alert.severity === 'high' ? 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-900' :
+                          'bg-muted/50 border-muted'
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <ShieldAlert className={`h-4 w-4 mt-0.5 ${
+                            alert.severity === 'critical' ? 'text-red-600' :
+                            alert.severity === 'high' ? 'text-amber-600' : 'text-muted-foreground'
+                          }`} />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{alert.title}</p>
+                            <p className="text-xs text-muted-foreground">{alert.description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {format(alert.createdAt, "dd/MM HH:mm", { locale: ptBR })}
+                            </p>
+                          </div>
+                          <Badge variant={alert.severity === 'critical' ? 'destructive' : 'secondary'} className="text-xs">
+                            {alert.severity}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {securityAlerts.length === 0 && (
+                <div className="flex items-center gap-3 p-4 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-900">
+                  <CheckCircle className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="text-sm font-medium text-green-800 dark:text-green-300">
+                      Nenhum alerta de segurança ativo
+                    </p>
+                    <p className="text-xs text-green-600 dark:text-green-400">
+                      Não foram detectadas tentativas de acesso cross-tenant
+                    </p>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </motion.div>
+
+        {/* Quick Stats */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
         >
           <Card>
             <CardHeader>
