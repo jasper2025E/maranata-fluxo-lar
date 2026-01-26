@@ -213,66 +213,87 @@ export default function Onboarding() {
   const stepLabels = ["Escola", "Plano", "Admin", "Pronto"];
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Panel - Branding */}
-      <div className="hidden lg:flex lg:w-[45%] bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground p-12 flex-col justify-between relative overflow-hidden">
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-1/4 -left-1/4 w-[600px] h-[600px] bg-white/5 rounded-full blur-3xl" />
-          <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl" />
-        </div>
-        
-        <div className="relative z-10">
-          <div className="flex items-center gap-3 mb-12">
-            <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-              <GraduationCap className="h-7 w-7" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold">{platformName}</h1>
-              <p className="text-sm text-primary-foreground/70">Gestão Escolar Inteligente</p>
-            </div>
-          </div>
-          
-          <h2 className="text-4xl font-bold leading-tight mb-6">
-            Comece agora com<br />
-            <span className="text-primary-foreground/80">14 dias grátis</span>
-          </h2>
-          <p className="text-lg text-primary-foreground/70 mb-10 max-w-md">
-            Cadastre sua escola em minutos e tenha acesso completo a todas as funcionalidades durante o período de teste.
-          </p>
-          
-          <div className="space-y-4">
-            {features.map((feature, index) => (
-              <motion.div
-                key={feature.label}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="flex items-center gap-4 p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10"
-              >
-                <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
-                  <feature.icon className="h-5 w-5" />
-                </div>
-                <span className="font-medium">{feature.label}</span>
-              </motion.div>
-            ))}
-          </div>
+    <div className="min-h-screen relative overflow-hidden">
+      {/* Stripe-style gradient background */}
+      <div className="absolute inset-0">
+        {/* Main gradient blob - top left */}
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
+          <svg
+            viewBox="0 0 1200 800"
+            className="w-full h-full"
+            preserveAspectRatio="xMidYMid slice"
+          >
+            <defs>
+              <linearGradient id="onboarding-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#80e9ff" />
+                <stop offset="20%" stopColor="#a855f7" />
+                <stop offset="40%" stopColor="#ec4899" />
+                <stop offset="60%" stopColor="#f97316" />
+                <stop offset="80%" stopColor="#fbbf24" />
+                <stop offset="100%" stopColor="#80e9ff" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M0,0 L600,0 Q800,100 700,300 Q600,500 400,450 Q200,400 150,550 Q100,700 0,800 Z"
+              fill="url(#onboarding-gradient)"
+              opacity="0.85"
+            />
+          </svg>
         </div>
 
-        <div className="relative z-10 flex items-center gap-2 text-sm text-primary-foreground/60">
-          <Gift className="h-5 w-5" />
-          <span>Sem cartão de crédito • Cancele quando quiser</span>
+        {/* Secondary gradient - bottom right */}
+        <div className="absolute bottom-0 right-0 w-[60%] h-[60%] pointer-events-none">
+          <svg
+            viewBox="0 0 600 600"
+            className="w-full h-full"
+            preserveAspectRatio="xMaxYMax slice"
+          >
+            <defs>
+              <linearGradient id="onboarding-gradient-2" x1="100%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#fbbf24" />
+                <stop offset="50%" stopColor="#f97316" />
+                <stop offset="100%" stopColor="#ec4899" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M600,600 L600,200 Q500,300 400,350 Q300,400 350,500 Q400,600 200,600 Z"
+              fill="url(#onboarding-gradient-2)"
+              opacity="0.6"
+            />
+          </svg>
         </div>
+
+        {/* Subtle grid pattern */}
+        <div 
+          className="absolute inset-0 opacity-[0.015] pointer-events-none"
+          style={{
+            backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px),
+                             linear-gradient(to bottom, #000 1px, transparent 1px)`,
+            backgroundSize: '60px 60px'
+          }}
+        />
+
+        {/* White overlay for readability */}
+        <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px]" />
       </div>
 
-      {/* Right Panel - Form */}
-      <div className="flex-1 flex items-center justify-center p-6 lg:p-12 overflow-y-auto">
+      {/* Content */}
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-6 lg:p-12 overflow-y-auto">
         <div className="w-full max-w-xl">
-          {/* Mobile Logo */}
-          <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-            <div className="h-10 w-10 rounded-xl bg-primary flex items-center justify-center">
-              <GraduationCap className="h-6 w-6 text-primary-foreground" />
+          {/* Logo */}
+          <div className="flex items-center justify-center gap-3 mb-8">
+            <div className="h-11 w-11 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg">
+              <GraduationCap className="h-6 w-6 text-white" />
             </div>
-            <span className="text-xl font-bold text-foreground">{platformName}</span>
+            <span className="text-2xl font-bold text-slate-900">{platformName}</span>
+          </div>
+          
+          {/* Trial badge */}
+          <div className="flex justify-center mb-6">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-slate-200 shadow-sm">
+              <Gift className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium text-slate-700">14 dias grátis • Sem cartão de crédito</span>
+            </div>
           </div>
 
           {/* Progress Steps */}
@@ -317,16 +338,16 @@ export default function Onboarding() {
                 exit={{ opacity: 0, x: -20 }}
               >
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
                     Dados da Escola
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-slate-600">
                     Informe os dados básicos da sua instituição
                   </p>
                 </div>
 
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
+                <div className="bg-white rounded-xl shadow-xl border border-slate-100 p-6">
+                  <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="escola-nome">Nome da Escola *</Label>
                       <div className="relative">
@@ -381,10 +402,10 @@ export default function Onboarding() {
                       Continuar
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
-                <p className="text-center text-sm text-muted-foreground mt-6">
+                <p className="text-center text-sm text-slate-500 mt-6">
                   Já tem uma conta?{" "}
                   <button
                     onClick={handleGoToLogin}
@@ -405,10 +426,10 @@ export default function Onboarding() {
                 exit={{ opacity: 0, x: -20 }}
               >
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
                     Escolha seu Plano
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-slate-600">
                     Todos os planos incluem 14 dias de teste grátis
                   </p>
                 </div>
@@ -424,62 +445,60 @@ export default function Onboarding() {
                       const isSelected = selectedPlan === plan.id;
                       
                       return (
-                        <Card
+                        <div
                           key={plan.id}
-                          className={`cursor-pointer transition-all hover:shadow-md ${
+                          className={`bg-white rounded-xl border p-4 cursor-pointer transition-all hover:shadow-md ${
                             isSelected
-                              ? "ring-2 ring-primary border-primary"
-                              : "hover:border-primary/50"
+                              ? "ring-2 ring-primary border-primary shadow-md"
+                              : "border-slate-200 hover:border-primary/50"
                           }`}
                           onClick={() => setSelectedPlan(plan.id)}
                         >
-                          <CardContent className="p-4">
-                            <div className="flex items-start gap-4">
-                              <div
-                                className={`h-12 w-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center shrink-0`}
-                              >
-                                <IconComponent className="h-6 w-6 text-white" />
+                          <div className="flex items-start gap-4">
+                            <div
+                              className={`h-12 w-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center shrink-0`}
+                            >
+                              <IconComponent className="h-6 w-6 text-white" />
+                            </div>
+                            
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-slate-900">{plan.name}</h3>
+                                {plan.popular && (
+                                  <Badge variant="secondary" className="text-xs">
+                                    Popular
+                                  </Badge>
+                                )}
                               </div>
                               
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2 mb-1">
-                                  <h3 className="font-semibold text-foreground">{plan.name}</h3>
-                                  {plan.popular && (
-                                    <Badge variant="secondary" className="text-xs">
-                                      Popular
-                                    </Badge>
-                                  )}
-                                </div>
-                                
-                                <div className="flex items-baseline gap-1 mb-2">
-                                  <span className="text-2xl font-bold text-foreground">
-                                    {formatPrice(plan.price)}
-                                  </span>
-                                  <span className="text-muted-foreground text-sm">/mês</span>
-                                </div>
-                                
-                                <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
-                                  <span>
-                                    {plan.limite_alunos ? `Até ${plan.limite_alunos} alunos` : "Alunos ilimitados"}
-                                  </span>
-                                  <span>
-                                    {plan.limite_usuarios ? `Até ${plan.limite_usuarios} usuários` : "Usuários ilimitados"}
-                                  </span>
-                                </div>
+                              <div className="flex items-baseline gap-1 mb-2">
+                                <span className="text-2xl font-bold text-slate-900">
+                                  {formatPrice(plan.price)}
+                                </span>
+                                <span className="text-slate-500 text-sm">/mês</span>
                               </div>
                               
-                              <div
-                                className={`h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                  isSelected
-                                    ? "border-primary bg-primary"
-                                    : "border-muted-foreground/30"
-                                }`}
-                              >
-                                {isSelected && <Check className="h-4 w-4 text-primary-foreground" />}
+                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
+                                <span>
+                                  {plan.limite_alunos ? `Até ${plan.limite_alunos} alunos` : "Alunos ilimitados"}
+                                </span>
+                                <span>
+                                  {plan.limite_usuarios ? `Até ${plan.limite_usuarios} usuários` : "Usuários ilimitados"}
+                                </span>
                               </div>
                             </div>
-                          </CardContent>
-                        </Card>
+                            
+                            <div
+                              className={`h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                                isSelected
+                                  ? "border-primary bg-primary"
+                                  : "border-slate-300"
+                              }`}
+                            >
+                              {isSelected && <Check className="h-4 w-4 text-white" />}
+                            </div>
+                          </div>
+                        </div>
                       );
                     })}
                   </div>
@@ -496,7 +515,7 @@ export default function Onboarding() {
                   </Button>
                 </div>
 
-                <p className="text-center text-xs text-muted-foreground mt-4">
+                <p className="text-center text-xs text-slate-500 mt-4">
                   Você pode mudar de plano a qualquer momento
                 </p>
               </motion.div>
@@ -511,16 +530,16 @@ export default function Onboarding() {
                 exit={{ opacity: 0, x: -20 }}
               >
                 <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-foreground mb-2">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
                     Dados do Administrador
                   </h2>
-                  <p className="text-muted-foreground">
+                  <p className="text-slate-600">
                     Crie sua conta de acesso ao sistema
                   </p>
                 </div>
 
-                <Card>
-                  <CardContent className="pt-6 space-y-4">
+                <div className="bg-white rounded-xl shadow-xl border border-slate-100 p-6">
+                  <div className="space-y-4">
                     <div className="space-y-2">
                       <Label htmlFor="admin-nome">Seu Nome *</Label>
                       <div className="relative">
@@ -625,8 +644,8 @@ export default function Onboarding() {
                         )}
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
               </motion.div>
             )}
 
@@ -638,49 +657,47 @@ export default function Onboarding() {
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center"
               >
-                <div className="mx-auto w-20 h-20 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center mb-6">
+                <div className="mx-auto w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6">
                   <CheckCircle className="h-10 w-10 text-green-600" />
                 </div>
 
-                <h2 className="text-2xl font-bold text-foreground mb-2">
+                <h2 className="text-2xl font-bold text-slate-900 mb-2">
                   Conta Criada com Sucesso!
                 </h2>
-                <p className="text-muted-foreground mb-8">
+                <p className="text-slate-600 mb-8">
                   Sua escola <strong>{escola.nome}</strong> foi cadastrada.
                   <br />
                   Você tem <strong>14 dias de teste grátis</strong> para explorar todas as funcionalidades.
                 </p>
 
-                <Card className="mb-6 text-left">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">O que você pode fazer agora:</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
+                <div className="bg-white rounded-xl shadow-xl border border-slate-100 p-6 mb-6 text-left">
+                  <h3 className="font-semibold text-slate-900 mb-4">O que você pode fazer agora:</h3>
+                  <div className="space-y-3">
                     <div className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-                      <span className="text-sm">Cadastrar seus primeiros alunos</span>
+                      <span className="text-sm text-slate-700">Cadastrar seus primeiros alunos</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-                      <span className="text-sm">Configurar cursos e turmas</span>
+                      <span className="text-sm text-slate-700">Configurar cursos e turmas</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-                      <span className="text-sm">Gerar faturas e controlar finanças</span>
+                      <span className="text-sm text-slate-700">Gerar faturas e controlar finanças</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-                      <span className="text-sm">Explorar relatórios e dashboards</span>
+                      <span className="text-sm text-slate-700">Explorar relatórios e dashboards</span>
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
 
                 <Button onClick={handleGoToLogin} size="lg" className="w-full">
                   Acessar o Sistema
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
 
-                <p className="text-sm text-muted-foreground mt-4">
+                <p className="text-sm text-slate-500 mt-4">
                   Use o e-mail <strong>{admin.email}</strong> para fazer login
                 </p>
               </motion.div>
