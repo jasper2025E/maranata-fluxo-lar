@@ -29,10 +29,10 @@ export function PlatformNavbar() {
         className="w-full"
         style={{
           background: `linear-gradient(90deg, 
-            hsl(24, 95%, 53%) 0%, 
-            hsl(340, 75%, 55%) 35%, 
-            hsl(280, 70%, 55%) 65%, 
-            hsl(262, 83%, 58%) 100%
+            hsl(24 95% 53%) 0%, 
+            hsl(340 75% 55%) 35%, 
+            hsl(280 70% 55%) 65%, 
+            hsl(262 83% 58%) 100%
           )`,
         }}
       >
@@ -78,14 +78,12 @@ export function PlatformNavbar() {
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
               <Link to="/contato">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="border-white/40 bg-transparent text-white hover:bg-white/10 hover:text-white rounded-full px-4 text-[14px] font-medium"
+                <button
+                  className="flex items-center gap-1.5 px-4 py-1.5 text-[14px] font-medium text-white rounded-full border border-white/30 bg-transparent hover:bg-white/10 transition-colors"
                 >
                   Fale com nossa equipe
-                  <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                </Button>
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </button>
               </Link>
             </div>
 
@@ -106,7 +104,7 @@ export function PlatformNavbar() {
 
       {/* Mobile Menu */}
       {isMobileOpen && (
-        <div className="lg:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t">
+        <div className="lg:hidden absolute top-full left-0 right-0 bg-background shadow-lg border-t border-border">
           <nav className="container mx-auto px-4 py-4">
             <div className="flex flex-col gap-1">
               {navItems.map((item) => (
@@ -120,7 +118,7 @@ export function PlatformNavbar() {
                   )}
                 </button>
               ))}
-              <div className="border-t my-2" />
+              <div className="border-t border-border my-2" />
               <Link
                 to="/auth"
                 className="px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg transition-colors"
