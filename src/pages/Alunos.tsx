@@ -479,7 +479,7 @@ const Alunos = () => {
                 {t("students.newStudent")}
               </Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl">
+            <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
               <form onSubmit={handleSubmit}>
                 <DialogHeader>
                   <DialogTitle className="text-xl font-semibold">
@@ -502,7 +502,7 @@ const Alunos = () => {
                       required
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="nascimento" className="text-sm font-medium text-muted-foreground">
                         {t("students.birthDate")}
@@ -534,7 +534,7 @@ const Alunos = () => {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="turma" className="text-sm font-medium text-muted-foreground">
                         {t("students.class")}
@@ -570,7 +570,7 @@ const Alunos = () => {
                       </Select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="telefone" className="text-sm font-medium text-muted-foreground">
                         {t("students.phone")}
@@ -690,7 +690,7 @@ const Alunos = () => {
                     {/* Campos de configuração (mostrar sempre para novo, ou quando modo != nenhum para edição) */}
                     {(!editingAluno || modoFaturamento !== "nenhum") && (
                       <>
-                        <div className="grid grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                           <div className="grid gap-2">
                             <Label htmlFor="dia_vencimento" className="text-sm font-medium text-muted-foreground">
                               Dia de Vencimento
