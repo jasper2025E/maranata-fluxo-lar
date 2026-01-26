@@ -274,7 +274,7 @@ const Auth = () => {
                   <Label htmlFor="email" className="text-white/90 text-sm font-medium">
                     E-mail
                   </Label>
-                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seuemail@exemplo.com" className={`h-12 rounded-lg bg-white/5 border border-white/30 text-white placeholder:text-white/40 transition-all duration-300 focus:bg-white/10 focus:border-white/50 focus:ring-0 focus:outline-none ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
+                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seuemail@exemplo.com" className={`h-12 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
                   {errors.email && <p className="text-xs text-red-300">{errors.email}</p>}
                 </div>
 
@@ -283,7 +283,7 @@ const Auth = () => {
                     Senha
                   </Label>
                   <div className="relative">
-                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className={`h-12 pr-10 rounded-lg bg-white/5 border border-white/30 text-white placeholder:text-white/40 transition-all duration-300 focus:bg-white/10 focus:border-white/50 focus:ring-0 focus:outline-none ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
+                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className={`h-12 pr-10 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
                     <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
