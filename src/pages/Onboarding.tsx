@@ -184,7 +184,15 @@ export default function Onboarding() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Handle FunctionsHttpError - extract message from response body
+        if (error.name === "FunctionsHttpError") {
+          const errorBody = await error.context?.json?.();
+          const errorMessage = errorBody?.error || "Erro ao criar conta. Tente novamente.";
+          throw new Error(errorMessage);
+        }
+        throw error;
+      }
       if (data?.error) throw new Error(data.error);
 
       // Save PaymentIntent secret and tenant ID for card form
