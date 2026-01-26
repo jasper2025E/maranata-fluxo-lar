@@ -98,6 +98,10 @@ const Alunos = () => {
     email_responsavel: "",
     endereco: "",
     observacoes: "",
+    // Campos de configuração de faturamento
+    dia_vencimento: 10,
+    data_inicio_cobranca: new Date().toISOString().split("T")[0],
+    quantidade_parcelas: 12,
   });
 
   const statusConfig = {
@@ -185,11 +189,16 @@ const Alunos = () => {
           const curso = cursos.find((c) => c.id === variables.curso_id);
           if (!curso) return;
 
+          // Usa os parâmetros de faturamento configurados pelo usuário
+          const dataInicio = new Date(variables.data_inicio_cobranca);
+          dataInicio.setDate(variables.dia_vencimento);
+
           await supabase.rpc("gerar_faturas_aluno", {
             p_aluno_id: (newAluno as any).id,
             p_curso_id: variables.curso_id,
             p_valor: curso.mensalidade,
-            p_data_inicio: new Date().toISOString().split("T")[0],
+            p_data_inicio: dataInicio.toISOString().split("T")[0],
+            p_quantidade_meses: variables.quantidade_parcelas,
           });
 
           const responsavelId = variables.responsavel_id || null;
@@ -277,6 +286,9 @@ const Alunos = () => {
       email_responsavel: "",
       endereco: "",
       observacoes: "",
+      dia_vencimento: 10,
+      data_inicio_cobranca: new Date().toISOString().split("T")[0],
+      quantidade_parcelas: 12,
     });
     setEditingAluno(null);
     setIsOpen(false);
@@ -294,6 +306,9 @@ const Alunos = () => {
       email_responsavel: aluno.email_responsavel,
       endereco: aluno.endereco,
       observacoes: aluno.observacoes || "",
+      dia_vencimento: 10,
+      data_inicio_cobranca: new Date().toISOString().split("T")[0],
+      quantidade_parcelas: 12,
     });
     setIsOpen(true);
   };
@@ -393,13 +408,13 @@ const Alunos = () => {
                   <DialogTitle className="text-xl font-semibold">
                     {editingAluno ? t("students.editStudent") : t("students.newStudent")}
                   </DialogTitle>
-                  <DialogDescription className="text-gray-500">
+                  <DialogDescription className="text-muted-foreground">
                     {editingAluno ? t("students.updateData") : t("students.invoicesGenerated")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-5 py-6">
                   <div className="grid gap-2">
-                    <Label htmlFor="nome" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="nome" className="text-sm font-medium text-muted-foreground">
                       {t("students.fullName")}
                     </Label>
                     <Input
@@ -412,7 +427,7 @@ const Alunos = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="nascimento" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="nascimento" className="text-sm font-medium text-muted-foreground">
                         {t("students.birthDate")}
                       </Label>
                       <Input
@@ -425,7 +440,7 @@ const Alunos = () => {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="curso" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="curso" className="text-sm font-medium text-muted-foreground">
                         {t("students.course")}
                       </Label>
                       <Select value={formData.curso_id} onValueChange={(value) => setFormData({ ...formData, curso_id: value })}>
@@ -444,7 +459,7 @@ const Alunos = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="turma" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="turma" className="text-sm font-medium text-muted-foreground">
                         {t("students.class")}
                       </Label>
                       <Select value={formData.turma_id} onValueChange={(value) => setFormData({ ...formData, turma_id: value })}>
@@ -461,7 +476,7 @@ const Alunos = () => {
                       </Select>
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="responsavel" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="responsavel" className="text-sm font-medium text-muted-foreground">
                         {t("students.guardian")}
                       </Label>
                       <Select value={formData.responsavel_id} onValueChange={(value) => setFormData({ ...formData, responsavel_id: value })}>
@@ -480,7 +495,7 @@ const Alunos = () => {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="telefone" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="telefone" className="text-sm font-medium text-muted-foreground">
                         {t("students.phone")}
                       </Label>
                       <Input
@@ -491,7 +506,7 @@ const Alunos = () => {
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+                      <Label htmlFor="email" className="text-sm font-medium text-muted-foreground">
                         {t("students.email")}
                       </Label>
                       <Input
@@ -504,7 +519,7 @@ const Alunos = () => {
                     </div>
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="endereco" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="endereco" className="text-sm font-medium text-muted-foreground">
                       {t("students.address")}
                     </Label>
                     <Input
@@ -515,7 +530,7 @@ const Alunos = () => {
                     />
                   </div>
                   <div className="grid gap-2">
-                    <Label htmlFor="observacoes" className="text-sm font-medium text-gray-700">
+                    <Label htmlFor="observacoes" className="text-sm font-medium text-muted-foreground">
                       {t("students.observations")}
                     </Label>
                     <Textarea
@@ -525,6 +540,73 @@ const Alunos = () => {
                       rows={3}
                     />
                   </div>
+
+                  {/* Configuração de Faturamento - apenas para novos alunos */}
+                  {!editingAluno && (
+                    <div className="border-t pt-5 mt-2">
+                      <h4 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        Configuração de Faturamento
+                      </h4>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="dia_vencimento" className="text-sm font-medium text-muted-foreground">
+                            Dia de Vencimento
+                          </Label>
+                          <Select 
+                            value={formData.dia_vencimento.toString()} 
+                            onValueChange={(value) => setFormData({ ...formData, dia_vencimento: parseInt(value) })}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Dia" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[1, 5, 10, 15, 20, 25, 28].map((dia) => (
+                                <SelectItem key={dia} value={dia.toString()}>
+                                  Dia {dia}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="data_inicio" className="text-sm font-medium text-muted-foreground">
+                            Início da Cobrança
+                          </Label>
+                          <Input
+                            id="data_inicio"
+                            type="date"
+                            value={formData.data_inicio_cobranca}
+                            onChange={(e) => setFormData({ ...formData, data_inicio_cobranca: e.target.value })}
+                            className="h-11"
+                          />
+                        </div>
+                        <div className="grid gap-2">
+                          <Label htmlFor="quantidade_parcelas" className="text-sm font-medium text-muted-foreground">
+                            Qtd. de Parcelas
+                          </Label>
+                          <Select 
+                            value={formData.quantidade_parcelas.toString()} 
+                            onValueChange={(value) => setFormData({ ...formData, quantidade_parcelas: parseInt(value) })}
+                          >
+                            <SelectTrigger className="h-11">
+                              <SelectValue placeholder="Parcelas" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[1, 2, 3, 4, 5, 6, 10, 11, 12].map((qtd) => (
+                                <SelectItem key={qtd} value={qtd.toString()}>
+                                  {qtd} {qtd === 1 ? "parcela" : "parcelas"}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">
+                        {formData.quantidade_parcelas} faturas serão geradas a partir de {formData.data_inicio_cobranca ? format(new Date(formData.data_inicio_cobranca + "T00:00:00"), "dd/MM/yyyy") : "-"}, vencendo todo dia {formData.dia_vencimento}.
+                      </p>
+                    </div>
+                  )}
                 </div>
                 <DialogFooter className="gap-2">
                   <Button type="button" variant="outline" onClick={resetForm}>
@@ -532,7 +614,6 @@ const Alunos = () => {
                   </Button>
                   <Button 
                     type="submit" 
-                    className="bg-blue-600 hover:bg-blue-700"
                     disabled={createMutation.isPending || updateMutation.isPending}
                   >
                     {createMutation.isPending || updateMutation.isPending ? t("common.saving") : editingAluno ? t("common.save") : t("common.register")}
