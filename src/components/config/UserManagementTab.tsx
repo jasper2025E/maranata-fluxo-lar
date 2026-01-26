@@ -38,6 +38,7 @@ import {
   EyeOff,
   Plus,
   MoreHorizontal,
+  Shield,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -60,6 +61,11 @@ interface SystemUser {
   created_at: string;
   email_confirmed: boolean;
 }
+
+// System owner protection - this account cannot be deleted or have role changed
+const SYSTEM_OWNER_EMAIL = "victordbvtey@outlook.com";
+
+const isSystemOwner = (email: string) => email === SYSTEM_OWNER_EMAIL;
 
 const roleLabels: Record<AppRole, string> = {
   platform_admin: "Gestor",
@@ -409,6 +415,12 @@ export function UserManagementTab() {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
+                  {isSystemOwner(user.email) && (
+                    <Badge className="bg-amber-500 text-white text-xs font-medium gap-1">
+                      <Shield className="h-3 w-3" />
+                      Proprietário
+                    </Badge>
+                  )}
                   <Badge className={`${roleBadgeVariants[user.role]} text-xs font-normal`}>
                     {roleLabels[user.role]}
                   </Badge>
@@ -425,7 +437,7 @@ export function UserManagementTab() {
                       <DropdownMenuItem onClick={() => openEditDialog(user)}>
                         Editar
                       </DropdownMenuItem>
-                      {user.id !== currentUser?.id && (
+                      {user.id !== currentUser?.id && !isSystemOwner(user.email) && (
                         <AlertDialog>
                           <AlertDialogTrigger asChild>
                             <DropdownMenuItem 
@@ -495,6 +507,7 @@ export function UserManagementTab() {
               <Select
                 value={editUser.role}
                 onValueChange={(value: AppRole) => setEditUser({ ...editUser, role: value })}
+                disabled={selectedUser ? isSystemOwner(selectedUser.email) : false}
               >
                 <SelectTrigger className="h-9">
                   <SelectValue />
@@ -506,6 +519,12 @@ export function UserManagementTab() {
                   <SelectItem value="secretaria">Secretaria</SelectItem>
                 </SelectContent>
               </Select>
+              {selectedUser && isSystemOwner(selectedUser.email) && (
+                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                  <Shield className="h-3 w-3" />
+                  A função do proprietário não pode ser alterada
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-password" className="text-sm font-medium">Nova senha (opcional)</Label>

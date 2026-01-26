@@ -5,6 +5,9 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// System owner protection - this account can never be deleted or have role changed
+const SYSTEM_OWNER_EMAIL = "victordbvtey@outlook.com";
+
 interface CreateUserRequest {
   action: "create" | "update" | "delete";
   email: string;
@@ -199,6 +202,18 @@ Deno.serve(async (req) => {
         );
       }
 
+      // Protect system owner from role changes
+      if (role) {
+        const { data: targetUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+        if (targetUser?.user?.email === SYSTEM_OWNER_EMAIL) {
+          console.warn("admin-manage-users: blocked role change attempt on system owner", { requestingUserId, targetUserId: userId });
+          return new Response(
+            JSON.stringify({ error: "As permissões do proprietário do sistema não podem ser alteradas" }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+      }
+
       // Update user metadata if nome provided
       if (nome) {
         const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
@@ -278,6 +293,16 @@ Deno.serve(async (req) => {
         return new Response(
           JSON.stringify({ error: "Cannot delete your own account" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Protect system owner from deletion
+      const { data: targetUser } = await supabaseAdmin.auth.admin.getUserById(userId);
+      if (targetUser?.user?.email === SYSTEM_OWNER_EMAIL) {
+        console.warn("admin-manage-users: blocked deletion attempt on system owner", { requestingUserId, targetUserId: userId });
+        return new Response(
+          JSON.stringify({ error: "O proprietário do sistema não pode ser excluído" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 
