@@ -1,7 +1,6 @@
 import { useSearchParams } from "react-router-dom";
 import DashboardLayout from "@/components/DashboardLayout";
 import EscolaDadosTab from "@/components/escola/EscolaDadosTab";
-import EscolaAssinaturaTab from "@/components/escola/EscolaAssinaturaTab";
 
 const EscolaPage = () => {
   const [searchParams] = useSearchParams();
@@ -10,8 +9,7 @@ const EscolaPage = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        {activeTab === "dados" && <EscolaDadosTab />}
-        {activeTab === "assinatura" && <EscolaAssinaturaTab />}
+        <EscolaDadosTab />
       </div>
     </DashboardLayout>
   );
