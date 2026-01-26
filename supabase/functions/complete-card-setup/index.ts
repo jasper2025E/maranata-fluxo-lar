@@ -9,7 +9,7 @@ const corsHeaders = {
 
 interface CompleteCardRequest {
   tenant_id: string;
-  setup_intent_id: string;
+  payment_intent_id: string;
 }
 
 serve(async (req) => {
@@ -41,9 +41,9 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    const { tenant_id, setup_intent_id }: CompleteCardRequest = await req.json();
+    const { tenant_id, payment_intent_id }: CompleteCardRequest = await req.json();
 
-    if (!tenant_id || !setup_intent_id) {
+    if (!tenant_id || !payment_intent_id) {
       return new Response(
         JSON.stringify({ error: "Dados incompletos" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -64,17 +64,17 @@ serve(async (req) => {
       );
     }
 
-    // Retrieve the SetupIntent to get the payment method
-    const setupIntent = await stripe.setupIntents.retrieve(setup_intent_id);
+    // Retrieve the PaymentIntent to verify it succeeded
+    const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id);
 
-    if (setupIntent.status !== "succeeded") {
+    if (paymentIntent.status !== "succeeded") {
       return new Response(
-        JSON.stringify({ error: "Configuração do cartão não foi concluída" }),
+        JSON.stringify({ error: "Pagamento da verificação não foi concluído" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const paymentMethodId = setupIntent.payment_method as string;
+    const paymentMethodId = paymentIntent.payment_method as string;
 
     if (!paymentMethodId) {
       return new Response(
@@ -104,7 +104,7 @@ serve(async (req) => {
       is_default: true,
     }, { onConflict: 'tenant_id,stripe_payment_method_id' });
 
-    // Enable auto billing now that card is saved
+    // Enable auto billing now that card is verified and R$1.00 was charged
     await supabaseAdmin
       .from("tenants")
       .update({
@@ -112,23 +112,26 @@ serve(async (req) => {
       })
       .eq("id", tenant.id);
 
-    // Log the event
+    // Log the successful verification
     await supabaseAdmin.from("subscription_history").insert({
       tenant_id: tenant.id,
-      event_type: "payment_method_added",
+      event_type: "card_verified",
       new_status: tenant.subscription_status,
+      amount: 100, // R$1.00
       metadata: {
+        payment_intent_id: paymentIntent.id,
         payment_method_id: paymentMethodId,
         card_brand: paymentMethod.card?.brand,
         card_last_four: paymentMethod.card?.last4,
         auto_billing_enabled: true,
+        verification_charge: "R$1,00 cobrado com sucesso",
       },
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Cartão cadastrado com sucesso",
+        message: "Cartão verificado com sucesso! R$1,00 foi cobrado.",
         card_brand: paymentMethod.card?.brand,
         card_last_four: paymentMethod.card?.last4,
       }),
@@ -137,7 +140,7 @@ serve(async (req) => {
   } catch (error: any) {
     console.error("Complete card setup error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || "Erro ao finalizar cadastro do cartão" }),
+      JSON.stringify({ error: error.message || "Erro ao finalizar verificação do cartão" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

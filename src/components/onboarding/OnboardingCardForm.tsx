@@ -25,7 +25,7 @@ interface CardFormContentProps {
   onError: (message: string) => void;
   schoolName: string;
   adminEmail: string;
-  setupIntentClientSecret: string;
+  paymentIntentClientSecret: string;
   tenantId: string;
 }
 
@@ -35,7 +35,7 @@ function CardFormContent({
   onError,
   schoolName,
   adminEmail,
-  setupIntentClientSecret,
+  paymentIntentClientSecret,
   tenantId,
 }: CardFormContentProps) {
   const stripe = useStripe();
@@ -62,9 +62,9 @@ function CardFormContent({
         throw new Error("Elemento do cartão não encontrado");
       }
 
-      // Use confirmCardSetup - this only SAVES the card, no charge is made
-      const { setupIntent, error: confirmError } = await stripe.confirmCardSetup(
-        setupIntentClientSecret,
+      // Use confirmCardPayment - this charges R$1.00 and saves the card
+      const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(
+        paymentIntentClientSecret,
         {
           payment_method: {
             card: cardElement,
@@ -78,7 +78,7 @@ function CardFormContent({
 
       if (confirmError) {
         // Translate Stripe errors to Portuguese
-        let errorMessage = confirmError.message || "Erro ao cadastrar cartão";
+        let errorMessage = confirmError.message || "Erro ao processar pagamento";
         
         if (confirmError.code === "card_declined") {
           errorMessage = "Cartão recusado. Verifique os dados ou use outro cartão.";
@@ -96,13 +96,15 @@ function CardFormContent({
           errorMessage = "Código de segurança incompleto.";
         } else if (confirmError.code === "incomplete_expiry") {
           errorMessage = "Data de validade incompleta.";
+        } else if (confirmError.code === "insufficient_funds") {
+          errorMessage = "Saldo insuficiente. Use outro cartão.";
         }
         
         throw new Error(errorMessage);
       }
 
-      if (!setupIntent || setupIntent.status !== "succeeded") {
-        throw new Error("Não foi possível cadastrar o cartão. Tente novamente.");
+      if (!paymentIntent || paymentIntent.status !== "succeeded") {
+        throw new Error("Pagamento não foi processado. Tente novamente.");
       }
 
       // Complete the setup on the backend
@@ -111,7 +113,7 @@ function CardFormContent({
         {
           body: {
             tenant_id: tenantId,
-            setup_intent_id: setupIntent.id,
+            payment_intent_id: paymentIntent.id,
           },
         }
       );
@@ -122,7 +124,7 @@ function CardFormContent({
 
       onSuccess();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao cadastrar cartão";
+      const message = err instanceof Error ? err.message : "Erro ao processar pagamento";
       setError(message);
       onError(message);
     } finally {
@@ -212,12 +214,12 @@ function CardFormContent({
         {processing ? (
           <>
             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Cadastrando cartão...
+            Processando R$ 1,00...
           </>
         ) : (
           <>
             <Lock className="h-4 w-4 mr-2" />
-            Cadastrar cartão e criar conta
+            Pagar R$ 1,00 e criar conta
           </>
         )}
       </Button>
@@ -228,10 +230,12 @@ function CardFormContent({
         <span>Seus dados estão protegidos com criptografia SSL</span>
       </div>
 
-      {/* Important: No charge notice */}
-      <div className="p-3 rounded-lg bg-green-50 border border-green-200">
-        <p className="text-center text-sm text-green-800">
-          <strong>Sem cobrança agora!</strong> Seu cartão será apenas cadastrado. A primeira cobrança ocorrerá somente após os 14 dias de teste.
+      {/* R$1.00 verification charge notice */}
+      <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+        <p className="text-center text-sm text-amber-800">
+          <strong>Taxa de verificação: R$ 1,00</strong>
+          <br />
+          <span className="text-xs">Será cobrado R$ 1,00 para verificar seu cartão. Após 14 dias de teste, a mensalidade do plano será cobrada automaticamente.</span>
         </p>
       </div>
     </form>
@@ -241,7 +245,7 @@ function CardFormContent({
 interface OnboardingCardFormProps {
   schoolName: string;
   adminEmail: string;
-  setupIntentClientSecret: string;
+  paymentIntentClientSecret: string;
   tenantId: string;
   onSuccess: () => void;
   onBack: () => void;
@@ -250,7 +254,7 @@ interface OnboardingCardFormProps {
 export function OnboardingCardForm({
   schoolName,
   adminEmail,
-  setupIntentClientSecret,
+  paymentIntentClientSecret,
   tenantId,
   onSuccess,
   onBack,
@@ -297,8 +301,8 @@ export function OnboardingCardForm({
           <CreditCard className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900">Cadastrar cartão</h3>
-          <p className="text-sm text-slate-500">Apenas para cobrança futura</p>
+          <h3 className="font-semibold text-slate-900">Verificar cartão</h3>
+          <p className="text-sm text-slate-500">Taxa de R$ 1,00 para ativação</p>
         </div>
       </div>
 
@@ -308,7 +312,7 @@ export function OnboardingCardForm({
           onError={handleError}
           schoolName={schoolName}
           adminEmail={adminEmail}
-          setupIntentClientSecret={setupIntentClientSecret}
+          paymentIntentClientSecret={paymentIntentClientSecret}
           tenantId={tenantId}
         />
       </Elements>

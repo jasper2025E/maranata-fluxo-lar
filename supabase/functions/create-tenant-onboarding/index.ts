@@ -95,7 +95,7 @@ serve(async (req) => {
     const limiteAlunos = planLimits?.limite_alunos || 50;
     const limiteUsuarios = planLimits?.limite_usuarios || 3;
 
-    // 1. Create Stripe customer WITHOUT payment method (just for registration)
+    // 1. Create Stripe customer
     let stripeCustomer;
     try {
       stripeCustomer = await stripe.customers.create({
@@ -114,24 +114,33 @@ serve(async (req) => {
       );
     }
 
-    // 2. Create a SetupIntent for future card collection (no charge, just save card)
-    let setupIntent;
+    // 2. Create a PaymentIntent for R$1.00 verification charge
+    // This will charge R$1.00 AND save the card for future use
+    let paymentIntent;
     try {
-      setupIntent = await stripe.setupIntents.create({
+      paymentIntent = await stripe.paymentIntents.create({
+        amount: 100, // R$1.00 in centavos
+        currency: "brl",
         customer: stripeCustomer.id,
-        payment_method_types: ["card"],
-        usage: "off_session", // For future automatic charges
+        description: "Verificação de cartão - Taxa de ativação (reembolsável)",
+        setup_future_usage: "off_session", // Save the card for future automatic charges
+        automatic_payment_methods: {
+          enabled: true,
+          allow_redirects: "never", // Only allow card payments, no redirects
+        },
         metadata: {
+          type: "card_verification",
           escola_nome: escola.nome,
           admin_email: admin.email,
+          plan: selectedPlan,
         },
       });
-    } catch (setupError: any) {
-      console.error("Error creating SetupIntent:", setupError);
+    } catch (paymentError: any) {
+      console.error("Error creating PaymentIntent:", paymentError);
       // Cleanup Stripe customer
       await stripe.customers.del(stripeCustomer.id).catch(() => {});
       return new Response(
-        JSON.stringify({ error: "Erro ao configurar método de pagamento. Tente novamente." }),
+        JSON.stringify({ error: "Erro ao configurar verificação do cartão. Tente novamente." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -153,7 +162,7 @@ serve(async (req) => {
         limite_alunos: limiteAlunos,
         limite_usuarios: limiteUsuarios,
         stripe_customer_id: stripeCustomer.id,
-        auto_billing_enabled: false, // Will be enabled after card is saved
+        auto_billing_enabled: false, // Will be enabled after card is verified
         billing_day: trialEndsAt.getDate(),
         next_billing_date: trialEndsAt.toISOString().split("T")[0],
       })
@@ -162,7 +171,8 @@ serve(async (req) => {
 
     if (tenantError) {
       console.error("Error creating tenant:", tenantError);
-      // Cleanup Stripe customer
+      // Cleanup Stripe
+      await stripe.paymentIntents.cancel(paymentIntent.id).catch(() => {});
       await stripe.customers.del(stripeCustomer.id).catch(() => {});
       return new Response(
         JSON.stringify({ error: "Erro ao criar escola. Tente novamente." }),
@@ -182,8 +192,9 @@ serve(async (req) => {
     });
 
     if (authError) {
-      // Rollback: delete tenant and Stripe customer
+      // Rollback: delete tenant and Stripe
       await supabaseAdmin.from("tenants").delete().eq("id", tenant.id);
+      await stripe.paymentIntents.cancel(paymentIntent.id).catch(() => {});
       await stripe.customers.del(stripeCustomer.id).catch(() => {});
       
       console.error("Error creating user:", authError);
@@ -204,9 +215,10 @@ serve(async (req) => {
       }, { onConflict: 'id' });
 
     if (profileError) {
-      // Rollback: delete user, tenant and Stripe customer
+      // Rollback everything
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
       await supabaseAdmin.from("tenants").delete().eq("id", tenant.id);
+      await stripe.paymentIntents.cancel(paymentIntent.id).catch(() => {});
       await stripe.customers.del(stripeCustomer.id).catch(() => {});
       
       console.error("Error creating profile:", profileError);
@@ -229,6 +241,7 @@ serve(async (req) => {
       await supabaseAdmin.from("profiles").delete().eq("id", authUser.user.id);
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
       await supabaseAdmin.from("tenants").delete().eq("id", tenant.id);
+      await stripe.paymentIntents.cancel(paymentIntent.id).catch(() => {});
       await stripe.customers.del(stripeCustomer.id).catch(() => {});
       
       console.error("Error assigning role:", roleError);
@@ -259,15 +272,17 @@ serve(async (req) => {
     // 8. Log the onboarding event
     await supabaseAdmin.from("subscription_history").insert({
       tenant_id: tenant.id,
-      event_type: "onboarding_completed",
+      event_type: "onboarding_started",
       new_status: "trial",
+      amount: 100, // R$1.00 verification charge
       metadata: {
         admin_email: admin.email,
         escola_nome: escola.nome,
         selected_plan: selectedPlan,
         trial_ends_at: trialEndsAt.toISOString(),
         stripe_customer_id: stripeCustomer.id,
-        payment_method_pending: true,
+        payment_intent_id: paymentIntent.id,
+        verification_charge: "R$1,00",
       },
     });
 
@@ -276,12 +291,12 @@ serve(async (req) => {
       user_id: authUser.user.id,
       tenant_id: tenant.id,
       title: "Bem-vindo ao sistema!",
-      message: `Sua escola ${escola.nome} foi criada com sucesso. Você tem 14 dias de teste grátis no plano ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}. Complete o cadastro do seu cartão para ativar a cobrança automática.`,
+      message: `Sua escola ${escola.nome} foi criada com sucesso. Você tem 14 dias de teste grátis no plano ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}. Foi cobrado R$1,00 para verificação do cartão. Após o período de teste, a mensalidade será cobrada automaticamente.`,
       type: "success",
       read: false,
     });
 
-    // Return SetupIntent client_secret so frontend can complete card registration
+    // Return PaymentIntent client_secret for frontend to confirm the R$1.00 charge
     return new Response(
       JSON.stringify({
         success: true,
@@ -290,7 +305,8 @@ serve(async (req) => {
         plan: selectedPlan,
         trial_ends_at: trialEndsAt.toISOString(),
         stripe_customer_id: stripeCustomer.id,
-        setup_intent_client_secret: setupIntent.client_secret,
+        payment_intent_client_secret: paymentIntent.client_secret,
+        verification_amount: "R$ 1,00",
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

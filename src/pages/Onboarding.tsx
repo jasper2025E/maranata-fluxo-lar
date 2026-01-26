@@ -142,8 +142,8 @@ export default function Onboarding() {
     setErrors({});
     return true;
   };
-  // State for SetupIntent flow
-  const [setupIntentSecret, setSetupIntentSecret] = useState<string | null>(null);
+  // State for PaymentIntent flow (R$1.00 verification charge)
+  const [paymentIntentSecret, setPaymentIntentSecret] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
 
   const handleNextStep = () => {
@@ -157,7 +157,7 @@ export default function Onboarding() {
     }
   };
 
-  // Step 1: Create tenant and get SetupIntent (no card charge)
+  // Step 1: Create tenant and get PaymentIntent for R$1.00 verification
   const handleCreateTenant = async () => {
     setLoading(true);
     try {
@@ -187,8 +187,8 @@ export default function Onboarding() {
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      // Save SetupIntent secret and tenant ID for card form
-      setSetupIntentSecret(data.setup_intent_client_secret);
+      // Save PaymentIntent secret and tenant ID for card form
+      setPaymentIntentSecret(data.payment_intent_client_secret);
       setTenantId(data.tenant_id);
       setStep(4);
     } catch (error: any) {
@@ -199,10 +199,10 @@ export default function Onboarding() {
     }
   };
 
-  // Step 2: Card registered successfully
+  // Step 2: Card verified and R$1.00 charged successfully
   const handleCardSuccess = () => {
     setStep(5);
-    toast.success("Cartão cadastrado com sucesso!");
+    toast.success("Cartão verificado! R$1,00 cobrado com sucesso.");
   };
 
   const handleGoToLogin = () => {
@@ -682,7 +682,7 @@ export default function Onboarding() {
                 <OnboardingCardForm
                   schoolName={escola.nome}
                   adminEmail={admin.email}
-                  setupIntentClientSecret={setupIntentSecret || ""}
+                  paymentIntentClientSecret={paymentIntentSecret || ""}
                   tenantId={tenantId || ""}
                   onSuccess={handleCardSuccess}
                   onBack={() => setStep(3)}
