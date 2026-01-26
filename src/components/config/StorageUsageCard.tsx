@@ -3,18 +3,13 @@ import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { HardDrive, Image, FileText, Film, AlertTriangle, ArrowUpCircle } from "lucide-react";
-import { useTenant } from "@/hooks/useTenant";
 
 interface StorageUsageCardProps {
   onUpgrade?: () => void;
 }
 
-// Storage limits by plan (in bytes)
-const PLAN_LIMITS: Record<string, number> = {
-  basic: 500 * 1024 * 1024,      // 500 MB
-  professional: 2 * 1024 * 1024 * 1024, // 2 GB
-  enterprise: 10 * 1024 * 1024 * 1024,  // 10 GB
-};
+// Storage limits (in bytes) - single-tenant has enterprise limits
+const STORAGE_LIMIT = 10 * 1024 * 1024 * 1024; // 10 GB
 
 function formatBytes(bytes: number): string {
   if (bytes === 0) return "0 B";
@@ -25,17 +20,15 @@ function formatBytes(bytes: number): string {
 }
 
 export function StorageUsageCard({ onUpgrade }: StorageUsageCardProps) {
-  const { data: tenant } = useTenant();
-  
-  // Get storage usage from tenant (default to 0 if not set)
-  const storageUsed = (tenant as any)?.storage_used_bytes || 0;
-  const planLimit = PLAN_LIMITS[tenant?.plano || "basic"] || PLAN_LIMITS.basic;
+  // Mock storage usage for single-tenant (in a real app, fetch from storage API)
+  const storageUsed = 0;
+  const planLimit = STORAGE_LIMIT;
   
   const usagePercent = Math.min(100, Math.round((storageUsed / planLimit) * 100));
   const isWarning = usagePercent >= 80;
   const isCritical = usagePercent >= 95;
   
-  // Mock distribution data (in real implementation, fetch from storage)
+  // Mock distribution data
   const distribution = [
     { type: "Imagens", icon: Image, bytes: Math.round(storageUsed * 0.6), color: "text-blue-500" },
     { type: "Documentos", icon: FileText, bytes: Math.round(storageUsed * 0.3), color: "text-green-500" },
@@ -52,7 +45,7 @@ export function StorageUsageCard({ onUpgrade }: StorageUsageCardProps) {
               Uso de Armazenamento
             </CardTitle>
             <CardDescription>
-              Plano {tenant?.plano?.charAt(0).toUpperCase()}{tenant?.plano?.slice(1) || "Basic"}
+              Plano Completo
             </CardDescription>
           </div>
           {isWarning && (
@@ -115,7 +108,7 @@ export function StorageUsageCard({ onUpgrade }: StorageUsageCardProps) {
               onClick={onUpgrade}
             >
               <ArrowUpCircle className="h-4 w-4" />
-              Fazer upgrade para mais espaço
+              Expandir armazenamento
             </Button>
           </div>
         )}

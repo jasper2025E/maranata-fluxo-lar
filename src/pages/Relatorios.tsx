@@ -27,7 +27,7 @@ import {
 import { format, subMonths, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { FinancialKPICard } from "@/components/dashboard/FinancialKPICard";
-import { PremiumGate } from "@/components/premium";
+// PremiumGate removido - single-tenant
 
 const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 const mesesCompletos = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
@@ -338,7 +338,6 @@ const Relatorios = () => {
 
   return (
     <DashboardLayout>
-      <PremiumGate feature="advancedReports">
       <div className="max-w-6xl mx-auto p-6 space-y-6">
 
         {/* Filters Bar */}
@@ -759,9 +758,7 @@ const Relatorios = () => {
               </div>
             </div>
           )}
-        </div>
       </div>
-      </PremiumGate>
     </DashboardLayout>
   );
 };

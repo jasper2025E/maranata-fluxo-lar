@@ -14,7 +14,7 @@ import { Loader2, TrendingUp, ChevronRight, Activity, Target, AlertCircle, Light
 import { cn } from "@/lib/utils";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useSearchParams } from "react-router-dom";
-import { PremiumGate } from "@/components/premium";
+// PremiumGate removido - single-tenant
 
 type TabType = "overview" | "scenarios" | "alerts" | "recommendations";
 
@@ -39,7 +39,6 @@ const SaudeFinanceira = () => {
 
   return (
     <DashboardLayout>
-      <PremiumGate feature="financialHealth">
         <div className="max-w-6xl mx-auto p-6 space-y-6">
           {/* Mobile Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
@@ -221,9 +220,7 @@ const SaudeFinanceira = () => {
                   <RecommendationsPanel recommendations={data.recommendations} />
                 )}
               </motion.div>
-            )}
           </div>
-        </PremiumGate>
       </DashboardLayout>
   );
 };

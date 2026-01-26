@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import DashboardLayout from "@/components/DashboardLayout";
-import { PremiumGate } from "@/components/premium";
+// PremiumGate removido - sistema single-tenant
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { FinancialKPICard } from "@/components/dashboard";
 import { formatCurrency } from "@/lib/formatters";
@@ -109,7 +109,6 @@ const Contabilidade = () => {
 
   return (
     <DashboardLayout>
-      <PremiumGate feature="accounting">
         <div className="max-w-6xl mx-auto p-6 space-y-6">
           {/* Mobile Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
@@ -399,7 +398,6 @@ const Contabilidade = () => {
                 </motion.div>
               )}
             </div>
-          </PremiumGate>
         </DashboardLayout>
   );
 };

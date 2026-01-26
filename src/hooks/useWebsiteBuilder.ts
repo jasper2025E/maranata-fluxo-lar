@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "./useTenant";
+import { useEscola } from "./useEscola";
 import { toast } from "sonner";
 
 export interface WebsitePage {
@@ -372,7 +372,7 @@ export function usePageBlocks(pageId: string | undefined) {
 
 export function useCreatePage() {
   const queryClient = useQueryClient();
-  const { data: tenant } = useTenant();
+  const { data: escola } = useEscola();
 
   return useMutation({
     mutationFn: async (params: { 
@@ -381,12 +381,12 @@ export function useCreatePage() {
       slug: string;
       isHomepage?: boolean;
     }) => {
-      if (!tenant?.id) throw new Error("Tenant não encontrado");
+      if (!escola?.tenant_id) throw new Error("Escola não encontrada");
 
       const { data, error } = await supabase
         .from("school_website_pages")
         .insert({
-          tenant_id: tenant.id,
+          tenant_id: escola.tenant_id,
           website_id: params.websiteId,
           title: params.title,
           slug: params.slug,
@@ -464,7 +464,7 @@ export function useDeletePage() {
 
 export function useCreateBlock() {
   const queryClient = useQueryClient();
-  const { data: tenant } = useTenant();
+  const { data: escola } = useEscola();
 
   return useMutation({
     mutationFn: async (params: { 
@@ -472,7 +472,7 @@ export function useCreateBlock() {
       blockType: BlockType;
       order?: number;
     }) => {
-      if (!tenant?.id) throw new Error("Tenant não encontrado");
+      if (!escola?.tenant_id) throw new Error("Escola não encontrada");
 
       const definition = blockLibrary.find(b => b.type === params.blockType);
       if (!definition) throw new Error("Tipo de bloco inválido");
@@ -488,7 +488,7 @@ export function useCreateBlock() {
       const maxOrder = blocks?.[0]?.block_order ?? -1;
 
       const insertData = {
-        tenant_id: tenant.id,
+        tenant_id: escola.tenant_id,
         page_id: params.pageId,
         block_type: params.blockType,
         block_order: params.order ?? maxOrder + 1,

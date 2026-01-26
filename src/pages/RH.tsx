@@ -26,7 +26,7 @@ import { ContratosTab } from "@/components/rh/ContratosTab";
 import { LoadingState } from "@/components/LoadingState";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { PremiumGate } from "@/components/premium";
+// PremiumGate removido - sistema single-tenant
 
 export default function RH() {
   const { t } = useTranslation();
@@ -222,7 +222,6 @@ export default function RH() {
 
   return (
     <DashboardLayout>
-      <PremiumGate feature="hrManagement">
         <div className="max-w-6xl mx-auto space-y-6">
           {/* Breadcrumb */}
           <nav className="flex items-center gap-2 text-sm">
@@ -236,7 +235,6 @@ export default function RH() {
             {renderContent()}
           </div>
         </div>
-      </PremiumGate>
     </DashboardLayout>
   );
 }

@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "./useTenant";
+import { useEscola } from "./useEscola";
 import { toast } from "sonner";
 
 interface UploadOptions {
@@ -92,18 +92,16 @@ async function compressImage(
 }
 
 export function useImageUpload(): UseImageUploadReturn {
-  const { data: tenant } = useTenant();
+  const { data: escola } = useEscola();
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
+  // Use escola id or a default folder for single-tenant
+  const uploadFolderId = escola?.id || "escola-maranata";
+
   const upload = useCallback(
     async (file: File, options: UploadOptions): Promise<UploadResult | null> => {
-      if (!tenant?.id) {
-        toast.error("Tenant não encontrado");
-        return null;
-      }
-
       const {
         bucket,
         folder = "",
@@ -147,8 +145,8 @@ export function useImageUpload(): UseImageUploadReturn {
                          file.name.split(".").pop() || "bin";
         const fileName = `${timestamp}-${randomId}.${extension}`;
         const filePath = folder 
-          ? `${tenant.id}/${folder}/${fileName}`
-          : `${tenant.id}/${fileName}`;
+          ? `${uploadFolderId}/${folder}/${fileName}`
+          : `${uploadFolderId}/${fileName}`;
 
         setProgress(60);
 
@@ -200,7 +198,7 @@ export function useImageUpload(): UseImageUploadReturn {
         setIsUploading(false);
       }
     },
-    [tenant?.id]
+    [uploadFolderId]
   );
 
   const uploadMultiple = useCallback(
