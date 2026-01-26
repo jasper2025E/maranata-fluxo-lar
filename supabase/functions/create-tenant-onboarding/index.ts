@@ -18,6 +18,11 @@ interface OnboardingRequest {
     email: string;
     password: string;
   };
+  plan?: string;
+  planLimits?: {
+    limite_alunos: number;
+    limite_usuarios: number;
+  };
 }
 
 serve(async (req) => {
@@ -38,7 +43,7 @@ serve(async (req) => {
       }
     );
 
-    const { escola, admin }: OnboardingRequest = await req.json();
+    const { escola, admin, plan, planLimits }: OnboardingRequest = await req.json();
 
     // Validate required fields
     if (!escola?.nome || !escola?.telefone) {
@@ -72,6 +77,11 @@ serve(async (req) => {
     const trialEndsAt = new Date();
     trialEndsAt.setDate(trialEndsAt.getDate() + 14);
 
+    // Use selected plan or default to basic
+    const selectedPlan = plan || "basic";
+    const limiteAlunos = planLimits?.limite_alunos || 50;
+    const limiteUsuarios = planLimits?.limite_usuarios || 3;
+
     // 1. Create the tenant
     const { data: tenant, error: tenantError } = await supabaseAdmin
       .from("tenants")
@@ -81,13 +91,13 @@ serve(async (req) => {
         telefone: escola.telefone,
         endereco: escola.endereco,
         email: admin.email,
-        plano: "basic",
+        plano: selectedPlan,
         status: "ativo",
         subscription_status: "trial",
         trial_ends_at: trialEndsAt.toISOString(),
         data_contrato: new Date().toISOString().split("T")[0],
-        limite_alunos: 50, // Basic plan limit
-        limite_usuarios: 3, // Basic plan limit
+        limite_alunos: limiteAlunos,
+        limite_usuarios: limiteUsuarios,
       })
       .select()
       .single();
@@ -191,6 +201,7 @@ serve(async (req) => {
       metadata: {
         admin_email: admin.email,
         escola_nome: escola.nome,
+        selected_plan: selectedPlan,
         trial_ends_at: trialEndsAt.toISOString(),
       },
     });
@@ -199,8 +210,8 @@ serve(async (req) => {
     await supabaseAdmin.from("notifications").insert({
       user_id: authUser.user.id,
       tenant_id: tenant.id,
-      title: "Bem-vindo ao Wevessistem!",
-      message: `Sua escola ${escola.nome} foi criada com sucesso. Você tem 14 dias de teste grátis.`,
+      title: "Bem-vindo ao sistema!",
+      message: `Sua escola ${escola.nome} foi criada com sucesso. Você tem 14 dias de teste grátis no plano ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}.`,
       type: "success",
       read: false,
     });
@@ -210,6 +221,7 @@ serve(async (req) => {
         success: true,
         tenant_id: tenant.id,
         user_id: authUser.user.id,
+        plan: selectedPlan,
         trial_ends_at: trialEndsAt.toISOString(),
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
