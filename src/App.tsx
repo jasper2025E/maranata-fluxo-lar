@@ -48,8 +48,8 @@ function AppContent() {
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* Público */}
-          <Route path="/" element={<Institucional />} />
+          {/* Público - Redireciona para login */}
+          <Route path="/" element={<Auth />} />
           <Route path="/auth" element={<Auth />} />
           
           {/* Protegido - Escola Maranata */}
