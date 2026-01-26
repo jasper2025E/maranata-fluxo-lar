@@ -283,11 +283,17 @@ export default function Onboarding() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
               >
-                {/* Trial badge */}
-                <div className="flex items-center justify-center gap-2 mb-4 py-2.5 px-4 bg-primary/5 rounded-lg border border-primary/10">
-                  <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                  <span className="text-sm font-medium text-primary">14 dias grátis</span>
-                  <span className="text-sm text-muted-foreground">• Cancele quando quiser</span>
+                {/* Trial banner */}
+                <div className="mb-6 p-4 bg-card rounded-lg border border-border shadow-sm">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30">
+                      <Gift className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">14 dias grátis para testar</p>
+                      <p className="text-xs text-muted-foreground">Sem compromisso. Cancele a qualquer momento.</p>
+                    </div>
+                  </div>
                 </div>
 
                 {/* Shopify-style card */}
