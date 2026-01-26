@@ -36,6 +36,10 @@ interface Aluno {
   status_matricula: 'ativo' | 'trancado' | 'cancelado' | 'transferido';
   desconto_percentual: number;
   observacoes: string | null;
+  // Campos de configuração de faturamento
+  dia_vencimento: number | null;
+  data_inicio_cobranca: string | null;
+  quantidade_parcelas: number | null;
   cursos?: { nome: string; mensalidade: number };
   turmas?: { nome: string; serie: string } | null;
   responsaveis?: { id: string; nome: string } | null;
@@ -172,6 +176,9 @@ const Alunos = () => {
           email_responsavel: data.email_responsavel,
           endereco: data.endereco,
           observacoes: data.observacoes || null,
+          dia_vencimento: data.dia_vencimento,
+          data_inicio_cobranca: data.data_inicio_cobranca,
+          quantidade_parcelas: data.quantidade_parcelas,
         })
         .select()
         .single();
@@ -252,6 +259,9 @@ const Alunos = () => {
           email_responsavel: data.email_responsavel,
           endereco: data.endereco,
           observacoes: data.observacoes || null,
+          dia_vencimento: data.dia_vencimento,
+          data_inicio_cobranca: data.data_inicio_cobranca,
+          quantidade_parcelas: data.quantidade_parcelas,
         })
         .eq("id", data.id);
       if (error) throw error;
@@ -358,9 +368,10 @@ const Alunos = () => {
       email_responsavel: aluno.email_responsavel,
       endereco: aluno.endereco,
       observacoes: aluno.observacoes || "",
-      dia_vencimento: 10,
-      data_inicio_cobranca: new Date().toISOString().split("T")[0],
-      quantidade_parcelas: 12,
+      // Carrega os dados de faturamento salvos do aluno
+      dia_vencimento: aluno.dia_vencimento ?? 10,
+      data_inicio_cobranca: aluno.data_inicio_cobranca || new Date().toISOString().split("T")[0],
+      quantidade_parcelas: aluno.quantidade_parcelas ?? 12,
     });
     setIsOpen(true);
   };

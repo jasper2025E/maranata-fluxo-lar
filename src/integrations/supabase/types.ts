@@ -18,14 +18,17 @@ export type Database = {
         Row: {
           created_at: string | null
           curso_id: string
+          data_inicio_cobranca: string | null
           data_matricula: string
           data_nascimento: string | null
           desconto_percentual: number | null
+          dia_vencimento: number | null
           email_responsavel: string | null
           endereco: string | null
           id: string
           nome_completo: string
           observacoes: string | null
+          quantidade_parcelas: number | null
           responsavel_id: string | null
           status_matricula: Database["public"]["Enums"]["aluno_status"] | null
           telefone_responsavel: string | null
@@ -36,14 +39,17 @@ export type Database = {
         Insert: {
           created_at?: string | null
           curso_id: string
+          data_inicio_cobranca?: string | null
           data_matricula?: string
           data_nascimento?: string | null
           desconto_percentual?: number | null
+          dia_vencimento?: number | null
           email_responsavel?: string | null
           endereco?: string | null
           id?: string
           nome_completo: string
           observacoes?: string | null
+          quantidade_parcelas?: number | null
           responsavel_id?: string | null
           status_matricula?: Database["public"]["Enums"]["aluno_status"] | null
           telefone_responsavel?: string | null
@@ -54,14 +60,17 @@ export type Database = {
         Update: {
           created_at?: string | null
           curso_id?: string
+          data_inicio_cobranca?: string | null
           data_matricula?: string
           data_nascimento?: string | null
           desconto_percentual?: number | null
+          dia_vencimento?: number | null
           email_responsavel?: string | null
           endereco?: string | null
           id?: string
           nome_completo?: string
           observacoes?: string | null
+          quantidade_parcelas?: number | null
           responsavel_id?: string | null
           status_matricula?: Database["public"]["Enums"]["aluno_status"] | null
           telefone_responsavel?: string | null
