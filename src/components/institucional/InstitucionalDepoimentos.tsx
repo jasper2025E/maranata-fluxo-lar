@@ -4,27 +4,27 @@ import { Star, Quote } from "lucide-react";
 const testimonials = [
   {
     quote:
-      "Reduzimos a inadimplência em 35% no primeiro trimestre. O sistema de cobrança automática é excelente.",
-    author: "Maria Silva",
-    role: "Diretora Financeira",
-    company: "Colégio São Paulo",
-    avatar: "MS",
+      "A gestão financeira ficou muito mais organizada. O controle de inadimplência com cobrança automática via PIX e boleto revolucionou nosso fluxo de caixa.",
+    author: "Carla Mendes",
+    role: "Diretora Administrativa",
+    company: "Colégio Esperança",
+    avatar: "CM",
   },
   {
     quote:
-      "A migração foi muito tranquila. A equipe de suporte nos ajudou em cada etapa. Altamente recomendado.",
-    author: "João Santos",
-    role: "Coordenador Administrativo",
-    company: "Escola Nova Geração",
-    avatar: "JS",
+      "O módulo de RH e folha de pagamento integrados economizam horas por mês. O ponto eletrônico é simples e eficiente.",
+    author: "Roberto Almeida",
+    role: "Gestor de RH",
+    company: "Instituto Educacional Futuro",
+    avatar: "RA",
   },
   {
     quote:
-      "Gerenciar 4 unidades ficou muito mais simples. Os relatórios consolidados economizam horas do meu dia.",
-    author: "Ana Oliveira",
-    role: "CEO",
-    company: "Grupo Educacional Alfa",
-    avatar: "AO",
+      "Gerenciar 3 unidades com dados isolados mas relatórios consolidados era exatamente o que precisávamos. Sistema robusto e confiável.",
+    author: "Fernanda Lima",
+    role: "Diretora Geral",
+    company: "Rede de Ensino Crescer",
+    avatar: "FL",
   },
 ];
 

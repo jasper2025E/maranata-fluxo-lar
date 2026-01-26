@@ -26,9 +26,9 @@ const staggerContainer = {
 };
 
 const trustBadges = [
-  "Sem taxa de setup",
-  "Suporte em português",
-  "Migração gratuita",
+  "14 dias grátis",
+  "Suporte brasileiro",
+  "LGPD compliant",
 ];
 
 export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
@@ -104,9 +104,9 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
             variants={fadeInUp}
             className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed"
           >
-            Sistema completo para gerenciar matrículas, mensalidades, 
-            funcionários e muito mais. Tudo em uma plataforma segura, 
-            escalável e fácil de usar.
+            Gerencie alunos, matrículas, mensalidades, funcionários e 
+            contabilidade em uma única plataforma multi-tenant. 
+            Segura, escalável e 100% na nuvem.
           </motion.p>
 
           {/* CTAs */}

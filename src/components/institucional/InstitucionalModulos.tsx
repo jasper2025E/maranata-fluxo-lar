@@ -8,64 +8,68 @@ import {
   Globe,
   FileText,
   Bell,
+  Crown,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const modules = [
   {
     icon: GraduationCap,
     title: "Gestão de Alunos",
     description:
-      "Matrículas, turmas, enturmação e acompanhamento completo do histórico escolar.",
-    features: ["Matrícula online", "Histórico completo", "Documentos digitais"],
+      "Matrículas, turmas, enturmação, responsáveis e acompanhamento completo do histórico.",
+    features: ["Matrícula digital", "Enturmação", "Histórico escolar"],
   },
   {
     icon: CreditCard,
-    title: "Financeiro Integrado",
+    title: "Financeiro Completo",
     description:
-      "Cobrança automática com PIX, boleto e cartão. Controle total de inadimplência.",
-    features: ["Multi-gateway", "Cobrança automática", "Relatórios fiscais"],
+      "Faturas, cobranças automáticas via PIX, boleto e cartão. Controle de inadimplência.",
+    features: ["Asaas & Stripe", "Carnês", "Juros automáticos"],
   },
   {
     icon: Users,
     title: "RH e Folha",
     description:
-      "Cadastro de funcionários, contratos, ponto eletrônico e geração de folha.",
-    features: ["Ponto digital", "Contratos", "Folha de pagamento"],
+      "Cadastro de funcionários, cargos, setores, contratos, ponto eletrônico e folha mensal.",
+    features: ["Ponto digital", "Contratos CLT/PJ", "Folha integrada"],
   },
   {
     icon: BarChart3,
     title: "Relatórios e BI",
     description:
-      "Dashboards em tempo real, projeções financeiras e indicadores de desempenho.",
-    features: ["Tempo real", "Exportação", "Gráficos avançados"],
+      "Dashboards em tempo real, análise de inadimplência, receitas por curso e exportações.",
+    features: ["KPIs financeiros", "Exportar CSV", "Gráficos"],
   },
   {
     icon: Building2,
     title: "Multi-escolas",
     description:
-      "Gerencie várias unidades em uma única plataforma com dados consolidados.",
-    features: ["Dados isolados", "Consolidação", "Permissões por unidade"],
+      "Gerencie várias unidades com dados isolados e visão consolidada no plano Enterprise.",
+    features: ["Isolamento RLS", "Consolidação", "Permissões"],
+    premium: true,
   },
   {
     icon: Globe,
     title: "Site Escolar",
     description:
-      "Crie o site da sua escola com editor visual. Capte leads e matrículas online.",
-    features: ["Editor drag-drop", "SEO otimizado", "Formulários"],
+      "Crie o site da escola com editor de blocos. Capture leads e pré-matrículas online.",
+    features: ["Editor visual", "SEO integrado", "Domínio próprio"],
   },
   {
     icon: FileText,
     title: "Contabilidade",
     description:
-      "Plano de contas, lançamentos, DRE e balanço patrimonial integrados.",
-    features: ["Plano de contas", "DRE automático", "Auditoria"],
+      "Plano de contas, lançamentos, DRE, balanço patrimonial e controle de patrimônio.",
+    features: ["DRE automático", "Depreciação", "Auditoria"],
+    premium: true,
   },
   {
     icon: Bell,
-    title: "Comunicação",
+    title: "Despesas",
     description:
-      "Envie avisos, boletos e comunicados por email e WhatsApp automaticamente.",
-    features: ["Email", "WhatsApp", "Agendamento"],
+      "Controle todas as despesas da escola por categoria, com alertas de vencimento.",
+    features: ["Categorização", "Recorrência", "Alertas"],
   },
 ];
 
@@ -102,8 +106,21 @@ export function InstitucionalModulos() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.05 }}
-              className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
+              className={cn(
+                "group p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 relative",
+                module.premium && "ring-1 ring-primary/20"
+              )}
             >
+              {/* Premium badge */}
+              {module.premium && (
+                <div className="absolute -top-2 -right-2">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-full">
+                    <Crown className="w-3 h-3" />
+                    Premium
+                  </span>
+                </div>
+              )}
+
               {/* Icon */}
               <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
                 <module.icon className="w-6 h-6" />

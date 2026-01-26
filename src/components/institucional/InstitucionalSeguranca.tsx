@@ -12,31 +12,31 @@ import { INSTITUCIONAL_COLORS } from "./colors";
 const securityFeatures = [
   {
     icon: Lock,
-    title: "Criptografia AES-256",
-    description: "Todos os dados são criptografados em trânsito e em repouso.",
+    title: "Isolamento Multi-tenant",
+    description: "Dados de cada escola 100% isolados via Row Level Security (RLS).",
   },
   {
     icon: Server,
-    title: "Infraestrutura Redundante",
-    description: "Servidores distribuídos com failover automático.",
+    title: "Infraestrutura Supabase",
+    description: "Hospedagem em nuvem com alta disponibilidade e redundância.",
   },
   {
     icon: Eye,
     title: "Conformidade LGPD",
-    description: "Processos e políticas em total conformidade com a LGPD.",
+    description: "Dados protegidos e processos em conformidade com a legislação.",
   },
   {
     icon: RefreshCw,
     title: "Backups Automáticos",
-    description: "Backups diários com retenção de 30 dias. Restauração rápida.",
+    description: "Backups diários com retenção garantida. Restauração rápida.",
   },
 ];
 
 const certifications = [
-  "ISO 27001",
-  "SOC 2 Type II",
+  "Isolamento RLS",
   "LGPD Compliant",
-  "PCI DSS",
+  "Criptografia SSL",
+  "Autenticação MFA",
 ];
 
 export function InstitucionalSeguranca() {
