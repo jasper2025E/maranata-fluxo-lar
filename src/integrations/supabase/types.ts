@@ -100,6 +100,45 @@ export type Database = {
           },
         ]
       }
+      announcement_reads: {
+        Row: {
+          announcement_id: string | null
+          id: string
+          read_at: string | null
+          read_by: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          announcement_id?: string | null
+          id?: string
+          read_at?: string | null
+          read_by?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          announcement_id?: string | null
+          id?: string
+          read_at?: string | null
+          read_by?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcement_reads_announcement_id_fkey"
+            columns: ["announcement_id"]
+            isOneToOne: false
+            referencedRelation: "platform_announcements"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "announcement_reads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_request_logs: {
         Row: {
           created_at: string
@@ -1971,9 +2010,12 @@ export type Database = {
           link_text: string | null
           link_url: string | null
           message: string
+          show_banner: boolean | null
           show_on_landing: boolean
           show_on_login: boolean
           starts_at: string
+          target_plans: string[] | null
+          target_status: string[] | null
           title: string
           type: string
           updated_at: string
@@ -1987,9 +2029,12 @@ export type Database = {
           link_text?: string | null
           link_url?: string | null
           message: string
+          show_banner?: boolean | null
           show_on_landing?: boolean
           show_on_login?: boolean
           starts_at?: string
+          target_plans?: string[] | null
+          target_status?: string[] | null
           title: string
           type?: string
           updated_at?: string
@@ -2003,14 +2048,227 @@ export type Database = {
           link_text?: string | null
           link_url?: string | null
           message?: string
+          show_banner?: boolean | null
           show_on_landing?: boolean
           show_on_login?: boolean
           starts_at?: string
+          target_plans?: string[] | null
+          target_status?: string[] | null
           title?: string
           type?: string
           updated_at?: string
         }
         Relationships: []
+      }
+      platform_audit_logs: {
+        Row: {
+          action: string
+          created_at: string | null
+          details: Json | null
+          id: string
+          ip_address: string | null
+          manager_id: string | null
+          resource_id: string | null
+          resource_type: string
+          user_agent: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          manager_id?: string | null
+          resource_id?: string | null
+          resource_type: string
+          user_agent?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          details?: Json | null
+          id?: string
+          ip_address?: string | null
+          manager_id?: string | null
+          resource_id?: string | null
+          resource_type?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_audit_logs_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "system_managers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_backups: {
+        Row: {
+          backup_type: string
+          completed_at: string | null
+          created_at: string | null
+          error_message: string | null
+          expires_at: string | null
+          file_size_bytes: number | null
+          file_url: string | null
+          id: string
+          requested_by: string | null
+          started_at: string | null
+          status: string
+          tables_included: string[] | null
+          tenant_id: string | null
+        }
+        Insert: {
+          backup_type?: string
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          expires_at?: string | null
+          file_size_bytes?: number | null
+          file_url?: string | null
+          id?: string
+          requested_by?: string | null
+          started_at?: string | null
+          status?: string
+          tables_included?: string[] | null
+          tenant_id?: string | null
+        }
+        Update: {
+          backup_type?: string
+          completed_at?: string | null
+          created_at?: string | null
+          error_message?: string | null
+          expires_at?: string | null
+          file_size_bytes?: number | null
+          file_url?: string | null
+          id?: string
+          requested_by?: string | null
+          started_at?: string | null
+          status?: string
+          tables_included?: string[] | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_backups_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "system_managers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_backups_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_changelog: {
+        Row: {
+          content: string
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_major: boolean | null
+          published_at: string | null
+          title: string
+          type: string
+          version: string
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_major?: boolean | null
+          published_at?: string | null
+          title: string
+          type?: string
+          version: string
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_major?: boolean | null
+          published_at?: string | null
+          title?: string
+          type?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_changelog_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "system_managers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      platform_roadmap: {
+        Row: {
+          category: string
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          estimated_release: string | null
+          id: string
+          is_public: boolean | null
+          priority: string | null
+          release_notes: string | null
+          released_at: string | null
+          status: string
+          title: string
+          updated_at: string | null
+          votes_count: number | null
+        }
+        Insert: {
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          estimated_release?: string | null
+          id?: string
+          is_public?: boolean | null
+          priority?: string | null
+          release_notes?: string | null
+          released_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string | null
+          votes_count?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          estimated_release?: string | null
+          id?: string
+          is_public?: boolean | null
+          priority?: string | null
+          release_notes?: string | null
+          released_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string | null
+          votes_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "platform_roadmap_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "system_managers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       platform_settings: {
         Row: {
@@ -2313,6 +2571,45 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "responsaveis_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      roadmap_votes: {
+        Row: {
+          created_at: string | null
+          id: string
+          roadmap_id: string | null
+          tenant_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          roadmap_id?: string | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          roadmap_id?: string | null
+          tenant_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "roadmap_votes_roadmap_id_fkey"
+            columns: ["roadmap_id"]
+            isOneToOne: false
+            referencedRelation: "platform_roadmap"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "roadmap_votes_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2886,7 +3183,9 @@ export type Database = {
           is_active: boolean | null
           last_login_at: string | null
           nome: string
+          permissions: Json | null
           phone: string | null
+          platform_role: string | null
           updated_at: string | null
         }
         Insert: {
@@ -2897,7 +3196,9 @@ export type Database = {
           is_active?: boolean | null
           last_login_at?: string | null
           nome: string
+          permissions?: Json | null
           phone?: string | null
+          platform_role?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -2908,7 +3209,9 @@ export type Database = {
           is_active?: boolean | null
           last_login_at?: string | null
           nome?: string
+          permissions?: Json | null
           phone?: string | null
+          platform_role?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -3441,6 +3744,15 @@ export type Database = {
       is_school_user: { Args: { _user_id: string }; Returns: boolean }
       is_system_manager: { Args: { _user_id: string }; Returns: boolean }
       is_tenant_blocked: { Args: { p_tenant_id: string }; Returns: boolean }
+      log_manager_action: {
+        Args: {
+          p_action: string
+          p_details?: Json
+          p_resource_id?: string
+          p_resource_type: string
+        }
+        Returns: string
+      }
       log_security_access: {
         Args: {
           p_action: string
@@ -3453,6 +3765,10 @@ export type Database = {
           p_target_tenant_id?: string
         }
         Returns: string
+      }
+      manager_has_permission: {
+        Args: { p_manager_id: string; p_permission: string }
+        Returns: boolean
       }
       recalcular_fatura: { Args: { p_fatura_id: string }; Returns: undefined }
       registrar_ponto_externo: {
@@ -3516,6 +3832,11 @@ export type Database = {
         | "credit_card"
         | "debit_card"
         | "bank_transfer"
+      platform_role:
+        | "super_admin"
+        | "admin_financeiro"
+        | "suporte"
+        | "read_only"
       subscription_status:
         | "trial"
         | "active"
@@ -3676,6 +3997,12 @@ export const Constants = {
         "credit_card",
         "debit_card",
         "bank_transfer",
+      ],
+      platform_role: [
+        "super_admin",
+        "admin_financeiro",
+        "suporte",
+        "read_only",
       ],
       subscription_status: [
         "trial",
