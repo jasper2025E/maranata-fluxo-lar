@@ -37,6 +37,7 @@ import { WebsiteEditorSEO } from "@/components/website/WebsiteEditorSEO";
 import { WebsiteEditorGallery } from "@/components/website/WebsiteEditorGallery";
 import { WebsiteEditorTestimonials } from "@/components/website/WebsiteEditorTestimonials";
 import { WebsitePreview } from "@/components/website/WebsitePreview";
+import { WebsiteThemeSelector } from "@/components/website/WebsiteThemeSelector";
 import { toast } from "sonner";
 
 export default function SiteEscolar() {
@@ -199,8 +200,12 @@ export default function SiteEscolar() {
             </Card>
 
             {/* Editor Tabs */}
-            <Tabs defaultValue="general" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-7">
+            <Tabs defaultValue="themes" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+                <TabsTrigger value="themes" className="gap-2">
+                  <Sparkles className="h-4 w-4" />
+                  <span className="hidden sm:inline">Temas</span>
+                </TabsTrigger>
                 <TabsTrigger value="general" className="gap-2">
                   <Settings className="h-4 w-4" />
                   <span className="hidden sm:inline">Geral</span>
@@ -230,6 +235,10 @@ export default function SiteEscolar() {
                   <span className="hidden sm:inline">Preview</span>
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="themes">
+                <WebsiteThemeSelector config={website} />
+              </TabsContent>
 
               <TabsContent value="general">
                 <WebsiteEditorGeneral config={website} />
