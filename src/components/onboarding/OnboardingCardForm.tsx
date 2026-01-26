@@ -215,12 +215,12 @@ function CardFormContent({
         {processing ? (
           <>
             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Processando R$ 1,00...
+            Verificando cartão...
           </>
         ) : (
           <>
             <Lock className="h-4 w-4 mr-2" />
-            Pagar R$ 1,00 e criar conta
+            Verificar cartão e criar conta
           </>
         )}
       </Button>
@@ -231,12 +231,13 @@ function CardFormContent({
         <span>Seus dados estão protegidos com criptografia SSL</span>
       </div>
 
-      {/* R$1.00 verification charge notice */}
-      <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
-        <p className="text-center text-sm text-amber-800">
-          <strong>Taxa de verificação: R$ 1,00</strong>
+      <div className="p-3 rounded-lg bg-slate-50 border border-slate-100">
+        <p className="text-center text-sm text-slate-700">
+          <strong>Sem cobrança agora</strong>
           <br />
-          <span className="text-xs">Será cobrado R$ 1,00 para verificar seu cartão. Após 14 dias de teste, a mensalidade do plano será cobrada automaticamente.</span>
+          <span className="text-xs text-slate-600">
+            Usamos esta etapa apenas para verificar e salvar o cartão para cobranças futuras automáticas.
+          </span>
         </p>
       </div>
     </form>
@@ -308,7 +309,10 @@ export function OnboardingCardForm({
         </div>
         <div>
           <h3 className="font-semibold text-slate-900">Verificar cartão</h3>
-          <p className="text-sm text-slate-500">Sem cobrança (modo teste)</p>
+          <p className="text-sm text-slate-500">
+            Sem cobrança (apenas verificação)
+            {isTestMode ? " • modo teste" : ""}
+          </p>
         </div>
       </div>
 
