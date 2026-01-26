@@ -155,7 +155,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = (requiredRole: AppRole): boolean => {
     if (!role) return false;
-    // Admin tem acesso total
+    // Proprietário (platform_admin) tem acesso total a tudo
+    if (role === "platform_admin") return true;
+    // Admin tem acesso total dentro da escola
     if (role === "admin") return true;
     return role === requiredRole;
   };
