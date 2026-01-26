@@ -220,6 +220,7 @@ const SaudeFinanceira = () => {
                   <RecommendationsPanel recommendations={data.recommendations} />
                 )}
               </motion.div>
+            )}
           </div>
       </DashboardLayout>
   );
