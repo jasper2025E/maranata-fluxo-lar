@@ -274,7 +274,7 @@ export default function PlatformDashboard() {
 
   return (
     <PlatformLayout>
-      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+      <div className="p-6 space-y-6 max-w-[1400px] mx-auto">
         {/* Header */}
         <WelcomeCard 
           avatarUrl={avatarUrl}
@@ -289,12 +289,15 @@ export default function PlatformDashboard() {
         {/* Quick Actions */}
         <QuickActionsCard />
 
+        {/* Metrics Grid */}
+        <MetricsGrid metrics={metrics} />
+
         {/* Main Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - 2/3 */}
           <div className="lg:col-span-2 space-y-6">
             {/* Profile and Awards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ProfileWidget 
                 avatarUrl={avatarUrl}
                 userName={userName}
@@ -307,9 +310,6 @@ export default function PlatformDashboard() {
               <AwardsWidget achievements={achievements} />
             </div>
 
-            {/* Metrics Grid */}
-            <MetricsGrid metrics={metrics} />
-
             {/* Activity Chart */}
             <ActivityChart data={activityChartData} />
 
@@ -318,7 +318,7 @@ export default function PlatformDashboard() {
           </div>
 
           {/* Right Column - 1/3 */}
-          <div className="space-y-6">
+          <div className="space-y-4">
             {/* Calendar */}
             <CalendarWidget 
               highlightedDates={tenants

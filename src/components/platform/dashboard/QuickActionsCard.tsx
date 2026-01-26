@@ -61,7 +61,7 @@ export function QuickActionsCard() {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.15 }}
-      className="grid grid-cols-2 lg:grid-cols-4 gap-3"
+      className="grid grid-cols-2 md:grid-cols-4 gap-3"
     >
       {quickActions.map((action, index) => (
         <motion.button
@@ -70,7 +70,7 @@ export function QuickActionsCard() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 + index * 0.05 }}
           onClick={() => navigate(action.path)}
-          className="group p-4 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all text-left"
+          className="group p-4 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all text-left"
         >
           <div className={cn(
             "h-10 w-10 rounded-xl flex items-center justify-center mb-3 transition-colors",
@@ -78,7 +78,7 @@ export function QuickActionsCard() {
           )}>
             <action.icon className={cn("h-5 w-5", action.color)} />
           </div>
-          <h4 className="font-medium text-foreground group-hover:text-primary transition-colors">
+          <h4 className="font-medium text-foreground text-sm group-hover:text-primary transition-colors">
             {action.label}
           </h4>
           <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
