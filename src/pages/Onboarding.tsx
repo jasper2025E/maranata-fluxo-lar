@@ -273,52 +273,6 @@ export default function Onboarding() {
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6 lg:p-8 overflow-y-auto">
         <div className="w-full max-w-xl">
           
-          {/* Progress Steps - Stripe-style numbered */}
-          <div className="flex items-center justify-center mb-8">
-            <div className="flex items-center">
-              {stepLabels.map((label, index) => {
-                const s = index + 1;
-                const isCompleted = step > s;
-                const isCurrent = step === s;
-                
-                return (
-                  <div key={s} className="flex items-center">
-                    <div className="flex flex-col items-center">
-                      <div className={`
-                        relative h-8 w-8 rounded-full flex items-center justify-center 
-                        text-xs font-semibold transition-all duration-200
-                        ${isCompleted 
-                          ? "bg-primary text-primary-foreground" 
-                          : isCurrent 
-                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/25" 
-                            : "bg-muted text-muted-foreground"
-                        }
-                      `}>
-                        {isCompleted ? (
-                          <Check className="h-4 w-4" strokeWidth={2.5} />
-                        ) : (
-                          <span>{s}</span>
-                        )}
-                      </div>
-                      <span className={`
-                        text-[11px] mt-2 font-medium whitespace-nowrap
-                        ${isCurrent ? "text-foreground" : "text-muted-foreground"}
-                      `}>
-                        {label}
-                      </span>
-                    </div>
-                    {s < 5 && (
-                      <div className={`
-                        w-10 sm:w-14 h-0.5 mx-1 rounded-full transition-colors duration-200
-                        ${step > s ? "bg-primary" : "bg-muted"}
-                      `} />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
           <AnimatePresence mode="wait">
             {/* Step 1: School Info */}
             {step === 1 && <motion.div key="step1" initial={{
