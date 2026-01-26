@@ -120,8 +120,11 @@ serve(async (req) => {
       });
     } catch (stripeError: any) {
       console.error("Error creating Stripe customer:", stripeError);
+      const errorMessage = stripeError.code === 'card_declined' 
+        ? "Cartão recusado. Por favor, verifique os dados ou use outro cartão."
+        : stripeError.message || "Erro ao processar cartão de crédito";
       return new Response(
-        JSON.stringify({ error: stripeError.message || "Erro ao processar cartão de crédito" }),
+        JSON.stringify({ error: errorMessage }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -183,15 +186,15 @@ serve(async (req) => {
       );
     }
 
-    // 4. Create the profile
+    // 4. Create the profile (upsert to handle edge cases)
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
-      .insert({
+      .upsert({
         id: authUser.user.id,
         email: admin.email,
         nome: admin.nome,
         tenant_id: tenant.id,
-      });
+      }, { onConflict: 'id' });
 
     if (profileError) {
       // Rollback: delete user, tenant and Stripe customer
@@ -201,7 +204,7 @@ serve(async (req) => {
       
       console.error("Error creating profile:", profileError);
       return new Response(
-        JSON.stringify({ error: "Erro ao criar perfil" }),
+        JSON.stringify({ error: "Erro ao criar perfil. Por favor, tente novamente." }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
