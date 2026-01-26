@@ -25,8 +25,6 @@ import {
   AlertTriangle
 } from "lucide-react";
 import { useUpdateSchoolWebsite, SchoolWebsiteConfig } from "@/hooks/useSchoolWebsite";
-import { usePlatformSettings } from "@/hooks/usePlatformSettings";
-import { useTenant } from "@/hooks/useTenant";
 import { useEscola } from "@/hooks/useEscola";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -178,8 +176,6 @@ function StatusIndicator({
 
 export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   const updateWebsite = useUpdateSchoolWebsite();
-  const { data: platformSettings, isLoading: isLoadingSettings } = usePlatformSettings();
-  const { data: tenant } = useTenant();
   const { data: escola } = useEscola();
   const [customDomain, setCustomDomain] = useState(config.custom_domain || "");
   const [isVerifying, setIsVerifying] = useState(false);
@@ -192,11 +188,8 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
     }
   }, [config.custom_domain]);
   
-  // Get dynamic system branding from platform settings
-  const systemName = platformSettings?.platform_slug || "sistema";
-  const systemDomain = platformSettings?.system_domain 
-    ? getSystemDomain(platformSettings.system_domain) 
-    : getSystemDomain(platformSettings?.platform_url);
+  // System domain for single-tenant
+  const systemDomain = "maranata-fluxo-lar.lovable.app";
   
   // Derive status from config
   const getStatus = (): DomainStatus => {
@@ -209,12 +202,9 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   
   const status: DomainStatus = getStatus();
   
-  // Use system domain dynamically for subdomain URLs
-  const hasSystemDomain = platformSettings?.system_domain && platformSettings.system_domain.trim() !== "";
+  // Default subdomain URL
   const defaultSubdomain = config.slug 
-    ? hasSystemDomain 
-      ? `https://${config.slug}.${systemDomain}` 
-      : `${window.location.origin}/escola/${config.slug}` 
+    ? `${window.location.origin}/escola/${config.slug}` 
     : null;
   
   // Server IP for A records
@@ -319,7 +309,7 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   const currentStatus = statusConfig[status];
   const StatusIcon = currentStatus.icon;
   
-  const schoolName = escola?.nome || tenant?.nome || "Sua Escola";
+  const schoolName = escola?.nome || "Escola Maranata";
   
   return (
     <div className="space-y-6">
@@ -487,8 +477,8 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
                   
                   <DNSRecordRow
                     type="TXT"
-                    name={`_${systemName}`}
-                    value={`${systemName}_verify=${config.slug}`}
+                    name="_lovable"
+                    value={`lovable_verify=${config.slug}`}
                     description="Verificação de propriedade"
                   />
                 </div>

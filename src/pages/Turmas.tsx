@@ -17,7 +17,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { FinancialKPICard } from "@/components/dashboard";
-import { PremiumGate } from "@/components/premium";
+// PremiumGate removido - single-tenant
 
 const turmaSchema = z.object({
   nome: z.string().trim().min(1, "Nome é obrigatório").max(100),
@@ -204,7 +204,6 @@ const Turmas = () => {
 
   return (
     <DashboardLayout>
-      <PremiumGate feature="classManagement">
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
@@ -447,7 +446,6 @@ const Turmas = () => {
           </CardContent>
         </Card>
       </div>
-      </PremiumGate>
     </DashboardLayout>
   );
 };

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { useTenant } from "./useTenant";
+import { useEscola } from "./useEscola";
 import { toast } from "sonner";
 
 export interface SchoolWebsiteConfig {
@@ -83,17 +83,17 @@ export interface SchoolWebsiteConfig {
 }
 
 export function useSchoolWebsite() {
-  const { data: tenant } = useTenant();
+  const { data: escola } = useEscola();
 
   return useQuery({
-    queryKey: ["school-website", tenant?.id],
+    queryKey: ["school-website", escola?.tenant_id],
     queryFn: async (): Promise<SchoolWebsiteConfig | null> => {
-      if (!tenant?.id) return null;
+      if (!escola?.tenant_id) return null;
 
       const { data, error } = await supabase
         .from("school_website_config")
         .select("*")
-        .eq("tenant_id", tenant.id)
+        .eq("tenant_id", escola.tenant_id)
         .maybeSingle();
 
       if (error) {
@@ -103,7 +103,7 @@ export function useSchoolWebsite() {
 
       return data as unknown as SchoolWebsiteConfig | null;
     },
-    enabled: !!tenant?.id,
+    enabled: !!escola?.tenant_id,
   });
 }
 
@@ -131,18 +131,18 @@ export function useSchoolWebsiteBySlug(slug: string) {
 
 export function useCreateSchoolWebsite() {
   const queryClient = useQueryClient();
-  const { data: tenant } = useTenant();
+  const { data: escola } = useEscola();
 
   return useMutation({
     mutationFn: async () => {
-      if (!tenant?.id) throw new Error("Tenant não encontrado");
+      if (!escola?.tenant_id) throw new Error("Escola não encontrada");
 
       const { data, error } = await supabase
         .from("school_website_config")
         .insert({
-          tenant_id: tenant.id,
+          tenant_id: escola.tenant_id,
           enabled: false,
-          slug: tenant.nome.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
+          slug: escola.nome.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, ""),
         })
         .select()
         .single();
@@ -163,16 +163,16 @@ export function useCreateSchoolWebsite() {
 
 export function useUpdateSchoolWebsite() {
   const queryClient = useQueryClient();
-  const { data: tenant } = useTenant();
+  const { data: escola } = useEscola();
 
   return useMutation({
     mutationFn: async (updates: Partial<SchoolWebsiteConfig>) => {
-      if (!tenant?.id) throw new Error("Tenant não encontrado");
+      if (!escola?.tenant_id) throw new Error("Escola não encontrada");
 
       const { data, error } = await supabase
         .from("school_website_config")
         .update(updates)
-        .eq("tenant_id", tenant.id)
+        .eq("tenant_id", escola.tenant_id)
         .select()
         .single();
 
@@ -192,16 +192,16 @@ export function useUpdateSchoolWebsite() {
 
 export function useToggleSchoolWebsite() {
   const queryClient = useQueryClient();
-  const { data: tenant } = useTenant();
+  const { data: escola } = useEscola();
 
   return useMutation({
     mutationFn: async (enabled: boolean) => {
-      if (!tenant?.id) throw new Error("Tenant não encontrado");
+      if (!escola?.tenant_id) throw new Error("Escola não encontrada");
 
       const { data, error } = await supabase
         .from("school_website_config")
         .update({ enabled })
-        .eq("tenant_id", tenant.id)
+        .eq("tenant_id", escola.tenant_id)
         .select()
         .single();
 
