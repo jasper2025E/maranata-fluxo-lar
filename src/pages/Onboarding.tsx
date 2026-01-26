@@ -275,81 +275,104 @@ export default function Onboarding() {
           
           <AnimatePresence mode="wait">
             {/* Step 1: School Info */}
-            {step === 1 && <motion.div key="step1" initial={{
-            opacity: 0,
-            x: 20
-          }} animate={{
-            opacity: 1,
-            x: 0
-          }} exit={{
-            opacity: 0,
-            x: -20
-          }}>
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                    Dados da Escola
-                  </h2>
-                  <p className="text-slate-600">
-                    Informe os dados básicos da sua instituição
-                  </p>
-                </div>
+            {step === 1 && (
+              <motion.div 
+                key="step1" 
+                initial={{ opacity: 0, y: 8 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Shopify-style card */}
+                <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+                  {/* Card header */}
+                  <div className="px-5 py-4 border-b border-border">
+                    <h2 className="text-base font-semibold text-foreground">
+                      Dados da escola
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Informações básicas da sua instituição
+                    </p>
+                  </div>
 
-                <div className="bg-white rounded-xl shadow-xl border border-slate-100 p-6">
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="escola-nome">Nome da Escola *</Label>
-                      <div className="relative">
-                        <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="escola-nome" placeholder="Ex: Escola Municipal São José" value={escola.nome} onChange={e => setEscola({
-                      ...escola,
-                      nome: e.target.value
-                    })} className={`pl-10 ${errors.nome ? "border-destructive" : ""}`} />
-                      </div>
+                  {/* Card body */}
+                  <div className="p-5 space-y-4">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="escola-nome" className="text-sm font-medium">
+                        Nome da escola
+                      </Label>
+                      <Input 
+                        id="escola-nome" 
+                        placeholder="Ex: Escola Municipal São José" 
+                        value={escola.nome} 
+                        onChange={e => setEscola({ ...escola, nome: e.target.value })} 
+                        className={`h-10 ${errors.nome ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                      />
                       {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="escola-cnpj">CNPJ (opcional)</Label>
-                      <Input id="escola-cnpj" placeholder="00.000.000/0001-00" value={escola.cnpj} onChange={e => setEscola({
-                    ...escola,
-                    cnpj: e.target.value
-                  })} />
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="escola-telefone">Telefone *</Label>
-                      <div className="relative">
-                        <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input id="escola-telefone" placeholder="(00) 00000-0000" value={escola.telefone} onChange={e => setEscola({
-                      ...escola,
-                      telefone: e.target.value
-                    })} className={`pl-10 ${errors.telefone ? "border-destructive" : ""}`} />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="escola-cnpj" className="text-sm font-medium">
+                          CNPJ
+                          <span className="text-muted-foreground font-normal ml-1">(opcional)</span>
+                        </Label>
+                        <Input 
+                          id="escola-cnpj" 
+                          placeholder="00.000.000/0001-00" 
+                          value={escola.cnpj} 
+                          onChange={e => setEscola({ ...escola, cnpj: e.target.value })}
+                          className="h-10"
+                        />
                       </div>
-                      {errors.telefone && <p className="text-xs text-destructive">{errors.telefone}</p>}
+
+                      <div className="space-y-1.5">
+                        <Label htmlFor="escola-telefone" className="text-sm font-medium">
+                          Telefone
+                        </Label>
+                        <Input 
+                          id="escola-telefone" 
+                          placeholder="(00) 00000-0000" 
+                          value={escola.telefone} 
+                          onChange={e => setEscola({ ...escola, telefone: e.target.value })} 
+                          className={`h-10 ${errors.telefone ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                        />
+                        {errors.telefone && <p className="text-xs text-destructive">{errors.telefone}</p>}
+                      </div>
                     </div>
 
-                    <div className="space-y-2">
-                      <Label htmlFor="escola-endereco">Endereço (opcional)</Label>
-                      <Input id="escola-endereco" placeholder="Rua, número, bairro, cidade" value={escola.endereco} onChange={e => setEscola({
-                    ...escola,
-                    endereco: e.target.value
-                  })} />
+                    <div className="space-y-1.5">
+                      <Label htmlFor="escola-endereco" className="text-sm font-medium">
+                        Endereço
+                        <span className="text-muted-foreground font-normal ml-1">(opcional)</span>
+                      </Label>
+                      <Input 
+                        id="escola-endereco" 
+                        placeholder="Rua, número, bairro, cidade" 
+                        value={escola.endereco} 
+                        onChange={e => setEscola({ ...escola, endereco: e.target.value })}
+                        className="h-10"
+                      />
                     </div>
+                  </div>
 
-                    <Button onClick={handleNextStep} className="w-full mt-6">
+                  {/* Card footer */}
+                  <div className="px-5 py-4 bg-muted/30 border-t border-border">
+                    <Button onClick={handleNextStep} className="w-full h-10">
                       Continuar
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
                 </div>
 
-                <p className="text-center text-sm text-slate-500 mt-6">
+                <p className="text-center text-sm text-muted-foreground mt-6">
                   Já tem uma conta?{" "}
                   <button onClick={handleGoToLogin} className="text-primary hover:underline font-medium">
                     Fazer login
                   </button>
                 </p>
-              </motion.div>}
+              </motion.div>
+            )}
 
             {/* Step 2: Plan Selection */}
             {step === 2 && <motion.div key="step2" initial={{
