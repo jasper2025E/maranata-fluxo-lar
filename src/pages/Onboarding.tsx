@@ -256,16 +256,17 @@ export default function Onboarding() {
         <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px]" />
       </div>
 
+      {/* Logo - Fixed top right */}
+      <div className="fixed top-6 right-6 lg:top-8 lg:right-8 z-20 flex flex-row items-center gap-3">
+        <span className="text-xl font-bold text-slate-900">{platformName}</span>
+        <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg">
+          <GraduationCap className="h-5 w-5 text-white" />
+        </div>
+      </div>
+
       {/* Content */}
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6 lg:p-8 overflow-y-auto">
         <div className="w-full max-w-xl">
-          {/* Logo */}
-          <div className="mb-8 flex flex-row items-center justify-end gap-3">
-            <span className="text-2xl font-bold text-slate-900">{platformName}</span>
-            <div className="h-11 w-11 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg">
-              <GraduationCap className="h-6 w-6 text-white" />
-            </div>
-          </div>
           
           {/* Trial badge */}
           <div className="flex justify-center mb-6">
