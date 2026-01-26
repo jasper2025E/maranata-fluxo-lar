@@ -260,11 +260,11 @@ export default function Onboarding() {
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6 lg:p-8 overflow-y-auto">
         <div className="w-full max-w-xl">
           {/* Logo */}
-          <div className="mb-8 border-dotted border-0 rounded gap-[100px] items-center justify-center flex flex-row shadow-large">
+          <div className="mb-8 flex flex-row items-center justify-end gap-3">
+            <span className="text-2xl font-bold text-slate-900">{platformName}</span>
             <div className="h-11 w-11 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg">
               <GraduationCap className="h-6 w-6 text-white" />
             </div>
-            <span className="text-2xl font-bold text-slate-900">{platformName}</span>
           </div>
           
           {/* Trial badge */}
