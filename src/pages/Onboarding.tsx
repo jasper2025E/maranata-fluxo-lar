@@ -28,11 +28,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import { OnboardingCardForm } from "@/components/onboarding/OnboardingCardForm";
 
 const escolaSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -51,7 +51,7 @@ const adminSchema = z.object({
   path: ["confirmPassword"],
 });
 
-type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3 | 4 | 5;
 
 interface Plan {
   id: string;
@@ -143,17 +143,25 @@ export default function Onboarding() {
     return true;
   };
 
+  const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
+
   const handleNextStep = () => {
     if (step === 1 && validateStep1()) {
       setStep(2);
     } else if (step === 2) {
       setStep(3);
     } else if (step === 3 && validateStep3()) {
-      handleSubmit();
+      // Go to card step instead of submitting
+      setStep(4);
     }
   };
 
-  const handleSubmit = async () => {
+  const handleCardSuccess = (pmId: string) => {
+    setPaymentMethodId(pmId);
+    handleSubmit(pmId);
+  };
+
+  const handleSubmit = async (pmId: string) => {
     setLoading(true);
     try {
       const selectedPlanData = plans.find(p => p.id === selectedPlan);
@@ -176,13 +184,14 @@ export default function Onboarding() {
             limite_alunos: selectedPlanData?.limite_alunos || 50,
             limite_usuarios: selectedPlanData?.limite_usuarios || 3,
           },
+          paymentMethodId: pmId,
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      setStep(4);
+      setStep(5);
       toast.success("Escola cadastrada com sucesso!");
     } catch (error: any) {
       console.error("Onboarding error:", error);
@@ -210,7 +219,7 @@ export default function Onboarding() {
     { icon: Shield, label: "Dados protegidos" },
   ];
 
-  const stepLabels = ["Escola", "Plano", "Admin", "Pronto"];
+  const stepLabels = ["Escola", "Plano", "Admin", "Cartão", "Pronto"];
 
   return (
     <div className="min-h-screen relative overflow-hidden">
@@ -292,7 +301,7 @@ export default function Onboarding() {
           <div className="flex justify-center mb-6">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full border border-slate-200 shadow-sm">
               <Gift className="h-4 w-4 text-primary" />
-              <span className="text-sm font-medium text-slate-700">14 dias grátis • Sem cartão de crédito</span>
+              <span className="text-sm font-medium text-slate-700">14 dias grátis • Cartão necessário</span>
             </div>
           </div>
 
@@ -304,22 +313,22 @@ export default function Onboarding() {
                 <div key={s} className="flex items-center">
                   <div className="flex flex-col items-center">
                     <div
-                      className={`h-9 w-9 rounded-full flex items-center justify-center font-semibold text-sm transition-all ${
+                      className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold text-xs transition-all ${
                         step >= s
                           ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground"
+                          : "bg-slate-200 text-slate-500"
                       }`}
                     >
                       {step > s ? <CheckCircle className="h-4 w-4" /> : s}
                     </div>
-                    <span className={`text-xs mt-1 ${step >= s ? "text-foreground" : "text-muted-foreground"}`}>
+                    <span className={`text-[10px] mt-1 ${step >= s ? "text-slate-900" : "text-slate-400"}`}>
                       {label}
                     </span>
                   </div>
-                  {s < 4 && (
+                  {s < 5 && (
                     <div
-                      className={`w-8 sm:w-12 h-0.5 mx-1 rounded ${
-                        step > s ? "bg-primary" : "bg-muted"
+                      className={`w-6 sm:w-8 h-0.5 mx-0.5 rounded ${
+                        step > s ? "bg-primary" : "bg-slate-200"
                       }`}
                     />
                   )}
@@ -649,10 +658,44 @@ export default function Onboarding() {
               </motion.div>
             )}
 
-            {/* Step 4: Success */}
+            {/* Step 4: Credit Card */}
             {step === 4 && (
               <motion.div
                 key="step4"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+              >
+                <div className="text-center mb-6">
+                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
+                    Adicione seu Cartão
+                  </h2>
+                  <p className="text-slate-600">
+                    Cartão necessário para ativar o trial de 14 dias
+                  </p>
+                </div>
+
+                {loading ? (
+                  <div className="bg-white rounded-xl shadow-xl border border-slate-100 p-12 flex flex-col items-center justify-center">
+                    <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
+                    <p className="text-slate-600 font-medium">Criando sua conta...</p>
+                    <p className="text-sm text-slate-500 mt-1">Isso pode levar alguns segundos</p>
+                  </div>
+                ) : (
+                  <OnboardingCardForm
+                    schoolName={escola.nome}
+                    adminEmail={admin.email}
+                    onSuccess={handleCardSuccess}
+                    onBack={() => setStep(3)}
+                  />
+                )}
+              </motion.div>
+            )}
+
+            {/* Step 5: Success */}
+            {step === 5 && (
+              <motion.div
+                key="step5"
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 className="text-center"
@@ -667,7 +710,7 @@ export default function Onboarding() {
                 <p className="text-slate-600 mb-8">
                   Sua escola <strong>{escola.nome}</strong> foi cadastrada.
                   <br />
-                  Você tem <strong>14 dias de teste grátis</strong> para explorar todas as funcionalidades.
+                  Você tem <strong>14 dias de teste grátis</strong> antes da primeira cobrança.
                 </p>
 
                 <div className="bg-white rounded-xl shadow-xl border border-slate-100 p-6 mb-6 text-left">
@@ -686,8 +729,8 @@ export default function Onboarding() {
                       <span className="text-sm text-slate-700">Gerar faturas e controlar finanças</span>
                     </div>
                     <div className="flex items-center gap-3">
-                      <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
-                      <span className="text-sm text-slate-700">Explorar relatórios e dashboards</span>
+                      <CreditCard className="h-5 w-5 text-primary shrink-0" />
+                      <span className="text-sm text-slate-700">Cartão registrado para cobrança automática</span>
                     </div>
                   </div>
                 </div>
