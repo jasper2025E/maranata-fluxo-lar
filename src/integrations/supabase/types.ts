@@ -3049,6 +3049,8 @@ export type Database = {
           secondary_color: string | null
           slug: string | null
           status: string | null
+          storage_limit_bytes: number | null
+          storage_used_bytes: number | null
           stripe_customer_id: string | null
           stripe_subscription_id: string | null
           subscription_ends_at: string | null
@@ -3087,6 +3089,8 @@ export type Database = {
           secondary_color?: string | null
           slug?: string | null
           status?: string | null
+          storage_limit_bytes?: number | null
+          storage_used_bytes?: number | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_ends_at?: string | null
@@ -3125,6 +3129,8 @@ export type Database = {
           secondary_color?: string | null
           slug?: string | null
           status?: string | null
+          storage_limit_bytes?: number | null
+          storage_used_bytes?: number | null
           stripe_customer_id?: string | null
           stripe_subscription_id?: string | null
           subscription_ends_at?: string | null
