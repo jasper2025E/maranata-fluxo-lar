@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import type { PlatformBranding } from "@/hooks/usePlatformBranding";
+import { GRADIENT_MAIN, INSTITUCIONAL_COLORS } from "./colors";
 
 interface InstitucionalCTAProps {
   branding?: PlatformBranding | null;
@@ -21,15 +22,7 @@ export function InstitucionalCTA({ branding }: InstitucionalCTAProps) {
       {/* Gradient Background */}
       <div
         className="absolute inset-0"
-        style={{
-          background: `linear-gradient(135deg, 
-            hsl(262 83% 58%) 0%, 
-            hsl(280 75% 55%) 25%,
-            hsl(310 70% 55%) 50%,
-            hsl(340 80% 58%) 75%,
-            hsl(25 95% 55%) 100%
-          )`,
-        }}
+        style={{ background: GRADIENT_MAIN }}
       />
 
       {/* Mesh overlay */}
@@ -37,8 +30,8 @@ export function InstitucionalCTA({ branding }: InstitucionalCTAProps) {
         className="absolute inset-0 opacity-30"
         style={{
           backgroundImage: `
-            radial-gradient(at 20% 80%, hsla(262, 80%, 60%, 0.5) 0px, transparent 50%),
-            radial-gradient(at 80% 20%, hsla(25, 90%, 55%, 0.4) 0px, transparent 50%)
+            radial-gradient(at 20% 80%, hsla(${INSTITUCIONAL_COLORS.gradient.from}, 0.5) 0px, transparent 50%),
+            radial-gradient(at 80% 20%, hsla(${INSTITUCIONAL_COLORS.gradient.to}, 0.4) 0px, transparent 50%)
           `,
         }}
       />
@@ -89,7 +82,7 @@ export function InstitucionalCTA({ branding }: InstitucionalCTAProps) {
                 key={index}
                 className="flex items-center gap-2 text-white/90 text-sm"
               >
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <CheckCircle2 className="h-4 w-4 text-white" />
                 {benefit}
               </div>
             ))}

@@ -1,3 +1,4 @@
+export * from "./colors";
 export * from "./InstitucionalNavbar";
 export * from "./InstitucionalHero";
 export * from "./InstitucionalBeneficios";
