@@ -14,6 +14,10 @@ interface WebsiteDomainManagerProps {
 
 type DomainStatus = "not_configured" | "pending" | "verifying" | "active" | "error";
 
+// System branding constants
+const SYSTEM_NAME = "maranata";
+const SYSTEM_DOMAIN = "maranata-fluxo-lar.lovable.app";
+
 export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   const updateWebsite = useUpdateSchoolWebsite();
   const [customDomain, setCustomDomain] = useState(config.custom_domain || "");
@@ -30,8 +34,8 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   
   const status = getStatus();
   
-  const baseUrl = window.location.origin;
-  const defaultSubdomain = config.slug ? `${baseUrl}/escola/${config.slug}` : null;
+  // Use system domain instead of lovableproject.com
+  const defaultSubdomain = config.slug ? `https://${SYSTEM_DOMAIN}/escola/${config.slug}` : null;
   
   const handleSaveDomain = () => {
     if (!customDomain) {
@@ -193,8 +197,8 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
                   </div>
                   <div className="grid grid-cols-3 gap-2 p-2">
                     <span>TXT</span>
-                    <span>_lovable</span>
-                    <span className="font-mono text-xs break-all">lovable_verify={config.slug}</span>
+                    <span>_{SYSTEM_NAME}</span>
+                    <span className="font-mono text-xs break-all">{SYSTEM_NAME}_verify={config.slug}</span>
                   </div>
                 </div>
               </div>
