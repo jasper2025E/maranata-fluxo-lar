@@ -75,7 +75,7 @@ const modules = [
 
 export function InstitucionalModulos() {
   return (
-    <section id="modulos" className="py-24 lg:py-32 bg-white">
+    <section id="modulos" className="py-24 lg:py-32 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -86,10 +86,10 @@ export function InstitucionalModulos() {
           className="text-center mb-16 lg:mb-20"
         >
           <p className="text-primary font-medium mb-4">Módulos</p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 tracking-tight mb-6">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-tight mb-6">
             Tudo que sua escola precisa
           </h2>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Uma plataforma completa com módulos integrados.
           </p>
         </motion.div>
@@ -104,13 +104,13 @@ export function InstitucionalModulos() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.05 }}
               className={cn(
-                "group p-6 rounded-2xl bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 hover:shadow-lg transition-all duration-300 relative"
+                "group p-6 rounded-2xl bg-muted/50 hover:bg-card border border-transparent hover:border-border hover:shadow-lg transition-all duration-300 relative"
               )}
             >
               {/* Premium badge */}
               {module.premium && (
                 <div className="absolute -top-2 -right-2">
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary text-white text-xs font-medium rounded-full">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-primary text-primary-foreground text-xs font-medium rounded-full">
                     <Crown className="w-3 h-3" />
                     Pro
                   </span>
@@ -118,17 +118,17 @@ export function InstitucionalModulos() {
               )}
 
               {/* Icon */}
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-4 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
                 <module.icon className="w-6 h-6" />
               </div>
 
               {/* Title */}
-              <h3 className="text-lg font-semibold text-slate-900 mb-2">
+              <h3 className="text-lg font-semibold text-foreground mb-2">
                 {module.title}
               </h3>
 
               {/* Description */}
-              <p className="text-sm text-slate-600 mb-4 leading-relaxed">
+              <p className="text-sm text-muted-foreground mb-4 leading-relaxed">
                 {module.description}
               </p>
 
@@ -137,7 +137,7 @@ export function InstitucionalModulos() {
                 {module.features.map((feature, featureIndex) => (
                   <span
                     key={featureIndex}
-                    className="px-2 py-1 text-xs font-medium bg-white border border-slate-200 rounded-md text-slate-500"
+                    className="px-2 py-1 text-xs font-medium bg-background border border-border rounded-md text-muted-foreground"
                   >
                     {feature}
                   </span>
