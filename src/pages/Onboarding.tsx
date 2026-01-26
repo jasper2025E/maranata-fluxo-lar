@@ -142,8 +142,9 @@ export default function Onboarding() {
     setErrors({});
     return true;
   };
-
-  const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
+  // State for SetupIntent flow
+  const [setupIntentSecret, setSetupIntentSecret] = useState<string | null>(null);
+  const [tenantId, setTenantId] = useState<string | null>(null);
 
   const handleNextStep = () => {
     if (step === 1 && validateStep1()) {
@@ -151,17 +152,13 @@ export default function Onboarding() {
     } else if (step === 2) {
       setStep(3);
     } else if (step === 3 && validateStep3()) {
-      // Go to card step instead of submitting
-      setStep(4);
+      // Create tenant first, then go to card step
+      handleCreateTenant();
     }
   };
 
-  const handleCardSuccess = (pmId: string) => {
-    setPaymentMethodId(pmId);
-    handleSubmit(pmId);
-  };
-
-  const handleSubmit = async (pmId: string) => {
+  // Step 1: Create tenant and get SetupIntent (no card charge)
+  const handleCreateTenant = async () => {
     setLoading(true);
     try {
       const selectedPlanData = plans.find(p => p.id === selectedPlan);
@@ -184,21 +181,28 @@ export default function Onboarding() {
             limite_alunos: selectedPlanData?.limite_alunos || 50,
             limite_usuarios: selectedPlanData?.limite_usuarios || 3,
           },
-          paymentMethodId: pmId,
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      setStep(5);
-      toast.success("Escola cadastrada com sucesso!");
+      // Save SetupIntent secret and tenant ID for card form
+      setSetupIntentSecret(data.setup_intent_client_secret);
+      setTenantId(data.tenant_id);
+      setStep(4);
     } catch (error: any) {
       console.error("Onboarding error:", error);
       toast.error(error.message || "Erro ao criar conta. Tente novamente.");
     } finally {
       setLoading(false);
     }
+  };
+
+  // Step 2: Card registered successfully
+  const handleCardSuccess = () => {
+    setStep(5);
+    toast.success("Cartão cadastrado com sucesso!");
   };
 
   const handleGoToLogin = () => {
@@ -675,20 +679,14 @@ export default function Onboarding() {
                   </p>
                 </div>
 
-                {loading ? (
-                  <div className="bg-white rounded-xl shadow-xl border border-slate-100 p-12 flex flex-col items-center justify-center">
-                    <Loader2 className="h-10 w-10 animate-spin text-primary mb-4" />
-                    <p className="text-slate-600 font-medium">Criando sua conta...</p>
-                    <p className="text-sm text-slate-500 mt-1">Isso pode levar alguns segundos</p>
-                  </div>
-                ) : (
-                  <OnboardingCardForm
-                    schoolName={escola.nome}
-                    adminEmail={admin.email}
-                    onSuccess={handleCardSuccess}
-                    onBack={() => setStep(3)}
-                  />
-                )}
+                <OnboardingCardForm
+                  schoolName={escola.nome}
+                  adminEmail={admin.email}
+                  setupIntentClientSecret={setupIntentSecret || ""}
+                  tenantId={tenantId || ""}
+                  onSuccess={handleCardSuccess}
+                  onBack={() => setStep(3)}
+                />
               </motion.div>
             )}
 

@@ -20,18 +20,24 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
+interface CardFormContentProps {
+  onSuccess: () => void;
+  onError: (message: string) => void;
+  schoolName: string;
+  adminEmail: string;
+  setupIntentClientSecret: string;
+  tenantId: string;
+}
+
 // Card form component inside Stripe Elements
 function CardFormContent({
   onSuccess,
   onError,
   schoolName,
   adminEmail,
-}: {
-  onSuccess: (paymentMethodId: string) => void;
-  onError: (message: string) => void;
-  schoolName: string;
-  adminEmail: string;
-}) {
+  setupIntentClientSecret,
+  tenantId,
+}: CardFormContentProps) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -56,27 +62,67 @@ function CardFormContent({
         throw new Error("Elemento do cartão não encontrado");
       }
 
-      // Create payment method directly (we'll attach to customer after account creation)
-      const { paymentMethod, error: createError } = await stripe.createPaymentMethod({
-        type: "card",
-        card: cardElement,
-        billing_details: {
-          name: schoolName,
-          email: adminEmail,
-        },
-      });
+      // Use confirmCardSetup - this only SAVES the card, no charge is made
+      const { setupIntent, error: confirmError } = await stripe.confirmCardSetup(
+        setupIntentClientSecret,
+        {
+          payment_method: {
+            card: cardElement,
+            billing_details: {
+              name: schoolName,
+              email: adminEmail,
+            },
+          },
+        }
+      );
 
-      if (createError) {
-        throw new Error(createError.message);
+      if (confirmError) {
+        // Translate Stripe errors to Portuguese
+        let errorMessage = confirmError.message || "Erro ao cadastrar cartão";
+        
+        if (confirmError.code === "card_declined") {
+          errorMessage = "Cartão recusado. Verifique os dados ou use outro cartão.";
+        } else if (confirmError.code === "expired_card") {
+          errorMessage = "Cartão expirado. Use outro cartão.";
+        } else if (confirmError.code === "incorrect_cvc") {
+          errorMessage = "Código de segurança incorreto.";
+        } else if (confirmError.code === "incorrect_number") {
+          errorMessage = "Número do cartão incorreto.";
+        } else if (confirmError.code === "invalid_expiry_month" || confirmError.code === "invalid_expiry_year") {
+          errorMessage = "Data de validade inválida.";
+        } else if (confirmError.code === "incomplete_number") {
+          errorMessage = "Número do cartão incompleto.";
+        } else if (confirmError.code === "incomplete_cvc") {
+          errorMessage = "Código de segurança incompleto.";
+        } else if (confirmError.code === "incomplete_expiry") {
+          errorMessage = "Data de validade incompleta.";
+        }
+        
+        throw new Error(errorMessage);
       }
 
-      if (!paymentMethod) {
-        throw new Error("Falha ao criar método de pagamento");
+      if (!setupIntent || setupIntent.status !== "succeeded") {
+        throw new Error("Não foi possível cadastrar o cartão. Tente novamente.");
       }
 
-      onSuccess(paymentMethod.id);
+      // Complete the setup on the backend
+      const { data, error: completeError } = await supabase.functions.invoke(
+        "complete-card-setup",
+        {
+          body: {
+            tenant_id: tenantId,
+            setup_intent_id: setupIntent.id,
+          },
+        }
+      );
+
+      if (completeError || data?.error) {
+        throw new Error(data?.error || "Erro ao finalizar cadastro");
+      }
+
+      onSuccess();
     } catch (err) {
-      const message = err instanceof Error ? err.message : "Erro ao processar cartão";
+      const message = err instanceof Error ? err.message : "Erro ao cadastrar cartão";
       setError(message);
       onError(message);
     } finally {
@@ -166,12 +212,12 @@ function CardFormContent({
         {processing ? (
           <>
             <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-            Validando cartão...
+            Cadastrando cartão...
           </>
         ) : (
           <>
             <Lock className="h-4 w-4 mr-2" />
-            Confirmar cartão e criar conta
+            Cadastrar cartão e criar conta
           </>
         )}
       </Button>
@@ -182,10 +228,12 @@ function CardFormContent({
         <span>Seus dados estão protegidos com criptografia SSL</span>
       </div>
 
-      {/* Charge notice */}
-      <p className="text-center text-xs text-slate-500">
-        Você <strong>não será cobrado agora</strong>. A primeira cobrança ocorrerá apenas após os 14 dias de teste.
-      </p>
+      {/* Important: No charge notice */}
+      <div className="p-3 rounded-lg bg-green-50 border border-green-200">
+        <p className="text-center text-sm text-green-800">
+          <strong>Sem cobrança agora!</strong> Seu cartão será apenas cadastrado. A primeira cobrança ocorrerá somente após os 14 dias de teste.
+        </p>
+      </div>
     </form>
   );
 }
@@ -193,13 +241,17 @@ function CardFormContent({
 interface OnboardingCardFormProps {
   schoolName: string;
   adminEmail: string;
-  onSuccess: (paymentMethodId: string) => void;
+  setupIntentClientSecret: string;
+  tenantId: string;
+  onSuccess: () => void;
   onBack: () => void;
 }
 
 export function OnboardingCardForm({
   schoolName,
   adminEmail,
+  setupIntentClientSecret,
+  tenantId,
   onSuccess,
   onBack,
 }: OnboardingCardFormProps) {
@@ -245,8 +297,8 @@ export function OnboardingCardForm({
           <CreditCard className="h-6 w-6 text-white" />
         </div>
         <div>
-          <h3 className="font-semibold text-slate-900">Cartão de crédito</h3>
-          <p className="text-sm text-slate-500">Necessário para ativar sua conta</p>
+          <h3 className="font-semibold text-slate-900">Cadastrar cartão</h3>
+          <p className="text-sm text-slate-500">Apenas para cobrança futura</p>
         </div>
       </div>
 
@@ -256,6 +308,8 @@ export function OnboardingCardForm({
           onError={handleError}
           schoolName={schoolName}
           adminEmail={adminEmail}
+          setupIntentClientSecret={setupIntentClientSecret}
+          tenantId={tenantId}
         />
       </Elements>
 
