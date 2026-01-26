@@ -39,6 +39,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { usePlatformBranding } from "@/hooks/usePlatformBranding";
 
 interface PlatformLayoutProps {
   children: ReactNode;
@@ -118,10 +119,15 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { data: branding } = usePlatformBranding();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedModules, setExpandedModules] = useState<string[]>(["Assinaturas", "Escolas", "Usuários"]);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [userName, setUserName] = useState<string | null>(null);
+  
+  // Platform branding
+  const platformName = branding?.platformName || "Sistema de Gestão";
+  const platformLogo = branding?.platformLogo;
 
   // Fetch user profile for avatar
   useEffect(() => {
@@ -284,11 +290,15 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 hover:opacity-90 transition-opacity w-full">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-lg shadow-primary/20">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
+              {platformLogo ? (
+                <img src={platformLogo} alt={platformName} className="h-10 w-10 rounded-xl object-contain" />
+              ) : (
+                <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center shadow-lg shadow-primary/20">
+                  <Sparkles className="h-5 w-5 text-primary-foreground" />
+                </div>
+              )}
               <div className="text-left flex-1">
-                <p className="font-bold text-foreground">Gestor</p>
+                <p className="font-bold text-foreground">{platformName}</p>
                 <p className="text-xs text-muted-foreground">Painel da Plataforma</p>
               </div>
               <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -385,10 +395,14 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
           <Menu className="h-5 w-5" />
         </Button>
         <div className="flex items-center gap-2">
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center shadow-md">
-            <Sparkles className="h-4 w-4 text-white" />
-          </div>
-          <span className="font-bold text-foreground">Gestor</span>
+          {platformLogo ? (
+            <img src={platformLogo} alt={platformName} className="h-8 w-8 rounded-lg object-contain" />
+          ) : (
+            <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-primary via-primary/80 to-primary/60 flex items-center justify-center shadow-md">
+              <Sparkles className="h-4 w-4 text-primary-foreground" />
+            </div>
+          )}
+          <span className="font-bold text-foreground">{platformName}</span>
         </div>
       </div>
 
