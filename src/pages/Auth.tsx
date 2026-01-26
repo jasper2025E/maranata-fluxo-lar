@@ -309,11 +309,11 @@ const Auth = () => {
               {/* Logo */}
               <div className="flex justify-center mb-8">
                 {branding?.platformLogo ? (
-                  <img src={branding.platformLogo} alt={platformName} className="h-10 w-auto" />
+                  <img src={branding.platformLogo} alt={platformName} className="h-16 w-auto" />
                 ) : (
-                  <div className="flex items-center gap-2">
-                    <GraduationCap className="h-8 w-8 text-white" />
-                    <span className="text-xl font-bold text-white">{platformName}</span>
+                  <div className="flex items-center gap-3">
+                    <GraduationCap className="h-12 w-12 text-white" />
+                    <span className="text-2xl font-bold text-white">{platformName}</span>
                   </div>
                 )}
               </div>
