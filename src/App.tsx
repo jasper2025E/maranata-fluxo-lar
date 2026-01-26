@@ -48,7 +48,7 @@ import ImpersonateUser from "./pages/platform/ImpersonateUser";
 import PlatformUsers from "./pages/platform/PlatformUsers";
 import PlatformSubscriptions from "./pages/platform/PlatformSubscriptions";
 import PlatformLogs from "./pages/platform/PlatformLogs";
-import PlatformSettings from "./pages/platform/PlatformSettings";
+// PlatformSettings foi consolidado em SystemProfile
 import PlatformSecurity from "./pages/platform/PlatformSecurity";
 import PlatformAnalytics from "./pages/platform/PlatformAnalytics";
 import PlatformPlans from "./pages/platform/PlatformPlans";
@@ -313,7 +313,7 @@ function AppContent() {
             path="/platform/settings"
             element={
               <ProtectedRoute platformOnly>
-                <PlatformSettings />
+                <SystemProfile />
               </ProtectedRoute>
             }
           />
