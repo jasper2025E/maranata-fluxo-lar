@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { translateStripeError, isStripeTestMode } from "@/lib/stripeErrors";
 
 interface CardFormContentProps {
   onSuccess: () => void;
@@ -27,72 +28,6 @@ interface CardFormContentProps {
   adminEmail: string;
   paymentIntentClientSecret: string;
   tenantId: string;
-  isTestMode: boolean;
-}
-
-function translateStripeCodeToPt(code?: string | null) {
-  if (!code) return null;
-
-  const map: Record<string, string> = {
-    card_declined: "Cartão recusado. Verifique os dados ou use outro cartão.",
-    expired_card: "Cartão expirado. Use outro cartão.",
-    incorrect_cvc: "Código de segurança incorreto.",
-    incorrect_number: "Número do cartão incorreto.",
-    invalid_expiry_month: "Data de validade inválida.",
-    invalid_expiry_year: "Data de validade inválida.",
-    incomplete_number: "Número do cartão incompleto.",
-    incomplete_cvc: "Código de segurança incompleto.",
-    incomplete_expiry: "Data de validade incompleta.",
-    incomplete_zip: "CEP incompleto.",
-    processing_error: "Erro ao processar o cartão. Tente novamente.",
-    authentication_required: "Seu cartão exige autenticação (3D Secure). Autorize no app do banco ou use outro cartão.",
-    insufficient_funds: "Saldo insuficiente. Use outro cartão.",
-    invalid_request_error: "Não foi possível processar a solicitação. Tente novamente.",
-  };
-
-  return map[code] ?? null;
-}
-
-function translateStripeDeclineCodeToPt(declineCode?: string | null) {
-  if (!declineCode) return null;
-
-  const map: Record<string, string> = {
-    insufficient_funds: "Saldo insuficiente. Use outro cartão.",
-    do_not_honor: "O banco recusou a transação. Tente novamente ou use outro cartão.",
-    generic_decline: "Cartão recusado. Verifique os dados ou use outro cartão.",
-    transaction_not_allowed: "Transação não permitida. Ative compras online/internacionais no app do banco.",
-    restricted_card: "Cartão com restrição. Use outro cartão.",
-    lost_card: "Cartão reportado como perdido. Use outro cartão.",
-    stolen_card: "Cartão reportado como roubado. Use outro cartão.",
-    fraud: "Transação recusada por segurança. Tente novamente ou use outro cartão.",
-  };
-
-  return map[declineCode] ?? null;
-}
-
-function formatTestModeSuffix(isTestMode: boolean) {
-  return isTestMode ? " (Ambiente de teste: o banco não recebe notificação.)" : "";
-}
-
-function translateStripeErrorToPt(err: any, isTestMode: boolean) {
-  const code = err?.code as string | undefined;
-  const declineCode = (err as any)?.decline_code as string | undefined;
-
-  // Prefer decline_code when card_declined, because it's more precise.
-  if (code === "card_declined") {
-    const byDecline = translateStripeDeclineCodeToPt(declineCode);
-    return (byDecline ?? translateStripeCodeToPt(code) ?? "Cartão recusado. Use outro cartão.") +
-      formatTestModeSuffix(isTestMode);
-  }
-
-  const byCode = translateStripeCodeToPt(code);
-  if (byCode) return byCode + formatTestModeSuffix(isTestMode);
-
-  // Fallback: never show raw English message to the user.
-  return (
-    "Não foi possível processar o pagamento. Verifique os dados do cartão ou use outro cartão." +
-    formatTestModeSuffix(isTestMode)
-  );
 }
 
 // Card form component inside Stripe Elements
@@ -103,7 +38,6 @@ function CardFormContent({
   adminEmail,
   paymentIntentClientSecret,
   tenantId,
-  isTestMode,
 }: CardFormContentProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -111,6 +45,7 @@ function CardFormContent({
   const [error, setError] = useState<string | null>(null);
   const [cardComplete, setCardComplete] = useState(false);
   const [focused, setFocused] = useState(false);
+  const isTestMode = isStripeTestMode();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -144,7 +79,7 @@ function CardFormContent({
       );
 
       if (confirmError) {
-        throw new Error(translateStripeErrorToPt(confirmError, isTestMode));
+        throw new Error(translateStripeError(confirmError));
       }
 
       if (!paymentIntent) {
@@ -216,8 +151,8 @@ function CardFormContent({
             onChange={(e) => {
               setCardComplete(e.complete);
               if (e.error) {
-                // e.error.message can come in English depending on Stripe locale and error type.
-                const translated = translateStripeErrorToPt(e.error, isTestMode);
+                // Translate to Portuguese using centralized utility
+                const translated = translateStripeError(e.error);
                 setError(translated);
               } else {
                 setError(null);
@@ -388,7 +323,6 @@ export function OnboardingCardForm({
           adminEmail={adminEmail}
           paymentIntentClientSecret={paymentIntentClientSecret}
           tenantId={tenantId}
-          isTestMode={isTestMode}
         />
       </Elements>
 

@@ -38,6 +38,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { translateStripeError } from "@/lib/stripeErrors";
 
 // Card brand icons/colors - Premium Fintech style
 const cardBrandConfig: Record<string, { label: string; gradient: string; textColor: string }> = {
@@ -116,7 +117,7 @@ function CardForm({
       );
 
       if (confirmError) {
-        throw new Error(confirmError.message);
+        throw new Error(translateStripeError(confirmError));
       }
 
       if (setupIntent?.status !== "succeeded") {
@@ -188,7 +189,14 @@ function CardForm({
             <CardElement
               onFocus={() => setFocused(true)}
               onBlur={() => setFocused(false)}
-              onChange={(e) => setCardComplete(e.complete)}
+              onChange={(e) => {
+                setCardComplete(e.complete);
+                if (e.error) {
+                  setError(translateStripeError(e.error));
+                } else {
+                  setError(null);
+                }
+              }}
               options={{
                 style: {
                   base: {
@@ -510,6 +518,7 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
               stripe={setupData.stripePromise} 
               options={{ 
                 clientSecret: setupData.clientSecret,
+                locale: "pt-BR",
                 appearance: {
                   theme: "stripe",
                 },

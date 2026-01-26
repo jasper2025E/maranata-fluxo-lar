@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { formatCurrency } from "@/lib/formatters";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { translateStripeApiError } from "@/lib/stripeErrors";
 
 interface BillingCycle {
   id: string;
@@ -126,7 +127,7 @@ export default function PagarFatura() {
       }
     } catch (error: any) {
       console.error("Error creating checkout:", error);
-      toast.error(error.message || "Erro ao processar pagamento");
+      toast.error(translateStripeApiError(error.message));
     } finally {
       setProcessing(false);
     }
