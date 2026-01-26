@@ -12,7 +12,7 @@ import { useUserLanguage } from "@/hooks/useUserLanguage";
 import { queryClient } from "@/lib/queryClient";
 
 // Pages
-import Index from "./pages/Index";
+import Institucional from "./pages/Institucional";
 import RootRedirect from "./components/RootRedirect";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -74,7 +74,7 @@ function AppContent() {
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Institucional />} />
           <Route path="/auth" element={<Auth />} />
           {/* Legacy route (marketing removido) */}
           <Route path="/marketing" element={<RootRedirect />} />
