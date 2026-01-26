@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -15,8 +14,9 @@ import {
   Loader2,
   Trash2,
   Receipt,
+  Calendar,
 } from "lucide-react";
-import { format, addDays } from "date-fns";
+import { format, addDays, setDate } from "date-fns";
 import { useCreateFatura, formatCurrency, meses, FaturaItem } from "@/hooks/useFaturas";
 
 interface Aluno {
@@ -51,6 +51,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
     mes_referencia: new Date().getMonth() + 1,
     ano_referencia: new Date().getFullYear(),
     meses_recorrencia: 12,
+    dia_vencimento: 10, // Dia fixo de vencimento para faturas recorrentes
   });
   
   const [itens, setItens] = useState<FaturaItem[]>([]);
@@ -103,17 +104,19 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
     
     try {
       if (tipo === "recorrente") {
-        // Para faturas recorrentes, criar múltiplas
+        // Para faturas recorrentes, criar múltiplas com dia fixo de vencimento
         for (let i = 0; i < data.meses_recorrencia; i++) {
-          const date = new Date(data.ano_referencia, data.mes_referencia - 1 + i, 10);
+          const baseDate = new Date(data.ano_referencia, data.mes_referencia - 1 + i, 1);
+          const vencimento = setDate(baseDate, data.dia_vencimento);
+          
           await createMutation.mutateAsync({
             aluno_id: data.aluno_id,
             curso_id: data.curso_id,
             responsavel_id: responsavelId,
             valor: valorTotal,
-            data_vencimento: format(date, "yyyy-MM-dd"),
-            mes_referencia: date.getMonth() + 1,
-            ano_referencia: date.getFullYear(),
+            data_vencimento: format(vencimento, "yyyy-MM-dd"),
+            mes_referencia: vencimento.getMonth() + 1,
+            ano_referencia: vencimento.getFullYear(),
             itens: mode === "detalhada" ? itens : undefined,
           });
         }
@@ -148,9 +151,13 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
       mes_referencia: new Date().getMonth() + 1,
       ano_referencia: new Date().getFullYear(),
       meses_recorrencia: 12,
+      dia_vencimento: 10,
     });
     setItens([]);
   };
+
+  // Gera lista de dias para o select
+  const diasDoMes = Array.from({ length: 28 }, (_, i) => i + 1);
 
   return (
     <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) resetForm(); }}>
@@ -214,10 +221,10 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
               </div>
             </div>
 
-            {/* Referência & Vencimento */}
-            <div className="grid grid-cols-3 gap-4">
+            {/* Referência */}
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Mês Ref.</Label>
+                <Label>Mês de Início</Label>
                 <Select value={String(data.mes_referencia)} onValueChange={(v) => setData({ ...data, mes_referencia: parseInt(v) })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -226,7 +233,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                 </Select>
               </div>
               <div className="space-y-2">
-                <Label>Ano Ref.</Label>
+                <Label>Ano de Início</Label>
                 <Select value={String(data.ano_referencia)} onValueChange={(v) => setData({ ...data, ano_referencia: parseInt(v) })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
@@ -234,27 +241,63 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                   </SelectContent>
                 </Select>
               </div>
-              {tipo === "avulsa" ? (
-                <div className="space-y-2">
-                  <Label>Vencimento</Label>
-                  <Input
-                    type="date"
-                    value={data.data_vencimento}
-                    onChange={(e) => setData({ ...data, data_vencimento: e.target.value })}
-                  />
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  <Label>Quantidade</Label>
-                  <Select value={String(data.meses_recorrencia)} onValueChange={(v) => setData({ ...data, meses_recorrencia: parseInt(v) })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      {[3, 6, 12, 24].map(n => <SelectItem key={n} value={String(n)}>{n} meses</SelectItem>)}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
             </div>
+
+            {/* Configuração de Vencimento */}
+            {tipo === "avulsa" ? (
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Data de Vencimento
+                </Label>
+                <Input
+                  type="date"
+                  value={data.data_vencimento}
+                  onChange={(e) => setData({ ...data, data_vencimento: e.target.value })}
+                />
+              </div>
+            ) : (
+              <Card className="bg-muted/30 border-dashed">
+                <CardContent className="p-4 space-y-4">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    Configuração de Cobrança Recorrente
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Dia de Vencimento</Label>
+                      <Select 
+                        value={String(data.dia_vencimento)} 
+                        onValueChange={(v) => setData({ ...data, dia_vencimento: parseInt(v) })}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {diasDoMes.map(d => (
+                            <SelectItem key={d} value={String(d)}>
+                              Dia {d}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <p className="text-xs text-muted-foreground">
+                        Todas as faturas vencerão no dia {data.dia_vencimento}
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Quantidade de Meses</Label>
+                      <Select value={String(data.meses_recorrencia)} onValueChange={(v) => setData({ ...data, meses_recorrencia: parseInt(v) })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24].map(n => (
+                            <SelectItem key={n} value={String(n)}>{n} {n === 1 ? 'mês' : 'meses'}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
 
             <TabsContent value="simples" className="mt-0 space-y-4">
               <div className="space-y-2">
@@ -355,9 +398,14 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                   <span className="text-2xl font-bold">{formatCurrency(valorTotal)}</span>
                 </div>
                 {tipo === "recorrente" && (
-                  <p className="text-sm text-muted-foreground mt-2">
-                    {data.meses_recorrencia} faturas de {formatCurrency(valorTotal)} serão criadas
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-sm text-muted-foreground">
+                      {data.meses_recorrencia} faturas de {formatCurrency(valorTotal)} serão criadas
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Vencimento: dia {data.dia_vencimento} de cada mês, iniciando em {meses[data.mes_referencia - 1]}/{data.ano_referencia}
+                    </p>
+                  </div>
                 )}
               </CardContent>
             </Card>

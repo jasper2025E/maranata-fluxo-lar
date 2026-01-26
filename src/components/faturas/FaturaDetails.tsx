@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -31,6 +31,8 @@ import {
   Download,
   FileDown,
   Printer,
+  Save,
+  Pencil,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -53,9 +55,11 @@ import {
   useAddFaturaDesconto,
   useRegistrarPagamento,
   useEstornarPagamento,
+  useUpdateFatura,
   getValorFinal,
   formatCurrency,
   meses,
+  queryKeys,
 } from "@/hooks/useFaturas";
 
 interface FaturaDetailsProps {
@@ -577,6 +581,141 @@ function HistoricoTab({ faturaId }: { faturaId: string }) {
   );
 }
 
+// Aba de Edição
+function EdicaoTab({ fatura, isEditable }: { fatura: Fatura; isEditable: boolean }) {
+  const updateFatura = useUpdateFatura();
+  const queryClient = useQueryClient();
+  
+  const [formData, setFormData] = useState({
+    data_vencimento: fatura.data_vencimento,
+    data_emissao: fatura.data_emissao,
+    mes_referencia: fatura.mes_referencia,
+    ano_referencia: fatura.ano_referencia,
+    valor: fatura.valor,
+  });
+
+  useEffect(() => {
+    setFormData({
+      data_vencimento: fatura.data_vencimento,
+      data_emissao: fatura.data_emissao,
+      mes_referencia: fatura.mes_referencia,
+      ano_referencia: fatura.ano_referencia,
+      valor: fatura.valor,
+    });
+  }, [fatura]);
+
+  const handleSave = async () => {
+    try {
+      await updateFatura.mutateAsync({
+        id: fatura.id,
+        data_vencimento: formData.data_vencimento,
+        data_emissao: formData.data_emissao,
+        mes_referencia: formData.mes_referencia,
+        ano_referencia: formData.ano_referencia,
+        valor: formData.valor,
+        valor_original: formData.valor,
+      });
+      queryClient.invalidateQueries({ queryKey: ['faturas', 'detail', fatura.id] });
+    } catch (error) {
+      // Erro já tratado pelo mutation
+    }
+  };
+
+  if (!isEditable) {
+    return (
+      <div className="text-center py-8 text-muted-foreground">
+        <AlertTriangle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+        <p>Esta fatura não pode ser editada</p>
+        <p className="text-xs mt-1">Faturas pagas, canceladas ou bloqueadas não podem ser alteradas</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <Card className="border-dashed">
+        <CardContent className="p-4 space-y-4">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <Pencil className="h-4 w-4" />
+            Editar Dados da Fatura
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Data de Emissão</Label>
+              <Input
+                type="date"
+                value={formData.data_emissao.split('T')[0]}
+                onChange={(e) => setFormData({ ...formData, data_emissao: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Data de Vencimento</Label>
+              <Input
+                type="date"
+                value={formData.data_vencimento.split('T')[0]}
+                onChange={(e) => setFormData({ ...formData, data_vencimento: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Mês de Referência</Label>
+              <Select 
+                value={String(formData.mes_referencia)} 
+                onValueChange={(v) => setFormData({ ...formData, mes_referencia: parseInt(v) })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {meses.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Ano de Referência</Label>
+              <Select 
+                value={String(formData.ano_referencia)} 
+                onValueChange={(v) => setFormData({ ...formData, ano_referencia: parseInt(v) })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {[2024, 2025, 2026, 2027].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label>Valor (R$)</Label>
+            <Input
+              type="number"
+              step="0.01"
+              value={formData.valor || ""}
+              onChange={(e) => setFormData({ ...formData, valor: parseFloat(e.target.value) || 0 })}
+            />
+          </div>
+
+          <Separator />
+
+          <Button 
+            onClick={handleSave} 
+            disabled={updateFatura.isPending}
+            className="w-full"
+          >
+            {updateFatura.isPending ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Save className="h-4 w-4 mr-2" />
+            )}
+            Salvar Alterações
+          </Button>
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
 export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: FaturaDetailsProps) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isGeneratingCarne, setIsGeneratingCarne] = useState(false);
@@ -770,10 +909,11 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
 
           {/* Tabs */}
           <Tabs defaultValue="itens" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="itens">Itens</TabsTrigger>
               <TabsTrigger value="descontos">Descontos</TabsTrigger>
               <TabsTrigger value="pagamentos">Pagamentos</TabsTrigger>
+              <TabsTrigger value="editar">Editar</TabsTrigger>
               <TabsTrigger value="historico">Histórico</TabsTrigger>
             </TabsList>
 
@@ -787,6 +927,10 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
 
             <TabsContent value="pagamentos" className="mt-4">
               <PagamentosTab faturaId={fatura.id} valorTotal={valorFinal} onDownloadRecibo={handleDownloadRecibo} />
+            </TabsContent>
+
+            <TabsContent value="editar" className="mt-4">
+              <EdicaoTab fatura={fatura} isEditable={isEditable} />
             </TabsContent>
 
             <TabsContent value="historico" className="mt-4">
