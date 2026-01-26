@@ -24,7 +24,6 @@ interface OnboardingRequest {
     limite_alunos: number;
     limite_usuarios: number;
   };
-  paymentMethodId: string;
 }
 
 serve(async (req) => {
@@ -57,7 +56,7 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    const { escola, admin, plan, planLimits, paymentMethodId }: OnboardingRequest = await req.json();
+    const { escola, admin, plan, planLimits }: OnboardingRequest = await req.json();
 
     // Validate required fields
     if (!escola?.nome || !escola?.telefone) {
@@ -70,13 +69,6 @@ serve(async (req) => {
     if (!admin?.nome || !admin?.email || !admin?.password) {
       return new Response(
         JSON.stringify({ error: "Nome, e-mail e senha do administrador são obrigatórios" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!paymentMethodId) {
-      return new Response(
-        JSON.stringify({ error: "Cartão de crédito é obrigatório para cadastro" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -103,16 +95,12 @@ serve(async (req) => {
     const limiteAlunos = planLimits?.limite_alunos || 50;
     const limiteUsuarios = planLimits?.limite_usuarios || 3;
 
-    // 1. Create Stripe customer with payment method
+    // 1. Create Stripe customer WITHOUT payment method (just for registration)
     let stripeCustomer;
     try {
       stripeCustomer = await stripe.customers.create({
         email: admin.email,
         name: escola.nome,
-        payment_method: paymentMethodId,
-        invoice_settings: {
-          default_payment_method: paymentMethodId,
-        },
         metadata: {
           escola_nome: escola.nome,
           cnpj: escola.cnpj || "",
@@ -120,73 +108,35 @@ serve(async (req) => {
       });
     } catch (stripeError: any) {
       console.error("Error creating Stripe customer:", stripeError);
-      
-      // Traduzir mensagens de erro do Stripe para português
-      let errorMessage = "Erro ao processar cartão de crédito. Tente novamente.";
-      
-      if (stripeError.code === 'card_declined') {
-        const declineCode = stripeError.decline_code || stripeError.raw?.decline_code;
-        switch (declineCode) {
-          case 'generic_decline':
-            errorMessage = "Cartão recusado pelo banco. Entre em contato com sua operadora ou use outro cartão.";
-            break;
-          case 'insufficient_funds':
-            errorMessage = "Saldo insuficiente. Verifique seu limite ou use outro cartão.";
-            break;
-          case 'lost_card':
-            errorMessage = "Este cartão foi reportado como perdido. Use outro cartão.";
-            break;
-          case 'stolen_card':
-            errorMessage = "Este cartão foi reportado como roubado. Use outro cartão.";
-            break;
-          case 'expired_card':
-            errorMessage = "Cartão expirado. Verifique a data de validade ou use outro cartão.";
-            break;
-          case 'incorrect_cvc':
-            errorMessage = "Código de segurança (CVV) incorreto. Verifique e tente novamente.";
-            break;
-          case 'processing_error':
-            errorMessage = "Erro no processamento. Aguarde alguns minutos e tente novamente.";
-            break;
-          case 'incorrect_number':
-            errorMessage = "Número do cartão incorreto. Verifique os dados e tente novamente.";
-            break;
-          case 'card_not_supported':
-            errorMessage = "Este tipo de cartão não é aceito. Use Visa, Mastercard ou outro cartão.";
-            break;
-          case 'currency_not_supported':
-            errorMessage = "Seu cartão não suporta pagamentos em Real. Use outro cartão.";
-            break;
-          case 'duplicate_transaction':
-            errorMessage = "Transação duplicada detectada. Aguarde alguns minutos.";
-            break;
-          case 'fraudulent':
-            errorMessage = "Transação bloqueada por segurança. Entre em contato com seu banco.";
-            break;
-          default:
-            errorMessage = "Cartão recusado. Entre em contato com seu banco ou use outro cartão.";
-        }
-      } else if (stripeError.code === 'expired_card') {
-        errorMessage = "Cartão expirado. Verifique a data de validade ou use outro cartão.";
-      } else if (stripeError.code === 'incorrect_cvc') {
-        errorMessage = "Código de segurança (CVV) incorreto. Verifique e tente novamente.";
-      } else if (stripeError.code === 'incorrect_number') {
-        errorMessage = "Número do cartão incorreto. Verifique os dados e tente novamente.";
-      } else if (stripeError.code === 'invalid_expiry_month' || stripeError.code === 'invalid_expiry_year') {
-        errorMessage = "Data de validade inválida. Verifique mês e ano de expiração.";
-      } else if (stripeError.code === 'invalid_cvc') {
-        errorMessage = "Código de segurança (CVV) inválido. Use 3 dígitos do verso do cartão.";
-      } else if (stripeError.code === 'authentication_required') {
-        errorMessage = "Autenticação adicional necessária. Use um cartão com 3D Secure habilitado.";
-      }
-      
       return new Response(
-        JSON.stringify({ error: errorMessage }),
+        JSON.stringify({ error: "Erro ao criar cliente no sistema de pagamentos. Tente novamente." }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // 2. Create the tenant with Stripe info
+    // 2. Create a SetupIntent for future card collection (no charge, just save card)
+    let setupIntent;
+    try {
+      setupIntent = await stripe.setupIntents.create({
+        customer: stripeCustomer.id,
+        payment_method_types: ["card"],
+        usage: "off_session", // For future automatic charges
+        metadata: {
+          escola_nome: escola.nome,
+          admin_email: admin.email,
+        },
+      });
+    } catch (setupError: any) {
+      console.error("Error creating SetupIntent:", setupError);
+      // Cleanup Stripe customer
+      await stripe.customers.del(stripeCustomer.id).catch(() => {});
+      return new Response(
+        JSON.stringify({ error: "Erro ao configurar método de pagamento. Tente novamente." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // 3. Create the tenant with Stripe info
     const { data: tenant, error: tenantError } = await supabaseAdmin
       .from("tenants")
       .insert({
@@ -203,7 +153,7 @@ serve(async (req) => {
         limite_alunos: limiteAlunos,
         limite_usuarios: limiteUsuarios,
         stripe_customer_id: stripeCustomer.id,
-        auto_billing_enabled: true,
+        auto_billing_enabled: false, // Will be enabled after card is saved
         billing_day: trialEndsAt.getDate(),
         next_billing_date: trialEndsAt.toISOString().split("T")[0],
       })
@@ -220,7 +170,7 @@ serve(async (req) => {
       );
     }
 
-    // 3. Create the admin user
+    // 4. Create the admin user
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: admin.email,
       password: admin.password,
@@ -243,7 +193,7 @@ serve(async (req) => {
       );
     }
 
-    // 4. Create the profile (upsert to handle edge cases)
+    // 5. Create the profile (upsert to handle edge cases)
     const { error: profileError } = await supabaseAdmin
       .from("profiles")
       .upsert({
@@ -266,7 +216,7 @@ serve(async (req) => {
       );
     }
 
-    // 5. Assign admin role
+    // 6. Assign admin role
     const { error: roleError } = await supabaseAdmin
       .from("user_roles")
       .insert({
@@ -287,18 +237,6 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
-
-    // 6. Save payment method to tenant_payment_methods
-    const paymentMethod = await stripe.paymentMethods.retrieve(paymentMethodId);
-    await supabaseAdmin.from("tenant_payment_methods").insert({
-      tenant_id: tenant.id,
-      stripe_payment_method_id: paymentMethodId,
-      card_brand: paymentMethod.card?.brand || "unknown",
-      card_last_four: paymentMethod.card?.last4 || "****",
-      card_exp_month: paymentMethod.card?.exp_month || 1,
-      card_exp_year: paymentMethod.card?.exp_year || 2030,
-      is_default: true,
-    });
 
     // 7. Create escola record (synced with tenant)
     const { error: escolaError } = await supabaseAdmin
@@ -329,7 +267,7 @@ serve(async (req) => {
         selected_plan: selectedPlan,
         trial_ends_at: trialEndsAt.toISOString(),
         stripe_customer_id: stripeCustomer.id,
-        payment_method_added: true,
+        payment_method_pending: true,
       },
     });
 
@@ -338,11 +276,12 @@ serve(async (req) => {
       user_id: authUser.user.id,
       tenant_id: tenant.id,
       title: "Bem-vindo ao sistema!",
-      message: `Sua escola ${escola.nome} foi criada com sucesso. Você tem 14 dias de teste grátis no plano ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}. Seu cartão será cobrado automaticamente após o período de teste.`,
+      message: `Sua escola ${escola.nome} foi criada com sucesso. Você tem 14 dias de teste grátis no plano ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}. Complete o cadastro do seu cartão para ativar a cobrança automática.`,
       type: "success",
       read: false,
     });
 
+    // Return SetupIntent client_secret so frontend can complete card registration
     return new Response(
       JSON.stringify({
         success: true,
@@ -351,6 +290,7 @@ serve(async (req) => {
         plan: selectedPlan,
         trial_ends_at: trialEndsAt.toISOString(),
         stripe_customer_id: stripeCustomer.id,
+        setup_intent_client_secret: setupIntent.client_secret,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

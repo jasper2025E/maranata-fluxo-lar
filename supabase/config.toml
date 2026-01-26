@@ -38,3 +38,9 @@ verify_jwt = false
 
 [functions.check-expiring-subscriptions]
 verify_jwt = false
+
+[functions.create-tenant-onboarding]
+verify_jwt = false
+
+[functions.complete-card-setup]
+verify_jwt = false
