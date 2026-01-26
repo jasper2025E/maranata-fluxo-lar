@@ -1,0 +1,16 @@
+export { HeroBlock } from "./HeroBlock";
+export { FeaturesBlock } from "./FeaturesBlock";
+export { TestimonialsBlock } from "./TestimonialsBlock";
+export { FAQBlock } from "./FAQBlock";
+export { GalleryBlock } from "./GalleryBlock";
+export { StatsBlock } from "./StatsBlock";
+export { CTABlock } from "./CTABlock";
+export { TimelineBlock } from "./TimelineBlock";
+export { ContactBlock } from "./ContactBlock";
+export { MapBlock } from "./MapBlock";
+export { VideoBlock } from "./VideoBlock";
+export { TeamBlock } from "./TeamBlock";
+export { TextBlock } from "./TextBlock";
+export { BannerBlock } from "./BannerBlock";
+export { DividerBlock } from "./DividerBlock";
+export { PreMatriculaBlock } from "./PreMatriculaBlock";
