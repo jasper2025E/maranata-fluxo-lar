@@ -19,6 +19,36 @@ serve(async (req) => {
       throw new Error("Stripe não configurado");
     }
 
+    const secretMode = stripeSecretKey.startsWith("sk_test")
+      ? "test"
+      : stripeSecretKey.startsWith("sk_live")
+        ? "live"
+        : "unknown";
+
+    const publishableMode = stripePublishableKey?.startsWith("pk_test")
+      ? "test"
+      : stripePublishableKey?.startsWith("pk_live")
+        ? "live"
+        : stripePublishableKey
+          ? "unknown"
+          : null;
+
+    // If a publishable key is provided, ensure it matches the secret key mode.
+    if (stripePublishableKey && publishableMode && publishableMode !== "unknown" && secretMode !== "unknown") {
+      if (publishableMode !== secretMode) {
+        return new Response(
+          JSON.stringify({
+            error: "Configuração do Stripe inconsistente (teste/produção).",
+            details: {
+              secretMode,
+              publishableMode,
+            },
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+    }
+
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -167,6 +197,8 @@ serve(async (req) => {
         setupIntentId: setupIntent.id,
         customerId,
         publishableKey: stripePublishableKey,
+        stripeMode: secretMode,
+        publishableMode,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

@@ -117,6 +117,13 @@ function CardForm({
       );
 
       if (confirmError) {
+        // Helpful debug signal (kept in console only)
+        console.error("[Stripe] confirmCardSetup error", {
+          code: (confirmError as any).code,
+          decline_code: (confirmError as any).decline_code,
+          type: (confirmError as any).type,
+          message: (confirmError as any).message,
+        });
         throw new Error(translateStripeError(confirmError));
       }
 
@@ -316,6 +323,13 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
 
       // Prefer backend-provided publishable key (prevents env mismatch: pk_live vs sk_test)
       const stripeKey = (data?.publishableKey as string | undefined) ?? import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+
+      // If backend reports modes, ensure they match. This avoids silent failures on confirmCardSetup.
+      if (data?.stripeMode && data?.publishableMode && data.publishableMode !== "unknown" && data.stripeMode !== "unknown") {
+        if (data.publishableMode !== data.stripeMode) {
+          throw new Error("Configuração do Stripe inconsistente (teste/produção). Atualize as chaves e tente novamente.");
+        }
+      }
       
       if (!stripeKey) {
         throw new Error(t("subscription.stripeNotConfigured"));
