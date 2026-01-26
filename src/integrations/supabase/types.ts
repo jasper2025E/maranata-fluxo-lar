@@ -1961,6 +1961,57 @@ export type Database = {
           },
         ]
       }
+      platform_announcements: {
+        Row: {
+          active: boolean
+          created_at: string
+          created_by: string | null
+          ends_at: string | null
+          id: string
+          link_text: string | null
+          link_url: string | null
+          message: string
+          show_on_landing: boolean
+          show_on_login: boolean
+          starts_at: string
+          title: string
+          type: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          link_text?: string | null
+          link_url?: string | null
+          message: string
+          show_on_landing?: boolean
+          show_on_login?: boolean
+          starts_at?: string
+          title: string
+          type?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          created_by?: string | null
+          ends_at?: string | null
+          id?: string
+          link_text?: string | null
+          link_url?: string | null
+          message?: string
+          show_on_landing?: boolean
+          show_on_login?: boolean
+          starts_at?: string
+          title?: string
+          type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       platform_settings: {
         Row: {
           description: string | null

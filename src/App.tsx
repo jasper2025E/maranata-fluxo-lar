@@ -54,6 +54,7 @@ import PlatformAnalytics from "./pages/platform/PlatformAnalytics";
 import PlatformPlans from "./pages/platform/PlatformPlans";
 import PlatformModules from "./pages/platform/PlatformModules";
 import PlatformMonitoring from "./pages/platform/PlatformMonitoring";
+import PlatformBranding from "./pages/platform/PlatformBranding";
 
 import LandingPage from "./pages/LandingPage";
 import Onboarding from "./pages/Onboarding";
@@ -352,6 +353,14 @@ function AppContent() {
             element={
               <ProtectedRoute platformOnly>
                 <PlatformMonitoring />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/branding"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformBranding />
               </ProtectedRoute>
             }
           />
