@@ -314,7 +314,7 @@ export default function Onboarding() {
                         placeholder="Ex: Escola Municipal São José" 
                         value={escola.nome} 
                         onChange={e => setEscola({ ...escola, nome: e.target.value })} 
-                        className={`h-10 ${errors.nome ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                        className={`h-10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground/30 ${errors.nome ? "border-destructive" : ""}`}
                       />
                       {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
                     </div>
@@ -330,7 +330,7 @@ export default function Onboarding() {
                           placeholder="00.000.000/0001-00" 
                           value={escola.cnpj} 
                           onChange={e => setEscola({ ...escola, cnpj: e.target.value })}
-                          className="h-10"
+                          className="h-10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground/30"
                         />
                       </div>
 
@@ -343,7 +343,7 @@ export default function Onboarding() {
                           placeholder="(00) 00000-0000" 
                           value={escola.telefone} 
                           onChange={e => setEscola({ ...escola, telefone: e.target.value })} 
-                          className={`h-10 ${errors.telefone ? "border-destructive focus-visible:ring-destructive" : ""}`}
+                          className={`h-10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground/30 ${errors.telefone ? "border-destructive" : ""}`}
                         />
                         {errors.telefone && <p className="text-xs text-destructive">{errors.telefone}</p>}
                       </div>
@@ -359,7 +359,7 @@ export default function Onboarding() {
                         placeholder="Rua, número, bairro, cidade" 
                         value={escola.endereco} 
                         onChange={e => setEscola({ ...escola, endereco: e.target.value })}
-                        className="h-10"
+                        className="h-10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground/30"
                       />
                     </div>
                   </div>
