@@ -314,7 +314,8 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
         throw new Error(t("subscription.setupError"));
       }
 
-      const stripeKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+      // Prefer backend-provided publishable key (prevents env mismatch: pk_live vs sk_test)
+      const stripeKey = (data?.publishableKey as string | undefined) ?? import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
       
       if (!stripeKey) {
         throw new Error(t("subscription.stripeNotConfigured"));

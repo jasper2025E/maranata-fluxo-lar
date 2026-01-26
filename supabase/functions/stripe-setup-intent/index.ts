@@ -14,6 +14,7 @@ serve(async (req) => {
 
   try {
     const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") || Deno.env.get("STRIPESECRETAPI");
+    const stripePublishableKey = Deno.env.get("VITE_STRIPE_PUBLISHABLE_KEY") || null;
     if (!stripeSecretKey) {
       throw new Error("Stripe não configurado");
     }
@@ -87,17 +88,14 @@ serve(async (req) => {
     // Create or get Stripe customer
     let customerId = tenant.stripe_customer_id;
 
-    if (!customerId) {
-      // Check if customer exists
+    // If a customerId exists, validate it against the current Stripe environment.
+    if (customerId) {
       const customerCheck = await fetch(
         `https://api.stripe.com/v1/customers/${customerId}`,
-        {
-          headers: { "Authorization": `Bearer ${stripeSecretKey}` },
-        }
+        { headers: { "Authorization": `Bearer ${stripeSecretKey}` } }
       );
       const customerData = await customerCheck.json();
-
-      if (customerData.error || customerData.deleted) {
+      if (customerData?.error || customerData?.deleted) {
         customerId = null;
       }
     }
@@ -168,6 +166,7 @@ serve(async (req) => {
         clientSecret: setupIntent.client_secret,
         setupIntentId: setupIntent.id,
         customerId,
+        publishableKey: stripePublishableKey,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
