@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import { usePlatformBranding } from "@/hooks/usePlatformBranding";
 import { OnboardingCardForm } from "@/components/onboarding/OnboardingCardForm";
 const escolaSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
@@ -47,9 +47,10 @@ const iconMap: Record<string, React.ElementType> = {
 export default function Onboarding() {
   const navigate = useNavigate();
   const {
-    data: platformSettings
-  } = usePlatformSettings();
-  const platformName = platformSettings?.platform_name || "Sistema de Gestão";
+    data: branding
+  } = usePlatformBranding();
+  const platformName = branding?.platformName || "Sistema de Gestão";
+  const platformLogo = branding?.platformLogo;
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -259,9 +260,13 @@ export default function Onboarding() {
       {/* Logo - Fixed top right */}
       <div className="fixed top-6 right-6 lg:top-8 lg:right-8 z-20 flex flex-row items-center gap-3">
         <span className="text-xl font-bold text-slate-900">{platformName}</span>
-        <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg">
-          <GraduationCap className="h-5 w-5 text-white" />
-        </div>
+        {platformLogo ? (
+          <img src={platformLogo} alt={platformName} className="h-10 w-auto object-contain" />
+        ) : (
+          <div className="h-10 w-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg">
+            <GraduationCap className="h-5 w-5 text-white" />
+          </div>
+        )}
       </div>
 
       {/* Content */}
