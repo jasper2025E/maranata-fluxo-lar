@@ -295,17 +295,13 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
-            <DropdownMenuItem onClick={() => navigate("/platform/system-profile")}>
-              <Building2 className="h-4 w-4 mr-2" />
-              Perfil do Sistema
+            <DropdownMenuItem onClick={() => navigate("/platform/settings")}>
+              <Settings className="h-4 w-4 mr-2" />
+              Configurações do Sistema
             </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/platform/profile")}>
               <User className="h-4 w-4 mr-2" />
               Minha Conta
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => navigate("/platform/settings")}>
-              <Settings className="h-4 w-4 mr-2" />
-              Configurações
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
