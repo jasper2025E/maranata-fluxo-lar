@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, Trash2, Search, Eye, Users, UserCheck, UserX, GraduationCap, Phone, Mail, MapPin, Calendar, BookOpen, ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -88,6 +89,7 @@ const Alunos = () => {
   const [editingAluno, setEditingAluno] = useState<Aluno | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSemTurma, setFilterSemTurma] = useState(false);
+  const [gerarNovasFaturas, setGerarNovasFaturas] = useState(false);
   const [formData, setFormData] = useState({
     nome_completo: "",
     data_nascimento: "",
@@ -237,7 +239,7 @@ const Alunos = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: string } & typeof formData) => {
+    mutationFn: async (data: { id: string; gerarNovasFaturas?: boolean } & typeof formData) => {
       const { error } = await supabase
         .from("alunos")
         .update({
@@ -253,11 +255,59 @@ const Alunos = () => {
         })
         .eq("id", data.id);
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
       toast.success(t("students.updateSuccess"));
+
+      // Gerar novas faturas se solicitado
+      if (data.gerarNovasFaturas && data.quantidade_parcelas > 0) {
+        void (async () => {
+          try {
+            const curso = cursos.find((c) => c.id === data.curso_id);
+            if (!curso) return;
+
+            const dataInicio = new Date(data.data_inicio_cobranca);
+            dataInicio.setDate(data.dia_vencimento);
+
+            await supabase.rpc("gerar_faturas_aluno", {
+              p_aluno_id: data.id,
+              p_curso_id: data.curso_id,
+              p_valor: curso.mensalidade,
+              p_data_inicio: dataInicio.toISOString().split("T")[0],
+              p_quantidade_meses: data.quantidade_parcelas,
+            });
+
+            queryClient.invalidateQueries({ queryKey: ["faturas"] });
+            toast.success(`${data.quantidade_parcelas} novas faturas geradas!`);
+
+            // Integrar com Asaas
+            const responsavelId = data.responsavel_id || null;
+            if (responsavelId) {
+              const { data: faturasGeradas } = await supabase
+                .from("faturas")
+                .select("id")
+                .eq("aluno_id", data.id)
+                .eq("status", "Aberta")
+                .is("asaas_payment_id", null)
+                .order("data_vencimento", { ascending: true })
+                .limit(3);
+
+              for (const fatura of faturasGeradas || []) {
+                await supabase.functions.invoke("asaas-create-payment", {
+                  body: { faturaId: fatura.id, billingType: "UNDEFINED" },
+                }).catch(() => {});
+              }
+            }
+          } catch (err) {
+            console.warn("Falha ao gerar faturas:", err);
+            toast.error("Erro ao gerar novas faturas");
+          }
+        })();
+      }
+
       resetForm();
     },
     onError: () => toast.error(t("students.updateError")),
@@ -291,11 +341,13 @@ const Alunos = () => {
       quantidade_parcelas: 12,
     });
     setEditingAluno(null);
+    setGerarNovasFaturas(false);
     setIsOpen(false);
   };
 
   const handleEdit = (aluno: Aluno) => {
     setEditingAluno(aluno);
+    setGerarNovasFaturas(false);
     setFormData({
       nome_completo: aluno.nome_completo,
       data_nascimento: aluno.data_nascimento,
@@ -356,7 +408,8 @@ const Alunos = () => {
       return;
     }
     if (editingAluno) {
-      updateMutation.mutate({ id: editingAluno.id, ...formData });
+      // Usa o estado gerarNovasFaturas controlado pelo Switch
+      updateMutation.mutate({ id: editingAluno.id, ...formData, gerarNovasFaturas });
     } else {
       createMutation.mutate(formData);
     }
@@ -541,72 +594,97 @@ const Alunos = () => {
                     />
                   </div>
 
-                  {/* Configuração de Faturamento - apenas para novos alunos */}
-                  {!editingAluno && (
-                    <div className="border-t pt-5 mt-2">
-                      <h4 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                  {/* Configuração de Faturamento */}
+                  <div className="border-t pt-5 mt-2">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
-                        Configuração de Faturamento
+                        {editingAluno ? "Gerar Novas Faturas" : "Configuração de Faturamento"}
                       </h4>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="dia_vencimento" className="text-sm font-medium text-muted-foreground">
-                            Dia de Vencimento
-                          </Label>
-                          <Select 
-                            value={formData.dia_vencimento.toString()} 
-                            onValueChange={(value) => setFormData({ ...formData, dia_vencimento: parseInt(value) })}
-                          >
-                            <SelectTrigger className="h-11">
-                              <SelectValue placeholder="Dia" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[1, 5, 10, 15, 20, 25, 28].map((dia) => (
-                                <SelectItem key={dia} value={dia.toString()}>
-                                  Dia {dia}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="data_inicio" className="text-sm font-medium text-muted-foreground">
-                            Início da Cobrança
-                          </Label>
-                          <Input
-                            id="data_inicio"
-                            type="date"
-                            value={formData.data_inicio_cobranca}
-                            onChange={(e) => setFormData({ ...formData, data_inicio_cobranca: e.target.value })}
-                            className="h-11"
+                      {editingAluno && (
+                        <div className="flex items-center gap-2">
+                          <Switch 
+                            checked={gerarNovasFaturas} 
+                            onCheckedChange={setGerarNovasFaturas}
                           />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label htmlFor="quantidade_parcelas" className="text-sm font-medium text-muted-foreground">
-                            Qtd. de Parcelas
+                          <Label className="text-xs text-muted-foreground">
+                            {gerarNovasFaturas ? "Ativado" : "Desativado"}
                           </Label>
-                          <Select 
-                            value={formData.quantidade_parcelas.toString()} 
-                            onValueChange={(value) => setFormData({ ...formData, quantidade_parcelas: parseInt(value) })}
-                          >
-                            <SelectTrigger className="h-11">
-                              <SelectValue placeholder="Parcelas" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[1, 2, 3, 4, 5, 6, 10, 11, 12].map((qtd) => (
-                                <SelectItem key={qtd} value={qtd.toString()}>
-                                  {qtd} {qtd === 1 ? "parcela" : "parcelas"}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
                         </div>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        {formData.quantidade_parcelas} faturas serão geradas a partir de {formData.data_inicio_cobranca ? format(new Date(formData.data_inicio_cobranca + "T00:00:00"), "dd/MM/yyyy") : "-"}, vencendo todo dia {formData.dia_vencimento}.
-                      </p>
+                      )}
                     </div>
-                  )}
+                    
+                    {editingAluno && !gerarNovasFaturas && (
+                      <p className="text-xs text-muted-foreground mb-4 bg-muted/50 p-3 rounded-md">
+                        Ative o switch acima para gerar novas faturas para este aluno. As faturas existentes não serão afetadas.
+                      </p>
+                    )}
+                    
+                    {(!editingAluno || gerarNovasFaturas) && (
+                      <>
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="grid gap-2">
+                            <Label htmlFor="dia_vencimento" className="text-sm font-medium text-muted-foreground">
+                              Dia de Vencimento
+                            </Label>
+                            <Select 
+                              value={formData.dia_vencimento.toString()} 
+                              onValueChange={(value) => setFormData({ ...formData, dia_vencimento: parseInt(value) })}
+                            >
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="Dia" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[1, 5, 10, 15, 20, 25, 28].map((dia) => (
+                                  <SelectItem key={dia} value={dia.toString()}>
+                                    Dia {dia}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="data_inicio" className="text-sm font-medium text-muted-foreground">
+                              Início da Cobrança
+                            </Label>
+                            <Input
+                              id="data_inicio"
+                              type="date"
+                              value={formData.data_inicio_cobranca}
+                              onChange={(e) => setFormData({ ...formData, data_inicio_cobranca: e.target.value })}
+                              className="h-11"
+                            />
+                          </div>
+                          <div className="grid gap-2">
+                            <Label htmlFor="quantidade_parcelas" className="text-sm font-medium text-muted-foreground">
+                              Qtd. de Parcelas
+                            </Label>
+                            <Select 
+                              value={formData.quantidade_parcelas.toString()} 
+                              onValueChange={(value) => setFormData({ ...formData, quantidade_parcelas: parseInt(value) })}
+                            >
+                              <SelectTrigger className="h-11">
+                                <SelectValue placeholder="Parcelas" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {[1, 2, 3, 4, 5, 6, 10, 11, 12].map((qtd) => (
+                                  <SelectItem key={qtd} value={qtd.toString()}>
+                                    {qtd} {qtd === 1 ? "parcela" : "parcelas"}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-2">
+                          {formData.quantidade_parcelas} faturas serão geradas a partir de {formData.data_inicio_cobranca ? format(new Date(formData.data_inicio_cobranca + "T00:00:00"), "dd/MM/yyyy") : "-"}, vencendo todo dia {formData.dia_vencimento}.
+                        </p>
+                      </>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-2">
+                      {formData.quantidade_parcelas} faturas serão geradas a partir de {formData.data_inicio_cobranca ? format(new Date(formData.data_inicio_cobranca + "T00:00:00"), "dd/MM/yyyy") : "-"}, vencendo todo dia {formData.dia_vencimento}.
+                    </p>
+                  </div>
                 </div>
                 <DialogFooter className="gap-2">
                   <Button type="button" variant="outline" onClick={resetForm}>
