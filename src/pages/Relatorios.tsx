@@ -758,6 +758,7 @@ const Relatorios = () => {
               </div>
             </div>
           )}
+        </div>
       </div>
     </DashboardLayout>
   );
