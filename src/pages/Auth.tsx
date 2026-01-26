@@ -295,12 +295,11 @@ const Auth = () => {
 
       {/* Header - Centered like Stripe */}
       <header className="relative z-10 py-6 flex-shrink-0">
-        <div className="flex items-center justify-center gap-2">
-          {branding?.platformLogo ? (
-            <img src={branding.platformLogo} alt={platformName} className="h-7 w-auto" />
-          ) : (
-            <span className="text-xl font-bold text-white tracking-tight">{platformName}</span>
+        <div className="flex items-center justify-center gap-3">
+          {branding?.platformLogo && (
+            <img src={branding.platformLogo} alt={platformName} className="h-8 w-auto" />
           )}
+          <span className="text-xl font-bold text-white tracking-tight">{platformName}</span>
         </div>
       </header>
 
