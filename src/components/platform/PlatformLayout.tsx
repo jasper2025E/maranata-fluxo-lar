@@ -1,4 +1,4 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -26,8 +26,9 @@ import {
   User
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
@@ -119,6 +120,42 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
   const { user, signOut } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [expandedModules, setExpandedModules] = useState<string[]>(["Assinaturas", "Escolas", "Usuários"]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  // Fetch user profile for avatar
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!user) return;
+      
+      // Try to get from auth metadata first
+      const metaAvatar = user.user_metadata?.avatar_url;
+      const metaName = user.user_metadata?.nome;
+      
+      if (metaAvatar) {
+        setAvatarUrl(metaAvatar);
+      }
+      if (metaName) {
+        setUserName(metaName);
+      }
+
+      // Also check profiles table
+      const { data } = await supabase
+        .from("profiles")
+        .select("avatar_url, nome")
+        .eq("id", user.id)
+        .single();
+
+      if (data?.avatar_url) {
+        setAvatarUrl(data.avatar_url);
+      }
+      if (data?.nome) {
+        setUserName(data.nome);
+      }
+    };
+
+    fetchProfile();
+  }, [user]);
 
   const handleSignOut = async () => {
     await signOut();
@@ -126,7 +163,10 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
     navigate("/auth");
   };
 
-  const getInitials = (email?: string) => {
+  const getInitials = (name?: string | null, email?: string) => {
+    if (name) {
+      return name.split(" ").map(n => n[0]).slice(0, 2).join("").toUpperCase();
+    }
     if (!email) return "G";
     return email.substring(0, 2).toUpperCase();
   };
@@ -308,12 +348,13 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
       <div className="border-t border-border/50 p-4">
         <div className="flex items-center gap-3">
           <Avatar className="h-9 w-9 ring-2 ring-primary/20">
+            {avatarUrl && <AvatarImage src={avatarUrl} alt={userName || "Gestor"} />}
             <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold">
-              {getInitials(user?.email)}
+              {getInitials(userName, user?.email)}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">{user?.email}</p>
+            <p className="text-sm font-medium text-foreground truncate">{userName || user?.email}</p>
             <p className="text-xs text-muted-foreground">Gestor do Sistema</p>
           </div>
         </div>
@@ -417,16 +458,25 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full ml-2">
                   <Avatar className="h-8 w-8 ring-2 ring-primary/20">
+                    {avatarUrl && <AvatarImage src={avatarUrl} alt={userName || "Gestor"} />}
                     <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-xs font-bold">
-                      {getInitials(user?.email)}
+                      {getInitials(userName, user?.email)}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <div className="px-2 py-2">
-                  <p className="text-sm font-medium text-foreground">{user?.email}</p>
-                  <p className="text-xs text-muted-foreground">Gestor da Plataforma</p>
+                <div className="px-2 py-2 flex items-center gap-3">
+                  <Avatar className="h-10 w-10">
+                    {avatarUrl && <AvatarImage src={avatarUrl} alt={userName || "Gestor"} />}
+                    <AvatarFallback className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground text-sm font-bold">
+                      {getInitials(userName, user?.email)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{userName || user?.email}</p>
+                    <p className="text-xs text-muted-foreground">Gestor da Plataforma</p>
+                  </div>
                 </div>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate("/platform/profile")}>

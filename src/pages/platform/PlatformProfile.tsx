@@ -85,20 +85,21 @@ export default function PlatformProfile() {
   const handleSaveProfile = async () => {
     setSaving(true);
     try {
-      // Update profiles table
+      // Use upsert to create profile if it doesn't exist
       const { error: profileError } = await supabase
         .from("profiles")
-        .update({
+        .upsert({
+          id: user?.id,
           nome: profile.nome,
+          email: profile.email,
           avatar_url: profile.avatar_url,
-        })
-        .eq("id", user?.id);
+        }, { onConflict: 'id' });
 
       if (profileError) throw profileError;
 
       // Update auth user metadata
       const { error: authError } = await supabase.auth.updateUser({
-        data: { nome: profile.nome }
+        data: { nome: profile.nome, avatar_url: profile.avatar_url }
       });
 
       if (authError) throw authError;
@@ -184,11 +185,22 @@ export default function PlatformProfile() {
       // Update profile state
       setProfile(prev => ({ ...prev, avatar_url: avatarUrl }));
 
-      // Update profiles table
-      await supabase
+      // Update profiles table using upsert
+      const { error: upsertError } = await supabase
         .from("profiles")
-        .update({ avatar_url: avatarUrl })
-        .eq("id", user.id);
+        .upsert({
+          id: user.id,
+          email: user.email || '',
+          nome: profile.nome || user?.user_metadata?.nome || '',
+          avatar_url: avatarUrl,
+        }, { onConflict: 'id' });
+
+      if (upsertError) throw upsertError;
+
+      // Also update auth metadata
+      await supabase.auth.updateUser({
+        data: { avatar_url: avatarUrl }
+      });
 
       toast.success("Foto atualizada com sucesso!");
     } catch (error: any) {
