@@ -1,33 +1,33 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
 import { 
   Building2, 
   Users, 
   TrendingUp, 
-  CreditCard,
   GraduationCap,
   Receipt,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  ArrowRight,
-  RefreshCw,
-  ExternalLink,
-  Sparkles,
-  BookOpen,
+  Target,
+  Award,
   Zap
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import PlatformLayout from "@/components/platform/PlatformLayout";
 import { formatCurrency } from "@/lib/formatters";
-import { getRandomVerse, type BibleVerse } from "@/lib/biblicalVerses";
-import { getGreeting, getFirstName } from "@/lib/greetings";
+import { differenceInDays } from "date-fns";
+import {
+  WelcomeCard,
+  ProfileWidget,
+  AwardsWidget,
+  MetricsGrid,
+  ActivityChart,
+  RecentSchoolsWidget,
+  RecentActivityFeed,
+  QuickActionsCard,
+  CalendarWidget,
+  UpcomingActivities,
+} from "@/components/platform/dashboard";
 
 interface Tenant {
   id: string;
@@ -73,7 +73,8 @@ export default function PlatformDashboard() {
     mrr: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [verse] = useState<BibleVerse>(() => getRandomVerse());
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [userName, setUserName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isPlatformAdmin()) {
@@ -81,7 +82,20 @@ export default function PlatformDashboard() {
       return;
     }
     fetchData();
+    fetchProfile();
   }, [isPlatformAdmin, navigate]);
+
+  const fetchProfile = async () => {
+    if (!user) return;
+    const { data } = await supabase
+      .from("profiles")
+      .select("avatar_url, nome")
+      .eq("id", user.id)
+      .single();
+
+    if (data?.avatar_url) setAvatarUrl(data.avatar_url);
+    if (data?.nome) setUserName(data.nome);
+  };
 
   const fetchData = async () => {
     try {
@@ -136,16 +150,122 @@ export default function PlatformDashboard() {
     }
   };
 
+  // Calculate days since user created (simulate active days)
+  const activeDays = user?.created_at 
+    ? differenceInDays(new Date(), new Date(user.created_at))
+    : 30;
+
+  // Generate mock activity data for chart
+  const activityChartData = [
+    { month: "Mar", value: 15 },
+    { month: "Abr", value: 22 },
+    { month: "Mai", value: 36 },
+    { month: "Jun", value: 28 },
+    { month: "Jul", value: 42 },
+    { month: "Ago", value: 35 },
+  ];
+
+  // Generate achievements data
+  const achievements = [
+    {
+      icon: Building2,
+      label: "Escolas",
+      value: `${stats.totalTenants}`,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+    },
+    {
+      icon: GraduationCap,
+      label: "Alunos",
+      value: `${stats.totalAlunos}`,
+      color: "text-violet-600 dark:text-violet-400",
+      bgColor: "bg-violet-100 dark:bg-violet-900/30",
+    },
+    {
+      icon: TrendingUp,
+      label: "MRR",
+      value: formatCurrency(stats.mrr),
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
+    },
+  ];
+
+  // Generate metrics data
+  const metrics = [
+    {
+      icon: Building2,
+      label: "Escolas",
+      value: stats.totalTenants,
+      color: "text-primary",
+      bgColor: "bg-primary/10",
+      chart: [3, 5, 4, 7, 6, 8, stats.totalTenants],
+    },
+    {
+      icon: Users,
+      label: "Usuários",
+      value: stats.totalUsers,
+      color: "text-blue-600 dark:text-blue-400",
+      bgColor: "bg-blue-100 dark:bg-blue-900/30",
+      chart: [12, 18, 22, 19, 25, 28, stats.totalUsers],
+    },
+    {
+      icon: GraduationCap,
+      label: "Alunos",
+      value: stats.totalAlunos,
+      color: "text-violet-600 dark:text-violet-400",
+      bgColor: "bg-violet-100 dark:bg-violet-900/30",
+      chart: [100, 150, 180, 200, 250, 280, stats.totalAlunos],
+    },
+    {
+      icon: Receipt,
+      label: "Faturas",
+      value: stats.totalFaturas,
+      color: "text-emerald-600 dark:text-emerald-400",
+      bgColor: "bg-emerald-100 dark:bg-emerald-900/30",
+      chart: [50, 80, 100, 120, 150, 180, stats.totalFaturas],
+    },
+  ];
+
+  // Generate recent activities
+  const recentActivities = tenants.slice(0, 5).map((tenant, index) => ({
+    id: tenant.id,
+    type: tenant.subscription_status === "active" 
+      ? "subscription_active" as const
+      : tenant.subscription_status === "trial"
+        ? "subscription_trial" as const
+        : "school_created" as const,
+    title: tenant.nome,
+    description: `Plano ${tenant.plano} • ${tenant.subscription_status === "active" ? "Assinatura ativa" : tenant.subscription_status === "trial" ? "Período de teste" : "Cadastrada"}`,
+    time: `${index + 1}h atrás`,
+  }));
+
+  // Generate upcoming activities
+  const upcomingActivities = tenants
+    .filter(t => t.subscription_status === "trial" && t.trial_ends_at)
+    .slice(0, 3)
+    .map((tenant, index) => ({
+      id: tenant.id,
+      type: "trial_ending" as const,
+      title: tenant.nome,
+      time: tenant.trial_ends_at 
+        ? `${differenceInDays(new Date(tenant.trial_ends_at), new Date())} dias`
+        : "Em breve",
+      color: "amber",
+    }));
+
   if (loading) {
     return (
       <PlatformLayout>
-        <div className="space-y-6">
-          <Skeleton className="h-32 w-full" />
-          <Skeleton className="h-48 w-full" />
-          <div className="grid gap-4 md:grid-cols-3">
-            {[1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-24" />
+        <div className="space-y-6 p-6">
+          <Skeleton className="h-12 w-72" />
+          <div className="grid grid-cols-4 gap-4">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-32 rounded-2xl" />
             ))}
+          </div>
+          <div className="grid grid-cols-3 gap-6">
+            <Skeleton className="h-64 rounded-2xl col-span-2" />
+            <Skeleton className="h-64 rounded-2xl" />
           </div>
         </div>
       </PlatformLayout>
@@ -154,335 +274,65 @@ export default function PlatformDashboard() {
 
   return (
     <PlatformLayout>
-      <div className="space-y-8">
-        {/* Welcome Banner - Premium gradient style */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-2xl border border-border/50 p-6 md:p-8 bg-card"
-        >
-          {/* Gradient blob decorations */}
-          <div className="absolute top-0 left-0 w-[400px] h-[300px] pointer-events-none">
-            <svg
-              viewBox="0 0 400 300"
-              className="w-full h-full"
-              preserveAspectRatio="xMinYMin slice"
-            >
-              <defs>
-                <linearGradient id="welcome-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#80e9ff" stopOpacity="0.3" />
-                  <stop offset="33%" stopColor="#a855f7" stopOpacity="0.2" />
-                  <stop offset="66%" stopColor="#ec4899" stopOpacity="0.15" />
-                  <stop offset="100%" stopColor="#f97316" stopOpacity="0.1" />
-                </linearGradient>
-              </defs>
-              <path
-                d="M0,0 L400,0 L400,150 Q300,250 150,200 Q50,170 0,250 Z"
-                fill="url(#welcome-gradient)"
+      <div className="p-6 space-y-6 max-w-[1600px] mx-auto">
+        {/* Header */}
+        <WelcomeCard 
+          avatarUrl={avatarUrl}
+          userName={userName}
+          stats={{
+            tenantsManaged: stats.totalTenants,
+            totalRevenue: formatCurrency(stats.receitaTotal),
+            activeDays,
+          }}
+        />
+
+        {/* Quick Actions */}
+        <QuickActionsCard />
+
+        {/* Main Grid */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Left Column - 2/3 */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Profile and Awards Row */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ProfileWidget 
+                avatarUrl={avatarUrl}
+                userName={userName}
+                stats={{
+                  tenantsManaged: stats.totalTenants,
+                  totalUsers: stats.totalUsers,
+                  activeDays,
+                }}
               />
-            </svg>
+              <AwardsWidget achievements={achievements} />
+            </div>
+
+            {/* Metrics Grid */}
+            <MetricsGrid metrics={metrics} />
+
+            {/* Activity Chart */}
+            <ActivityChart data={activityChartData} />
+
+            {/* Recent Schools */}
+            <RecentSchoolsWidget tenants={tenants} />
           </div>
-          
-          <div className="relative z-10">
-            <div className="flex items-center gap-2 mb-2">
-              <BookOpen className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-primary">
-                {getGreeting()}{user?.user_metadata?.nome ? `, ${getFirstName(user.user_metadata.nome)}` : ""}! ✨
-              </span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-medium text-foreground italic leading-relaxed max-w-2xl">
-              "{verse.text}"
-            </h1>
-            <p className="text-sm text-muted-foreground mt-3 font-medium">
-              — {verse.reference}
-            </p>
+
+          {/* Right Column - 1/3 */}
+          <div className="space-y-6">
+            {/* Calendar */}
+            <CalendarWidget 
+              highlightedDates={tenants
+                .filter(t => t.trial_ends_at)
+                .map(t => new Date(t.trial_ends_at!))}
+            />
+
+            {/* Upcoming Activities */}
+            <UpcomingActivities activities={upcomingActivities} />
+
+            {/* Recent Activity Feed */}
+            <RecentActivityFeed activities={recentActivities} />
           </div>
-        </motion.div>
-
-        {/* Quick Start Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-        >
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-xl font-semibold">Comece a gerenciar</CardTitle>
-              <Button variant="ghost" size="icon" className="text-muted-foreground">
-                <span className="sr-only">Fechar</span>
-                ×
-              </Button>
-            </CardHeader>
-            <CardContent>
-              <div className="grid md:grid-cols-3 gap-4">
-                {/* Quick Action 1 */}
-                <button
-                  onClick={() => navigate("/platform/tenants/new")}
-                  className="group p-5 rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 text-left"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                      <Building2 className="h-5 w-5 text-primary" />
-                    </div>
-                    <Badge variant="secondary" className="text-xs">Rápido</Badge>
-                  </div>
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                    Cadastrar nova escola
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                    Iniciar <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-                  </p>
-                </button>
-
-                {/* Quick Action 2 */}
-                <button
-                  onClick={() => navigate("/platform/subscriptions")}
-                  className="group p-5 rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 text-left"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
-                      <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <Badge variant="outline" className="text-xs">Financeiro</Badge>
-                  </div>
-                  <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                    Gerenciar assinaturas
-                  </h3>
-                  <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                    Iniciar <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
-                  </p>
-                </button>
-
-                {/* Explore All */}
-                <button
-                  onClick={() => navigate("/platform/tenants")}
-                  className="group p-5 rounded-xl border-2 border-dashed border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 text-left flex items-center justify-between"
-                >
-                  <div>
-                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
-                      Ver todas as escolas
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {stats.totalTenants} cadastradas
-                    </p>
-                  </div>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
-                </button>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Today Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.15 }}
-          className="space-y-4"
-        >
-          <h2 className="text-xl font-bold text-foreground">Hoje</h2>
-          
-          <div className="flex flex-wrap items-center gap-6 md:gap-12 p-4 rounded-xl bg-muted/30 border border-border/50">
-            {/* Volume */}
-            <div className="space-y-1">
-              <div className="flex items-center gap-2">
-                <span className="text-sm text-muted-foreground">MRR</span>
-              </div>
-              <p className="text-2xl font-bold text-foreground">
-                {formatCurrency(stats.mrr)}
-              </p>
-            </div>
-
-            {/* Escolas Ativas */}
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Escolas ativas</span>
-              <p className="text-2xl font-bold text-foreground">
-                {stats.activeTenants}
-              </p>
-            </div>
-
-            {/* Saldo */}
-            <div className="space-y-1">
-              <span className="text-sm text-muted-foreground">Receita total</span>
-              <p className="text-2xl font-bold text-foreground">
-                {formatCurrency(stats.receitaTotal)}
-              </p>
-            </div>
-
-            <div className="ml-auto">
-              <Button 
-                variant="link" 
-                className="text-primary"
-                onClick={() => navigate("/platform/subscriptions")}
-              >
-                Ver detalhes
-              </Button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Stats Grid */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
-        >
-          <Card className="group hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300 overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="pt-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Total de Escolas</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.totalTenants}</p>
-                  <div className="flex items-center gap-2 mt-1 text-xs">
-                    <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
-                      <CheckCircle className="h-3 w-3" />
-                      {stats.activeTenants} ativas
-                    </span>
-                    {stats.trialTenants > 0 && (
-                      <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
-                        <Clock className="h-3 w-3" />
-                        {stats.trialTenants} em teste
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                  <Building2 className="h-6 w-6 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-500/20 transition-all duration-300 overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="pt-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Usuários</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.totalUsers}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Em todas as escolas</p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center">
-                  <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-lg hover:shadow-purple-500/5 hover:border-purple-500/20 transition-all duration-300 overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="pt-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Alunos</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.totalAlunos}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Cadastrados na plataforma</p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/10 flex items-center justify-center">
-                  <GraduationCap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="group hover:shadow-lg hover:shadow-green-500/5 hover:border-green-500/20 transition-all duration-300 overflow-hidden relative">
-            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-            <CardContent className="pt-6 relative">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Faturas</p>
-                  <p className="text-2xl font-bold text-foreground">{stats.totalFaturas}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Total emitidas</p>
-                </div>
-                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/10 flex items-center justify-center">
-                  <Receipt className="h-6 w-6 text-green-600 dark:text-green-400" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </motion.div>
-
-        {/* Recent Schools */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.25 }}
-        >
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>Escolas Recentes</CardTitle>
-                <CardDescription>Últimas escolas cadastradas na plataforma</CardDescription>
-              </div>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => navigate("/platform/tenants")}
-              >
-                Ver todas
-              </Button>
-            </CardHeader>
-            <CardContent>
-              {tenants.length === 0 ? (
-                <div className="text-center py-12">
-                  <Building2 className="h-12 w-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p className="text-muted-foreground">Nenhuma escola cadastrada</p>
-                  <Button
-                    onClick={() => navigate("/platform/tenants/new")}
-                    className="mt-4"
-                  >
-                    Cadastrar primeira escola
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {tenants.slice(0, 5).map((tenant) => (
-                    <button
-                      key={tenant.id}
-                      onClick={() => navigate(`/platform/tenants/${tenant.id}`)}
-                      className="flex items-center justify-between w-full p-3 rounded-lg hover:bg-muted/50 transition-colors text-left"
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <Building2 className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-medium text-foreground">{tenant.nome}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {tenant.cnpj || "CNPJ não informado"}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{tenant.plano}</Badge>
-                        {tenant.subscription_status === "active" && (
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400">
-                            <CheckCircle className="h-3 w-3 mr-1" />
-                            Ativa
-                          </Badge>
-                        )}
-                        {tenant.subscription_status === "trial" && (
-                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
-                            <Clock className="h-3 w-3 mr-1" />
-                            Teste
-                          </Badge>
-                        )}
-                        {(tenant.subscription_status === "past_due" || tenant.subscription_status === "suspended") && (
-                          <Badge variant="destructive">
-                            <AlertTriangle className="h-3 w-3 mr-1" />
-                            Inadimplente
-                          </Badge>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </motion.div>
+        </div>
       </div>
     </PlatformLayout>
   );
