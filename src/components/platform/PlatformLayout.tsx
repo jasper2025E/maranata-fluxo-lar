@@ -23,7 +23,11 @@ import {
   MoreHorizontal,
   FolderOpen,
   Sparkles,
-  User
+  User,
+  Megaphone,
+  Rocket,
+  HardDrive,
+  Tag
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,17 +68,8 @@ interface NavSection {
 
 const navigation: NavSection[] = [
   {
-    title: "Produtos",
+    title: "Gestão",
     modules: [
-      { 
-        icon: CreditCard, 
-        label: "Assinaturas", 
-        subItems: [
-          { label: "Visão geral", path: "/platform/subscriptions" },
-          { label: "Planos", path: "/platform/plans" },
-          { label: "Histórico", path: "/platform/subscriptions" },
-        ]
-      },
       { 
         icon: Building2, 
         label: "Escolas", 
@@ -84,13 +79,47 @@ const navigation: NavSection[] = [
         ]
       },
       { 
+        icon: CreditCard, 
+        label: "Assinaturas", 
+        subItems: [
+          { label: "Visão geral", path: "/platform/subscriptions" },
+          { label: "Planos", path: "/platform/plans" },
+        ]
+      },
+      { 
         icon: Users, 
         label: "Usuários", 
         subItems: [
           { label: "Todos os usuários", path: "/platform/users" },
+          { label: "Gestores", path: "/platform/managers" },
           { label: "Acessar como", path: "/platform/impersonate" },
         ]
       },
+    ],
+  },
+  {
+    title: "Comunicação",
+    modules: [
+      { 
+        icon: Megaphone, 
+        label: "Comunicados", 
+        path: "/platform/announcements"
+      },
+      { 
+        icon: Rocket, 
+        label: "Roadmap", 
+        path: "/platform/roadmap"
+      },
+      { 
+        icon: Tag, 
+        label: "Changelog", 
+        path: "/platform/changelog"
+      },
+    ],
+  },
+  {
+    title: "Sistema",
+    modules: [
       { 
         icon: Activity, 
         label: "Monitoramento", 
@@ -102,14 +131,24 @@ const navigation: NavSection[] = [
         path: "/platform/analytics"
       },
       { 
-        icon: MoreHorizontal, 
-        label: "Mais", 
-        subItems: [
-          { label: "Módulos", path: "/platform/modules" },
-          { label: "Logs", path: "/platform/logs" },
-          { label: "Configurações", path: "/platform/settings" },
-          { label: "Segurança", path: "/platform/security" },
-        ]
+        icon: HardDrive, 
+        label: "Backups", 
+        path: "/platform/backups"
+      },
+      { 
+        icon: Shield, 
+        label: "Segurança", 
+        path: "/platform/security"
+      },
+      { 
+        icon: FileText, 
+        label: "Logs", 
+        path: "/platform/logs"
+      },
+      { 
+        icon: Settings, 
+        label: "Configurações", 
+        path: "/platform/settings"
       },
     ],
   },

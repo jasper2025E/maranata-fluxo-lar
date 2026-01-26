@@ -57,6 +57,11 @@ import PlatformMonitoring from "./pages/platform/PlatformMonitoring";
 import PlatformBranding from "./pages/platform/PlatformBranding";
 import PlatformProfile from "./pages/platform/PlatformProfile";
 import SystemProfile from "./pages/platform/SystemProfile";
+import PlatformRoadmap from "./pages/platform/PlatformRoadmap";
+import PlatformAnnouncements from "./pages/platform/PlatformAnnouncements";
+import PlatformBackups from "./pages/platform/PlatformBackups";
+import PlatformChangelog from "./pages/platform/PlatformChangelog";
+import PlatformManagers from "./pages/platform/PlatformManagers";
 import LandingPage from "./pages/LandingPage";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
@@ -386,6 +391,46 @@ function AppContent() {
             element={
               <ProtectedRoute platformOnly>
                 <TenantData />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/roadmap"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformRoadmap />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/announcements"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformAnnouncements />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/backups"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformBackups />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/changelog"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformChangelog />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/managers"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformManagers />
               </ProtectedRoute>
             }
           />
