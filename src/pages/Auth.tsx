@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,6 +10,7 @@ import { Loader2, Eye, EyeOff, ShieldCheck, ArrowLeft, GraduationCap } from "luc
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { GradientBackground } from "@/components/landing/GradientBackground";
+import { useQuery } from "@tanstack/react-query";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -34,6 +35,29 @@ const Auth = () => {
   const [mfaFactorId, setMfaFactorId] = useState<string>("");
   const [mfaCode, setMfaCode] = useState("");
   const [mfaVerifying, setMfaVerifying] = useState(false);
+
+  // Fetch school branding
+  const { data: escola } = useQuery({
+    queryKey: ["escola-branding"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("escola")
+        .select("nome, logo_url")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching escola branding:", error);
+        return null;
+      }
+      return data;
+    },
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const schoolName = escola?.nome || "Escola Maranata";
+  const schoolLogo = escola?.logo_url;
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -154,6 +178,28 @@ const Auth = () => {
     setPassword("");
   };
 
+  // Logo component
+  const LogoDisplay = ({ size = "large" }: { size?: "small" | "large" }) => {
+    const iconSize = size === "large" ? "h-14 w-14" : "h-7 w-7";
+    const textSize = size === "large" ? "text-3xl" : "text-xl";
+    const imgSize = size === "large" ? "h-16 w-16" : "h-8 w-8";
+    
+    return (
+      <div className="flex items-center gap-3">
+        {schoolLogo ? (
+          <img 
+            src={schoolLogo} 
+            alt={schoolName} 
+            className={`${imgSize} object-contain rounded-lg`}
+          />
+        ) : (
+          <GraduationCap className={`${iconSize} text-white`} />
+        )}
+        <span className={`${textSize} font-bold text-white`}>{schoolName}</span>
+      </div>
+    );
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
@@ -172,10 +218,7 @@ const Auth = () => {
         </div>
         
         <header className="relative z-10 p-6 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <GraduationCap className="h-7 w-7 text-white" />
-            <span className="text-xl font-bold text-white">Escola Maranata</span>
-          </div>
+          <LogoDisplay size="small" />
         </header>
 
         <main className="relative z-10 flex-1 flex items-center justify-center p-6">
@@ -228,7 +271,7 @@ const Auth = () => {
         </main>
 
         <footer className="relative z-10 py-4 flex-shrink-0 text-center text-white/70 text-sm">
-          © {new Date().getFullYear()} Escola Maranata
+          © {new Date().getFullYear()} {schoolName}
         </footer>
       </div>
     );
@@ -245,10 +288,7 @@ const Auth = () => {
           <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-8 sm:p-10">
               <div className="flex justify-center mb-8">
-                <div className="flex items-center gap-4">
-                  <GraduationCap className="h-14 w-14 text-white" />
-                  <span className="text-3xl font-bold text-white">Escola Maranata</span>
-                </div>
+                <LogoDisplay size="large" />
               </div>
 
               <h1 className="text-white mb-6 text-center font-mono font-light text-lg mx-px">
@@ -333,6 +373,10 @@ const Auth = () => {
           </div>
         </div>
       </main>
+
+      <footer className="relative z-10 py-4 flex-shrink-0 text-center text-white/70 text-sm">
+        © {new Date().getFullYear()} {schoolName}
+      </footer>
     </div>
   );
 };
