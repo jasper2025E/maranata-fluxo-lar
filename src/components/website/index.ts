@@ -6,3 +6,4 @@ export { WebsiteEditorGallery } from "./WebsiteEditorGallery";
 export { WebsiteEditorTestimonials } from "./WebsiteEditorTestimonials";
 export { WebsitePreview } from "./WebsitePreview";
 export { PreMatriculaForm } from "./PreMatriculaForm";
+export { WebsiteThemeSelector } from "./WebsiteThemeSelector";
