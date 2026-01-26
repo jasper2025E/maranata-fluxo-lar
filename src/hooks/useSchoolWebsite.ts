@@ -101,7 +101,7 @@ export function useSchoolWebsite() {
         throw error;
       }
 
-      return data as SchoolWebsiteConfig | null;
+      return data as unknown as SchoolWebsiteConfig | null;
     },
     enabled: !!tenant?.id,
   });
@@ -123,7 +123,7 @@ export function useSchoolWebsiteBySlug(slug: string) {
         throw error;
       }
 
-      return data as SchoolWebsiteConfig | null;
+      return data as unknown as SchoolWebsiteConfig | null;
     },
     enabled: !!slug,
   });

@@ -8,3 +8,5 @@ export { WebsitePreview } from "./WebsitePreview";
 export { PreMatriculaForm } from "./PreMatriculaForm";
 export { WebsiteThemeSelector } from "./WebsiteThemeSelector";
 export { WebsiteThemeImportExport } from "./WebsiteThemeImportExport";
+export { WebsitePagesManager } from "./WebsitePagesManager";
+export { WebsiteBlockEditor } from "./WebsiteBlockEditor";
