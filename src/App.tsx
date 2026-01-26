@@ -50,6 +50,8 @@ import PlatformSubscriptions from "./pages/platform/PlatformSubscriptions";
 import PlatformLogs from "./pages/platform/PlatformLogs";
 // PlatformSettings foi consolidado em SystemProfile
 import PlatformSecurity from "./pages/platform/PlatformSecurity";
+import PlatformSecuritySettings from "./pages/platform/PlatformSecuritySettings";
+import PlatformNotifications from "./pages/platform/PlatformNotifications";
 import PlatformAnalytics from "./pages/platform/PlatformAnalytics";
 import PlatformPlans from "./pages/platform/PlatformPlans";
 import PlatformModules from "./pages/platform/PlatformModules";
@@ -327,6 +329,22 @@ function AppContent() {
             element={
               <ProtectedRoute platformOnly>
                 <PlatformSecurity />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/security-settings"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformSecuritySettings />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/platform/notifications"
+            element={
+              <ProtectedRoute platformOnly>
+                <PlatformNotifications />
               </ProtectedRoute>
             }
           />
