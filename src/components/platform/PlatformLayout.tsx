@@ -58,6 +58,8 @@ interface NavModule {
   icon: React.ElementType;
   label: string;
   path?: string;
+  iconColor?: string;
+  iconBg?: string;
   subItems?: NavSubItem[];
 }
 
@@ -72,7 +74,9 @@ const navigation: NavSection[] = [
     modules: [
       { 
         icon: Building2, 
-        label: "Escolas", 
+        label: "Escolas",
+        iconColor: "text-blue-600 dark:text-blue-400",
+        iconBg: "bg-blue-100 dark:bg-blue-900/30",
         subItems: [
           { label: "Todas as escolas", path: "/platform/tenants" },
           { label: "Adicionar escola", path: "/platform/tenants/new" },
@@ -80,7 +84,9 @@ const navigation: NavSection[] = [
       },
       { 
         icon: CreditCard, 
-        label: "Assinaturas", 
+        label: "Assinaturas",
+        iconColor: "text-emerald-600 dark:text-emerald-400",
+        iconBg: "bg-emerald-100 dark:bg-emerald-900/30",
         subItems: [
           { label: "Visão geral", path: "/platform/subscriptions" },
           { label: "Planos", path: "/platform/plans" },
@@ -88,7 +94,9 @@ const navigation: NavSection[] = [
       },
       { 
         icon: Users, 
-        label: "Usuários", 
+        label: "Usuários",
+        iconColor: "text-violet-600 dark:text-violet-400",
+        iconBg: "bg-violet-100 dark:bg-violet-900/30",
         subItems: [
           { label: "Todos os usuários", path: "/platform/users" },
           { label: "Gestores", path: "/platform/managers" },
@@ -102,17 +110,23 @@ const navigation: NavSection[] = [
     modules: [
       { 
         icon: Megaphone, 
-        label: "Comunicados", 
+        label: "Comunicados",
+        iconColor: "text-amber-600 dark:text-amber-400",
+        iconBg: "bg-amber-100 dark:bg-amber-900/30",
         path: "/platform/announcements"
       },
       { 
         icon: Rocket, 
-        label: "Roadmap", 
+        label: "Roadmap",
+        iconColor: "text-rose-600 dark:text-rose-400",
+        iconBg: "bg-rose-100 dark:bg-rose-900/30",
         path: "/platform/roadmap"
       },
       { 
         icon: Tag, 
-        label: "Changelog", 
+        label: "Changelog",
+        iconColor: "text-cyan-600 dark:text-cyan-400",
+        iconBg: "bg-cyan-100 dark:bg-cyan-900/30",
         path: "/platform/changelog"
       },
     ],
@@ -122,32 +136,44 @@ const navigation: NavSection[] = [
     modules: [
       { 
         icon: Activity, 
-        label: "Monitoramento", 
+        label: "Monitoramento",
+        iconColor: "text-green-600 dark:text-green-400",
+        iconBg: "bg-green-100 dark:bg-green-900/30",
         path: "/platform/monitoring"
       },
       { 
         icon: BarChart3, 
-        label: "Analytics", 
+        label: "Analytics",
+        iconColor: "text-indigo-600 dark:text-indigo-400",
+        iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
         path: "/platform/analytics"
       },
       { 
         icon: HardDrive, 
-        label: "Backups", 
+        label: "Backups",
+        iconColor: "text-slate-600 dark:text-slate-400",
+        iconBg: "bg-slate-100 dark:bg-slate-900/30",
         path: "/platform/backups"
       },
       { 
         icon: Shield, 
-        label: "Segurança", 
+        label: "Segurança",
+        iconColor: "text-red-600 dark:text-red-400",
+        iconBg: "bg-red-100 dark:bg-red-900/30",
         path: "/platform/security"
       },
       { 
         icon: FileText, 
-        label: "Logs", 
+        label: "Logs",
+        iconColor: "text-gray-600 dark:text-gray-400",
+        iconBg: "bg-gray-100 dark:bg-gray-900/30",
         path: "/platform/logs"
       },
       { 
         icon: Settings, 
-        label: "Configurações", 
+        label: "Configurações",
+        iconColor: "text-primary",
+        iconBg: "bg-primary/10",
         path: "/platform/settings"
       },
     ],
@@ -251,15 +277,19 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
             }
           }}
           className={cn(
-            "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+            "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group",
             moduleActive
               ? "bg-primary/10 text-primary font-medium"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
-          <module.icon className="h-4 w-4 shrink-0" />
+          <div className={cn(
+            "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+            moduleActive ? "bg-primary/15" : module.iconBg
+          )}>
+            <module.icon className={cn("h-4 w-4", moduleActive ? "text-primary" : module.iconColor)} />
+          </div>
           <span className="flex-1 text-left">{module.label}</span>
-          <ChevronRight className="h-4 w-4 opacity-40" />
         </button>
       );
     }
@@ -269,13 +299,18 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
         <button
           onClick={() => toggleModule(module.label)}
           className={cn(
-            "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+            "flex items-center gap-3 w-full px-3 py-2.5 rounded-xl text-sm transition-all duration-200 group",
             moduleActive
               ? "bg-primary/10 text-primary font-medium"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
-          <module.icon className="h-4 w-4 shrink-0" />
+          <div className={cn(
+            "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+            moduleActive ? "bg-primary/15" : module.iconBg
+          )}>
+            <module.icon className={cn("h-4 w-4", moduleActive ? "text-primary" : module.iconColor)} />
+          </div>
           <span className="flex-1 text-left">{module.label}</span>
           <motion.div
             animate={{ rotate: isExpanded ? 180 : 0 }}
@@ -293,7 +328,7 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
               transition={{ duration: 0.2, ease: "easeInOut" }}
               className="overflow-hidden"
             >
-              <div className="ml-7 mt-1 space-y-0.5 border-l-2 border-primary/20 pl-3 pb-1">
+              <div className="ml-11 mt-1.5 space-y-0.5 pb-2">
                 {module.subItems?.map((subItem, index) => (
                   <motion.button
                     key={subItem.path + subItem.label}
@@ -305,7 +340,7 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
                       setMobileMenuOpen(false);
                     }}
                     className={cn(
-                      "block w-full text-left px-3 py-2 text-sm rounded-md transition-all duration-200",
+                      "block w-full text-left px-3 py-2 text-sm rounded-lg transition-all duration-200",
                       isActive(subItem.path)
                         ? "text-primary font-medium bg-primary/5"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -362,28 +397,39 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
       </div>
 
       {/* Home Link */}
-      <div className="px-3 py-4 border-b border-border/50">
+      <div className="px-3 pt-4 pb-2">
         <button
           onClick={() => navigate("/platform")}
           className={cn(
-            "flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+            "flex items-center gap-3 w-full px-3 py-3 rounded-xl text-sm transition-all duration-200",
             location.pathname === "/platform"
-              ? "bg-gradient-to-r from-primary/15 via-primary/10 to-transparent text-primary font-medium border-l-2 border-primary"
+              ? "bg-gradient-to-r from-primary/15 via-primary/10 to-transparent text-primary font-medium"
               : "text-muted-foreground hover:text-foreground hover:bg-muted/50"
           )}
         >
-          <LayoutDashboard className="h-4 w-4" />
+          <div className={cn(
+            "h-8 w-8 rounded-lg flex items-center justify-center",
+            location.pathname === "/platform" ? "bg-primary/15" : "bg-muted"
+          )}>
+            <LayoutDashboard className={cn(
+              "h-4 w-4",
+              location.pathname === "/platform" ? "text-primary" : "text-muted-foreground"
+            )} />
+          </div>
           <span>Página inicial</span>
         </button>
       </div>
 
       {/* Navigation Modules */}
-      <nav className="flex-1 overflow-y-auto py-4 px-3">
-        {navigation.map((section) => (
+      <nav className="flex-1 overflow-y-auto py-2 px-3 space-y-6">
+        {navigation.map((section, sectionIndex) => (
           <div key={section.title}>
-            <p className="px-3 mb-3 text-xs font-semibold text-muted-foreground/70 uppercase tracking-wider">
-              {section.title}
-            </p>
+            <div className="flex items-center gap-2 px-3 mb-2">
+              <p className="text-[11px] font-semibold text-muted-foreground/60 uppercase tracking-widest">
+                {section.title}
+              </p>
+              <div className="flex-1 h-px bg-border/50" />
+            </div>
             <div className="space-y-1">
               {section.modules.map((module) => (
                 <NavModule key={module.label} module={module} />
