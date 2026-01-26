@@ -38,6 +38,7 @@ import { WebsiteEditorGallery } from "@/components/website/WebsiteEditorGallery"
 import { WebsiteEditorTestimonials } from "@/components/website/WebsiteEditorTestimonials";
 import { WebsitePreview } from "@/components/website/WebsitePreview";
 import { WebsiteThemeSelector } from "@/components/website/WebsiteThemeSelector";
+import { WebsiteThemeImportExport } from "@/components/website/WebsiteThemeImportExport";
 import { toast } from "sonner";
 
 export default function SiteEscolar() {
@@ -236,8 +237,9 @@ export default function SiteEscolar() {
                 </TabsTrigger>
               </TabsList>
 
-              <TabsContent value="themes">
+              <TabsContent value="themes" className="space-y-6">
                 <WebsiteThemeSelector config={website} />
+                <WebsiteThemeImportExport config={website} />
               </TabsContent>
 
               <TabsContent value="general">
