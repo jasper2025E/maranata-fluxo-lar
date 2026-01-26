@@ -34,7 +34,9 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   
   // Get dynamic system branding from platform settings
   const systemName = platformSettings?.platform_slug || "sistema";
-  const systemDomain = getSystemDomain(platformSettings?.platform_url);
+  const systemDomain = platformSettings?.system_domain 
+    ? getSystemDomain(platformSettings.system_domain) 
+    : getSystemDomain(platformSettings?.platform_url);
   
   // Derive status from config
   const getStatus = (): DomainStatus => {
@@ -46,8 +48,14 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   
   const status = getStatus();
   
-  // Use system domain dynamically
-  const defaultSubdomain = config.slug ? `https://${systemDomain}/escola/${config.slug}` : null;
+  // Use system domain dynamically for subdomain URLs
+  // If system_domain is configured, show subdomain format, otherwise show path format
+  const hasSystemDomain = platformSettings?.system_domain && platformSettings.system_domain.trim() !== "";
+  const defaultSubdomain = config.slug 
+    ? hasSystemDomain 
+      ? `https://${config.slug}.${systemDomain}` 
+      : `https://${systemDomain}/escola/${config.slug}` 
+    : null;
   
   const handleSaveDomain = () => {
     if (!customDomain) {

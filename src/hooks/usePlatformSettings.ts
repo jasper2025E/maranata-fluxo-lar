@@ -5,6 +5,9 @@ interface PlatformSettings {
   platform_name: string;
   platform_slug: string;
   platform_url: string;
+  system_domain: string;
+  system_domain_verified: boolean;
+  system_domain_ssl_status: "pending" | "active" | "error";
   support_email: string;
   max_schools: number;
   max_users_per_school: number;
@@ -20,6 +23,9 @@ const defaultSettings: PlatformSettings = {
   platform_name: "Sistema de Gestão",
   platform_slug: "sistema-gestao",
   platform_url: "",
+  system_domain: "",
+  system_domain_verified: false,
+  system_domain_ssl_status: "pending",
   support_email: "",
   max_schools: 100,
   max_users_per_school: 10,
