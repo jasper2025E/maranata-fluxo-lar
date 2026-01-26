@@ -445,124 +445,83 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
           </CardHeader>
           
           <CardContent className="space-y-6">
-            <Tabs defaultValue="records" className="w-full">
-              <TabsList className="grid w-full grid-cols-2 h-11">
-                <TabsTrigger value="records" className="gap-2 text-sm">
-                  <Server className="h-4 w-4" />
-                  Registros DNS
-                </TabsTrigger>
-                <TabsTrigger value="nameservers" className="gap-2 text-sm">
-                  <Globe className="h-4 w-4" />
-                  Nameservers
-                </TabsTrigger>
-              </TabsList>
+            {/* DNS Records - Primary Method */}
+            <div className="space-y-4">
+              <Alert className="bg-blue-500/5 border-blue-500/20">
+                <Info className="h-4 w-4 text-blue-600" />
+                <AlertDescription className="text-sm">
+                  Configure os registros abaixo no painel DNS do seu registrador 
+                  (GoDaddy, Registro.br, HostGator, Cloudflare, etc.)
+                </AlertDescription>
+              </Alert>
               
-              {/* DNS Records Tab */}
-              <TabsContent value="records" className="space-y-4 mt-4">
-                <Alert className="bg-blue-500/5 border-blue-500/20">
-                  <Info className="h-4 w-4 text-blue-600" />
-                  <AlertDescription className="text-sm">
-                    <strong>Recomendado:</strong> Use esta opção se você deseja manter outros serviços 
-                    (email, subdomínios) funcionando no mesmo domínio.
-                  </AlertDescription>
-                </Alert>
+              <div className="rounded-xl border bg-card overflow-hidden">
+                <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-muted/50 border-b text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  <div className="col-span-2">Tipo</div>
+                  <div className="col-span-3">Nome / Host</div>
+                  <div className="col-span-7">Valor / Aponta para</div>
+                </div>
                 
-                <div className="rounded-xl border bg-card overflow-hidden">
-                  <div className="grid grid-cols-12 gap-3 px-4 py-3 bg-muted/50 border-b text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                    <div className="col-span-2">Tipo</div>
-                    <div className="col-span-3">Nome / Host</div>
-                    <div className="col-span-7">Valor / Aponta para</div>
+                <div className="px-4 divide-y divide-border/50">
+                  <DNSRecordRow
+                    type="A"
+                    name="@"
+                    value={serverIP}
+                    description="Domínio raiz (obrigatório)"
+                    priority
+                  />
+                  
+                  <DNSRecordRow
+                    type="A"
+                    name="www"
+                    value={serverIP}
+                    description="Subdomínio www (recomendado)"
+                  />
+                  
+                  <DNSRecordRow
+                    type="TXT"
+                    name={`_${systemName}`}
+                    value={`${systemName}_verify=${config.slug}`}
+                    description="Verificação de propriedade"
+                  />
+                </div>
+              </div>
+              
+              <Collapsible className="rounded-xl border bg-muted/20">
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 text-left hover:bg-muted/30 transition-colors rounded-xl">
+                  <div className="flex items-center gap-2">
+                    <Info className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Como configurar no seu registrador</span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="px-4 pb-4 space-y-3">
+                  <div className="space-y-2 text-sm text-muted-foreground">
+                    <p><strong className="text-foreground">GoDaddy:</strong> Domínios → Gerenciar DNS → Adicionar Registro</p>
+                    <p><strong className="text-foreground">Registro.br:</strong> Domínio → Editar zona → Adicionar registro</p>
+                    <p><strong className="text-foreground">HostGator:</strong> Meus Domínios → Gerenciar DNS → Adicionar</p>
+                    <p><strong className="text-foreground">Cloudflare:</strong> DNS → Registros → Adicionar registro (desative proxy laranja)</p>
+                    <p><strong className="text-foreground">Locaweb:</strong> Painel → Domínios → Zona DNS → Adicionar</p>
                   </div>
                   
-                  <div className="px-4 divide-y divide-border/50">
-                    <DNSRecordRow
-                      type="A"
-                      name="@"
-                      value={serverIP}
-                      description="Domínio raiz"
-                      priority
-                    />
-                    
-                    <DNSRecordRow
-                      type="A"
-                      name="www"
-                      value={serverIP}
-                      description="Subdomínio www"
-                    />
-                    
-                    <DNSRecordRow
-                      type="CNAME"
-                      name="www"
-                      value={config.custom_domain}
-                      description="Alternativa ao A record para www"
-                    />
-                    
-                    <DNSRecordRow
-                      type="TXT"
-                      name={`_${systemName}`}
-                      value={`${systemName}_verify=${config.slug}`}
-                      description="Verificação de propriedade"
-                    />
-                  </div>
-                </div>
-                
-                <div className="text-xs text-muted-foreground p-3 bg-muted/30 rounded-lg">
-                  <strong>Dica:</strong> Use A record para @ e www. O CNAME para www é uma alternativa 
-                  se seu registrador não permitir A record para subdomínios.
-                </div>
-              </TabsContent>
+                  <Alert className="bg-amber-500/5 border-amber-500/20">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="text-sm">
+                      <strong>Importante:</strong> Remova registros A ou CNAME existentes 
+                      para @ e www antes de adicionar os novos, para evitar conflitos.
+                    </AlertDescription>
+                  </Alert>
+                </CollapsibleContent>
+              </Collapsible>
               
-              {/* Nameservers Tab */}
-              <TabsContent value="nameservers" className="space-y-4 mt-4">
-                <Alert className="bg-amber-500/5 border-amber-500/20">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <AlertDescription className="text-sm">
-                    <strong>Configuração avançada:</strong> Use apenas se quiser delegar 
-                    o controle total do DNS para nossa plataforma.
-                  </AlertDescription>
-                </Alert>
-                
-                <div className="space-y-3">
-                  <Label className="text-sm font-medium">Nameservers Personalizados</Label>
-                  <p className="text-sm text-muted-foreground">
-                    No painel do seu registrador, selecione <strong>"Usar meus próprios nameservers"</strong> e adicione:
-                  </p>
-                  
-                  <div className="space-y-2 mt-4">
-                    {nameservers.map((ns, index) => (
-                      <NameserverRow key={ns} number={index + 1} value={ns} />
-                    ))}
-                  </div>
-                </div>
-                
-                <Collapsible className="rounded-xl border bg-muted/20">
-                  <CollapsibleTrigger className="flex items-center justify-between w-full p-4 text-left hover:bg-muted/30 transition-colors rounded-xl">
-                    <div className="flex items-center gap-2">
-                      <Info className="h-4 w-4 text-muted-foreground" />
-                      <span className="text-sm font-medium">Como configurar no seu registrador</span>
-                    </div>
-                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
-                  </CollapsibleTrigger>
-                  <CollapsibleContent className="px-4 pb-4 space-y-3">
-                    <div className="space-y-2 text-sm text-muted-foreground">
-                      <p><strong className="text-foreground">GoDaddy:</strong> Domínios → Gerenciar DNS → Nameservers → Alterar</p>
-                      <p><strong className="text-foreground">Registro.br:</strong> Domínio → Alterar Servidores DNS</p>
-                      <p><strong className="text-foreground">HostGator:</strong> Meus Domínios → Gerenciar → Servidores de Nome</p>
-                      <p><strong className="text-foreground">Locaweb:</strong> Painel → Domínios → Configurar DNS</p>
-                    </div>
-                    
-                    <Alert className="bg-red-500/5 border-red-500/20">
-                      <AlertCircle className="h-4 w-4 text-red-600" />
-                      <AlertDescription className="text-sm">
-                        <strong>Atenção:</strong> Ao usar nameservers personalizados, 
-                        todo o controle DNS é transferido. Emails e outros serviços 
-                        precisarão ser reconfigurados.
-                      </AlertDescription>
-                    </Alert>
-                  </CollapsibleContent>
-                </Collapsible>
-              </TabsContent>
-            </Tabs>
+              <div className="text-xs text-muted-foreground p-3 bg-muted/30 rounded-lg flex items-start gap-2">
+                <Zap className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                <span>
+                  <strong>Dica:</strong> Se estiver usando Cloudflare, desative o proxy (ícone laranja) 
+                  para os registros A apontarem diretamente para nosso servidor.
+                </span>
+              </div>
+            </div>
 
             {/* Status Indicators */}
             <div className="grid grid-cols-2 gap-3 pt-2">
