@@ -6,41 +6,49 @@ const integrations = [
     name: "Asaas",
     category: "Pagamentos",
     logo: "💳",
+    description: "Boleto, PIX e Cartão",
   },
   {
     name: "Stripe",
     category: "Pagamentos",
     logo: "💰",
+    description: "Cartão internacional",
+  },
+  {
+    name: "Email SMTP",
+    category: "Comunicação",
+    logo: "📧",
+    description: "Envio de cobranças",
   },
   {
     name: "WhatsApp",
     category: "Comunicação",
     logo: "📱",
-  },
-  {
-    name: "Google Workspace",
-    category: "Produtividade",
-    logo: "📧",
-  },
-  {
-    name: "Contabilizei",
-    category: "Contabilidade",
-    logo: "📊",
+    description: "Notificações (em breve)",
   },
   {
     name: "eSocial",
     category: "Governo",
     logo: "🏛️",
+    description: "Folha de pagamento",
+  },
+  {
+    name: "Contador",
+    category: "Contabilidade",
+    logo: "📊",
+    description: "Exportação DRE",
   },
   {
     name: "Zapier",
     category: "Automação",
     logo: "⚡",
+    description: "Conecte +5000 apps",
   },
   {
     name: "API REST",
     category: "Desenvolvimento",
     logo: "🔌",
+    description: "Integração customizada",
   },
 ];
 
@@ -79,12 +87,15 @@ export function InstitucionalIntegracoes() {
               transition={{ duration: 0.4, delay: index * 0.05 }}
               className="group p-6 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg transition-all duration-300 text-center"
             >
-              <div className="text-4xl mb-4">{integration.logo}</div>
+              <div className="text-4xl mb-3">{integration.logo}</div>
               <h4 className="font-semibold text-foreground mb-1">
                 {integration.name}
               </h4>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground mb-1">
                 {integration.category}
+              </p>
+              <p className="text-xs text-primary">
+                {integration.description}
               </p>
             </motion.div>
           ))}
