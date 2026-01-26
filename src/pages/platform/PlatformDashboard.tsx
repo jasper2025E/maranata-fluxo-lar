@@ -27,6 +27,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import PlatformLayout from "@/components/platform/PlatformLayout";
 import { formatCurrency } from "@/lib/formatters";
 import { getRandomVerse, type BibleVerse } from "@/lib/biblicalVerses";
+import { getGreeting, getFirstName } from "@/lib/greetings";
 
 interface Tenant {
   id: string;
@@ -185,7 +186,9 @@ export default function PlatformDashboard() {
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-5 w-5 text-primary" />
-              <span className="text-sm font-medium text-primary">Painel do Gestor</span>
+              <span className="text-sm font-medium text-primary">
+                {getGreeting()}{user?.user_metadata?.nome ? `, ${getFirstName(user.user_metadata.nome)}` : ""}! ✨
+              </span>
             </div>
             <h1 className="text-xl md:text-2xl font-medium text-foreground italic leading-relaxed max-w-2xl">
               "{verse.text}"
