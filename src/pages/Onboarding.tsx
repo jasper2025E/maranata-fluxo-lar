@@ -383,85 +383,110 @@ export default function Onboarding() {
             )}
 
             {/* Step 2: Plan Selection */}
-            {step === 2 && <motion.div key="step2" initial={{
-            opacity: 0,
-            x: 20
-          }} animate={{
-            opacity: 1,
-            x: 0
-          }} exit={{
-            opacity: 0,
-            x: -20
-          }}>
-                <div className="text-center mb-6">
-                  <h2 className="text-2xl font-bold text-slate-900 mb-2">
-                    Escolha seu Plano
-                  </h2>
-                  <p className="text-slate-600">
-                    Todos os planos incluem 14 dias de teste grátis
-                  </p>
+            {step === 2 && (
+              <motion.div 
+                key="step2" 
+                initial={{ opacity: 0, y: 8 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2 }}
+              >
+                {/* Shopify-style card */}
+                <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
+                  {/* Card header */}
+                  <div className="px-5 py-4">
+                    <h2 className="text-base font-semibold text-foreground">
+                      Escolha seu plano
+                    </h2>
+                    <p className="text-sm text-muted-foreground mt-0.5">
+                      Todos os planos incluem 14 dias de teste grátis
+                    </p>
+                  </div>
+
+                  {/* Card body */}
+                  <div className="p-5 pt-0">
+                    {plansLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {plans.map(plan => {
+                          const isSelected = selectedPlan === plan.id;
+                          return (
+                            <div 
+                              key={plan.id} 
+                              className={`relative rounded-lg border p-4 cursor-pointer transition-all ${
+                                isSelected 
+                                  ? "border-primary bg-primary/5" 
+                                  : "border-border hover:border-foreground/20"
+                              }`} 
+                              onClick={() => setSelectedPlan(plan.id)}
+                            >
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  {/* Radio indicator */}
+                                  <div className={`h-4 w-4 rounded-full border-2 flex items-center justify-center shrink-0 transition-colors ${
+                                    isSelected 
+                                      ? "border-primary bg-primary" 
+                                      : "border-muted-foreground/30"
+                                  }`}>
+                                    {isSelected && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+                                  </div>
+                                  
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-foreground">{plan.name}</span>
+                                      {plan.popular && (
+                                        <span className="text-xs font-medium text-primary">
+                                          Popular
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
+                                      <span>
+                                        {plan.limite_alunos ? `Até ${plan.limite_alunos} alunos` : "Alunos ilimitados"}
+                                      </span>
+                                      <span className="text-border">•</span>
+                                      <span>
+                                        {plan.limite_usuarios ? `Até ${plan.limite_usuarios} usuários` : "Usuários ilimitados"}
+                                      </span>
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div className="text-right">
+                                  <span className="font-semibold text-foreground">
+                                    {formatPrice(plan.price)}
+                                  </span>
+                                  <span className="text-sm text-muted-foreground">/mês</span>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card footer */}
+                  <div className="px-5 py-4 bg-muted/30 border-t border-border flex gap-3">
+                    <Button variant="outline" onClick={() => setStep(1)} className="h-10">
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Voltar
+                    </Button>
+                    <Button onClick={handleNextStep} className="flex-1 h-10">
+                      Continuar
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
 
-                {plansLoading ? <div className="flex items-center justify-center py-12">
-                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div> : <div className="space-y-4">
-                    {plans.map(plan => {
-                const IconComponent = iconMap[plan.icon] || Zap;
-                const isSelected = selectedPlan === plan.id;
-                return <div key={plan.id} className={`bg-white rounded-xl border p-4 cursor-pointer transition-all hover:shadow-md ${isSelected ? "ring-2 ring-primary border-primary shadow-md" : "border-slate-200 hover:border-primary/50"}`} onClick={() => setSelectedPlan(plan.id)}>
-                          <div className="flex items-start gap-4">
-                            <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center shrink-0`}>
-                              <IconComponent className="h-6 w-6 text-white" />
-                            </div>
-                            
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-slate-900">{plan.name}</h3>
-                                {plan.popular && <Badge variant="secondary" className="text-xs">
-                                    Popular
-                                  </Badge>}
-                              </div>
-                              
-                              <div className="flex items-baseline gap-1 mb-2">
-                                <span className="text-2xl font-bold text-slate-900">
-                                  {formatPrice(plan.price)}
-                                </span>
-                                <span className="text-slate-500 text-sm">/mês</span>
-                              </div>
-                              
-                              <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-slate-500">
-                                <span>
-                                  {plan.limite_alunos ? `Até ${plan.limite_alunos} alunos` : "Alunos ilimitados"}
-                                </span>
-                                <span>
-                                  {plan.limite_usuarios ? `Até ${plan.limite_usuarios} usuários` : "Usuários ilimitados"}
-                                </span>
-                              </div>
-                            </div>
-                            
-                            <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? "border-primary bg-primary" : "border-slate-300"}`}>
-                              {isSelected && <Check className="h-4 w-4 text-white" />}
-                            </div>
-                          </div>
-                        </div>;
-              })}
-                  </div>}
-
-                <div className="flex gap-3 mt-6">
-                  <Button variant="outline" onClick={() => setStep(1)}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Voltar
-                  </Button>
-                  <Button onClick={handleNextStep} className="flex-1">
-                    Continuar
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                </div>
-
-                <p className="text-center text-xs text-slate-500 mt-4">
+                <p className="text-center text-sm text-muted-foreground mt-6">
                   Você pode mudar de plano a qualquer momento
                 </p>
-              </motion.div>}
+              </motion.div>
+            )}
 
             {/* Step 3: Admin Info */}
             {step === 3 && <motion.div key="step3" initial={{
