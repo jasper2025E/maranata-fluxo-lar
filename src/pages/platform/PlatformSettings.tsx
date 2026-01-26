@@ -9,7 +9,8 @@ import {
   Database,
   Zap,
   Mail,
-  CreditCard
+  CreditCard,
+  Link2
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -20,7 +21,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
+import { PlatformDomainManager } from "@/components/platform/PlatformDomainManager";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 interface PlatformConfig {
   platform_name: string;
@@ -52,9 +56,11 @@ const defaultConfig: PlatformConfig = {
 
 export default function PlatformSettings() {
   const { isPlatformAdmin } = useAuth();
+  const { data: platformSettings, refetch: refetchPlatformSettings } = usePlatformSettings();
   const [config, setConfig] = useState<PlatformConfig>(defaultConfig);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState("general");
 
   useEffect(() => {
     if (isPlatformAdmin()) {
@@ -183,6 +189,20 @@ export default function PlatformSettings() {
             <RefreshCw className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList>
+              <TabsTrigger value="general" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Geral
+              </TabsTrigger>
+              <TabsTrigger value="domains" className="flex items-center gap-2">
+                <Link2 className="h-4 w-4" />
+                Domínios
+              </TabsTrigger>
+            </TabsList>
+
+            {/* General Settings Tab */}
+            <TabsContent value="general" className="space-y-6">
           <div className="grid gap-6 md:grid-cols-2">
             {/* General Settings */}
             <Card>
@@ -358,6 +378,16 @@ export default function PlatformSettings() {
               </CardContent>
             </Card>
           </div>
+            </TabsContent>
+
+            {/* Domains Tab */}
+            <TabsContent value="domains">
+              <PlatformDomainManager 
+                platformSlug={platformSettings?.platform_slug || "sistema"} 
+                onSave={() => refetchPlatformSettings()}
+              />
+            </TabsContent>
+          </Tabs>
         )}
       </div>
     </PlatformLayout>

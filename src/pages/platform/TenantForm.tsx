@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Building2, Save } from "lucide-react";
+import { ArrowLeft, Building2, Save, Globe, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { toast } from "sonner";
 import PlatformLayout from "@/components/platform/PlatformLayout";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import { generateSlugFromName, isValidSubdomainSlug } from "@/lib/subdomain";
 
-interface TenantForm {
+interface TenantFormData {
   nome: string;
   cnpj: string;
   email: string;
@@ -33,10 +36,11 @@ export default function TenantForm() {
   const navigate = useNavigate();
   const { id } = useParams();
   const { isPlatformAdmin } = useAuth();
+  const { data: platformSettings } = usePlatformSettings();
   const isEditing = Boolean(id);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState<TenantForm>({
+  const [form, setForm] = useState<TenantFormData>({
     nome: "",
     cnpj: "",
     email: "",
@@ -47,6 +51,16 @@ export default function TenantForm() {
     limite_alunos: 100,
     limite_usuarios: 5,
   });
+
+  // Generate automatic subdomain slug from school name
+  const generatedSlug = useMemo(() => {
+    return generateSlugFromName(form.nome);
+  }, [form.nome]);
+
+  // Get system domain for preview
+  const systemDomain = platformSettings?.system_domain || platformSettings?.platform_url || "";
+  const cleanDomain = systemDomain.replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const previewSubdomain = generatedSlug && cleanDomain ? `${generatedSlug}.${cleanDomain}` : null;
 
   useEffect(() => {
     if (!isPlatformAdmin()) {
@@ -207,6 +221,35 @@ export default function TenantForm() {
                   />
                 </div>
               </div>
+
+              {/* Subdomain Preview Card */}
+              {form.nome && (
+                <div className="p-4 border rounded-lg bg-muted/30 space-y-2">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Globe className="h-4 w-4 text-primary" />
+                    Subdomínio Automático
+                  </div>
+                  {previewSubdomain ? (
+                    <div className="flex items-center gap-2">
+                      <code className="px-3 py-1.5 rounded bg-background text-primary font-medium">
+                        {previewSubdomain}
+                      </code>
+                      {generatedSlug && !isValidSubdomainSlug(generatedSlug) && (
+                        <span className="text-xs text-amber-600">
+                          (slug será ajustado automaticamente)
+                        </span>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Configure o domínio do sistema em Configurações para habilitar subdomínios automáticos.
+                    </p>
+                  )}
+                  <p className="text-xs text-muted-foreground">
+                    A escola terá este endereço gratuito assim que for cadastrada.
+                  </p>
+                </div>
+              )}
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
