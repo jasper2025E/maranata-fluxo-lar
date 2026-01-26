@@ -22,7 +22,8 @@ import {
   FileText,
   MoreHorizontal,
   FolderOpen,
-  Sparkles
+  Sparkles,
+  User
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -254,6 +255,10 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuItem onClick={() => navigate("/platform/profile")}>
+              <User className="h-4 w-4 mr-2" />
+              Meu Perfil
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={() => navigate("/platform/settings")}>
               <Settings className="h-4 w-4 mr-2" />
               Configurações
@@ -424,6 +429,10 @@ export default function PlatformLayout({ children }: PlatformLayoutProps) {
                   <p className="text-xs text-muted-foreground">Gestor da Plataforma</p>
                 </div>
                 <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => navigate("/platform/profile")}>
+                  <User className="h-4 w-4 mr-2" />
+                  Meu Perfil
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => navigate("/platform/settings")}>
                   <Settings className="h-4 w-4 mr-2" />
                   Configurações
