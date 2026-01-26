@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 interface PlatformSettings {
   platform_name: string;
   platform_slug: string;
+  platform_url: string;
   support_email: string;
   max_schools: number;
   max_users_per_school: number;
@@ -18,6 +19,7 @@ interface PlatformSettings {
 const defaultSettings: PlatformSettings = {
   platform_name: "Sistema de Gestão",
   platform_slug: "sistema-gestao",
+  platform_url: "",
   support_email: "",
   max_schools: 100,
   max_users_per_school: 10,
@@ -86,5 +88,6 @@ export function usePlatformName() {
   return {
     name: data?.platform_name || defaultSettings.platform_name,
     slug: data?.platform_slug || defaultSettings.platform_slug,
+    url: data?.platform_url || "",
   };
 }
