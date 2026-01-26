@@ -283,15 +283,27 @@ export default function Onboarding() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
               >
-                {/* Trial banner */}
-                <div className="mb-6 p-4 bg-card rounded-lg border border-border shadow-sm">
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center justify-center h-10 w-10 rounded-full bg-green-100 dark:bg-green-900/30">
-                      <Gift className="h-5 w-5 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">14 dias grátis para testar</p>
-                      <p className="text-xs text-muted-foreground">Sem compromisso. Cancele a qualquer momento.</p>
+                {/* Trial banner - premium style */}
+                <div className="mb-6 relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 p-[1px]">
+                  <div className="relative bg-card rounded-[11px] p-4">
+                    <div className="flex items-center gap-4">
+                      <div className="relative">
+                        <div className="absolute inset-0 bg-emerald-500/20 rounded-xl blur-lg" />
+                        <div className="relative flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
+                          <Sparkles className="h-6 w-6 text-white" />
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-base font-semibold text-foreground">14 dias grátis</p>
+                          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full">
+                            Trial
+                          </span>
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-0.5">
+                          Acesso completo a todos os recursos. Cancele quando quiser.
+                        </p>
+                      </div>
                     </div>
                   </div>
                 </div>
