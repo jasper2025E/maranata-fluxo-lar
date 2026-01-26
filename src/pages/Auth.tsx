@@ -5,18 +5,39 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff, BookOpen, ShieldCheck, ArrowLeft } from "lucide-react";
+import { 
+  Loader2, 
+  Eye, 
+  EyeOff, 
+  ShieldCheck, 
+  ArrowLeft,
+  GraduationCap,
+  Users,
+  BarChart3,
+  CreditCard,
+  Shield,
+  CheckCircle2
+} from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { AuthError } from "@supabase/supabase-js";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres")
 });
 
+const features = [
+  { icon: GraduationCap, title: "Gestão Escolar Completa", description: "Alunos, turmas, cursos e matrículas" },
+  { icon: CreditCard, title: "Financeiro Integrado", description: "Faturas, cobranças e relatórios" },
+  { icon: Users, title: "RH e Funcionários", description: "Folha de pagamento e ponto eletrônico" },
+  { icon: BarChart3, title: "Relatórios Avançados", description: "Dashboards e projeções financeiras" },
+  { icon: Shield, title: "Segurança Total", description: "Multi-tenant com isolamento de dados" },
+];
+
 const Auth = () => {
   const navigate = useNavigate();
+  const { data: platformSettings, isLoading: platformLoading } = usePlatformSettings();
   const {
     user,
     signIn,
@@ -31,10 +52,6 @@ const Auth = () => {
     email?: string;
     password?: string;
   }>({});
-  const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  const [escolaNome, setEscolaNome] = useState("Escola");
-  const [logoLoaded, setLogoLoaded] = useState(false);
-  const [escolaLoading, setEscolaLoading] = useState(true);
   
   // MFA state
   const [mfaRequired, setMfaRequired] = useState(false);
@@ -42,21 +59,8 @@ const Auth = () => {
   const [mfaCode, setMfaCode] = useState("");
   const [mfaVerifying, setMfaVerifying] = useState(false);
 
-  // Fetch escola info using secure RPC function
-  useEffect(() => {
-    const fetchEscola = async () => {
-      try {
-        const { data, error } = await supabase.rpc("get_escola_public_info");
-        if (!error && data && data.length > 0) {
-          setEscolaNome(data[0].nome);
-          setLogoUrl(data[0].logo_url);
-        }
-      } finally {
-        setEscolaLoading(false);
-      }
-    };
-    fetchEscola();
-  }, []);
+  // Platform branding
+  const platformName = platformSettings?.platform_name || "Sistema de Gestão";
 
   // Redirect if already authenticated - route based on role
   useEffect(() => {
@@ -68,6 +72,7 @@ const Auth = () => {
       }
     }
   }, [user, authLoading, isPlatformAdmin, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -106,7 +111,6 @@ const Auth = () => {
 
       // Check if MFA is required
       if (data.session === null && data.user === null) {
-        // This shouldn't happen with current Supabase, but handle just in case
         toast.error("Erro inesperado no login");
         return;
       }
@@ -130,7 +134,7 @@ const Auth = () => {
       }
 
       toast.success("Login realizado com sucesso!");
-      navigate("/dashboard");
+      // Redirect based on role will happen via useEffect
     } catch (error: any) {
       toast.error("Erro inesperado ao fazer login");
     } finally {
@@ -163,7 +167,7 @@ const Auth = () => {
       if (verifyError) throw verifyError;
 
       toast.success("Login realizado com sucesso!");
-      navigate("/dashboard");
+      // Redirect will happen via useEffect
     } catch (error: any) {
       console.error("MFA verification error:", error);
       if (error.message?.includes("Invalid")) {
@@ -184,32 +188,30 @@ const Auth = () => {
     setMfaCode("");
     setPassword("");
   };
-  if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-100 via-pink-50 to-blue-100">
-        <Loader2 className="h-8 w-8 animate-spin text-violet-600" />
-      </div>;
+
+  if (authLoading || platformLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/5 via-background to-primary/10">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
+
   // MFA Verification Screen
   if (mfaRequired) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-violet-50 to-pink-50" />
-        <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-gradient-to-br from-violet-400/40 to-blue-400/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/4 animate-pulse" />
-        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gradient-to-tl from-pink-300/50 to-violet-300/40 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
-
-        <div className="relative w-full max-w-md">
-          <div className="absolute inset-0 bg-gradient-to-br from-pink-100/80 via-violet-100/60 to-white/80 rounded-3xl blur-xl" />
-          
-          <div className="relative bg-gradient-to-br from-pink-50/90 via-white/95 to-violet-50/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 p-8 md:p-10">
+      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 via-background to-primary/10">
+        <div className="w-full max-w-md">
+          <div className="bg-card rounded-2xl shadow-xl border p-8">
             <div className="flex justify-center mb-6">
-              <div className="p-4 rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-pink-500 shadow-lg">
-                <ShieldCheck className="h-10 w-10 text-white" />
+              <div className="p-4 rounded-full bg-primary/10">
+                <ShieldCheck className="h-10 w-10 text-primary" />
               </div>
             </div>
 
             <div className="text-center mb-8">
-              <h1 className="text-2xl font-bold text-gray-900 mb-2">Verificação em Duas Etapas</h1>
-              <p className="text-gray-600 text-sm">
+              <h1 className="text-2xl font-bold text-foreground mb-2">Verificação em Duas Etapas</h1>
+              <p className="text-muted-foreground text-sm">
                 Digite o código de 6 dígitos do seu app autenticador
               </p>
             </div>
@@ -224,7 +226,7 @@ const Auth = () => {
                   value={mfaCode}
                   onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                   placeholder="000000"
-                  className="text-center text-3xl tracking-[0.75em] font-mono h-16 bg-white/80 border-gray-200 rounded-xl"
+                  className="text-center text-3xl tracking-[0.75em] font-mono h-16"
                   maxLength={6}
                   autoFocus
                   autoComplete="one-time-code"
@@ -236,7 +238,7 @@ const Auth = () => {
               <Button 
                 type="submit" 
                 disabled={mfaVerifying || mfaCode.length !== 6}
-                className="w-full h-12 bg-gradient-to-r from-violet-500 via-purple-500 to-violet-600 hover:from-violet-600 hover:via-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/30"
+                className="w-full h-12"
               >
                 {mfaVerifying ? (
                   <>
@@ -251,7 +253,7 @@ const Auth = () => {
               <Button 
                 type="button"
                 variant="ghost" 
-                className="w-full text-gray-600"
+                className="w-full"
                 onClick={handleBackToLogin}
                 disabled={mfaVerifying}
               >
@@ -260,7 +262,7 @@ const Auth = () => {
               </Button>
             </form>
 
-            <p className="mt-6 text-xs text-center text-gray-500">
+            <p className="mt-6 text-xs text-center text-muted-foreground">
               Abra seu app autenticador (Google Authenticator, Authy, etc.) 
               e digite o código exibido.
             </p>
@@ -270,89 +272,165 @@ const Auth = () => {
     );
   }
 
-  return <div className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-slate-100 via-violet-50 to-pink-50" />
-      
-      {/* Floating gradient blobs */}
-      <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-gradient-to-br from-violet-400/40 to-blue-400/30 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/4 animate-pulse" />
-      <div className="absolute bottom-0 right-0 w-[600px] h-[600px] bg-gradient-to-tl from-pink-300/50 to-violet-300/40 rounded-full blur-3xl translate-x-1/4 translate-y-1/4" />
-      <div className="absolute top-1/2 right-1/4 w-[300px] h-[300px] bg-gradient-to-l from-pink-200/60 to-purple-200/40 rounded-full blur-2xl" />
+  return (
+    <div className="min-h-screen flex">
+      {/* Left Side - Platform Presentation */}
+      <div className="hidden lg:flex lg:w-1/2 xl:w-[55%] bg-gradient-to-br from-primary via-primary/90 to-primary/80 text-primary-foreground p-12 flex-col justify-between relative overflow-hidden">
+        {/* Background decorations */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-1/4 -left-1/4 w-[600px] h-[600px] bg-white/5 rounded-full blur-3xl" />
+          <div className="absolute -bottom-1/4 -right-1/4 w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] bg-white/5 rounded-full blur-2xl" />
+        </div>
 
-      {/* Login Card */}
-      <div className="relative w-full max-w-md">
-        <div className="absolute inset-0 bg-gradient-to-br from-pink-100/80 via-violet-100/60 to-white/80 rounded-3xl blur-xl" />
-        
-        <div className="relative bg-gradient-to-br from-pink-50/90 via-white/95 to-violet-50/90 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/60 p-8 md:p-10">
-          {/* Logo */}
-          <div className="flex justify-center mb-6">
-            {escolaLoading ? (
-              <div className="h-28 w-28 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse border-4 border-white shadow-lg" />
-            ) : logoUrl ? (
-              <div className="relative h-28 w-28">
-                {!logoLoaded && (
-                  <div className="absolute inset-0 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse border-4 border-white" />
-                )}
-                <img 
-                  src={logoUrl} 
-                  alt={escolaNome} 
-                  className={`h-28 w-28 object-contain rounded-full shadow-lg border-4 border-white transition-opacity duration-300 ${logoLoaded ? 'opacity-100' : 'opacity-0'}`}
-                  onLoad={() => setLogoLoaded(true)}
-                  loading="eager"
-                />
-              </div>
-            ) : (
-              <div className="h-28 w-28 rounded-full bg-gradient-to-br from-violet-600 via-purple-600 to-pink-500 flex items-center justify-center shadow-lg border-4 border-white">
-                <BookOpen className="h-14 w-14 text-white" />
-              </div>
-            )}
+        {/* Content */}
+        <div className="relative z-10">
+          {/* Logo/Brand */}
+          <div className="flex items-center gap-3 mb-16">
+            <div className="h-12 w-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <GraduationCap className="h-7 w-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">{platformName}</h1>
+              <p className="text-sm text-primary-foreground/70">Gestão Escolar Inteligente</p>
+            </div>
           </div>
 
-          {/* Title */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Bem-vindo</h1>
-            <p className="text-gray-600">Entre com email e senha</p>
+          {/* Main Headline */}
+          <div className="mb-12">
+            <h2 className="text-4xl xl:text-5xl font-bold leading-tight mb-6">
+              Simplifique a gestão<br />
+              <span className="text-primary-foreground/80">da sua escola</span>
+            </h2>
+            <p className="text-lg text-primary-foreground/70 max-w-md">
+              Uma plataforma completa para gerenciar alunos, finanças, RH e muito mais. 
+              Tudo em um só lugar.
+            </p>
           </div>
 
-          {/* Form */}
+          {/* Features */}
+          <div className="space-y-4">
+            {features.map((feature, index) => (
+              <div 
+                key={index} 
+                className="flex items-start gap-4 p-4 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10 hover:bg-white/15 transition-colors"
+              >
+                <div className="h-10 w-10 rounded-lg bg-white/20 flex items-center justify-center shrink-0">
+                  <feature.icon className="h-5 w-5" />
+                </div>
+                <div>
+                  <h3 className="font-semibold mb-1">{feature.title}</h3>
+                  <p className="text-sm text-primary-foreground/70">{feature.description}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="relative z-10 flex items-center gap-2 text-sm text-primary-foreground/60">
+          <CheckCircle2 className="h-4 w-4" />
+          <span>Dados protegidos com criptografia de ponta a ponta</span>
+        </div>
+      </div>
+
+      {/* Right Side - Login Form */}
+      <div className="w-full lg:w-1/2 xl:w-[45%] flex items-center justify-center p-6 sm:p-12 bg-background">
+        <div className="w-full max-w-md">
+          {/* Mobile Logo */}
+          <div className="lg:hidden flex items-center justify-center gap-3 mb-10">
+            <div className="h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
+              <GraduationCap className="h-7 w-7 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold text-foreground">{platformName}</h1>
+              <p className="text-xs text-muted-foreground">Gestão Escolar</p>
+            </div>
+          </div>
+
+          {/* Welcome Text */}
+          <div className="text-center lg:text-left mb-8">
+            <h2 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
+              Bem-vindo de volta
+            </h2>
+            <p className="text-muted-foreground">
+              Entre com suas credenciais para acessar o sistema
+            </p>
+          </div>
+
+          {/* Login Form */}
           <form onSubmit={handleLogin} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-700 font-medium">
+              <Label htmlFor="email" className="text-foreground font-medium">
                 Email
               </Label>
-              <Input id="email" type="email" placeholder="Digite seu email" value={email} onChange={e => setEmail(e.target.value)} className={`h-12 bg-white/80 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
-              {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="seu@email.com" 
+                value={email} 
+                onChange={e => setEmail(e.target.value)} 
+                className={`h-12 ${errors.email ? "border-destructive" : ""}`} 
+                disabled={loading} 
+                autoComplete="email" 
+              />
+              {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-700 font-medium">
+              <Label htmlFor="password" className="text-foreground font-medium">
                 Senha
               </Label>
               <div className="relative">
-                <Input id="password" type={showPassword ? "text" : "password"} placeholder="Digite sua senha" value={password} onChange={e => setPassword(e.target.value)} className={`h-12 bg-white/80 border-gray-200 rounded-xl focus:ring-2 focus:ring-violet-400 focus:border-violet-400 pr-12 ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
-                <Button type="button" variant="ghost" size="icon" className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-transparent" onClick={() => setShowPassword(!showPassword)}>
+                <Input 
+                  id="password" 
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="••••••••" 
+                  value={password} 
+                  onChange={e => setPassword(e.target.value)} 
+                  className={`h-12 pr-12 ${errors.password ? "border-destructive" : ""}`} 
+                  disabled={loading} 
+                  autoComplete="current-password" 
+                />
+                <Button 
+                  type="button" 
+                  variant="ghost" 
+                  size="icon" 
+                  className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-muted-foreground hover:text-foreground" 
+                  onClick={() => setShowPassword(!showPassword)}
+                >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
               </div>
-              {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+              {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
             </div>
 
-            <Button type="submit" disabled={loading} className="w-full h-12 bg-gradient-to-r from-violet-500 via-purple-500 to-violet-600 hover:from-violet-600 hover:via-purple-600 hover:to-violet-700 text-white font-semibold rounded-xl shadow-lg shadow-violet-500/30 transition-all duration-300 hover:shadow-xl hover:shadow-violet-500/40">
-              {loading ? <>
+            <Button 
+              type="submit" 
+              disabled={loading} 
+              className="w-full h-12 text-base font-semibold"
+            >
+              {loading ? (
+                <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Entrando...
-                </> : "Entrar"}
+                </>
+              ) : (
+                "Entrar"
+              )}
             </Button>
           </form>
 
           {/* Footer */}
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-500">
-              Sistema de Gestão Escolar {escolaNome}
+          <div className="mt-10 text-center text-sm text-muted-foreground">
+            <p>
+              © {new Date().getFullYear()} {platformName}. Todos os direitos reservados.
             </p>
           </div>
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default Auth;
