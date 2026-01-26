@@ -26,6 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import PlatformLayout from "@/components/platform/PlatformLayout";
 import { formatCurrency } from "@/lib/formatters";
+import { getRandomVerse, type BibleVerse } from "@/lib/biblicalVerses";
 
 interface Tenant {
   id: string;
@@ -71,6 +72,7 @@ export default function PlatformDashboard() {
     mrr: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [verse] = useState<BibleVerse>(() => getRandomVerse());
 
   useEffect(() => {
     if (!isPlatformAdmin()) {
@@ -182,21 +184,14 @@ export default function PlatformDashboard() {
           
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
-              <Sparkles className="h-5 w-5 text-primary" />
+              <BookOpen className="h-5 w-5 text-primary" />
               <span className="text-sm font-medium text-primary">Painel do Gestor</span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-              É bom ter você de volta!
+            <h1 className="text-xl md:text-2xl font-medium text-foreground italic leading-relaxed max-w-2xl">
+              "{verse.text}"
             </h1>
-            <p className="text-muted-foreground mt-2 max-w-xl">
-              Gerencie todas as escolas da plataforma ou{" "}
-              <button 
-                onClick={() => navigate("/platform/tenants")}
-                className="text-primary hover:underline font-medium"
-              >
-                explore os recursos disponíveis
-              </button>{" "}
-              para começar.
+            <p className="text-sm text-muted-foreground mt-3 font-medium">
+              — {verse.reference}
             </p>
           </div>
         </motion.div>

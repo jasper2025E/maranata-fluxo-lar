@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDashboardStats } from "@/hooks/useDashboardStats";
 import { 
@@ -16,6 +17,7 @@ import {
   Briefcase,
   GraduationCap,
   ChevronRight,
+  BookOpen,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { LoadingState } from "@/components/LoadingState";
@@ -28,10 +30,12 @@ import {
   InadimplenciaCard,
 } from "@/components/dashboard";
 import { motion } from "framer-motion";
+import { getRandomVerse, type BibleVerse } from "@/lib/biblicalVerses";
 
 const Dashboard = () => {
   const { t } = useTranslation();
   const { data: stats, isLoading, error } = useDashboardStats();
+  const [verse] = useState<BibleVerse>(() => getRandomVerse());
 
   if (isLoading) {
     return (
@@ -68,12 +72,25 @@ const Dashboard = () => {
           <span className="font-medium text-foreground">{t("dashboard.title")}</span>
         </nav>
 
-        {/* Header */}
+        {/* Verse Banner */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
+          className="relative overflow-hidden rounded-xl border border-border/50 p-5 bg-card"
         >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
+          <div className="relative z-10 flex items-start gap-3">
+            <BookOpen className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
+            <div>
+              <p className="text-foreground italic leading-relaxed">
+                "{verse.text}"
+              </p>
+              <p className="text-sm text-muted-foreground mt-2 font-medium">
+                — {verse.reference}
+              </p>
+            </div>
+          </div>
         </motion.div>
 
 
