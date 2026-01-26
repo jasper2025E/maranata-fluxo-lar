@@ -209,6 +209,7 @@ export function OnboardingCardForm({
       console.error("Stripe publishable key not found");
       return null;
     }
+    console.log("🔑 Stripe Key:", key.substring(0, 20) + "...");
     return loadStripe(key);
   });
 
