@@ -15,16 +15,14 @@ interface WebsiteDomainManagerProps {
 
 type DomainStatus = "not_configured" | "pending" | "verifying" | "active" | "error";
 
-// Get the published URL from environment or use current origin as fallback
-const getPublishedDomain = () => {
-  // Use the published URL from the project
-  const publishedUrl = import.meta.env.VITE_PUBLISHED_URL || window.location.origin;
-  try {
-    const url = new URL(publishedUrl);
-    return url.host;
-  } catch {
-    return window.location.host;
+// Get the system domain - uses custom URL from settings or falls back to published URL
+const getSystemDomain = (customUrl?: string) => {
+  if (customUrl) {
+    // Clean the custom URL (remove protocol if present)
+    return customUrl.replace(/^https?:\/\//, "").replace(/\/$/, "");
   }
+  // Fallback to current origin
+  return window.location.host;
 };
 
 export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
@@ -36,7 +34,7 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   
   // Get dynamic system branding from platform settings
   const systemName = platformSettings?.platform_slug || "sistema";
-  const systemDomain = getPublishedDomain();
+  const systemDomain = getSystemDomain(platformSettings?.platform_url);
   
   // Derive status from config
   const getStatus = (): DomainStatus => {

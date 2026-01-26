@@ -24,6 +24,7 @@ import { toast } from "sonner";
 
 interface PlatformConfig {
   platform_name: string;
+  platform_url: string;
   support_email: string;
   max_schools: number;
   max_users_per_school: number;
@@ -36,8 +37,9 @@ interface PlatformConfig {
 }
 
 const defaultConfig: PlatformConfig = {
-  platform_name: "Maranata Fluxo",
-  support_email: "suporte@maranatafluxo.com",
+  platform_name: "Sistema de Gestão",
+  platform_url: "",
+  support_email: "suporte@exemplo.com",
   max_schools: 100,
   max_users_per_school: 10,
   max_students_per_school: 500,
@@ -120,6 +122,7 @@ export default function PlatformSettings() {
   const getSettingDescription = (key: string): string => {
     const descriptions: Record<string, string> = {
       platform_name: "Nome da plataforma",
+      platform_url: "URL personalizada do sistema",
       support_email: "Email de suporte",
       max_schools: "Limite máximo de escolas",
       max_users_per_school: "Limite de usuários por escola",
@@ -198,7 +201,22 @@ export default function PlatformSettings() {
                   <Input
                     value={config.platform_name}
                     onChange={(e) => updateConfig("platform_name", e.target.value)}
+                    placeholder="Ex: Meu Sistema de Gestão"
                   />
+                  <p className="text-xs text-muted-foreground">
+                    Este nome será usado em toda a plataforma e nos links das escolas
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <Label>URL Personalizada do Sistema</Label>
+                  <Input
+                    value={config.platform_url}
+                    onChange={(e) => updateConfig("platform_url", e.target.value)}
+                    placeholder="Ex: meugestao.com.br ou app.meugestao.com.br"
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    Domínio personalizado para os sites das escolas (deixe vazio para usar o padrão)
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <Label>Email de Suporte</Label>
@@ -206,6 +224,7 @@ export default function PlatformSettings() {
                     type="email"
                     value={config.support_email}
                     onChange={(e) => updateConfig("support_email", e.target.value)}
+                    placeholder="suporte@exemplo.com"
                   />
                 </div>
               </CardContent>
