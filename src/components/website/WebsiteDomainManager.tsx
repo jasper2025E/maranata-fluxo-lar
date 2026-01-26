@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Globe, CheckCircle, AlertCircle, Clock, RefreshCw, ExternalLink, Copy, Check } from "lucide-react";
 import { useUpdateSchoolWebsite, SchoolWebsiteConfig } from "@/hooks/useSchoolWebsite";
+import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { toast } from "sonner";
 
 interface WebsiteDomainManagerProps {
@@ -14,15 +15,28 @@ interface WebsiteDomainManagerProps {
 
 type DomainStatus = "not_configured" | "pending" | "verifying" | "active" | "error";
 
-// System branding constants
-const SYSTEM_NAME = "maranata";
-const SYSTEM_DOMAIN = "maranata-fluxo-lar.lovable.app";
+// Get the published URL from environment or use current origin as fallback
+const getPublishedDomain = () => {
+  // Use the published URL from the project
+  const publishedUrl = import.meta.env.VITE_PUBLISHED_URL || window.location.origin;
+  try {
+    const url = new URL(publishedUrl);
+    return url.host;
+  } catch {
+    return window.location.host;
+  }
+};
 
 export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   const updateWebsite = useUpdateSchoolWebsite();
+  const { data: platformSettings, isLoading: isLoadingSettings } = usePlatformSettings();
   const [customDomain, setCustomDomain] = useState(config.custom_domain || "");
   const [isVerifying, setIsVerifying] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  // Get dynamic system branding from platform settings
+  const systemName = platformSettings?.platform_slug || "sistema";
+  const systemDomain = getPublishedDomain();
   
   // Derive status from config
   const getStatus = (): DomainStatus => {
@@ -34,8 +48,8 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   
   const status = getStatus();
   
-  // Use system domain instead of lovableproject.com
-  const defaultSubdomain = config.slug ? `https://${SYSTEM_DOMAIN}/escola/${config.slug}` : null;
+  // Use system domain dynamically
+  const defaultSubdomain = config.slug ? `https://${systemDomain}/escola/${config.slug}` : null;
   
   const handleSaveDomain = () => {
     if (!customDomain) {
@@ -197,8 +211,8 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
                   </div>
                   <div className="grid grid-cols-3 gap-2 p-2">
                     <span>TXT</span>
-                    <span>_{SYSTEM_NAME}</span>
-                    <span className="font-mono text-xs break-all">{SYSTEM_NAME}_verify={config.slug}</span>
+                    <span>_{systemName}</span>
+                    <span className="font-mono text-xs break-all">{systemName}_verify={config.slug}</span>
                   </div>
                 </div>
               </div>
