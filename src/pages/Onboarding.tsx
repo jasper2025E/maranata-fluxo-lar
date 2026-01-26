@@ -188,28 +188,14 @@ export default function Onboarding() {
         },
       });
 
-      // Tratar erros do Edge Function
-      if (error) {
-        // FunctionsHttpError - extrair mensagem do backend
-        const errorMessage = data?.error || error.message || "Erro ao criar conta";
-        throw new Error(errorMessage);
-      }
-      
-      if (data?.error) {
-        throw new Error(data.error);
-      }
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       setStep(5);
       toast.success("Escola cadastrada com sucesso!");
     } catch (error: any) {
       console.error("Onboarding error:", error);
-      
-      // Mostrar mensagem de erro clara ao usuário
-      const errorMessage = error.message || "Erro ao criar conta. Tente novamente.";
-      
-      toast.error(errorMessage, {
-        duration: 6000,
-      });
+      toast.error(error.message || "Erro ao criar conta. Tente novamente.");
     } finally {
       setLoading(false);
     }
