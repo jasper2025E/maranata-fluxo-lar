@@ -16,14 +16,14 @@ import { useAuth } from "@/contexts/AuthContext";
 
 export function FinancialProjectionSection() {
   const { t } = useTranslation();
-  const { hasRole, isPlatformAdmin } = useAuth();
+  const { hasRole } = useAuth();
   const [selectedScenario, setSelectedScenario] = useState<ScenarioType>("realistic");
   const [isExpanded, setIsExpanded] = useState(true);
   
   const { data, isLoading, error } = useFinancialProjection();
 
-  // Access control: only admin, financeiro, or platform_admin
-  const canAccess = hasRole("admin") || hasRole("financeiro") || isPlatformAdmin();
+  // Access control: only admin or financeiro
+  const canAccess = hasRole("admin") || hasRole("financeiro");
   
   if (!canAccess) {
     return null;

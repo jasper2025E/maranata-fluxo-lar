@@ -7,7 +7,6 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
 import { 
   ProfileTab, 
   SecurityTab, 
@@ -15,7 +14,6 @@ import {
   SystemTab, 
   ConfiguracoesCobranca,
   UserManagementTab,
-  IntegrationsTab,
   GatewayConfigTab,
 } from "@/components/config";
 
@@ -27,7 +25,7 @@ interface UserPreferences {
 }
 
 const Configuracoes = () => {
-  const { user, role, isPlatformAdmin } = useAuth();
+  const { user, role } = useAuth();
   const { theme, setTheme } = useTheme();
   const { i18n } = useTranslation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -138,8 +136,6 @@ const Configuracoes = () => {
         return role === "admin" ? <UserManagementTab /> : null;
       case "gateways":
         return role === "admin" ? <GatewayConfigTab /> : null;
-      case "integracoes":
-        return isPlatformAdmin() ? <IntegrationsTab /> : null;
       case "sistema":
         return role === "admin" ? <SystemTab role={role} /> : null;
       default:
