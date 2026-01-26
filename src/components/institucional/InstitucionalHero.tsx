@@ -100,125 +100,143 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
             transition={{ duration: 0.8, delay: 0.2 }}
             className="relative lg:h-[600px] hidden lg:block"
           >
-            {/* Main Dashboard Card */}
-            <div className="absolute top-0 right-0 w-[320px] bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden">
+            {/* Main Dashboard Card - Gestão de Alunos */}
+            <div className="absolute top-0 right-0 w-[340px] bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden">
               {/* Dashboard header */}
-              <div className="bg-slate-800 px-4 py-3 flex items-center justify-between">
+              <div className="bg-slate-900 px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
-                    <span className="text-[10px] text-white font-bold">E</span>
+                  <div className="w-7 h-7 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
+                    <span className="text-[11px] text-white font-bold">M</span>
                   </div>
-                  <span className="text-white text-sm font-medium">ESCOLA DEMO</span>
+                  <span className="text-white text-sm font-medium">Maranata Gestão</span>
                 </div>
-                <div className="flex items-center gap-2 bg-slate-700 rounded px-2 py-1">
-                  <span className="text-slate-400 text-xs">🔍 Pesquisar</span>
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                  <span className="text-slate-400 text-xs">Online</span>
                 </div>
               </div>
               
               {/* Dashboard content */}
               <div className="p-4">
-                <div className="text-sm text-slate-500 mb-1">Hoje</div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <div className="text-xs text-slate-400 mb-1">Volume líquido ↓</div>
-                    <div className="text-xl font-semibold text-slate-900">R$ 52.198,72</div>
-                    <div className="text-xs text-slate-400">14:00</div>
-                  </div>
-                  <div>
-                    <div className="text-xs text-slate-400 mb-1">Ontem ↓</div>
-                    <div className="text-xl font-semibold text-slate-900">R$ 48.931,34</div>
-                  </div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-slate-700">Visão Geral</span>
+                  <span className="text-xs text-slate-400">Janeiro 2026</span>
                 </div>
                 
-                {/* Mini chart */}
-                <div className="h-20 flex items-end gap-1 mb-4">
-                  {[40, 55, 45, 60, 50, 70, 65, 80, 75, 85, 90, 70].map((h, i) => (
-                    <div 
-                      key={i} 
-                      className="flex-1 bg-primary/20 rounded-t"
-                      style={{ height: `${h}%` }}
-                    />
-                  ))}
+                <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="bg-slate-50 rounded-lg p-2.5 text-center">
+                    <div className="text-lg font-bold text-slate-900">248</div>
+                    <div className="text-[10px] text-slate-500">Alunos</div>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-2.5 text-center">
+                    <div className="text-lg font-bold text-slate-900">12</div>
+                    <div className="text-[10px] text-slate-500">Turmas</div>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-2.5 text-center">
+                    <div className="text-lg font-bold text-green-600">97%</div>
+                    <div className="text-[10px] text-slate-500">Adimplência</div>
+                  </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-slate-500">Receita mensal</span>
-                      <span className="text-xs text-green-600 font-medium">+12,8%</span>
+                {/* Faturas recentes */}
+                <div className="text-xs font-medium text-slate-600 mb-2">Últimas faturas</div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between py-1.5 px-2 bg-green-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                      <span className="text-xs text-slate-700">Maria Silva</span>
                     </div>
-                    <div className="text-lg font-semibold text-slate-900">R$ 89.274,29</div>
+                    <span className="text-xs font-medium text-green-600">R$ 890,00</span>
                   </div>
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs text-slate-500">Novos alunos</span>
-                      <span className="text-xs text-green-600 font-medium">+8</span>
+                  <div className="flex items-center justify-between py-1.5 px-2 bg-green-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                      <span className="text-xs text-slate-700">João Santos</span>
                     </div>
-                    <div className="text-lg font-semibold text-slate-900">127</div>
+                    <span className="text-xs font-medium text-green-600">R$ 750,00</span>
+                  </div>
+                  <div className="flex items-center justify-between py-1.5 px-2 bg-amber-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                      <span className="text-xs text-slate-700">Ana Costa</span>
+                    </div>
+                    <span className="text-xs font-medium text-amber-600">Pendente</span>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Payment Card - overlapping */}
-            <div className="absolute top-32 left-0 w-[280px] bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden">
-              {/* Product info */}
-              <div className="p-4 border-b border-slate-100">
-                <div className="flex items-start gap-3">
-                  <div className="w-12 h-14 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white text-lg">📚</span>
+            {/* Pagamento PIX Card */}
+            <div className="absolute top-44 left-0 w-[260px] bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden">
+              <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-primary/5 to-purple-500/5">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-sm">💳</span>
                   </div>
                   <div>
-                    <div className="font-medium text-slate-900">Mensalidade Maio</div>
-                    <div className="text-sm text-slate-500">R$ 450 por mês</div>
+                    <div className="font-medium text-slate-900 text-sm">Fatura #2026-001</div>
+                    <div className="text-xs text-slate-500">Mensalidade Janeiro</div>
                   </div>
                 </div>
               </div>
               
-              {/* Payment button */}
               <div className="p-4 space-y-3">
-                <button className="w-full bg-slate-900 text-white py-2.5 rounded-md text-sm font-medium flex items-center justify-center gap-2">
-                  <span>Pay</span>
-                </button>
-                <div className="text-center text-xs text-slate-400">Ou pague com cartão</div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs text-slate-500">Valor</span>
+                  <span className="text-lg font-bold text-slate-900">R$ 890,00</span>
+                </div>
                 
-                {/* Card form preview */}
-                <div className="space-y-2">
-                  <div className="h-9 bg-slate-50 rounded border border-slate-200 px-3 flex items-center">
-                    <span className="text-sm text-slate-400">E-mail</span>
-                  </div>
-                  <div className="h-9 bg-slate-50 rounded border border-slate-200 px-3 flex items-center justify-between">
-                    <span className="text-sm text-slate-400">Número do cartão</span>
-                    <div className="flex gap-1">
-                      <div className="w-6 h-4 bg-blue-600 rounded-sm" />
-                      <div className="w-6 h-4 bg-red-500 rounded-sm" />
-                      <div className="w-6 h-4 bg-yellow-500 rounded-sm" />
+                <div className="grid grid-cols-2 gap-2">
+                  <button className="flex items-center justify-center gap-1.5 py-2 bg-[#32BCAD] text-white rounded-lg text-xs font-medium">
+                    <span>◉</span> PIX
+                  </button>
+                  <button className="flex items-center justify-center gap-1.5 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
+                    <span>▤</span> Boleto
+                  </button>
+                </div>
+                
+                <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-white border-2 border-slate-200 rounded-lg flex items-center justify-center">
+                    <div className="grid grid-cols-4 gap-0.5">
+                      {Array.from({ length: 16 }).map((_, i) => (
+                        <div key={i} className={`w-2 h-2 ${Math.random() > 0.5 ? 'bg-slate-900' : 'bg-white'}`} />
+                      ))}
                     </div>
                   </div>
                 </div>
                 
-                <button className="w-full bg-primary text-white py-2.5 rounded-md text-sm font-medium">
-                  Pagar
-                </button>
+                <div className="text-center text-[10px] text-slate-400">
+                  Escaneie o QR Code para pagar
+                </div>
               </div>
             </div>
 
-            {/* Small floating chart card */}
-            <div className="absolute bottom-10 right-10 w-[200px] bg-white rounded-xl shadow-xl border border-slate-100 p-4">
+            {/* Receita Card */}
+            <div className="absolute bottom-8 right-8 w-[220px] bg-white rounded-xl shadow-xl border border-slate-100 p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-slate-500">Taxa de adimplência</span>
-                <span className="text-xs text-green-600 font-medium">+5,2%</span>
+                <span className="text-xs font-medium text-slate-600">Receita Mensal</span>
+                <span className="text-[10px] text-green-600 font-medium bg-green-50 px-1.5 py-0.5 rounded">+18%</span>
               </div>
-              <div className="text-2xl font-bold text-slate-900 mb-2">97,8%</div>
-              {/* Mini line chart */}
-              <svg className="w-full h-12" viewBox="0 0 200 50">
+              <div className="text-2xl font-bold text-slate-900 mb-3">R$ 124.500</div>
+              {/* Mini area chart */}
+              <svg className="w-full h-10" viewBox="0 0 200 40">
+                <defs>
+                  <linearGradient id="areaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity="0.3" />
+                    <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity="0" />
+                  </linearGradient>
+                </defs>
                 <path
-                  d="M0,40 Q30,35 50,30 T100,25 T150,15 T200,10"
+                  d="M0,35 Q25,30 50,28 T100,20 T150,15 T200,8 L200,40 L0,40 Z"
+                  fill="url(#areaGrad)"
+                />
+                <path
+                  d="M0,35 Q25,30 50,28 T100,20 T150,15 T200,8"
                   fill="none"
                   stroke="hsl(var(--primary))"
                   strokeWidth="2"
                 />
-                <circle cx="200" cy="10" r="4" fill="hsl(var(--primary))" />
+                <circle cx="200" cy="8" r="3" fill="hsl(var(--primary))" />
               </svg>
             </div>
           </motion.div>
