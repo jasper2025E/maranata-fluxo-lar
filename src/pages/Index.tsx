@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import { usePlatformBranding, usePlatformAnnouncements } from "@/hooks/usePlatformBranding";
 import { GradientBackground } from "@/components/landing/GradientBackground";
 import { AnnouncementBanner } from "@/components/landing/AnnouncementBanner";
+import { PlatformNavbar } from "@/components/landing/PlatformNavbar";
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   GraduationCap,
@@ -53,29 +54,8 @@ export default function Index() {
         gradientTo={branding?.gradientTo}
       />
 
-      {/* Header */}
-      <header className="relative z-10 p-6">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {branding?.platformLogo ? (
-              <img src={branding.platformLogo} alt={branding.platformName} className="h-10 w-auto" />
-            ) : (
-              <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-                <GraduationCap className="w-6 h-6 text-white" />
-              </div>
-            )}
-            <span className="text-xl font-bold text-white">{branding?.platformName}</span>
-          </div>
-          <Link to="/auth">
-            <Button 
-              variant="outline" 
-              className="bg-white/10 border-white/30 text-white hover:bg-white/20 backdrop-blur-sm"
-            >
-              Entrar
-            </Button>
-          </Link>
-        </div>
-      </header>
+      {/* Stripe-style Navbar */}
+      <PlatformNavbar />
 
       {/* Announcements */}
       {announcements.length > 0 && (
