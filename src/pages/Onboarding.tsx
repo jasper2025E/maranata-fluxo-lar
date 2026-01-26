@@ -273,55 +273,50 @@ export default function Onboarding() {
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6 lg:p-8 overflow-y-auto">
         <div className="w-full max-w-xl">
           
-          {/* Value proposition - editorial style */}
-          <div className="mb-10">
-            <div className="text-center space-y-3">
-              <div className="inline-flex items-center gap-1.5 text-xs font-medium tracking-wide text-primary/80 uppercase">
-                <span className="w-6 h-px bg-primary/40" />
-                Comece agora
-                <span className="w-6 h-px bg-primary/40" />
-              </div>
-              <h1 className="text-3xl sm:text-4xl font-bold text-foreground tracking-tight">
-                14 dias grátis
-              </h1>
-              <p className="text-muted-foreground text-sm max-w-xs mx-auto">
-                Experimente todos os recursos sem compromisso. Cancele quando quiser.
-              </p>
-            </div>
-          </div>
-
-          {/* Progress Steps - minimal linear */}
-          <div className="flex items-center justify-center gap-2 mb-10">
-            {stepLabels.map((label, index) => {
-              const s = index + 1;
-              const isCompleted = step > s;
-              const isCurrent = step === s;
-              
-              return (
-                <div key={s} className="flex items-center">
-                  <div className="flex flex-col items-center gap-1.5">
-                    <div className={`
-                      h-2.5 w-2.5 rounded-full transition-all duration-300
-                      ${isCompleted ? "bg-primary scale-100" : ""}
-                      ${isCurrent ? "bg-primary ring-4 ring-primary/20 scale-110" : ""}
-                      ${!isCompleted && !isCurrent ? "bg-border" : ""}
-                    `} />
-                    <span className={`
-                      text-[10px] font-medium transition-colors duration-200
-                      ${isCurrent ? "text-foreground" : "text-muted-foreground/60"}
-                    `}>
-                      {label}
-                    </span>
+          {/* Progress Steps - Stripe-style numbered */}
+          <div className="flex items-center justify-center mb-8">
+            <div className="flex items-center">
+              {stepLabels.map((label, index) => {
+                const s = index + 1;
+                const isCompleted = step > s;
+                const isCurrent = step === s;
+                
+                return (
+                  <div key={s} className="flex items-center">
+                    <div className="flex flex-col items-center">
+                      <div className={`
+                        relative h-8 w-8 rounded-full flex items-center justify-center 
+                        text-xs font-semibold transition-all duration-200
+                        ${isCompleted 
+                          ? "bg-primary text-primary-foreground" 
+                          : isCurrent 
+                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/25" 
+                            : "bg-muted text-muted-foreground"
+                        }
+                      `}>
+                        {isCompleted ? (
+                          <Check className="h-4 w-4" strokeWidth={2.5} />
+                        ) : (
+                          <span>{s}</span>
+                        )}
+                      </div>
+                      <span className={`
+                        text-[11px] mt-2 font-medium whitespace-nowrap
+                        ${isCurrent ? "text-foreground" : "text-muted-foreground"}
+                      `}>
+                        {label}
+                      </span>
+                    </div>
+                    {s < 5 && (
+                      <div className={`
+                        w-10 sm:w-14 h-0.5 mx-1 rounded-full transition-colors duration-200
+                        ${step > s ? "bg-primary" : "bg-muted"}
+                      `} />
+                    )}
                   </div>
-                  {s < 5 && (
-                    <div className={`
-                      w-8 sm:w-12 h-px mx-2 transition-colors duration-300
-                      ${step > s ? "bg-primary" : "bg-border"}
-                    `} />
-                  )}
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
 
           <AnimatePresence mode="wait">
