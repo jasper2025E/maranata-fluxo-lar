@@ -28,11 +28,12 @@ export function PlatformNavbar() {
       <div
         className="w-full"
         style={{
-          background: `linear-gradient(90deg, 
-            hsl(24 95% 53%) 0%, 
-            hsl(340 75% 55%) 35%, 
-            hsl(280 70% 55%) 65%, 
-            hsl(262 83% 58%) 100%
+          background: `linear-gradient(115deg, 
+            hsl(25 100% 55%) 0%, 
+            hsl(340 85% 58%) 25%,
+            hsl(310 70% 55%) 50%,
+            hsl(280 75% 58%) 75%,
+            hsl(262 83% 62%) 100%
           )`,
         }}
       >
