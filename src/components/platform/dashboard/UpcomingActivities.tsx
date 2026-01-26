@@ -46,11 +46,11 @@ export function UpcomingActivities({ activities }: UpcomingActivitiesProps) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.35 }}
-      className="bg-card rounded-2xl border border-border p-4"
+      className="bg-card rounded-2xl border border-border p-5"
     >
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground">Próximas Atividades</h3>
-        <Button variant="ghost" size="sm" className="text-primary text-xs">
+        <h3 className="font-semibold text-foreground text-sm">Próximas Atividades</h3>
+        <Button variant="ghost" size="sm" className="text-primary text-xs h-7 px-2">
           Ver todas
         </Button>
       </div>
@@ -61,7 +61,7 @@ export function UpcomingActivities({ activities }: UpcomingActivitiesProps) {
           <p className="text-sm text-muted-foreground">Nenhuma atividade pendente</p>
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {activities.map((activity, index) => {
             const config = typeConfig[activity.type];
             
@@ -71,15 +71,12 @@ export function UpcomingActivities({ activities }: UpcomingActivitiesProps) {
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.4 + index * 0.05 }}
-                className="p-3 rounded-xl border border-border/50 hover:border-primary/20 transition-colors"
+                className="p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
               >
-                <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center justify-between mb-1.5">
                   <h4 className="text-sm font-medium text-foreground truncate pr-2">
                     {activity.title}
                   </h4>
-                  <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0">
-                    <MoreHorizontal className="h-3 w-3" />
-                  </Button>
                 </div>
                 <div className="flex items-center justify-between">
                   <Badge className={cn("text-xs border-0", config.badgeColor)}>

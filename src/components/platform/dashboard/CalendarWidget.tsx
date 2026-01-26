@@ -49,46 +49,43 @@ export function CalendarWidget({ highlightedDates = [] }: CalendarWidgetProps) {
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       transition={{ delay: 0.3 }}
-      className="bg-card rounded-2xl border border-border p-4"
+      className="bg-card rounded-2xl border border-border p-5"
     >
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground">Calendário</h3>
-        <Button variant="ghost" size="icon" className="h-8 w-8">
-          <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
-        </Button>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-foreground text-sm">Calendário</h3>
       </div>
       
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-7 w-7"
           onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
         >
           <ChevronLeft className="h-4 w-4" />
         </Button>
-        <span className="font-medium text-foreground">
-          {format(currentMonth, "MMMM yyyy", { locale: ptBR })}
+        <span className="font-medium text-foreground text-sm capitalize">
+          {format(currentMonth, "MMM yyyy", { locale: ptBR })}
         </span>
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-7 w-7"
           onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
         >
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
       
-      <div className="grid grid-cols-7 gap-1 mb-2">
+      <div className="grid grid-cols-7 gap-0.5 mb-1">
         {weekDays.map((d, i) => (
-          <div key={i} className="text-center text-xs font-medium text-muted-foreground py-1">
+          <div key={i} className="text-center text-[10px] font-medium text-muted-foreground py-1">
             {d}
           </div>
         ))}
       </div>
       
-      <div className="grid grid-cols-7 gap-1">
+      <div className="grid grid-cols-7 gap-0.5">
         {days.map((date, i) => {
           const isCurrentMonth = isSameMonth(date, currentMonth);
           const isTodayDate = isToday(date);
@@ -98,11 +95,11 @@ export function CalendarWidget({ highlightedDates = [] }: CalendarWidgetProps) {
             <button
               key={i}
               className={cn(
-                "h-8 w-8 rounded-full text-xs font-medium transition-all",
-                !isCurrentMonth && "text-muted-foreground/40",
+                "h-7 w-7 rounded-full text-[11px] font-medium transition-all",
+                !isCurrentMonth && "text-muted-foreground/30",
                 isCurrentMonth && !isTodayDate && "text-foreground hover:bg-muted",
                 isTodayDate && "bg-primary text-primary-foreground",
-                highlighted && !isTodayDate && "ring-2 ring-primary/50 ring-offset-2 ring-offset-background"
+                highlighted && !isTodayDate && "ring-2 ring-primary/50 ring-offset-1 ring-offset-background"
               )}
             >
               {format(date, "d")}
