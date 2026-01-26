@@ -133,8 +133,8 @@ export default function SystemProfile() {
       return;
     }
 
-    if (file.size > 2 * 1024 * 1024) {
-      toast.error("Arquivo muito grande. Máximo 2MB.");
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 10MB.");
       return;
     }
 
