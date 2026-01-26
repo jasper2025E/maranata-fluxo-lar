@@ -23,11 +23,21 @@ serve(async (req) => {
   try {
     const ASAAS_WEBHOOK_TOKEN = Deno.env.get("ASAAS_WEBHOOK_TOKEN");
     
-    // Verificar token do webhook (opcional, mas recomendado)
+    // Validar token do webhook - OBRIGATÓRIO para segurança
     const accessToken = req.headers.get("asaas-access-token");
-    if (ASAAS_WEBHOOK_TOKEN && accessToken !== ASAAS_WEBHOOK_TOKEN) {
-      console.warn("Token de webhook inválido");
-      // Continuar mesmo assim para não bloquear webhooks do Asaas
+    
+    // Se o token está configurado, validação é obrigatória
+    if (ASAAS_WEBHOOK_TOKEN) {
+      if (!accessToken || accessToken !== ASAAS_WEBHOOK_TOKEN) {
+        console.error("Token de webhook inválido ou ausente");
+        return new Response(
+          JSON.stringify({ error: "Unauthorized" }),
+          { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+    } else {
+      // Se não há token configurado, apenas logar warning (ambiente de desenvolvimento)
+      console.warn("ASAAS_WEBHOOK_TOKEN não configurado - webhook sem validação");
     }
 
     const event = await req.json();
