@@ -349,19 +349,6 @@ export default function Onboarding() {
                       </div>
                     </div>
 
-                    <div className="space-y-1.5">
-                      <Label htmlFor="escola-endereco" className="text-sm font-medium">
-                        Endereço
-                        <span className="text-muted-foreground font-normal ml-1">(opcional)</span>
-                      </Label>
-                      <Input 
-                        id="escola-endereco" 
-                        placeholder="Rua, número, bairro, cidade" 
-                        value={escola.endereco} 
-                        onChange={e => setEscola({ ...escola, endereco: e.target.value })}
-                        className="h-10 focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-foreground/30"
-                      />
-                    </div>
                   </div>
 
                   {/* Card footer */}
