@@ -1,131 +1,100 @@
 
-# Plano: Migração Stripe para Produção
+# Plano: Versículos Bíblicos Aleatórios no Sistema
 
-## Resumo Executivo
-Vou configurar o sistema para operar em ambiente **Stripe produção**, atualizando as chaves secretas e públicas para as versões "live". Isso afetará todo o fluxo de pagamentos: cadastro de escolas, gerenciamento de assinaturas, cobrança automática e webhooks.
+## Visão Geral
 
----
+Implementar uma funcionalidade que exibe um versículo bíblico aleatório toda vez que uma pessoa acessa o sistema. O versículo será mostrado no local onde atualmente aparece "É bom ter você de volta!" na página do Gestor (e opcionalmente no Dashboard das escolas).
 
-## Regras de Negócio Confirmadas
+## Estrutura Proposta
 
-| Situação | Comportamento |
-|----------|---------------|
-| Cadastro de nova escola | 14 dias grátis, sem cobrança no cadastro |
-| Escola em trial (14 dias) | Sem cobrança até fim do período |
-| Após trial | Cobrança no dia configurado (billing_day) |
-| Cartão já cadastrado | Cobrança automática (off-session) |
+### 1. Criar Arquivo de Versículos
 
----
+Criar um arquivo `src/lib/biblicalVerses.ts` contendo uma coleção de versículos bíblicos inspiradores em português:
 
-## Etapa 1: Atualização de Secrets (Stripe Produção)
-
-Preciso que você forneça as **chaves de produção** do Stripe:
-
-1. **STRIPE_SECRET_KEY** (ou STRIPESECRETAPI)
-   - Chave secreta de produção (começa com `sk_live_...`)
-   - Usada pelos Edge Functions para operações no backend
-
-2. **VITE_STRIPE_PUBLISHABLE_KEY**
-   - Chave publicável de produção (começa com `pk_live_...`)
-   - Usada no frontend para inicializar Stripe Elements
-
-3. **STRIPE_WEBHOOK_SECRET** (produção)
-   - Webhook signing secret para produção
-   - Obtido no Stripe Dashboard → Webhooks → Endpoint → Signing secret
-
-### Secrets Atuais (7 configurados)
-- ASAAS_API_KEY ✅
-- ASAAS_WEBHOOK_TOKEN ✅
-- RESEND_API_KEY ✅
-- STRIPESECRETAPI (precisa atualizar para `sk_live`)
-- STRIPE_SECRET_KEY (precisa atualizar para `sk_live`)
-- STRIPE_WEBHOOK_SECRET (precisa atualizar para produção)
-- VITE_STRIPE_PUBLISHABLE_KEY (já foi atualizado para `pk_test` — precisa `pk_live`)
-
----
-
-## Etapa 2: Arquivos que Usam Stripe (Não Requerem Mudança de Código)
-
-Os Edge Functions já estão preparados para produção, pois usam variáveis de ambiente:
-
-### Edge Functions (Backend)
-| Função | Propósito |
-|--------|-----------|
-| `create-tenant-onboarding` | Cadastro de escolas (SetupIntent sem cobrança) |
-| `complete-card-setup` | Finalização da verificação do cartão |
-| `stripe-setup-intent` | Criar SetupIntent para salvar cartão |
-| `stripe-save-payment-method` | Salvar método de pagamento |
-| `stripe-charge-subscription` | Cobrança automática mensal |
-| `create-subscription-checkout` | Checkout para upgrade de plano |
-| `create-tenant-stripe-subscription` | Criar subscription manual |
-| `stripe-webhook` | Processar eventos do Stripe |
-| `sync-tenant-subscription` | Sincronizar dados com Stripe |
-| `get-stripe-subscriptions` | Consultar subscriptions |
-
-### Frontend (React)
-| Arquivo | Propósito |
-|---------|-----------|
-| `OnboardingCardForm.tsx` | Formulário de cartão no cadastro |
-| `PaymentMethodCard.tsx` | Gerenciamento de cartão salvo |
-| `Onboarding.tsx` | Fluxo de cadastro de escola |
-| `MinhaAssinatura.tsx` | Página de assinatura da escola |
-| `UpgradePlanDialog.tsx` | Dialog para mudar de plano |
-
----
-
-## Etapa 3: Configurar Webhook no Stripe Dashboard
-
-Você precisará configurar um novo endpoint de webhook no painel Stripe **produção**:
-
-### Configuração do Webhook
 ```text
-URL: https://sznckclviajjmmvsgrpp.supabase.co/functions/v1/stripe-webhook
-
-Eventos a ativar:
-- checkout.session.completed
-- customer.subscription.updated
-- customer.subscription.deleted
-- invoice.paid
-- invoice.payment_failed
+src/lib/
+└── biblicalVerses.ts    # Array com ~30-50 versículos + função para selecionar aleatório
 ```
 
-Após criar o webhook, copie o **Signing Secret** e me forneça para atualizar `STRIPE_WEBHOOK_SECRET`.
+**Exemplo de versículos incluídos:**
+- "Porque eu sei os planos que tenho para vocês, diz o Senhor..." (Jeremias 29:11)
+- "Tudo posso naquele que me fortalece." (Filipenses 4:13)
+- "O Senhor é o meu pastor, nada me faltará." (Salmo 23:1)
+- "Confia no Senhor de todo o teu coração..." (Provérbios 3:5-6)
+- E mais ~40 versículos edificantes
 
----
+### 2. Atualizar PlatformDashboard (Gestor)
 
-## Etapa 4: Limpeza de Dados de Teste
+Modificar `src/pages/platform/PlatformDashboard.tsx`:
 
-Antes de ir para produção, recomendo limpar os dados de teste:
+- Importar a função `getRandomVerse()` do novo arquivo
+- Usar `useState` com `useMemo` para selecionar um versículo ao carregar a página
+- Substituir o texto "É bom ter você de volta!" pelo versículo selecionado
+- Adicionar a referência bíblica (livro, capítulo:versículo) abaixo
 
-1. **Tenants de teste**: Escolas cadastradas durante testes
-2. **Customers Stripe de teste**: Existem apenas no ambiente test, não serão visíveis em produção
-3. **Payment Methods salvos**: Cartões de teste não funcionarão em produção
+**Layout visual proposto:**
+```text
+┌─────────────────────────────────────────────────┐
+│ ✨ Painel do Gestor                             │
+│                                                 │
+│ "Porque eu sei os planos que tenho para vocês,  │
+│  diz o Senhor, planos de paz e não de mal..."   │
+│                                                 │
+│ — Jeremias 29:11                                │
+│                                                 │
+│ Gerencie todas as escolas da plataforma...      │
+└─────────────────────────────────────────────────┘
+```
 
-### Ação Necessária
-As escolas cadastradas com cartões de teste precisarão:
-- Recadastrar o cartão de crédito (produção)
-- Ou serem removidas se forem apenas testes
+### 3. Atualizar Dashboard das Escolas (Opcional)
 
----
+Se desejar, também podemos adicionar o versículo no Dashboard principal (`src/pages/Dashboard.tsx`) com um banner similar ao do Gestor.
 
-## Etapa 5: Validação Pós-Deploy
+## Arquivos a Modificar/Criar
 
-Após atualizar as chaves, testarei:
+| Arquivo | Ação |
+|---------|------|
+| `src/lib/biblicalVerses.ts` | **CRIAR** - Lista de versículos e função de seleção |
+| `src/pages/platform/PlatformDashboard.tsx` | **EDITAR** - Integrar versículo no banner |
+| `src/pages/Dashboard.tsx` | **EDITAR (opcional)** - Adicionar banner com versículo |
 
-1. **Cadastro de nova escola** → Verificar SetupIntent criado em produção
-2. **Salvar cartão real** → Verificar cartão aparece no Stripe Dashboard (produção)
-3. **Webhook funcionando** → Verificar eventos chegando corretamente
-4. **Cobrança automática** → Simular dia de cobrança
+## Detalhes Técnicos
 
----
+### Interface do Versículo
+```typescript
+interface BibleVerse {
+  text: string;      // Texto do versículo
+  reference: string; // Referência (ex: "João 3:16")
+}
+```
 
-## Próximos Passos
+### Função de Seleção
+```typescript
+export function getRandomVerse(): BibleVerse {
+  const randomIndex = Math.floor(Math.random() * verses.length);
+  return verses[randomIndex];
+}
+```
 
-Para prosseguir, preciso que você:
+### Uso no Componente
+```typescript
+const [verse] = useState(() => getRandomVerse());
 
-1. **Forneça a chave secreta de produção** (`sk_live_...`)
-2. **Forneça a chave publicável de produção** (`pk_live_...`)
-3. **Configure o webhook no Stripe Dashboard** (produção) e forneça o Signing Secret
-4. **Confirme se devo limpar dados de teste** do banco de dados
+// No JSX:
+<h1>{verse.text}</h1>
+<span>— {verse.reference}</span>
+```
 
-Após receber essas informações, atualizarei os secrets e farei o deploy das Edge Functions.
+## Comportamento
+
+- **Novo versículo a cada acesso**: O versículo muda toda vez que a página é carregada/recarregada
+- **Estilo elegante**: O versículo aparece em itálico com a referência em fonte menor
+- **Não afeta navegação**: Navegar entre páginas e voltar ao dashboard mantém o mesmo versículo (até recarregar)
+
+## Categorias de Versículos Sugeridos
+
+1. **Liderança e Gestão** - Para inspirar gestores
+2. **Fé e Confiança** - Versículos de encorajamento
+3. **Sabedoria** - Provérbios e ensinamentos
+4. **Educação** - Versículos sobre ensino e conhecimento
+5. **Gratidão** - Versículos de agradecimento
