@@ -9,7 +9,8 @@ const corsHeaders = {
 
 interface CompleteCardRequest {
   tenant_id: string;
-  payment_intent_id: string;
+  setup_intent_id?: string;
+  payment_intent_id?: string; // Legacy support
 }
 
 serve(async (req) => {
@@ -41,9 +42,12 @@ serve(async (req) => {
       apiVersion: "2023-10-16",
     });
 
-    const { tenant_id, payment_intent_id }: CompleteCardRequest = await req.json();
+    const { tenant_id, setup_intent_id, payment_intent_id }: CompleteCardRequest = await req.json();
 
-    if (!tenant_id || !payment_intent_id) {
+    // Support both SetupIntent (new) and PaymentIntent (legacy)
+    const intentId = setup_intent_id || payment_intent_id;
+
+    if (!tenant_id || !intentId) {
       return new Response(
         JSON.stringify({ error: "Dados incompletos" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -64,17 +68,33 @@ serve(async (req) => {
       );
     }
 
-    // Retrieve the PaymentIntent to verify it succeeded
-    const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id);
+    let paymentMethodId: string;
 
-    if (paymentIntent.status !== "succeeded") {
-      return new Response(
-        JSON.stringify({ error: "Pagamento da verificação não foi concluído" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (setup_intent_id) {
+      // New flow: SetupIntent (no charge)
+      const setupIntent = await stripe.setupIntents.retrieve(setup_intent_id);
+
+      if (setupIntent.status !== "succeeded") {
+        return new Response(
+          JSON.stringify({ error: "Verificação do cartão não foi concluída" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      paymentMethodId = setupIntent.payment_method as string;
+    } else {
+      // Legacy flow: PaymentIntent (R$1.00 charge)
+      const paymentIntent = await stripe.paymentIntents.retrieve(payment_intent_id!);
+
+      if (paymentIntent.status !== "succeeded") {
+        return new Response(
+          JSON.stringify({ error: "Pagamento da verificação não foi concluído" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      paymentMethodId = paymentIntent.payment_method as string;
     }
-
-    const paymentMethodId = paymentIntent.payment_method as string;
 
     if (!paymentMethodId) {
       return new Response(
@@ -104,7 +124,7 @@ serve(async (req) => {
       is_default: true,
     }, { onConflict: 'tenant_id,stripe_payment_method_id' });
 
-    // Enable auto billing now that card is verified and R$1.00 was charged
+    // Enable auto billing now that card is verified
     await supabaseAdmin
       .from("tenants")
       .update({
@@ -117,21 +137,24 @@ serve(async (req) => {
       tenant_id: tenant.id,
       event_type: "card_verified",
       new_status: tenant.subscription_status,
-      amount: 100, // R$1.00
+      amount: 0, // No charge in SetupIntent flow
       metadata: {
-        payment_intent_id: paymentIntent.id,
+        setup_intent_id: setup_intent_id || null,
+        payment_intent_id: payment_intent_id || null,
         payment_method_id: paymentMethodId,
         card_brand: paymentMethod.card?.brand,
         card_last_four: paymentMethod.card?.last4,
         auto_billing_enabled: true,
-        verification_charge: "R$1,00 cobrado com sucesso",
+        verification_charge: setup_intent_id ? "Nenhuma (SetupIntent)" : "R$1,00 (PaymentIntent)",
       },
     });
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Cartão verificado com sucesso! R$1,00 foi cobrado.",
+        message: setup_intent_id 
+          ? "Cartão verificado com sucesso!" 
+          : "Cartão verificado com sucesso! R$1,00 foi cobrado.",
         card_brand: paymentMethod.card?.brand,
         card_last_four: paymentMethod.card?.last4,
       }),
