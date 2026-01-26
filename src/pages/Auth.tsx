@@ -333,8 +333,8 @@ const Auth = () => {
                     type="email" 
                     value={email} 
                     onChange={e => setEmail(e.target.value)} 
-                    placeholder="username@gmail.com"
-                    className={`h-12 rounded-lg bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20 ${errors.email ? "border-destructive" : ""}`} 
+                    placeholder="seuemail@exemplo.com"
+                    className={`h-12 rounded-lg bg-white/5 border border-white/30 text-white placeholder:text-white/40 transition-all duration-300 focus:bg-white/10 focus:border-white/50 focus:ring-0 focus:outline-none ${errors.email ? "border-red-400" : ""}`} 
                     disabled={loading} 
                     autoComplete="email" 
                   />
@@ -351,8 +351,8 @@ const Auth = () => {
                       type={showPassword ? "text" : "password"} 
                       value={password} 
                       onChange={e => setPassword(e.target.value)} 
-                      placeholder="Senha"
-                      className={`h-12 pr-10 rounded-lg bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20 ${errors.password ? "border-destructive" : ""}`} 
+                      placeholder="••••••••"
+                      className={`h-12 pr-10 rounded-lg bg-white/5 border border-white/30 text-white placeholder:text-white/40 transition-all duration-300 focus:bg-white/10 focus:border-white/50 focus:ring-0 focus:outline-none ${errors.password ? "border-red-400" : ""}`} 
                       disabled={loading} 
                       autoComplete="current-password" 
                     />
