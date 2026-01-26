@@ -238,9 +238,9 @@ export default function Onboarding() {
   const stepLabels = ["Escola", "Plano", "Admin", "Cartão", "Pronto"];
 
   return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* Stripe-style gradient background */}
-      <div className="absolute inset-0">
+    <div className="min-h-screen relative overflow-x-hidden">
+      {/* Stripe-style gradient background - fixed */}
+      <div className="fixed inset-0 z-0">
         {/* Main gradient blob - top left */}
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
           <svg
@@ -303,7 +303,7 @@ export default function Onboarding() {
       </div>
 
       {/* Content */}
-      <div className="relative z-10 min-h-screen flex items-center justify-center p-6 lg:p-12 overflow-y-auto">
+      <div className="relative z-10 min-h-screen flex items-center justify-center p-6 lg:p-8 overflow-y-auto">
         <div className="w-full max-w-xl">
           {/* Logo */}
           <div className="flex items-center justify-center gap-3 mb-8">
