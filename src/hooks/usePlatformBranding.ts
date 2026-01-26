@@ -17,6 +17,7 @@ export interface PlatformBranding {
   faviconUrl: string | null;
   metaTitle: string | null;
   metaDescription: string | null;
+  privacyTermsUrl: string | null;
 }
 
 interface Announcement {
@@ -53,6 +54,7 @@ const defaultBranding: PlatformBranding = {
   faviconUrl: null,
   metaTitle: null,
   metaDescription: null,
+  privacyTermsUrl: null,
 };
 
 function extractValue<T>(data: { value: T } | null | undefined, fallback: T): T {
@@ -101,6 +103,7 @@ export function usePlatformBranding() {
         faviconUrl: (settings.favicon_url as string) || defaultBranding.faviconUrl,
         metaTitle: (settings.meta_title as string) || defaultBranding.metaTitle,
         metaDescription: (settings.meta_description as string) || defaultBranding.metaDescription,
+        privacyTermsUrl: (settings.privacy_terms_url as string) || defaultBranding.privacyTermsUrl,
       };
     },
     staleTime: 1000 * 60 * 5,
