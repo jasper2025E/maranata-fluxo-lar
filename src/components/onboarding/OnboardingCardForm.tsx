@@ -27,6 +27,7 @@ interface CardFormContentProps {
   adminEmail: string;
   paymentIntentClientSecret: string;
   tenantId: string;
+  isTestMode: boolean;
 }
 
 // Card form component inside Stripe Elements
@@ -37,6 +38,7 @@ function CardFormContent({
   adminEmail,
   paymentIntentClientSecret,
   tenantId,
+  isTestMode,
 }: CardFormContentProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -81,7 +83,22 @@ function CardFormContent({
         let errorMessage = confirmError.message || "Erro ao processar pagamento";
         
         if (confirmError.code === "card_declined") {
-          errorMessage = "Cartão recusado. Verifique os dados ou use outro cartão.";
+          // Try to be more specific using decline_code when available
+          const declineCode = (confirmError as any).decline_code as string | undefined;
+          const declineMap: Record<string, string> = {
+            insufficient_funds: "Saldo insuficiente. Use outro cartão.",
+            do_not_honor: "O banco recusou a transação. Tente novamente ou use outro cartão.",
+            generic_decline: "Cartão recusado. Verifique os dados ou use outro cartão.",
+            transaction_not_allowed: "Transação não permitida. Ative compras online/internacionais no app do banco.",
+            restricted_card: "Cartão com restrição. Use outro cartão.",
+            lost_card: "Cartão reportado como perdido. Use outro cartão.",
+            stolen_card: "Cartão reportado como roubado. Use outro cartão.",
+            fraud: "Transação recusada por segurança. Tente novamente ou use outro cartão.",
+          };
+
+          errorMessage = declineCode && declineMap[declineCode]
+            ? declineMap[declineCode]
+            : "Cartão recusado. Verifique os dados ou use outro cartão.";
         } else if (confirmError.code === "expired_card") {
           errorMessage = "Cartão expirado. Use outro cartão.";
         } else if (confirmError.code === "incorrect_cvc") {
@@ -98,13 +115,36 @@ function CardFormContent({
           errorMessage = "Data de validade incompleta.";
         } else if (confirmError.code === "insufficient_funds") {
           errorMessage = "Saldo insuficiente. Use outro cartão.";
+        } else if (confirmError.code === "authentication_required") {
+          errorMessage = "Seu cartão exige autenticação (3D Secure). Autorize no app do banco ou use outro cartão.";
+        }
+
+        if (isTestMode) {
+          errorMessage = `${errorMessage} (Ambiente de teste: o banco não recebe notificação.)`;
         }
         
         throw new Error(errorMessage);
       }
 
-      if (!paymentIntent || paymentIntent.status !== "succeeded") {
+      if (!paymentIntent) {
         throw new Error("Pagamento não foi processado. Tente novamente.");
+      }
+
+      // If Stripe requires customer action, inform user clearly
+      if (paymentIntent.status === "requires_action") {
+        throw new Error(
+          isTestMode
+            ? "Pagamento precisa de autenticação (3D Secure). No modo teste, use um cartão de teste compatível."
+            : "Pagamento precisa de autenticação (3D Secure). Autorize no app do banco e tente novamente."
+        );
+      }
+
+      if (paymentIntent.status !== "succeeded") {
+        throw new Error(
+          isTestMode
+            ? `Pagamento não concluído (status: ${paymentIntent.status}). Em modo teste, use cartões de teste do Stripe.`
+            : "Pagamento não foi processado. Tente novamente."
+        );
       }
 
       // Complete the setup on the backend
@@ -259,8 +299,11 @@ export function OnboardingCardForm({
   onSuccess,
   onBack,
 }: OnboardingCardFormProps) {
+  const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+  const isTestMode = Boolean(publishableKey?.startsWith("pk_test"));
+
   const [stripePromise] = useState(() => {
-    const key = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
+    const key = publishableKey;
     if (!key) {
       console.error("Stripe publishable key not found");
       return null;
@@ -306,6 +349,14 @@ export function OnboardingCardForm({
         </div>
       </div>
 
+      {isTestMode && (
+        <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
+          <p className="text-xs text-amber-800">
+            <strong>Ambiente de teste</strong>: pagamentos não chegam ao seu banco. Use cartões de teste ou configure as chaves de produção.
+          </p>
+        </div>
+      )}
+
       <Elements stripe={stripePromise}>
         <CardFormContent
           onSuccess={onSuccess}
@@ -314,6 +365,7 @@ export function OnboardingCardForm({
           adminEmail={adminEmail}
           paymentIntentClientSecret={paymentIntentClientSecret}
           tenantId={tenantId}
+          isTestMode={isTestMode}
         />
       </Elements>
 
