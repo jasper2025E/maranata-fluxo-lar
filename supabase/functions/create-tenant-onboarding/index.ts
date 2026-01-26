@@ -101,6 +101,57 @@ async function cleanupOrphanUser(
   }
 }
 
+async function getTenantById(supabaseAdmin: any, tenantId: string) {
+  const { data, error } = await supabaseAdmin
+    .from("tenants")
+    .select(
+      "id, nome, email, plano, stripe_customer_id, auto_billing_enabled, subscription_status, trial_ends_at"
+    )
+    .eq("id", tenantId)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+async function ensureStripeCustomer(
+  stripe: Stripe,
+  existingCustomerId: string | null | undefined,
+  schoolName: string,
+  email: string,
+  cnpj?: string | null
+): Promise<string> {
+  let customerId = existingCustomerId || null;
+
+  // Validate existing customer id
+  if (customerId) {
+    try {
+      const customer = (await stripe.customers.retrieve(customerId)) as any;
+      // Stripe returns either a Customer or DeletedCustomer
+      if (customer?.deleted) customerId = null;
+    } catch {
+      customerId = null;
+    }
+  }
+
+  if (!customerId) {
+    const created = await stripe.customers.create({
+      email,
+      name: schoolName,
+      metadata: {
+        escola_nome: schoolName,
+        cnpj: cnpj || "",
+      },
+    });
+    customerId = created.id;
+  }
+
+  if (!customerId) {
+    throw new Error("Não foi possível criar/obter customer no Stripe");
+  }
+
+  return customerId;
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -161,6 +212,72 @@ serve(async (req) => {
       if (orphan) {
         await cleanupOrphanUser(supabaseAdmin, existingUser.id);
       } else {
+        // If user exists but onboarding wasn't completed (stopped at card step), allow resume.
+        const { data: profile, error: profileError } = await supabaseAdmin
+          .from("profiles")
+          .select("tenant_id")
+          .eq("id", existingUser.id)
+          .maybeSingle();
+        if (profileError) throw profileError;
+
+        const tenantId = (profile as any)?.tenant_id as string | null | undefined;
+        if (tenantId) {
+          const tenant = await getTenantById(supabaseAdmin, tenantId);
+          const canResume =
+            tenant &&
+            tenant.subscription_status === "trial" &&
+            tenant.auto_billing_enabled === false;
+
+          if (canResume) {
+            // Create a new verification PaymentIntent for the existing customer
+            const customerId = await ensureStripeCustomer(
+              stripe,
+              tenant.stripe_customer_id,
+              tenant.nome || escola.nome,
+              admin.email,
+              escola.cnpj
+            );
+
+            // Persist recovered customer id if needed
+            if (customerId && customerId !== tenant.stripe_customer_id) {
+              await supabaseAdmin
+                .from("tenants")
+                .update({ stripe_customer_id: customerId })
+                .eq("id", tenant.id);
+            }
+
+            const paymentIntent = await stripe.paymentIntents.create({
+              amount: 100,
+              currency: "brl",
+              customer: customerId,
+              description: "Verificação de cartão - Taxa de ativação (reembolsável)",
+              setup_future_usage: "off_session",
+              automatic_payment_methods: { enabled: true },
+              metadata: {
+                type: "card_verification_resume",
+                tenant_id: tenant.id,
+                user_id: existingUser.id,
+                admin_email: admin.email,
+                plan: tenant.plano || "basic",
+              },
+            });
+
+            return new Response(
+              JSON.stringify({
+                success: true,
+                resume: true,
+                tenant_id: tenant.id,
+                user_id: existingUser.id,
+                trial_ends_at: tenant.trial_ends_at,
+                stripe_customer_id: customerId,
+                payment_intent_client_secret: paymentIntent.client_secret,
+                verification_amount: "R$ 1,00",
+              }),
+              { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+            );
+          }
+        }
+
         return new Response(
           JSON.stringify({
             error:

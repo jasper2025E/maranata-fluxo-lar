@@ -130,6 +130,18 @@ export default function PlatformUsers() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<PlatformUser | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+
+  const [orphanCleanupDialogOpen, setOrphanCleanupDialogOpen] = useState(false);
+  const [orphanCleanupLoading, setOrphanCleanupLoading] = useState(false);
+  const [orphanCleanupPreview, setOrphanCleanupPreview] = useState<
+    | {
+        scanned: number;
+        orphanCount: number;
+        sampleEmails: string[];
+        reasons?: Record<string, number>;
+      }
+    | null
+  >(null);
   
   const [formData, setFormData] = useState({
     nome: "",
@@ -145,6 +157,75 @@ export default function PlatformUsers() {
       fetchUsers();
     }
   }, [isPlatformAdmin]);
+
+  const extractInvokeError = (responseError: any, fallback: string) => {
+    if (!responseError) return fallback;
+    if (responseError.context?.body) {
+      try {
+        const body = JSON.parse(responseError.context.body);
+        return body.error || fallback;
+      } catch {
+        return responseError.message || fallback;
+      }
+    }
+    return responseError.message || fallback;
+  };
+
+  const openOrphanCleanupDialog = async () => {
+    setOrphanCleanupDialogOpen(true);
+    setOrphanCleanupLoading(true);
+    setOrphanCleanupPreview(null);
+    try {
+      const res = await supabase.functions.invoke("cleanup-orphan-users", {
+        body: { dryRun: true, maxUsers: 2000 },
+      });
+
+      if (res.error) {
+        throw new Error(extractInvokeError(res.error, "Erro ao analisar usuários órfãos"));
+      }
+
+      if (res.data?.error) throw new Error(res.data.error);
+
+      setOrphanCleanupPreview({
+        scanned: res.data.scanned ?? 0,
+        orphanCount: res.data.orphanCount ?? 0,
+        sampleEmails: (res.data.sampleEmails ?? []) as string[],
+        reasons: res.data.reasons as Record<string, number> | undefined,
+      });
+    } catch (error: any) {
+      console.error("Error previewing orphan cleanup:", error);
+      toast.error(error.message || "Erro ao analisar usuários órfãos");
+      setOrphanCleanupDialogOpen(false);
+    } finally {
+      setOrphanCleanupLoading(false);
+    }
+  };
+
+  const runOrphanCleanup = async () => {
+    setOrphanCleanupLoading(true);
+    try {
+      const res = await supabase.functions.invoke("cleanup-orphan-users", {
+        body: { dryRun: false, maxUsers: 2000 },
+      });
+
+      if (res.error) {
+        throw new Error(extractInvokeError(res.error, "Erro ao limpar usuários órfãos"));
+      }
+
+      if (res.data?.error) throw new Error(res.data.error);
+
+      const deleted = res.data.deletedCount ?? 0;
+      const orphans = res.data.orphanCount ?? 0;
+      toast.success(`Limpeza concluída: ${deleted} removido(s) (órfãos encontrados: ${orphans})`);
+      setOrphanCleanupDialogOpen(false);
+      fetchUsers();
+    } catch (error: any) {
+      console.error("Error running orphan cleanup:", error);
+      toast.error(error.message || "Erro ao limpar usuários órfãos");
+    } finally {
+      setOrphanCleanupLoading(false);
+    }
+  };
 
   const fetchTenants = async () => {
     try {
@@ -529,16 +610,67 @@ export default function PlatformUsers() {
             </p>
           </div>
 
-          <Button 
-            onClick={() => {
-              resetForm();
-              setCreateDialogOpen(true);
-            }}
-          >
-            <UserPlus className="h-4 w-4 mr-2" />
-            Novo Usuário
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button
+              variant="outline"
+              onClick={openOrphanCleanupDialog}
+              disabled={orphanCleanupLoading}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Limpar órfãos
+            </Button>
+
+            <Button
+              onClick={() => {
+                resetForm();
+                setCreateDialogOpen(true);
+              }}
+            >
+              <UserPlus className="h-4 w-4 mr-2" />
+              Novo Usuário
+            </Button>
+          </div>
         </div>
+
+        {/* Orphan Cleanup Dialog */}
+        <AlertDialog open={orphanCleanupDialogOpen} onOpenChange={setOrphanCleanupDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Limpar usuários órfãos</AlertDialogTitle>
+              <AlertDialogDescription>
+                {orphanCleanupLoading && !orphanCleanupPreview
+                  ? "Analisando usuários..."
+                  : orphanCleanupPreview
+                    ? `Encontramos ${orphanCleanupPreview.orphanCount} usuário(s) órfão(s) (varredura: ${orphanCleanupPreview.scanned}).`
+                    : "Confirme para limpar usuários órfãos."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+
+            {orphanCleanupPreview?.sampleEmails?.length ? (
+              <div className="text-sm text-muted-foreground space-y-2">
+                <p className="font-medium text-foreground">Exemplos (até 10):</p>
+                <ul className="list-disc pl-5">
+                  {orphanCleanupPreview.sampleEmails.map((e) => (
+                    <li key={e}>{e}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={orphanCleanupLoading}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  runOrphanCleanup();
+                }}
+                disabled={orphanCleanupLoading || (orphanCleanupPreview?.orphanCount ?? 0) === 0}
+              >
+                {orphanCleanupLoading ? "Limpando..." : "Confirmar limpeza"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {/* Bulk Actions Bar */}
         <AnimatePresence>
