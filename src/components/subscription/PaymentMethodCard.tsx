@@ -321,15 +321,8 @@ export function PaymentMethodCard({ tenantId, onUpdate }: PaymentMethodCardProps
         throw new Error(t("subscription.setupError"));
       }
 
-      // Prefer backend-provided publishable key (prevents env mismatch: pk_live vs sk_test)
+      // Prefer backend-provided publishable key
       const stripeKey = (data?.publishableKey as string | undefined) ?? import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY;
-
-      // If backend reports modes, ensure they match. This avoids silent failures on confirmCardSetup.
-      if (data?.stripeMode && data?.publishableMode && data.publishableMode !== "unknown" && data.stripeMode !== "unknown") {
-        if (data.publishableMode !== data.stripeMode) {
-          throw new Error("Configuração do Stripe inconsistente (teste/produção). Atualize as chaves e tente novamente.");
-        }
-      }
       
       if (!stripeKey) {
         throw new Error(t("subscription.stripeNotConfigured"));
