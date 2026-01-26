@@ -190,10 +190,10 @@ export default function TenantForm() {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">
+            <h1 className="text-2xl font-bold text-foreground">
               {isEditing ? "Editar Escola" : "Nova Escola"}
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground mt-1">
               {isEditing ? "Atualize os dados da escola" : "Cadastre uma nova escola na plataforma"}
             </p>
           </div>

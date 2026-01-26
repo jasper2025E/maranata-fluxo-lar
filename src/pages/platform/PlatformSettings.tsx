@@ -157,7 +157,9 @@ export default function PlatformSettings() {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-              <Settings className="h-6 w-6 text-primary" />
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <Settings className="h-5 w-5 text-primary" />
+              </div>
               Configurações Globais
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -170,15 +172,17 @@ export default function PlatformSettings() {
               variant="outline"
               onClick={fetchSettings}
               disabled={loading}
+              className="gap-2"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Recarregar
             </Button>
             <Button
               onClick={saveSettings}
               disabled={saving}
+              className="gap-2"
             >
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4" />
               {saving ? "Salvando..." : "Salvar"}
             </Button>
           </div>

@@ -152,17 +152,39 @@ export default function PlatformDashboard() {
   return (
     <PlatformLayout>
       <div className="space-y-8">
-        {/* Welcome Banner */}
+        {/* Welcome Banner - Premium gradient style */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative overflow-hidden rounded-xl bg-gradient-to-r from-background to-muted border p-6 md:p-8"
+          className="relative overflow-hidden rounded-2xl border border-border/50 p-6 md:p-8 bg-card"
         >
-          {/* Decorative gradient */}
-          <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-primary/20 via-primary/10 to-transparent transform translate-x-16 -translate-y-16 rounded-full blur-3xl" />
-          <div className="absolute top-0 right-0 w-32 h-full bg-gradient-to-l from-primary/30 to-transparent" />
+          {/* Gradient blob decorations */}
+          <div className="absolute top-0 left-0 w-[400px] h-[300px] pointer-events-none">
+            <svg
+              viewBox="0 0 400 300"
+              className="w-full h-full"
+              preserveAspectRatio="xMinYMin slice"
+            >
+              <defs>
+                <linearGradient id="welcome-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stopColor="#80e9ff" stopOpacity="0.3" />
+                  <stop offset="33%" stopColor="#a855f7" stopOpacity="0.2" />
+                  <stop offset="66%" stopColor="#ec4899" stopOpacity="0.15" />
+                  <stop offset="100%" stopColor="#f97316" stopOpacity="0.1" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M0,0 L400,0 L400,150 Q300,250 150,200 Q50,170 0,250 Z"
+                fill="url(#welcome-gradient)"
+              />
+            </svg>
+          </div>
           
           <div className="relative z-10">
+            <div className="flex items-center gap-2 mb-2">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <span className="text-sm font-medium text-primary">Painel do Gestor</span>
+            </div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">
               É bom ter você de volta!
             </h1>
@@ -170,7 +192,7 @@ export default function PlatformDashboard() {
               Gerencie todas as escolas da plataforma ou{" "}
               <button 
                 onClick={() => navigate("/platform/tenants")}
-                className="text-primary hover:underline"
+                className="text-primary hover:underline font-medium"
               >
                 explore os recursos disponíveis
               </button>{" "}
@@ -198,49 +220,55 @@ export default function PlatformDashboard() {
                 {/* Quick Action 1 */}
                 <button
                   onClick={() => navigate("/platform/tenants/new")}
-                  className="group p-4 rounded-lg border bg-card hover:bg-muted/50 transition-all text-left"
+                  className="group p-5 rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 text-left"
                 >
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                      <Building2 className="h-5 w-5 text-primary" />
+                    </div>
                     <Badge variant="secondary" className="text-xs">Rápido</Badge>
                   </div>
                   <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                     Cadastrar nova escola
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                    Iniciar <ArrowRight className="h-3 w-3" />
+                    Iniciar <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
                   </p>
                 </button>
 
                 {/* Quick Action 2 */}
                 <button
                   onClick={() => navigate("/platform/subscriptions")}
-                  className="group p-4 rounded-lg border bg-card hover:bg-muted/50 transition-all text-left"
+                  className="group p-5 rounded-xl border border-border/50 bg-gradient-to-br from-card to-muted/30 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300 text-left"
                 >
-                  <div className="flex items-center gap-2 mb-2">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center group-hover:bg-green-500/20 transition-colors">
+                      <CreditCard className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
                     <Badge variant="outline" className="text-xs">Financeiro</Badge>
                   </div>
                   <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                     Gerenciar assinaturas
                   </h3>
                   <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                    Iniciar <ArrowRight className="h-3 w-3" />
+                    Iniciar <ArrowRight className="h-3 w-3 group-hover:translate-x-0.5 transition-transform" />
                   </p>
                 </button>
 
                 {/* Explore All */}
                 <button
                   onClick={() => navigate("/platform/tenants")}
-                  className="group p-4 rounded-lg border-2 border-dashed hover:border-primary/50 transition-all text-left flex items-center justify-between"
+                  className="group p-5 rounded-xl border-2 border-dashed border-border/50 hover:border-primary/50 hover:bg-primary/5 transition-all duration-300 text-left flex items-center justify-between"
                 >
                   <div>
-                    <h3 className="font-semibold text-foreground">
+                    <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">
                       Ver todas as escolas
                     </h3>
                     <p className="text-sm text-muted-foreground mt-1">
                       {stats.totalTenants} cadastradas
                     </p>
                   </div>
-                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors" />
+                  <ArrowRight className="h-5 w-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
                 </button>
               </div>
             </CardContent>
@@ -254,15 +282,15 @@ export default function PlatformDashboard() {
           transition={{ delay: 0.15 }}
           className="space-y-4"
         >
-          <h2 className="text-xl font-semibold text-foreground">Hoje</h2>
+          <h2 className="text-xl font-bold text-foreground">Hoje</h2>
           
-          <div className="flex flex-wrap items-center gap-6 md:gap-12">
+          <div className="flex flex-wrap items-center gap-6 md:gap-12 p-4 rounded-xl bg-muted/30 border border-border/50">
             {/* Volume */}
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="text-sm text-muted-foreground">MRR</span>
               </div>
-              <p className="text-2xl font-semibold text-foreground">
+              <p className="text-2xl font-bold text-foreground">
                 {formatCurrency(stats.mrr)}
               </p>
             </div>
@@ -270,7 +298,7 @@ export default function PlatformDashboard() {
             {/* Escolas Ativas */}
             <div className="space-y-1">
               <span className="text-sm text-muted-foreground">Escolas ativas</span>
-              <p className="text-2xl font-semibold text-foreground">
+              <p className="text-2xl font-bold text-foreground">
                 {stats.activeTenants}
               </p>
             </div>
@@ -278,7 +306,7 @@ export default function PlatformDashboard() {
             {/* Saldo */}
             <div className="space-y-1">
               <span className="text-sm text-muted-foreground">Receita total</span>
-              <p className="text-2xl font-semibold text-foreground">
+              <p className="text-2xl font-bold text-foreground">
                 {formatCurrency(stats.receitaTotal)}
               </p>
             </div>
@@ -302,71 +330,75 @@ export default function PlatformDashboard() {
           transition={{ delay: 0.2 }}
           className="grid gap-4 md:grid-cols-2 lg:grid-cols-4"
         >
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
+          <Card className="group hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 transition-all duration-300 overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="pt-6 relative">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Total de Escolas</p>
-                  <p className="text-2xl font-bold">{stats.totalTenants}</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalTenants}</p>
                   <div className="flex items-center gap-2 mt-1 text-xs">
-                    <span className="text-green-600 flex items-center gap-1">
+                    <span className="text-green-600 dark:text-green-400 flex items-center gap-1">
                       <CheckCircle className="h-3 w-3" />
                       {stats.activeTenants} ativas
                     </span>
                     {stats.trialTenants > 0 && (
-                      <span className="text-blue-600 flex items-center gap-1">
+                      <span className="text-blue-600 dark:text-blue-400 flex items-center gap-1">
                         <Clock className="h-3 w-3" />
                         {stats.trialTenants} em teste
                       </span>
                     )}
                   </div>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
                   <Building2 className="h-6 w-6 text-primary" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
+          <Card className="group hover:shadow-lg hover:shadow-blue-500/5 hover:border-blue-500/20 transition-all duration-300 overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="pt-6 relative">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Usuários</p>
-                  <p className="text-2xl font-bold">{stats.totalUsers}</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalUsers}</p>
                   <p className="text-xs text-muted-foreground mt-1">Em todas as escolas</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500/20 to-blue-500/10 flex items-center justify-center">
                   <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
+          <Card className="group hover:shadow-lg hover:shadow-purple-500/5 hover:border-purple-500/20 transition-all duration-300 overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="pt-6 relative">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Alunos</p>
-                  <p className="text-2xl font-bold">{stats.totalAlunos}</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalAlunos}</p>
                   <p className="text-xs text-muted-foreground mt-1">Cadastrados na plataforma</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-purple-500/20 to-purple-500/10 flex items-center justify-center">
                   <GraduationCap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-6">
+          <Card className="group hover:shadow-lg hover:shadow-green-500/5 hover:border-green-500/20 transition-all duration-300 overflow-hidden relative">
+            <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+            <CardContent className="pt-6 relative">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Faturas</p>
-                  <p className="text-2xl font-bold">{stats.totalFaturas}</p>
+                  <p className="text-2xl font-bold text-foreground">{stats.totalFaturas}</p>
                   <p className="text-xs text-muted-foreground mt-1">Total emitidas</p>
                 </div>
-                <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500/20 to-green-500/10 flex items-center justify-center">
                   <Receipt className="h-6 w-6 text-green-600 dark:text-green-400" />
                 </div>
               </div>

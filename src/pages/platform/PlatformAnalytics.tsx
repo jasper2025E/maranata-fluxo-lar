@@ -76,7 +76,7 @@ export default function PlatformAnalytics() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-foreground">Analytics</h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mt-1">
               Métricas avançadas e indicadores de performance do SaaS
             </p>
           </div>
@@ -84,8 +84,9 @@ export default function PlatformAnalytics() {
             variant="outline"
             size="sm"
             onClick={() => refetch()}
+            className="gap-2"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4" />
             Atualizar
           </Button>
         </div>
