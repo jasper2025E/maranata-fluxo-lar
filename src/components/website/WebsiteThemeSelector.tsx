@@ -1,9 +1,8 @@
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Check, Sparkles, Palette, Sun, Moon, Leaf, Heart, Zap, BookOpen, GraduationCap, Baby } from "lucide-react";
+import { Check, Palette } from "lucide-react";
 import { useUpdateSchoolWebsite, SchoolWebsiteConfig } from "@/hooks/useSchoolWebsite";
 import { cn } from "@/lib/utils";
 
@@ -11,228 +10,128 @@ interface WebsiteTheme {
   id: string;
   name: string;
   description: string;
-  icon: React.ReactNode;
   category: "moderno" | "classico" | "colorido" | "minimalista";
   colors: {
     primary: string;
     secondary: string;
     accent: string;
-    background: string;
-    foreground: string;
   };
   font: string;
-  preview: {
-    headerBg: string;
-    heroBg: string;
-    cardBg: string;
-    buttonBg: string;
-    textColor: string;
-  };
 }
 
 const themes: WebsiteTheme[] = [
   {
-    id: "azul-profissional",
-    name: "Azul Profissional",
-    description: "Visual corporativo e confiável, ideal para escolas tradicionais",
-    icon: <BookOpen className="h-5 w-5" />,
-    category: "classico",
+    id: "craft",
+    name: "Craft",
+    description: "Clean e moderno com tons azuis",
+    category: "moderno",
     colors: {
       primary: "217 91% 60%",
       secondary: "210 40% 96%",
-      accent: "45 93% 47%",
-      background: "0 0% 100%",
-      foreground: "222 47% 11%",
+      accent: "217 91% 50%",
     },
     font: "Inter",
-    preview: {
-      headerBg: "hsl(217, 91%, 60%)",
-      heroBg: "linear-gradient(135deg, hsl(217, 91%, 60%) 0%, hsl(217, 91%, 45%) 100%)",
-      cardBg: "hsl(210, 40%, 96%)",
-      buttonBg: "hsl(217, 91%, 60%)",
-      textColor: "hsl(222, 47%, 11%)",
-    },
   },
   {
-    id: "verde-natureza",
-    name: "Verde Natureza",
-    description: "Transmite crescimento e sustentabilidade",
-    icon: <Leaf className="h-5 w-5" />,
-    category: "moderno",
+    id: "dawn",
+    name: "Dawn",
+    description: "Minimalista com verde suave",
+    category: "minimalista",
     colors: {
       primary: "142 76% 36%",
       secondary: "142 40% 96%",
-      accent: "38 92% 50%",
-      background: "0 0% 100%",
-      foreground: "142 40% 15%",
+      accent: "142 76% 30%",
     },
-    font: "Poppins",
-    preview: {
-      headerBg: "hsl(142, 76%, 36%)",
-      heroBg: "linear-gradient(135deg, hsl(142, 76%, 36%) 0%, hsl(142, 76%, 28%) 100%)",
-      cardBg: "hsl(142, 40%, 96%)",
-      buttonBg: "hsl(142, 76%, 36%)",
-      textColor: "hsl(142, 40%, 15%)",
-    },
+    font: "Inter",
   },
   {
-    id: "roxo-moderno",
-    name: "Roxo Moderno",
-    description: "Criativo e inovador, perfeito para escolas de tecnologia",
-    icon: <Sparkles className="h-5 w-5" />,
-    category: "moderno",
+    id: "sense",
+    name: "Sense",
+    description: "Elegante com tons neutros",
+    category: "classico",
     colors: {
-      primary: "262 83% 58%",
-      secondary: "262 40% 96%",
-      accent: "330 80% 60%",
-      background: "0 0% 100%",
-      foreground: "262 40% 15%",
+      primary: "220 14% 35%",
+      secondary: "220 14% 96%",
+      accent: "220 14% 25%",
     },
-    font: "Montserrat",
-    preview: {
-      headerBg: "hsl(262, 83%, 58%)",
-      heroBg: "linear-gradient(135deg, hsl(262, 83%, 58%) 0%, hsl(280, 70%, 45%) 100%)",
-      cardBg: "hsl(262, 40%, 96%)",
-      buttonBg: "hsl(262, 83%, 58%)",
-      textColor: "hsl(262, 40%, 15%)",
-    },
+    font: "Inter",
   },
   {
-    id: "laranja-energia",
-    name: "Laranja Energia",
-    description: "Vibrante e acolhedor, ótimo para escolas infantis",
-    icon: <Zap className="h-5 w-5" />,
+    id: "crave",
+    name: "Crave",
+    description: "Vibrante com laranja energético",
     category: "colorido",
     colors: {
       primary: "25 95% 53%",
       secondary: "25 40% 96%",
-      accent: "45 93% 47%",
-      background: "0 0% 100%",
-      foreground: "25 40% 15%",
+      accent: "25 95% 45%",
     },
-    font: "Lato",
-    preview: {
-      headerBg: "hsl(25, 95%, 53%)",
-      heroBg: "linear-gradient(135deg, hsl(25, 95%, 53%) 0%, hsl(35, 95%, 50%) 100%)",
-      cardBg: "hsl(25, 40%, 96%)",
-      buttonBg: "hsl(25, 95%, 53%)",
-      textColor: "hsl(25, 40%, 15%)",
-    },
+    font: "Inter",
   },
   {
-    id: "rosa-carinho",
-    name: "Rosa Carinho",
-    description: "Delicado e afetuoso, ideal para creches e berçários",
-    icon: <Heart className="h-5 w-5" />,
+    id: "origin",
+    name: "Origin",
+    description: "Sofisticado com roxo moderno",
+    category: "moderno",
+    colors: {
+      primary: "262 83% 58%",
+      secondary: "262 40% 96%",
+      accent: "262 83% 50%",
+    },
+    font: "Inter",
+  },
+  {
+    id: "taste",
+    name: "Taste",
+    description: "Acolhedor com rosa delicado",
     category: "colorido",
     colors: {
       primary: "330 80% 60%",
       secondary: "330 40% 96%",
-      accent: "262 83% 58%",
-      background: "0 0% 100%",
-      foreground: "330 40% 15%",
+      accent: "330 80% 52%",
     },
-    font: "Poppins",
-    preview: {
-      headerBg: "hsl(330, 80%, 60%)",
-      heroBg: "linear-gradient(135deg, hsl(330, 80%, 60%) 0%, hsl(300, 70%, 55%) 100%)",
-      cardBg: "hsl(330, 40%, 96%)",
-      buttonBg: "hsl(330, 80%, 60%)",
-      textColor: "hsl(330, 40%, 15%)",
-    },
+    font: "Inter",
   },
   {
-    id: "dourado-premium",
-    name: "Dourado Premium",
-    description: "Elegante e sofisticado para escolas de alto padrão",
-    icon: <GraduationCap className="h-5 w-5" />,
+    id: "studio",
+    name: "Studio",
+    description: "Premium com dourado elegante",
     category: "classico",
     colors: {
       primary: "38 92% 40%",
       secondary: "38 40% 96%",
-      accent: "222 47% 20%",
-      background: "0 0% 100%",
-      foreground: "222 47% 11%",
+      accent: "38 92% 32%",
     },
-    font: "Montserrat",
-    preview: {
-      headerBg: "hsl(38, 92%, 40%)",
-      heroBg: "linear-gradient(135deg, hsl(38, 92%, 40%) 0%, hsl(35, 85%, 35%) 100%)",
-      cardBg: "hsl(38, 40%, 96%)",
-      buttonBg: "hsl(38, 92%, 40%)",
-      textColor: "hsl(222, 47%, 11%)",
-    },
+    font: "Inter",
   },
   {
-    id: "turquesa-tropical",
-    name: "Turquesa Tropical",
-    description: "Refrescante e moderno, transmite tranquilidade",
-    icon: <Sun className="h-5 w-5" />,
+    id: "refresh",
+    name: "Refresh",
+    description: "Fresco com turquesa tropical",
     category: "moderno",
     colors: {
       primary: "174 72% 40%",
       secondary: "174 40% 96%",
-      accent: "38 92% 50%",
-      background: "0 0% 100%",
-      foreground: "174 40% 15%",
-    },
-    font: "Open Sans",
-    preview: {
-      headerBg: "hsl(174, 72%, 40%)",
-      heroBg: "linear-gradient(135deg, hsl(174, 72%, 40%) 0%, hsl(190, 70%, 35%) 100%)",
-      cardBg: "hsl(174, 40%, 96%)",
-      buttonBg: "hsl(174, 72%, 40%)",
-      textColor: "hsl(174, 40%, 15%)",
-    },
-  },
-  {
-    id: "cinza-minimalista",
-    name: "Cinza Minimalista",
-    description: "Clean e elegante, foco total no conteúdo",
-    icon: <Moon className="h-5 w-5" />,
-    category: "minimalista",
-    colors: {
-      primary: "220 14% 35%",
-      secondary: "220 14% 96%",
-      accent: "217 91% 60%",
-      background: "0 0% 100%",
-      foreground: "220 14% 10%",
+      accent: "174 72% 32%",
     },
     font: "Inter",
-    preview: {
-      headerBg: "hsl(220, 14%, 35%)",
-      heroBg: "linear-gradient(135deg, hsl(220, 14%, 35%) 0%, hsl(220, 14%, 25%) 100%)",
-      cardBg: "hsl(220, 14%, 96%)",
-      buttonBg: "hsl(220, 14%, 35%)",
-      textColor: "hsl(220, 14%, 10%)",
-    },
   },
   {
-    id: "arco-iris-infantil",
-    name: "Arco-Íris Infantil",
-    description: "Multicolorido e divertido para educação infantil",
-    icon: <Baby className="h-5 w-5" />,
+    id: "colorblock",
+    name: "Colorblock",
+    description: "Divertido e multicolorido",
     category: "colorido",
     colors: {
       primary: "340 82% 52%",
       secondary: "180 70% 95%",
       accent: "45 93% 47%",
-      background: "0 0% 100%",
-      foreground: "222 47% 11%",
     },
-    font: "Poppins",
-    preview: {
-      headerBg: "linear-gradient(90deg, hsl(340, 82%, 52%), hsl(25, 95%, 53%), hsl(45, 93%, 47%), hsl(142, 76%, 36%), hsl(217, 91%, 60%), hsl(262, 83%, 58%))",
-      heroBg: "linear-gradient(135deg, hsl(340, 82%, 52%) 0%, hsl(25, 95%, 53%) 100%)",
-      cardBg: "hsl(180, 70%, 95%)",
-      buttonBg: "hsl(340, 82%, 52%)",
-      textColor: "hsl(222, 47%, 11%)",
-    },
+    font: "Inter",
   },
 ];
 
 const categories = [
-  { id: "todos", label: "Todos" },
+  { id: "todos", label: "Todos os temas" },
   { id: "moderno", label: "Moderno" },
   { id: "classico", label: "Clássico" },
   { id: "colorido", label: "Colorido" },
@@ -246,7 +145,6 @@ interface WebsiteThemeSelectorProps {
 export function WebsiteThemeSelector({ config }: WebsiteThemeSelectorProps) {
   const updateWebsite = useUpdateSchoolWebsite();
   const [selectedCategory, setSelectedCategory] = useState("todos");
-  const [selectedTheme, setSelectedTheme] = useState<string | null>(null);
 
   const filteredThemes = selectedCategory === "todos" 
     ? themes 
@@ -265,161 +163,149 @@ export function WebsiteThemeSelector({ config }: WebsiteThemeSelectorProps) {
       accent_color: theme.colors.accent,
       font_family: theme.font,
     });
-    setSelectedTheme(theme.id);
   };
 
   const currentThemeId = getCurrentThemeId();
 
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Palette className="h-5 w-5" />
-          Temas Prontos
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-base font-medium">
+          <Palette className="h-4 w-4" />
+          Temas
         </CardTitle>
-        <CardDescription>
-          Escolha um tema pronto e personalize depois se desejar
+        <CardDescription className="text-sm">
+          Escolha um tema pronto para começar
         </CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Category Filter */}
-        <div className="flex flex-wrap gap-2">
+      <CardContent className="space-y-5">
+        {/* Category Filter - Shopify style tabs */}
+        <div className="flex gap-1 border-b">
           {categories.map((cat) => (
-            <Button
+            <button
               key={cat.id}
               type="button"
-              variant={selectedCategory === cat.id ? "default" : "outline"}
-              size="sm"
               onClick={() => setSelectedCategory(cat.id)}
+              className={cn(
+                "px-3 py-2 text-sm font-medium transition-colors relative",
+                selectedCategory === cat.id
+                  ? "text-foreground"
+                  : "text-muted-foreground hover:text-foreground"
+              )}
             >
               {cat.label}
-            </Button>
+              {selectedCategory === cat.id && (
+                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-foreground" />
+              )}
+            </button>
           ))}
         </div>
 
-        {/* Themes Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Themes Grid - Shopify style */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {filteredThemes.map((theme) => {
             const isActive = currentThemeId === theme.id;
-            const isSelected = selectedTheme === theme.id;
             
             return (
-              <motion.div
+              <button
                 key={theme.id}
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.2 }}
+                type="button"
+                onClick={() => handleApplyTheme(theme)}
+                disabled={updateWebsite.isPending}
+                className={cn(
+                  "group relative rounded-lg border bg-card text-left transition-all hover:shadow-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                  isActive && "ring-2 ring-primary"
+                )}
               >
-                <Card 
-                  className={cn(
-                    "cursor-pointer transition-all duration-200 hover:shadow-lg overflow-hidden",
-                    isActive && "ring-2 ring-primary",
-                    isSelected && "ring-2 ring-primary/50"
-                  )}
-                  onClick={() => handleApplyTheme(theme)}
-                >
-                  {/* Mini Preview */}
-                  <div className="relative h-32 overflow-hidden">
-                    {/* Header */}
-                    <div 
-                      className="h-8 flex items-center px-3"
-                      style={{ background: theme.preview.headerBg }}
-                    >
-                      <div className="flex gap-1">
-                        <div className="w-2 h-2 rounded-full bg-white/30" />
-                        <div className="w-2 h-2 rounded-full bg-white/30" />
-                        <div className="w-2 h-2 rounded-full bg-white/30" />
-                      </div>
+                {/* Theme Preview */}
+                <div className="relative aspect-[4/3] overflow-hidden rounded-t-lg">
+                  {/* Header bar */}
+                  <div 
+                    className="h-10 flex items-center justify-between px-3"
+                    style={{ backgroundColor: `hsl(${theme.colors.primary})` }}
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 rounded bg-white/20" />
+                      <div className="h-2 w-12 rounded-full bg-white/40" />
                     </div>
-                    
-                    {/* Hero */}
-                    <div 
-                      className="h-16 flex items-center justify-center"
-                      style={{ background: theme.preview.heroBg }}
-                    >
-                      <div className="text-center">
-                        <div className="h-2 w-20 bg-white/90 rounded mx-auto mb-1" />
-                        <div className="h-1.5 w-16 bg-white/60 rounded mx-auto" />
-                      </div>
+                    <div className="flex gap-1.5">
+                      <div className="h-2 w-8 rounded-full bg-white/30" />
+                      <div className="h-2 w-8 rounded-full bg-white/30" />
                     </div>
-                    
-                    {/* Cards */}
-                    <div className="h-8 bg-white flex items-center justify-center gap-2 px-3">
-                      <div 
-                        className="w-8 h-5 rounded"
-                        style={{ background: theme.preview.cardBg }}
-                      />
-                      <div 
-                        className="w-8 h-5 rounded"
-                        style={{ background: theme.preview.cardBg }}
-                      />
-                      <div 
-                        className="w-8 h-5 rounded"
-                        style={{ background: theme.preview.cardBg }}
-                      />
-                    </div>
-
-                    {/* Active Badge */}
-                    {isActive && (
-                      <div className="absolute top-2 right-2">
-                        <Badge className="bg-white text-primary shadow-sm">
-                          <Check className="h-3 w-3 mr-1" />
-                          Ativo
-                        </Badge>
-                      </div>
-                    )}
                   </div>
-
-                  {/* Info */}
-                  <div className="p-4">
-                    <div className="flex items-center gap-2 mb-1">
+                  
+                  {/* Hero section */}
+                  <div 
+                    className="h-16 flex flex-col items-center justify-center px-4"
+                    style={{ 
+                      backgroundColor: `hsl(${theme.colors.secondary})`,
+                    }}
+                  >
+                    <div 
+                      className="h-2.5 w-24 rounded-full mb-1.5"
+                      style={{ backgroundColor: `hsl(${theme.colors.primary})` }}
+                    />
+                    <div className="h-1.5 w-32 rounded-full bg-muted-foreground/20" />
+                  </div>
+                  
+                  {/* Content cards */}
+                  <div className="h-12 bg-background flex items-center justify-center gap-2 px-3">
+                    {[1, 2, 3].map((i) => (
                       <div 
-                        className="p-1.5 rounded-lg"
+                        key={i}
+                        className="flex-1 h-7 rounded border"
                         style={{ 
-                          backgroundColor: `hsl(${theme.colors.primary} / 0.1)`,
-                          color: `hsl(${theme.colors.primary})`
+                          backgroundColor: `hsl(${theme.colors.secondary})`,
+                          borderColor: `hsl(${theme.colors.primary} / 0.2)`
                         }}
-                      >
-                        {theme.icon}
+                      />
+                    ))}
+                  </div>
+
+                  {/* Active indicator */}
+                  {isActive && (
+                    <div className="absolute top-2 right-2">
+                      <div className="flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground">
+                        <Check className="h-3 w-3" />
+                        Ativo
                       </div>
-                      <h3 className="font-semibold text-sm">{theme.name}</h3>
                     </div>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {theme.description}
-                    </p>
-                    
-                    {/* Color Palette */}
-                    <div className="flex gap-1 mt-3">
+                  )}
+                </div>
+
+                {/* Theme Info */}
+                <div className="p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium text-sm">{theme.name}</span>
+                    {/* Color dots */}
+                    <div className="flex -space-x-1">
                       <div 
-                        className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
+                        className="w-4 h-4 rounded-full border-2 border-background"
                         style={{ backgroundColor: `hsl(${theme.colors.primary})` }}
-                        title="Primária"
                       />
                       <div 
-                        className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
+                        className="w-4 h-4 rounded-full border-2 border-background"
                         style={{ backgroundColor: `hsl(${theme.colors.secondary})` }}
-                        title="Secundária"
                       />
                       <div 
-                        className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
+                        className="w-4 h-4 rounded-full border-2 border-background"
                         style={{ backgroundColor: `hsl(${theme.colors.accent})` }}
-                        title="Destaque"
                       />
-                      <span className="text-xs text-muted-foreground ml-auto self-center">
-                        {theme.font}
-                      </span>
                     </div>
                   </div>
-                </Card>
-              </motion.div>
+                  <p className="text-xs text-muted-foreground">
+                    {theme.description}
+                  </p>
+                </div>
+              </button>
             );
           })}
         </div>
 
         {updateWebsite.isPending && (
-          <div className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-muted-foreground">
             Aplicando tema...
-          </div>
+          </p>
         )}
       </CardContent>
     </Card>
