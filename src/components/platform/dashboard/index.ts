@@ -8,3 +8,5 @@ export { RecentActivityFeed } from "./RecentActivityFeed";
 export { QuickActionsCard } from "./QuickActionsCard";
 export { CalendarWidget } from "./CalendarWidget";
 export { UpcomingActivities } from "./UpcomingActivities";
+export { SystemStatusWidget } from "./SystemStatusWidget";
+export { StorageWidget } from "./StorageWidget";

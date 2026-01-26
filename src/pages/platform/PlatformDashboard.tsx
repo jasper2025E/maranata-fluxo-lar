@@ -18,7 +18,6 @@ import { formatCurrency } from "@/lib/formatters";
 import { differenceInDays } from "date-fns";
 import {
   WelcomeCard,
-  ProfileWidget,
   AwardsWidget,
   MetricsGrid,
   ActivityChart,
@@ -27,6 +26,8 @@ import {
   QuickActionsCard,
   CalendarWidget,
   UpcomingActivities,
+  SystemStatusWidget,
+  StorageWidget,
 } from "@/components/platform/dashboard";
 
 interface Tenant {
@@ -286,6 +287,9 @@ export default function PlatformDashboard() {
           }}
         />
 
+        {/* System Status */}
+        <SystemStatusWidget isMaintenanceMode={false} />
+
         {/* Quick Actions */}
         <QuickActionsCard />
 
@@ -296,19 +300,8 @@ export default function PlatformDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column - 2/3 */}
           <div className="lg:col-span-2 space-y-6">
-            {/* Profile and Awards Row */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ProfileWidget 
-                avatarUrl={avatarUrl}
-                userName={userName}
-                stats={{
-                  tenantsManaged: stats.totalTenants,
-                  totalUsers: stats.totalUsers,
-                  activeDays,
-                }}
-              />
-              <AwardsWidget achievements={achievements} />
-            </div>
+            {/* Awards */}
+            <AwardsWidget achievements={achievements} />
 
             {/* Activity Chart */}
             <ActivityChart data={activityChartData} />
@@ -319,6 +312,9 @@ export default function PlatformDashboard() {
 
           {/* Right Column - 1/3 */}
           <div className="space-y-4">
+            {/* Storage Widget */}
+            <StorageWidget />
+
             {/* Calendar */}
             <CalendarWidget 
               highlightedDates={tenants

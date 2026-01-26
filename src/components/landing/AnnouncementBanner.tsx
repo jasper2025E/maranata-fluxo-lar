@@ -15,7 +15,7 @@ interface AnnouncementBannerProps {
   announcements: Announcement[];
 }
 
-const typeConfig = {
+const typeConfig: Record<string, { icon: typeof Info; bg: string; text: string }> = {
   info: {
     icon: Info,
     bg: "bg-blue-500/90",
@@ -34,6 +34,16 @@ const typeConfig = {
   promo: {
     icon: Sparkles,
     bg: "bg-gradient-to-r from-purple-600/90 to-pink-500/90",
+    text: "text-white",
+  },
+  urgent: {
+    icon: AlertTriangle,
+    bg: "bg-red-500/90",
+    text: "text-white",
+  },
+  maintenance: {
+    icon: Info,
+    bg: "bg-slate-600/90",
     text: "text-white",
   },
 };

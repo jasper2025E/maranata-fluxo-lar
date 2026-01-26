@@ -9,25 +9,22 @@ import {
   LogOut,
   Activity,
   Users,
-  UserCog,
   CreditCard,
   ChevronDown,
-  ChevronRight,
-  Search,
   Bell,
-  HelpCircle,
+  BellRing,
   Menu,
   X,
   BarChart3,
   FileText,
-  MoreHorizontal,
-  FolderOpen,
   Sparkles,
   User,
   Megaphone,
   Rocket,
   HardDrive,
-  Tag
+  Tag,
+  Search,
+  HelpCircle
 } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -137,36 +134,43 @@ const navigation: NavSection[] = [
       { 
         icon: Activity, 
         label: "Monitoramento",
-        iconColor: "text-green-600 dark:text-green-400",
-        iconBg: "bg-green-100 dark:bg-green-900/30",
+        iconColor: "text-success",
+        iconBg: "bg-success/10",
         path: "/platform/monitoring"
       },
       { 
         icon: BarChart3, 
         label: "Analytics",
-        iconColor: "text-indigo-600 dark:text-indigo-400",
-        iconBg: "bg-indigo-100 dark:bg-indigo-900/30",
+        iconColor: "text-primary",
+        iconBg: "bg-primary/10",
         path: "/platform/analytics"
       },
       { 
         icon: HardDrive, 
         label: "Backups",
-        iconColor: "text-slate-600 dark:text-slate-400",
-        iconBg: "bg-slate-100 dark:bg-slate-900/30",
+        iconColor: "text-muted-foreground",
+        iconBg: "bg-muted",
         path: "/platform/backups"
       },
       { 
         icon: Shield, 
         label: "Segurança",
-        iconColor: "text-red-600 dark:text-red-400",
-        iconBg: "bg-red-100 dark:bg-red-900/30",
-        path: "/platform/security"
+        iconColor: "text-destructive",
+        iconBg: "bg-destructive/10",
+        path: "/platform/security-settings"
+      },
+      { 
+        icon: BellRing, 
+        label: "Notificações",
+        iconColor: "text-warning",
+        iconBg: "bg-warning/10",
+        path: "/platform/notifications"
       },
       { 
         icon: FileText, 
         label: "Logs",
-        iconColor: "text-gray-600 dark:text-gray-400",
-        iconBg: "bg-gray-100 dark:bg-gray-900/30",
+        iconColor: "text-muted-foreground",
+        iconBg: "bg-muted",
         path: "/platform/logs"
       },
       { 

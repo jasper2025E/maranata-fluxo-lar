@@ -4,13 +4,13 @@
 
 /* 
   Design System - Maranata Financeiro
-  Enterprise SaaS / Banking-grade Professional UI
+  Luz Mina Palette - Premium SaaS 2027
   All colors MUST be HSL.
 */
 
 @layer base {
   :root {
-    /* Base Colors - Clean Gray Foundation */
+    /* Base Colors - Clean Foundation */
     --background: 220 14% 96%;
     --foreground: 222 47% 11%;
 
@@ -22,8 +22,8 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
 
-    /* Primary - Modern Professional Blue */
-    --primary: 221 83% 53%;
+    /* Primary - Vibrant Violet (Luz Mina) */
+    --primary: 262 83% 58%;
     --primary-foreground: 0 0% 100%;
 
     /* Secondary - Soft Gray */
@@ -34,12 +34,12 @@
     --muted: 220 14% 96%;
     --muted-foreground: 220 9% 46%;
 
-    /* Accent - Light Blue Tint */
-    --accent: 221 83% 96%;
-    --accent-foreground: 221 83% 40%;
+    /* Accent - Rose Pink (Luz Mina) */
+    --accent: 340 80% 58%;
+    --accent-foreground: 0 0% 100%;
 
-    /* Status Colors - Banking Grade */
-    --success: 152 69% 31%;
+    /* Status Colors - Premium Grade */
+    --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
@@ -55,27 +55,27 @@
     /* Borders & Inputs */
     --border: 220 13% 91%;
     --input: 220 13% 91%;
-    --ring: 221 83% 53%;
+    --ring: 262 83% 58%;
 
     /* Border Radius - Modern Rounded */
     --radius: 0.75rem;
 
-    /* Sidebar - Deep Professional Navy */
+    /* Sidebar - Deep Professional */
     --sidebar-background: 222 47% 11%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 35% 18%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 222 35% 18%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-ring: 262 83% 58%;
 
-    /* Chart Colors - Harmonious Palette */
-    --chart-1: 221 83% 53%;
-    --chart-2: 152 69% 31%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    /* Chart Colors - Luz Mina Palette */
+    --chart-1: 262 83% 58%;
+    --chart-2: 340 80% 58%;
+    --chart-3: 25 95% 55%;
+    --chart-4: 160 84% 39%;
+    --chart-5: 199 89% 48%;
   }
 
   .dark {
@@ -88,7 +88,7 @@
     --popover: 222 47% 11%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 221 83% 53%;
+    --primary: 262 83% 65%;
     --primary-foreground: 0 0% 100%;
 
     --secondary: 222 35% 18%;
@@ -97,10 +97,10 @@
     --muted: 222 35% 18%;
     --muted-foreground: 220 13% 65%;
 
-    --accent: 221 83% 20%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 340 75% 55%;
+    --accent-foreground: 0 0% 100%;
 
-    --success: 152 69% 40%;
+    --success: 160 84% 45%;
     --success-foreground: 0 0% 100%;
 
     --warning: 38 92% 50%;
@@ -114,22 +114,22 @@
 
     --border: 222 35% 18%;
     --input: 222 35% 18%;
-    --ring: 221 83% 53%;
+    --ring: 262 83% 65%;
 
     --sidebar-background: 222 47% 7%;
     --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 221 83% 53%;
+    --sidebar-primary: 262 83% 65%;
     --sidebar-primary-foreground: 0 0% 100%;
     --sidebar-accent: 222 35% 12%;
     --sidebar-accent-foreground: 210 40% 98%;
     --sidebar-border: 222 35% 12%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-ring: 262 83% 65%;
 
-    --chart-1: 221 83% 53%;
-    --chart-2: 152 69% 40%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --chart-1: 262 83% 65%;
+    --chart-2: 340 75% 55%;
+    --chart-3: 25 95% 55%;
+    --chart-4: 160 84% 45%;
+    --chart-5: 199 89% 48%;
   }
 }
 
@@ -177,13 +177,17 @@
     animation: scaleIn 0.2s ease-out;
   }
 
-  /* Gradient backgrounds - Enterprise */
+  /* Gradient backgrounds - Luz Mina */
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(221 83% 45%) 100%);
+    background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(262 83% 48%) 100%);
+  }
+
+  .gradient-accent {
+    background: linear-gradient(135deg, hsl(340 80% 58%) 0%, hsl(340 80% 48%) 100%);
   }
 
   .gradient-success {
-    background: linear-gradient(135deg, hsl(152 69% 31%) 0%, hsl(152 69% 25%) 100%);
+    background: linear-gradient(135deg, hsl(160 84% 39%) 0%, hsl(160 84% 32%) 100%);
   }
 
   .gradient-warning {
@@ -198,11 +202,22 @@
     background: linear-gradient(180deg, hsl(222 47% 11%) 0%, hsl(222 47% 8%) 100%);
   }
 
+  /* Premium gradient - Luz Mina signature */
+  .gradient-luz-mina {
+    background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(340 80% 58%) 50%, hsl(25 95% 55%) 100%);
+  }
+
   /* Glass effect - Premium */
   .glass {
     background: hsl(var(--background) / 0.85);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
+  }
+
+  .glass-card {
+    background: hsl(var(--card) / 0.8);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 
   /* Card styles - Enterprise */
@@ -212,12 +227,12 @@
 
   .card-interactive {
     @apply bg-card border border-border/50 shadow-soft rounded-xl transition-all duration-200;
-    @apply hover:shadow-medium hover:border-border;
+    @apply hover:shadow-medium hover:border-border hover:-translate-y-0.5;
   }
 
-  /* Text gradient */
+  /* Text gradient - Luz Mina */
   .text-gradient {
-    background: linear-gradient(135deg, hsl(221 83% 53%) 0%, hsl(221 83% 65%) 100%);
+    background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(340 80% 58%) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -231,6 +246,11 @@
   /* Status indicator dot */
   .status-dot {
     @apply h-2 w-2 rounded-full animate-pulse;
+  }
+
+  /* Premium badge glow */
+  .badge-glow {
+    box-shadow: 0 0 12px hsl(262 83% 58% / 0.4);
   }
 }
 
