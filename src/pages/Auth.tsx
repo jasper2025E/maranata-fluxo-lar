@@ -289,37 +289,33 @@ const Auth = () => {
         gradientTo={branding?.gradientTo}
       />
 
-      {/* Header */}
-      <header className="relative z-10 p-6">
-        <div className="flex items-center gap-2">
+      {/* Header - Centered like Stripe */}
+      <header className="relative z-10 py-6">
+        <div className="flex items-center justify-center gap-2">
           {branding?.platformLogo ? (
             <img src={branding.platformLogo} alt={platformName} className="h-7 w-auto" />
           ) : (
-            <GraduationCap className="h-7 w-7 text-white" />
+            <span className="text-xl font-bold text-white tracking-tight">{platformName}</span>
           )}
-          <span className="text-xl font-bold text-white">{platformName}</span>
         </div>
       </header>
 
       {/* Announcements */}
       {announcements.length > 0 && (
-        <div className="relative z-10 px-6 max-w-md mx-auto w-full mb-4">
+        <div className="relative z-10 px-6 max-w-[480px] mx-auto w-full mb-4">
           <AnnouncementBanner announcements={announcements} />
         </div>
       )}
 
       {/* Content */}
-      <main className="relative z-10 flex-1 flex items-center justify-center p-6">
-        <div className="w-full max-w-md">
-          <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
+      <main className="relative z-10 flex-1 flex items-center justify-center px-6 py-4">
+        <div className="w-full max-w-[480px]">
+          <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
             {/* Form Section */}
-            <div className="p-8">
-              <h1 className="text-2xl font-semibold text-foreground mb-2">
-                {branding?.loginTitle}
+            <div className="p-10">
+              <h1 className="text-[26px] font-semibold text-foreground mb-8">
+                {branding?.loginTitle || "Acesse sua conta"}
               </h1>
-              <p className="text-muted-foreground text-sm mb-8">
-                {branding?.loginSubtitle}
-              </p>
 
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
@@ -331,7 +327,7 @@ const Auth = () => {
                     type="email" 
                     value={email} 
                     onChange={e => setEmail(e.target.value)} 
-                    className={`h-11 ${errors.email ? "border-destructive" : ""}`} 
+                    className={`h-12 rounded-md border-border ${errors.email ? "border-destructive" : ""}`} 
                     disabled={loading} 
                     autoComplete="email" 
                   />
@@ -345,7 +341,7 @@ const Auth = () => {
                     </Label>
                     <button
                       type="button"
-                      className="text-sm text-primary hover:text-primary/80 font-medium"
+                      className="text-sm text-primary hover:underline"
                       onClick={() => toast.info("Funcionalidade em desenvolvimento")}
                     >
                       Esqueceu sua senha?
@@ -357,7 +353,7 @@ const Auth = () => {
                       type={showPassword ? "text" : "password"} 
                       value={password} 
                       onChange={e => setPassword(e.target.value)} 
-                      className={`h-11 pr-10 ${errors.password ? "border-destructive" : ""}`} 
+                      className={`h-12 pr-10 rounded-md border-border ${errors.password ? "border-destructive" : ""}`} 
                       disabled={loading} 
                       autoComplete="current-password" 
                     />
@@ -377,8 +373,9 @@ const Auth = () => {
                     id="remember" 
                     checked={rememberMe}
                     onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                    className="border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                   />
-                  <Label htmlFor="remember" className="text-sm text-muted-foreground font-normal cursor-pointer">
+                  <Label htmlFor="remember" className="text-sm text-foreground font-normal cursor-pointer">
                     Lembrar de mim neste dispositivo
                   </Label>
                 </div>
@@ -386,7 +383,8 @@ const Auth = () => {
                 <Button 
                   type="submit" 
                   disabled={loading} 
-                  className="w-full h-11 font-medium"
+                  className="w-full h-12 font-medium text-base rounded-md"
+                  style={{ backgroundColor: 'hsl(262, 83%, 68%)', color: 'white' }}
                 >
                   {loading ? (
                     <>
@@ -398,13 +396,59 @@ const Auth = () => {
                   )}
                 </Button>
               </form>
+
+              {/* Divider */}
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-white px-4 text-muted-foreground">ou</span>
+                </div>
+              </div>
+
+              {/* Alternative Login Options */}
+              <div className="space-y-3">
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="w-full h-12 font-normal text-sm rounded-md border-border"
+                  onClick={() => toast.info("Login com Google em desenvolvimento")}
+                >
+                  <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                  </svg>
+                  Entrar com o Google
+                </Button>
+
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="w-full h-12 font-normal text-sm rounded-md border-border"
+                  onClick={() => toast.info("Login com chave de acesso em desenvolvimento")}
+                >
+                  Fazer login com chave de acesso
+                </Button>
+
+                <Button 
+                  type="button"
+                  variant="outline"
+                  className="w-full h-12 font-normal text-sm rounded-md border-border"
+                  onClick={() => toast.info("Login com SSO em desenvolvimento")}
+                >
+                  Entrar com SSO
+                </Button>
+              </div>
             </div>
 
-            {/* Footer Section */}
-            <div className="px-8 py-4 bg-muted/50 border-t">
+            {/* Footer Section - Light blue like Stripe */}
+            <div className="px-10 py-5 bg-sky-50 border-t border-sky-100">
               <p className="text-sm text-center text-muted-foreground">
                 Começando agora?{" "}
-                <Link to="/cadastro" className="text-primary hover:text-primary/80 font-medium">
+                <Link to="/cadastro" className="text-primary hover:underline font-medium">
                   Crie uma conta
                 </Link>
               </p>
@@ -413,13 +457,11 @@ const Auth = () => {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 p-6 flex items-center justify-center gap-4 text-white/70 text-sm">
-        <span>© {new Date().getFullYear()} {platformName}</span>
-        <span>•</span>
-        <button className="hover:text-white transition-colors">Privacidade</button>
-        <span>•</span>
-        <button className="hover:text-white transition-colors">Termos</button>
+      {/* Footer - Stripe style */}
+      <footer className="relative z-10 py-6 flex items-center justify-center gap-2 text-white/80 text-sm">
+        <span>© {platformName}</span>
+        <span className="mx-2">·</span>
+        <button className="hover:text-white hover:underline transition-colors">Privacidade e termos</button>
       </footer>
     </div>
   );
