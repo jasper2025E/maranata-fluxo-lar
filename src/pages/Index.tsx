@@ -46,20 +46,22 @@ export default function Index() {
   const features = branding?.features || [];
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
       {/* Background */}
-      <GradientBackground
-        gradientFrom={branding?.gradientFrom}
-        gradientVia={branding?.gradientVia}
-        gradientTo={branding?.gradientTo}
-      />
+      <div className="fixed inset-0 z-0">
+        <GradientBackground
+          gradientFrom={branding?.gradientFrom}
+          gradientVia={branding?.gradientVia}
+          gradientTo={branding?.gradientTo}
+        />
+      </div>
 
       {/* Stripe-style Navbar */}
       <PlatformNavbar />
 
       {/* Announcements */}
       {announcements.length > 0 && (
-        <div className="relative z-10 px-6 max-w-2xl mx-auto w-full">
+        <div className="relative z-10 px-6 max-w-2xl mx-auto w-full flex-shrink-0">
           <AnnouncementBanner announcements={announcements} />
         </div>
       )}
@@ -126,7 +128,7 @@ export default function Index() {
       </main>
 
       {/* Footer */}
-      <footer className="relative z-10 p-6">
+      <footer className="relative z-10 py-4 flex-shrink-0">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-sm text-white/70">
             © {new Date().getFullYear()} {branding?.platformName}. Todos os direitos reservados.

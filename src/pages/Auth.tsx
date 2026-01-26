@@ -190,16 +190,18 @@ const Auth = () => {
   // MFA Verification Screen
   if (mfaRequired) {
     return (
-      <div className="min-h-screen flex flex-col relative overflow-hidden">
+      <div className="min-h-screen flex flex-col relative overflow-x-hidden">
         {/* Dynamic Gradient Background */}
-        <GradientBackground
-          gradientFrom={branding?.gradientFrom}
-          gradientVia={branding?.gradientVia}
-          gradientTo={branding?.gradientTo}
-        />
+        <div className="fixed inset-0 z-0">
+          <GradientBackground
+            gradientFrom={branding?.gradientFrom}
+            gradientVia={branding?.gradientVia}
+            gradientTo={branding?.gradientTo}
+          />
+        </div>
         
         {/* Header */}
-        <header className="relative z-10 p-6">
+        <header className="relative z-10 p-6 flex-shrink-0">
           <div className="flex items-center gap-2">
             {branding?.platformLogo ? (
               <img src={branding.platformLogo} alt={platformName} className="h-7 w-auto" />
@@ -216,15 +218,15 @@ const Auth = () => {
             <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
               <div className="p-8">
                 <div className="flex justify-center mb-6">
-                  <div className="p-3 rounded-full bg-violet-100">
-                    <ShieldCheck className="h-8 w-8 text-violet-600" />
+                  <div className="p-3 rounded-full bg-primary/10">
+                    <ShieldCheck className="h-8 w-8 text-primary" />
                   </div>
                 </div>
 
-                <h1 className="text-2xl font-semibold text-gray-900 text-center mb-2">
+                <h1 className="text-2xl font-semibold text-foreground text-center mb-2">
                   Verificação em Duas Etapas
                 </h1>
-                <p className="text-gray-500 text-center text-sm mb-8">
+                <p className="text-muted-foreground text-center text-sm mb-8">
                   Digite o código de 6 dígitos do seu app autenticador
                 </p>
 
@@ -233,7 +235,7 @@ const Auth = () => {
                     value={mfaCode}
                     onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
                     placeholder="000000"
-                    className="text-center text-3xl tracking-[0.5em] font-mono h-14 border-gray-300"
+                    className="text-center text-3xl tracking-[0.5em] font-mono h-14 border-border"
                     maxLength={6}
                     autoFocus
                     autoComplete="one-time-code"
@@ -244,7 +246,7 @@ const Auth = () => {
                   <Button 
                     type="submit" 
                     disabled={mfaVerifying || mfaCode.length !== 6}
-                    className="w-full h-11 bg-violet-500 hover:bg-violet-600 text-white font-medium"
+                    className="w-full h-11 font-medium"
                   >
                     {mfaVerifying ? (
                       <>
@@ -259,7 +261,7 @@ const Auth = () => {
                   <Button 
                     type="button"
                     variant="ghost" 
-                    className="w-full text-gray-600"
+                    className="w-full text-muted-foreground"
                     onClick={handleBackToLogin}
                     disabled={mfaVerifying}
                   >
@@ -273,7 +275,7 @@ const Auth = () => {
         </main>
 
         {/* Footer */}
-        <footer className="relative z-10 p-6 text-center text-white/70 text-sm">
+        <footer className="relative z-10 py-4 flex-shrink-0 text-center text-white/70 text-sm">
           © {new Date().getFullYear()} {platformName}
         </footer>
       </div>
@@ -281,16 +283,18 @@ const Auth = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col relative overflow-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
       {/* Dynamic Gradient Background */}
-      <GradientBackground
-        gradientFrom={branding?.gradientFrom}
-        gradientVia={branding?.gradientVia}
-        gradientTo={branding?.gradientTo}
-      />
+      <div className="fixed inset-0 z-0">
+        <GradientBackground
+          gradientFrom={branding?.gradientFrom}
+          gradientVia={branding?.gradientVia}
+          gradientTo={branding?.gradientTo}
+        />
+      </div>
 
       {/* Header - Centered like Stripe */}
-      <header className="relative z-10 py-6">
+      <header className="relative z-10 py-6 flex-shrink-0">
         <div className="flex items-center justify-center gap-2">
           {branding?.platformLogo ? (
             <img src={branding.platformLogo} alt={platformName} className="h-7 w-auto" />
@@ -302,7 +306,7 @@ const Auth = () => {
 
       {/* Announcements */}
       {announcements.length > 0 && (
-        <div className="relative z-10 px-6 max-w-[480px] mx-auto w-full mb-4">
+        <div className="relative z-10 px-6 max-w-[480px] mx-auto w-full mb-4 flex-shrink-0">
           <AnnouncementBanner announcements={announcements} />
         </div>
       )}
@@ -312,17 +316,17 @@ const Auth = () => {
         <div className="w-full max-w-[480px]">
           <div className="bg-white rounded-xl shadow-2xl overflow-hidden">
             {/* Form Section */}
-            <div className="p-10">
-              <h1 className="text-[26px] font-semibold text-foreground mb-8">
+            <div className="p-8 sm:p-10">
+              <h1 className="text-[26px] font-semibold text-foreground mb-6">
                 {branding?.loginTitle || "Acesse sua conta"}
               </h1>
 
-              <form onSubmit={handleLogin} className="space-y-5">
-                <div className="space-y-2">
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-foreground text-sm font-medium">
                     E-mail
                   </Label>
-                  <Input 
+                  <Input
                     id="email" 
                     type="email" 
                     value={email} 
@@ -331,10 +335,10 @@ const Auth = () => {
                     disabled={loading} 
                     autoComplete="email" 
                   />
-                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
+                {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
                     <Label htmlFor="password" className="text-foreground text-sm font-medium">
                       Senha
@@ -384,7 +388,6 @@ const Auth = () => {
                   type="submit" 
                   disabled={loading} 
                   className="w-full h-12 font-medium text-base rounded-md"
-                  style={{ backgroundColor: 'hsl(262, 83%, 68%)', color: 'white' }}
                 >
                   {loading ? (
                     <>
@@ -408,14 +411,14 @@ const Auth = () => {
               </div>
 
               {/* Alternative Login Options */}
-              <div className="space-y-3">
+              <div className="space-y-2">
                 <Button 
                   type="button"
                   variant="outline"
-                  className="w-full h-12 font-normal text-sm rounded-md border-border"
+                  className="w-full h-11 font-normal text-sm rounded-md border-border"
                   onClick={() => toast.info("Login com Google em desenvolvimento")}
                 >
-                  <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">
+                  <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                     <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
@@ -427,7 +430,7 @@ const Auth = () => {
                 <Button 
                   type="button"
                   variant="outline"
-                  className="w-full h-12 font-normal text-sm rounded-md border-border"
+                  className="w-full h-11 font-normal text-sm rounded-md border-border"
                   onClick={() => toast.info("Login com chave de acesso em desenvolvimento")}
                 >
                   Fazer login com chave de acesso
@@ -436,7 +439,7 @@ const Auth = () => {
                 <Button 
                   type="button"
                   variant="outline"
-                  className="w-full h-12 font-normal text-sm rounded-md border-border"
+                  className="w-full h-11 font-normal text-sm rounded-md border-border"
                   onClick={() => toast.info("Login com SSO em desenvolvimento")}
                 >
                   Entrar com SSO
@@ -444,8 +447,8 @@ const Auth = () => {
               </div>
             </div>
 
-            {/* Footer Section - Light blue like Stripe */}
-            <div className="px-10 py-5 bg-sky-50 border-t border-sky-100">
+            {/* Footer Section */}
+            <div className="px-8 sm:px-10 py-4 bg-muted/50 border-t border-border">
               <p className="text-sm text-center text-muted-foreground">
                 Começando agora?{" "}
                 <Link to="/cadastro" className="text-primary hover:underline font-medium">
@@ -458,7 +461,7 @@ const Auth = () => {
       </main>
 
       {/* Footer - Stripe style */}
-      <footer className="relative z-10 py-6 flex items-center justify-center gap-2 text-white/80 text-sm">
+      <footer className="relative z-10 py-4 flex-shrink-0 flex items-center justify-center gap-2 text-white/80 text-sm">
         <span>© {platformName}</span>
         <span className="mx-2">·</span>
         <button className="hover:text-white hover:underline transition-colors">Privacidade e termos</button>
