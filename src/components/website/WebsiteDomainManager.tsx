@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -184,6 +184,13 @@ export function WebsiteDomainManager({ config }: WebsiteDomainManagerProps) {
   const [customDomain, setCustomDomain] = useState(config.custom_domain || "");
   const [isVerifying, setIsVerifying] = useState(false);
   const [copied, setCopied] = useState(false);
+  
+  // Sync state when config changes (after save)
+  useEffect(() => {
+    if (config.custom_domain !== undefined) {
+      setCustomDomain(config.custom_domain || "");
+    }
+  }, [config.custom_domain]);
   
   // Get dynamic system branding from platform settings
   const systemName = platformSettings?.platform_slug || "sistema";
