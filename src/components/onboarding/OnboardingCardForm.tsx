@@ -30,6 +30,71 @@ interface CardFormContentProps {
   isTestMode: boolean;
 }
 
+function translateStripeCodeToPt(code?: string | null) {
+  if (!code) return null;
+
+  const map: Record<string, string> = {
+    card_declined: "Cartão recusado. Verifique os dados ou use outro cartão.",
+    expired_card: "Cartão expirado. Use outro cartão.",
+    incorrect_cvc: "Código de segurança incorreto.",
+    incorrect_number: "Número do cartão incorreto.",
+    invalid_expiry_month: "Data de validade inválida.",
+    invalid_expiry_year: "Data de validade inválida.",
+    incomplete_number: "Número do cartão incompleto.",
+    incomplete_cvc: "Código de segurança incompleto.",
+    incomplete_expiry: "Data de validade incompleta.",
+    incomplete_zip: "CEP incompleto.",
+    processing_error: "Erro ao processar o cartão. Tente novamente.",
+    authentication_required: "Seu cartão exige autenticação (3D Secure). Autorize no app do banco ou use outro cartão.",
+    insufficient_funds: "Saldo insuficiente. Use outro cartão.",
+    invalid_request_error: "Não foi possível processar a solicitação. Tente novamente.",
+  };
+
+  return map[code] ?? null;
+}
+
+function translateStripeDeclineCodeToPt(declineCode?: string | null) {
+  if (!declineCode) return null;
+
+  const map: Record<string, string> = {
+    insufficient_funds: "Saldo insuficiente. Use outro cartão.",
+    do_not_honor: "O banco recusou a transação. Tente novamente ou use outro cartão.",
+    generic_decline: "Cartão recusado. Verifique os dados ou use outro cartão.",
+    transaction_not_allowed: "Transação não permitida. Ative compras online/internacionais no app do banco.",
+    restricted_card: "Cartão com restrição. Use outro cartão.",
+    lost_card: "Cartão reportado como perdido. Use outro cartão.",
+    stolen_card: "Cartão reportado como roubado. Use outro cartão.",
+    fraud: "Transação recusada por segurança. Tente novamente ou use outro cartão.",
+  };
+
+  return map[declineCode] ?? null;
+}
+
+function formatTestModeSuffix(isTestMode: boolean) {
+  return isTestMode ? " (Ambiente de teste: o banco não recebe notificação.)" : "";
+}
+
+function translateStripeErrorToPt(err: any, isTestMode: boolean) {
+  const code = err?.code as string | undefined;
+  const declineCode = (err as any)?.decline_code as string | undefined;
+
+  // Prefer decline_code when card_declined, because it's more precise.
+  if (code === "card_declined") {
+    const byDecline = translateStripeDeclineCodeToPt(declineCode);
+    return (byDecline ?? translateStripeCodeToPt(code) ?? "Cartão recusado. Use outro cartão.") +
+      formatTestModeSuffix(isTestMode);
+  }
+
+  const byCode = translateStripeCodeToPt(code);
+  if (byCode) return byCode + formatTestModeSuffix(isTestMode);
+
+  // Fallback: never show raw English message to the user.
+  return (
+    "Não foi possível processar o pagamento. Verifique os dados do cartão ou use outro cartão." +
+    formatTestModeSuffix(isTestMode)
+  );
+}
+
 // Card form component inside Stripe Elements
 function CardFormContent({
   onSuccess,
@@ -79,51 +144,7 @@ function CardFormContent({
       );
 
       if (confirmError) {
-        // Translate Stripe errors to Portuguese
-        let errorMessage = confirmError.message || "Erro ao processar pagamento";
-        
-        if (confirmError.code === "card_declined") {
-          // Try to be more specific using decline_code when available
-          const declineCode = (confirmError as any).decline_code as string | undefined;
-          const declineMap: Record<string, string> = {
-            insufficient_funds: "Saldo insuficiente. Use outro cartão.",
-            do_not_honor: "O banco recusou a transação. Tente novamente ou use outro cartão.",
-            generic_decline: "Cartão recusado. Verifique os dados ou use outro cartão.",
-            transaction_not_allowed: "Transação não permitida. Ative compras online/internacionais no app do banco.",
-            restricted_card: "Cartão com restrição. Use outro cartão.",
-            lost_card: "Cartão reportado como perdido. Use outro cartão.",
-            stolen_card: "Cartão reportado como roubado. Use outro cartão.",
-            fraud: "Transação recusada por segurança. Tente novamente ou use outro cartão.",
-          };
-
-          errorMessage = declineCode && declineMap[declineCode]
-            ? declineMap[declineCode]
-            : "Cartão recusado. Verifique os dados ou use outro cartão.";
-        } else if (confirmError.code === "expired_card") {
-          errorMessage = "Cartão expirado. Use outro cartão.";
-        } else if (confirmError.code === "incorrect_cvc") {
-          errorMessage = "Código de segurança incorreto.";
-        } else if (confirmError.code === "incorrect_number") {
-          errorMessage = "Número do cartão incorreto.";
-        } else if (confirmError.code === "invalid_expiry_month" || confirmError.code === "invalid_expiry_year") {
-          errorMessage = "Data de validade inválida.";
-        } else if (confirmError.code === "incomplete_number") {
-          errorMessage = "Número do cartão incompleto.";
-        } else if (confirmError.code === "incomplete_cvc") {
-          errorMessage = "Código de segurança incompleto.";
-        } else if (confirmError.code === "incomplete_expiry") {
-          errorMessage = "Data de validade incompleta.";
-        } else if (confirmError.code === "insufficient_funds") {
-          errorMessage = "Saldo insuficiente. Use outro cartão.";
-        } else if (confirmError.code === "authentication_required") {
-          errorMessage = "Seu cartão exige autenticação (3D Secure). Autorize no app do banco ou use outro cartão.";
-        }
-
-        if (isTestMode) {
-          errorMessage = `${errorMessage} (Ambiente de teste: o banco não recebe notificação.)`;
-        }
-        
-        throw new Error(errorMessage);
+        throw new Error(translateStripeErrorToPt(confirmError, isTestMode));
       }
 
       if (!paymentIntent) {
@@ -195,7 +216,9 @@ function CardFormContent({
             onChange={(e) => {
               setCardComplete(e.complete);
               if (e.error) {
-                setError(e.error.message);
+                // e.error.message can come in English depending on Stripe locale and error type.
+                const translated = translateStripeErrorToPt(e.error, isTestMode);
+                setError(translated);
               } else {
                 setError(null);
               }
@@ -357,7 +380,7 @@ export function OnboardingCardForm({
         </div>
       )}
 
-      <Elements stripe={stripePromise}>
+      <Elements stripe={stripePromise} options={{ locale: "pt-BR" }}>
         <CardFormContent
           onSuccess={onSuccess}
           onError={handleError}
