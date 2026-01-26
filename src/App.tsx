@@ -73,7 +73,7 @@ function AppContent() {
       <Sonner />
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<RootRedirect />} />
+          <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
           {/* Legacy route (marketing removido) */}
           <Route path="/marketing" element={<RootRedirect />} />
