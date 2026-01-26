@@ -283,29 +283,12 @@ export default function Onboarding() {
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.2 }}
               >
-                {/* Trial banner - premium style */}
-                <div className="mb-6 relative overflow-hidden rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 p-[1px]">
-                  <div className="relative bg-card rounded-[11px] p-4">
-                    <div className="flex items-center gap-4">
-                      <div className="relative">
-                        <div className="absolute inset-0 bg-emerald-500/20 rounded-xl blur-lg" />
-                        <div className="relative flex items-center justify-center h-12 w-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 shadow-lg">
-                          <Sparkles className="h-6 w-6 text-white" />
-                        </div>
-                      </div>
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <p className="text-base font-semibold text-foreground">14 dias grátis</p>
-                          <span className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-full">
-                            Trial
-                          </span>
-                        </div>
-                        <p className="text-sm text-muted-foreground mt-0.5">
-                          Acesso completo a todos os recursos. Cancele quando quiser.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
+                {/* Trial notice */}
+                <div className="mb-5 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Check className="h-4 w-4 text-green-600" />
+                  <span>14 dias grátis</span>
+                  <span className="text-border">•</span>
+                  <span>Sem cartão de crédito</span>
                 </div>
 
                 {/* Shopify-style card */}
