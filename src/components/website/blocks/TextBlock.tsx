@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import DOMPurify from "dompurify";
 
 interface TextBlockProps {
   content: {
@@ -50,7 +51,9 @@ export function TextBlock({ content, settings, colors }: TextBlockProps) {
         {content.text && (
           <div 
             className="prose prose-lg max-w-none text-muted-foreground"
-            dangerouslySetInnerHTML={{ __html: content.text.replace(/\n/g, '<br/>') }}
+            dangerouslySetInnerHTML={{ 
+              __html: DOMPurify.sanitize(content.text.replace(/\n/g, '<br/>')) 
+            }}
           />
         )}
       </div>
