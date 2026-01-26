@@ -294,7 +294,7 @@ export default function Onboarding() {
                 {/* Shopify-style card */}
                 <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden">
                   {/* Card header */}
-                  <div className="px-5 py-4 border-b border-border">
+                  <div className="px-5 py-4">
                     <h2 className="text-base font-semibold text-foreground">
                       Dados da escola
                     </h2>
