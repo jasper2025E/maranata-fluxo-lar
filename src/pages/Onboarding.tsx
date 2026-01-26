@@ -321,37 +321,59 @@ export default function Onboarding() {
             </div>
           </div>
 
-          {/* Progress Steps */}
-          <div className="flex items-center justify-center gap-1 mb-8">
-            {stepLabels.map((label, index) => {
-              const s = index + 1;
-              return (
-                <div key={s} className="flex items-center">
-                  <div className="flex flex-col items-center">
-                    <div
-                      className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold text-xs transition-all ${
-                        step >= s
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-slate-200 text-slate-500"
-                      }`}
-                    >
-                      {step > s ? <CheckCircle className="h-4 w-4" /> : s}
+          {/* Progress Steps - Professional minimal design */}
+          <nav className="flex items-center justify-center mb-10" aria-label="Progress">
+            <ol className="flex items-center gap-0">
+              {stepLabels.map((label, index) => {
+                const s = index + 1;
+                const isCompleted = step > s;
+                const isCurrent = step === s;
+                const isUpcoming = step < s;
+                
+                return (
+                  <li key={s} className="flex items-center">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`
+                          relative h-9 w-9 rounded-full flex items-center justify-center text-sm font-medium
+                          transition-colors duration-200
+                          ${isCompleted 
+                            ? "bg-slate-900 text-white" 
+                            : isCurrent 
+                              ? "bg-slate-900 text-white ring-4 ring-slate-900/10" 
+                              : "bg-slate-100 text-slate-400"
+                          }
+                        `}
+                      >
+                        {isCompleted ? (
+                          <Check className="h-4 w-4" strokeWidth={2.5} />
+                        ) : (
+                          <span>{s}</span>
+                        )}
+                      </div>
+                      <span 
+                        className={`
+                          text-xs mt-2 font-medium whitespace-nowrap
+                          ${isCompleted || isCurrent ? "text-slate-900" : "text-slate-400"}
+                        `}
+                      >
+                        {label}
+                      </span>
                     </div>
-                    <span className={`text-[10px] mt-1 ${step >= s ? "text-slate-900" : "text-slate-400"}`}>
-                      {label}
-                    </span>
-                  </div>
-                  {s < 5 && (
-                    <div
-                      className={`w-6 sm:w-8 h-0.5 mx-0.5 rounded ${
-                        step > s ? "bg-primary" : "bg-slate-200"
-                      }`}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    {s < 5 && (
+                      <div
+                        className={`
+                          w-8 sm:w-12 h-px mx-2 sm:mx-3
+                          transition-colors duration-200
+                          ${isCompleted ? "bg-slate-900" : "bg-slate-200"}
+                        `}
+                      />
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          </nav>
 
           <AnimatePresence mode="wait">
             {/* Step 1: School Info */}
