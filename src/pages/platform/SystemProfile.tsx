@@ -16,7 +16,6 @@ import {
   FileText,
   HardDrive,
   Camera,
-  Link2,
   Zap,
   AlertTriangle,
   Users,
@@ -40,7 +39,6 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
 import { GradientBackground } from "@/components/landing/GradientBackground";
-import { PlatformDomainManager } from "@/components/platform/PlatformDomainManager";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 
 interface SystemConfig {
@@ -275,7 +273,7 @@ export default function SystemProfile() {
           </div>
         ) : (
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="branding" className="gap-2">
                 <Palette className="h-4 w-4" />
                 <span className="hidden lg:inline">Marca</span>
@@ -295,10 +293,6 @@ export default function SystemProfile() {
               <TabsTrigger value="notifications" className="gap-2">
                 <Bell className="h-4 w-4" />
                 <span className="hidden lg:inline">Alertas</span>
-              </TabsTrigger>
-              <TabsTrigger value="domains" className="gap-2">
-                <Link2 className="h-4 w-4" />
-                <span className="hidden lg:inline">Domínios</span>
               </TabsTrigger>
             </TabsList>
 
@@ -841,13 +835,6 @@ export default function SystemProfile() {
               </Card>
             </TabsContent>
 
-            {/* Domains Tab */}
-            <TabsContent value="domains">
-              <PlatformDomainManager 
-                platformSlug={platformSettings?.platform_slug || "sistema"} 
-                onSave={() => refetchPlatformSettings()}
-              />
-            </TabsContent>
           </Tabs>
         )}
       </div>
