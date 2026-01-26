@@ -49,6 +49,7 @@ interface SystemConfig {
   meta_title: string;
   meta_description: string;
   support_email: string;
+  privacy_terms_url: string;
   // Gradients
   gradient_from: string;
   gradient_via: string;
@@ -87,6 +88,7 @@ const defaultConfig: SystemConfig = {
   meta_title: "",
   meta_description: "",
   support_email: "suporte@exemplo.com",
+  privacy_terms_url: "",
   gradient_from: "262 83% 58%",
   gradient_via: "292 84% 61%",
   gradient_to: "24 95% 53%",
@@ -398,6 +400,15 @@ export default function SystemProfile() {
                         maxLength={160}
                       />
                       <p className="text-xs text-muted-foreground">{(config.meta_description || "").length}/160</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>URL de Privacidade e Termos</Label>
+                      <Input
+                        value={config.privacy_terms_url}
+                        onChange={(e) => updateConfig("privacy_terms_url", e.target.value)}
+                        placeholder="https://seusite.com/privacidade"
+                      />
+                      <p className="text-xs text-muted-foreground">Link exibido no rodapé da página de login</p>
                     </div>
                   </CardContent>
                 </Card>

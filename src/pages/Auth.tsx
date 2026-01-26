@@ -417,8 +417,19 @@ const Auth = () => {
       {/* Footer - Stripe style */}
       <footer className="relative z-10 py-4 flex-shrink-0 flex items-center justify-center gap-2 text-white/80 text-sm">
         <span>© {platformName}</span>
-        <span className="mx-2">·</span>
-        <button className="hover:text-white hover:underline transition-colors">Privacidade e termos</button>
+        {branding?.privacyTermsUrl && (
+          <>
+            <span className="mx-2">·</span>
+            <a 
+              href={branding.privacyTermsUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-white hover:underline transition-colors"
+            >
+              Privacidade e termos
+            </a>
+          </>
+        )}
       </footer>
     </div>
   );
