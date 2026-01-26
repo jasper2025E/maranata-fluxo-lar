@@ -15,6 +15,7 @@ type CleanupRequest = {
 type AdminUser = {
   id: string;
   email?: string;
+  created_at?: string;
 };
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -104,30 +105,95 @@ serve(async (req) => {
       if (v.tenant_id) tenantIds.add(v.tenant_id);
     }
 
-    // 3) Load tenants referenced
-    const tenantMap = new Set<string>();
-    for (const ids of chunk(Array.from(tenantIds), 200)) {
-      const { data, error } = await supabaseAdmin.from("tenants").select("id").in("id", ids);
+    // 3) Load ALL active tenants (not just referenced ones) - CRITICAL FIX
+    // This prevents deleting users whose profile was already deleted but tenant still exists
+    const allActiveTenants = new Set<string>();
+    let tenantPage = 0;
+    while (true) {
+      const { data: tenants, error } = await supabaseAdmin
+        .from("tenants")
+        .select("id, email")
+        .range(tenantPage * 1000, (tenantPage + 1) * 1000 - 1);
       if (error) throw error;
-      (data || []).forEach((t: any) => tenantMap.add(t.id));
+      if (!tenants || tenants.length === 0) break;
+      tenants.forEach((t: any) => {
+        allActiveTenants.add(t.id);
+      });
+      tenantPage++;
+      if (tenants.length < 1000) break;
     }
 
-    // 4) Identify orphans
+    // 4) Build map of tenant emails for safety check
+    const tenantEmailMap = new Map<string, string>();
+    for (const ids of chunk(Array.from(allActiveTenants), 200)) {
+      const { data, error } = await supabaseAdmin
+        .from("tenants")
+        .select("id, email")
+        .in("id", ids);
+      if (error) throw error;
+      (data || []).forEach((t: any) => {
+        if (t.email) tenantEmailMap.set(t.email.toLowerCase(), t.id);
+      });
+    }
+
+    // 5) Identify orphans - STRICT CRITERIA
+    // Only consider orphan if:
+    // - No profile exists AND email doesn't match any tenant email
+    // - Profile exists but tenant_id is null AND email doesn't match any tenant
+    // - Profile exists with tenant_id but that tenant was DELETED (not in allActiveTenants)
+    //   AND email doesn't match any active tenant
     const orphans: { id: string; email?: string; reason: string }[] = [];
+    const protected_users: { id: string; email?: string; reason: string }[] = [];
+
     for (const u of users) {
+      const userEmail = (u.email || "").toLowerCase();
       const profile = profileMap.get(u.id);
+      
+      // SAFETY: If user's email matches any active tenant's email, NEVER delete
+      if (tenantEmailMap.has(userEmail)) {
+        protected_users.push({ 
+          id: u.id, 
+          email: u.email, 
+          reason: "email_matches_tenant" 
+        });
+        continue;
+      }
+
       if (!profile) {
+        // No profile - check if recently created (give 24h grace period for onboarding)
+        const createdAt = u.created_at ? new Date(u.created_at) : new Date(0);
+        const ageHours = (Date.now() - createdAt.getTime()) / (1000 * 60 * 60);
+        
+        if (ageHours < 24) {
+          protected_users.push({ 
+            id: u.id, 
+            email: u.email, 
+            reason: "recently_created" 
+          });
+          continue;
+        }
+        
         orphans.push({ id: u.id, email: u.email, reason: "missing_profile" });
         continue;
       }
+
       if (!profile.tenant_id) {
         orphans.push({ id: u.id, email: u.email, reason: "missing_tenant_id" });
         continue;
       }
-      if (!tenantMap.has(profile.tenant_id)) {
-        orphans.push({ id: u.id, email: u.email, reason: "tenant_not_found" });
+
+      // Profile has tenant_id - check if tenant exists
+      if (!allActiveTenants.has(profile.tenant_id)) {
+        orphans.push({ id: u.id, email: u.email, reason: "tenant_deleted" });
         continue;
       }
+
+      // User has valid profile + valid tenant = NOT an orphan
+      protected_users.push({ 
+        id: u.id, 
+        email: u.email, 
+        reason: "valid_user" 
+      });
     }
 
     if (dryRun) {
@@ -137,11 +203,21 @@ serve(async (req) => {
           dryRun: true,
           scanned: users.length,
           orphanCount: orphans.length,
-          sampleEmails: orphans
+          protectedCount: protected_users.length,
+          sampleOrphanEmails: orphans
             .map((o) => o.email)
             .filter(Boolean)
             .slice(0, 10),
+          sampleProtectedEmails: protected_users
+            .filter(p => p.reason === "email_matches_tenant")
+            .map((o) => o.email)
+            .filter(Boolean)
+            .slice(0, 5),
           reasons: orphans.reduce((acc: Record<string, number>, o) => {
+            acc[o.reason] = (acc[o.reason] || 0) + 1;
+            return acc;
+          }, {}),
+          protectedReasons: protected_users.reduce((acc: Record<string, number>, o) => {
             acc[o.reason] = (acc[o.reason] || 0) + 1;
             return acc;
           }, {}),
@@ -150,12 +226,12 @@ serve(async (req) => {
       );
     }
 
-    // 5) Delete orphans (best-effort)
+    // 6) Delete orphans (best-effort) - ONLY if not protected
     let deleted = 0;
     const orphanIds = orphans.map((o) => o.id);
 
     for (const ids of chunk(orphanIds, 100)) {
-      // Cleanup DB rows first (in case auth deletion doesn't cascade)
+      // Cleanup DB rows first
       try {
         await supabaseAdmin.from("user_roles").delete().in("user_id", ids);
       } catch {
@@ -183,6 +259,7 @@ serve(async (req) => {
         dryRun: false,
         scanned: users.length,
         orphanCount: orphans.length,
+        protectedCount: protected_users.length,
         deletedCount: deleted,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
