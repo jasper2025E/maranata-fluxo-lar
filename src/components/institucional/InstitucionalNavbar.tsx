@@ -56,7 +56,7 @@ export function InstitucionalNavbar({ branding }: InstitucionalNavbarProps) {
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300",
         scrolled
-          ? "bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm"
+          ? "bg-background/95 backdrop-blur-md border-b border-border shadow-sm"
           : "bg-transparent"
       )}
     >
@@ -71,7 +71,7 @@ export function InstitucionalNavbar({ branding }: InstitucionalNavbarProps) {
                 className="h-7 w-auto object-contain"
               />
             ) : (
-              <span className="text-xl font-bold text-slate-900 tracking-tight">
+              <span className="text-xl font-bold text-foreground tracking-tight">
                 {branding?.platformName || "maranata"}
               </span>
             )}
@@ -83,7 +83,7 @@ export function InstitucionalNavbar({ branding }: InstitucionalNavbarProps) {
               <button
                 key={link.href}
                 onClick={() => scrollToSection(link.href)}
-                className="flex items-center gap-1 px-4 py-2 text-[15px] font-medium text-slate-600 hover:text-slate-900 transition-colors"
+                className="flex items-center gap-1 px-4 py-2 text-[15px] font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 {link.label}
                 {link.hasDropdown && (
@@ -96,7 +96,7 @@ export function InstitucionalNavbar({ branding }: InstitucionalNavbarProps) {
           {/* Desktop CTA */}
           <div className="hidden lg:flex items-center gap-4">
             <Link to="/auth">
-              <button className="text-[15px] font-medium text-slate-600 hover:text-slate-900 transition-colors flex items-center gap-1">
+              <button className="text-[15px] font-medium text-muted-foreground hover:text-foreground transition-colors flex items-center gap-1">
                 Entrar
                 <ArrowRight className="h-4 w-4" />
               </button>
@@ -104,7 +104,7 @@ export function InstitucionalNavbar({ branding }: InstitucionalNavbarProps) {
             <Link to="/cadastro">
               <Button
                 variant="outline"
-                className="h-10 px-4 text-[15px] font-medium border-primary text-primary hover:bg-primary hover:text-white transition-all"
+                className="h-10 px-4 text-[15px] font-medium border-primary text-primary hover:bg-primary hover:text-primary-foreground transition-all"
               >
                 Fale com nossa equipe
                 <ArrowRight className="h-4 w-4 ml-1" />
@@ -115,7 +115,7 @@ export function InstitucionalNavbar({ branding }: InstitucionalNavbarProps) {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="lg:hidden p-2 text-slate-600 hover:text-slate-900"
+            className="lg:hidden p-2 text-muted-foreground hover:text-foreground"
           >
             {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
           </button>
@@ -128,19 +128,19 @@ export function InstitucionalNavbar({ branding }: InstitucionalNavbarProps) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden overflow-hidden bg-white border-t border-slate-100"
+              className="lg:hidden overflow-hidden bg-card border-t border-border"
             >
               <div className="py-4 space-y-1">
                 {navLinks.map((link) => (
                   <button
                     key={link.href}
                     onClick={() => scrollToSection(link.href)}
-                    className="block w-full text-left px-4 py-3 text-base font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50"
+                    className="block w-full text-left px-4 py-3 text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50"
                   >
                     {link.label}
                   </button>
                 ))}
-                <div className="pt-4 px-4 space-y-3 border-t border-slate-100">
+                <div className="pt-4 px-4 space-y-3 border-t border-border">
                   <Link to="/auth" className="block">
                     <Button variant="outline" className="w-full">
                       Entrar

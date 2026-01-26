@@ -41,7 +41,7 @@ const certifications = [
 
 export function InstitucionalSeguranca() {
   return (
-    <section id="seguranca" className="py-24 lg:py-32 bg-white">
+    <section id="seguranca" className="py-24 lg:py-32 bg-background">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Left Content */}
@@ -52,11 +52,11 @@ export function InstitucionalSeguranca() {
             transition={{ duration: 0.6 }}
           >
             <p className="text-primary font-medium mb-4">Segurança</p>
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 tracking-tight mb-6">
+            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-tight mb-6">
               Seus dados protegidos{" "}
               <span className="text-primary">24/7</span>
             </h2>
-            <p className="text-lg text-slate-600 mb-8 leading-relaxed">
+            <p className="text-lg text-muted-foreground mb-8 leading-relaxed">
               Segurança não é opcional. Investimos em infraestrutura 
               e processos para garantir que os dados da sua escola 
               estejam sempre seguros.
@@ -77,10 +77,10 @@ export function InstitucionalSeguranca() {
                     <feature.icon className="w-5 h-5 text-primary" />
                   </div>
                   <div>
-                    <h4 className="font-semibold text-slate-900 mb-1">
+                    <h4 className="font-semibold text-foreground mb-1">
                       {feature.title}
                     </h4>
-                    <p className="text-sm text-slate-600">
+                    <p className="text-sm text-muted-foreground">
                       {feature.description}
                     </p>
                   </div>
@@ -97,23 +97,23 @@ export function InstitucionalSeguranca() {
             transition={{ duration: 0.6 }}
             className="relative"
           >
-            <div className="relative bg-white rounded-3xl p-8 lg:p-12 border border-slate-200 shadow-xl">
+            <div className="relative bg-card rounded-3xl p-8 lg:p-12 border border-border shadow-xl">
               {/* Shield Icon */}
               <div className="flex justify-center mb-8">
                 <div className="relative">
                   <div className="absolute inset-0 bg-primary/20 rounded-full blur-2xl" />
                   <div className="relative w-24 h-24 rounded-full bg-primary flex items-center justify-center shadow-lg">
-                    <Shield className="w-12 h-12 text-white" />
+                    <Shield className="w-12 h-12 text-primary-foreground" />
                   </div>
                 </div>
               </div>
 
               {/* Uptime */}
               <div className="text-center mb-8">
-                <div className="text-5xl font-bold text-slate-900 mb-2">
+                <div className="text-5xl font-bold text-foreground mb-2">
                   99.9%
                 </div>
-                <div className="text-slate-500">
+                <div className="text-muted-foreground">
                   Uptime garantido por SLA
                 </div>
               </div>
@@ -123,10 +123,10 @@ export function InstitucionalSeguranca() {
                 {certifications.map((cert, index) => (
                   <div
                     key={index}
-                    className="flex items-center gap-3 px-4 py-3 bg-slate-50 rounded-lg"
+                    className="flex items-center gap-3 px-4 py-3 bg-muted/50 rounded-lg"
                   >
                     <CheckCircle2 className="w-5 h-5 text-primary" />
-                    <span className="font-medium text-slate-900">{cert}</span>
+                    <span className="font-medium text-foreground">{cert}</span>
                   </div>
                 ))}
               </div>

@@ -14,7 +14,7 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
   const [email, setEmail] = useState("");
 
   return (
-    <section className="relative min-h-screen overflow-hidden bg-white">
+    <section className="relative min-h-screen overflow-hidden bg-background">
       {/* Gradient blob - top left */}
       <div className="absolute top-0 left-0 w-[70%] h-[90%] pointer-events-none">
         <svg
@@ -43,8 +43,8 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
       <div 
         className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
-          backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px),
-                           linear-gradient(to bottom, #000 1px, transparent 1px)`,
+          backgroundImage: `linear-gradient(to right, hsl(var(--foreground)) 1px, transparent 1px),
+                           linear-gradient(to bottom, hsl(var(--foreground)) 1px, transparent 1px)`,
           backgroundSize: '60px 60px'
         }}
       />
@@ -60,14 +60,14 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
             className="max-w-xl"
           >
             {/* Main headline - Stripe style typography */}
-            <h1 className="text-[2.75rem] sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-semibold leading-[1.1] tracking-tight text-slate-900 mb-6">
+            <h1 className="text-[2.75rem] sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-semibold leading-[1.1] tracking-tight text-foreground mb-6">
               Infraestrutura{" "}
               <span className="text-primary">financeira</span>{" "}
               para escolas
             </h1>
 
             {/* Subheadline */}
-            <p className="text-lg sm:text-xl text-slate-600 leading-relaxed mb-8 max-w-lg">
+            <p className="text-lg sm:text-xl text-muted-foreground leading-relaxed mb-8 max-w-lg">
               Faça como as melhores instituições de ensino: gerencie alunos, 
               cobranças e funcionários em uma plataforma completa, segura e escalável.
             </p>
@@ -79,7 +79,7 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
                 placeholder="E-mail"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 px-4 text-base border-slate-300 bg-white focus:border-primary focus:ring-primary rounded-md"
+                className="h-12 px-4 text-base border-border bg-background focus:border-primary focus:ring-primary rounded-md"
               />
               <Link to="/cadastro">
                 <Button 
@@ -101,64 +101,64 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
             className="relative lg:h-[600px] hidden lg:block"
           >
             {/* Main Dashboard Card - Gestão de Alunos */}
-            <div className="absolute top-0 right-0 w-[340px] bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden">
+            <div className="absolute top-0 right-0 w-[340px] bg-card rounded-xl shadow-2xl border border-border overflow-hidden">
               {/* Dashboard header */}
-              <div className="bg-slate-900 px-4 py-3 flex items-center justify-between">
+              <div className="bg-foreground px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-7 h-7 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                    <span className="text-[11px] text-white font-bold">M</span>
+                    <span className="text-[11px] text-primary-foreground font-bold">M</span>
                   </div>
-                  <span className="text-white text-sm font-medium">Maranata Gestão</span>
+                  <span className="text-background text-sm font-medium">Maranata Gestão</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
-                  <span className="text-slate-400 text-xs">Online</span>
+                  <span className="text-muted-foreground text-xs">Online</span>
                 </div>
               </div>
               
               {/* Dashboard content */}
               <div className="p-4">
                 <div className="flex items-center justify-between mb-3">
-                  <span className="text-sm font-medium text-slate-700">Visão Geral</span>
-                  <span className="text-xs text-slate-400">Janeiro 2026</span>
+                  <span className="text-sm font-medium text-foreground">Visão Geral</span>
+                  <span className="text-xs text-muted-foreground">Janeiro 2026</span>
                 </div>
                 
                 <div className="grid grid-cols-3 gap-3 mb-4">
-                  <div className="bg-slate-50 rounded-lg p-2.5 text-center">
-                    <div className="text-lg font-bold text-slate-900">248</div>
-                    <div className="text-[10px] text-slate-500">Alunos</div>
+                  <div className="bg-muted/50 rounded-lg p-2.5 text-center">
+                    <div className="text-lg font-bold text-foreground">248</div>
+                    <div className="text-[10px] text-muted-foreground">Alunos</div>
                   </div>
-                  <div className="bg-slate-50 rounded-lg p-2.5 text-center">
-                    <div className="text-lg font-bold text-slate-900">12</div>
-                    <div className="text-[10px] text-slate-500">Turmas</div>
+                  <div className="bg-muted/50 rounded-lg p-2.5 text-center">
+                    <div className="text-lg font-bold text-foreground">12</div>
+                    <div className="text-[10px] text-muted-foreground">Turmas</div>
                   </div>
-                  <div className="bg-slate-50 rounded-lg p-2.5 text-center">
+                  <div className="bg-muted/50 rounded-lg p-2.5 text-center">
                     <div className="text-lg font-bold text-green-600">97%</div>
-                    <div className="text-[10px] text-slate-500">Adimplência</div>
+                    <div className="text-[10px] text-muted-foreground">Adimplência</div>
                   </div>
                 </div>
 
                 {/* Faturas recentes */}
-                <div className="text-xs font-medium text-slate-600 mb-2">Últimas faturas</div>
+                <div className="text-xs font-medium text-muted-foreground mb-2">Últimas faturas</div>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between py-1.5 px-2 bg-green-50 rounded-lg">
+                  <div className="flex items-center justify-between py-1.5 px-2 bg-green-50 dark:bg-green-950/30 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                      <span className="text-xs text-slate-700">Maria Silva</span>
+                      <span className="text-xs text-foreground">Maria Silva</span>
                     </div>
                     <span className="text-xs font-medium text-green-600">R$ 890,00</span>
                   </div>
-                  <div className="flex items-center justify-between py-1.5 px-2 bg-green-50 rounded-lg">
+                  <div className="flex items-center justify-between py-1.5 px-2 bg-green-50 dark:bg-green-950/30 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                      <span className="text-xs text-slate-700">João Santos</span>
+                      <span className="text-xs text-foreground">João Santos</span>
                     </div>
                     <span className="text-xs font-medium text-green-600">R$ 750,00</span>
                   </div>
-                  <div className="flex items-center justify-between py-1.5 px-2 bg-amber-50 rounded-lg">
+                  <div className="flex items-center justify-between py-1.5 px-2 bg-amber-50 dark:bg-amber-950/30 rounded-lg">
                     <div className="flex items-center gap-2">
                       <div className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
-                      <span className="text-xs text-slate-700">Ana Costa</span>
+                      <span className="text-xs text-foreground">Ana Costa</span>
                     </div>
                     <span className="text-xs font-medium text-amber-600">Pendente</span>
                   </div>
@@ -167,57 +167,57 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
             </div>
 
             {/* Pagamento PIX Card */}
-            <div className="absolute top-44 left-0 w-[260px] bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden">
-              <div className="p-4 border-b border-slate-100 bg-gradient-to-r from-primary/5 to-purple-500/5">
+            <div className="absolute top-44 left-0 w-[260px] bg-card rounded-xl shadow-2xl border border-border overflow-hidden">
+              <div className="p-4 border-b border-border bg-gradient-to-r from-primary/5 to-purple-500/5">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white text-sm">💳</span>
+                    <span className="text-primary-foreground text-sm">💳</span>
                   </div>
                   <div>
-                    <div className="font-medium text-slate-900 text-sm">Fatura #2026-001</div>
-                    <div className="text-xs text-slate-500">Mensalidade Janeiro</div>
+                    <div className="font-medium text-foreground text-sm">Fatura #2026-001</div>
+                    <div className="text-xs text-muted-foreground">Mensalidade Janeiro</div>
                   </div>
                 </div>
               </div>
               
               <div className="p-4 space-y-3">
                 <div className="flex justify-between items-center">
-                  <span className="text-xs text-slate-500">Valor</span>
-                  <span className="text-lg font-bold text-slate-900">R$ 890,00</span>
+                  <span className="text-xs text-muted-foreground">Valor</span>
+                  <span className="text-lg font-bold text-foreground">R$ 890,00</span>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-2">
                   <button className="flex items-center justify-center gap-1.5 py-2 bg-[#32BCAD] text-white rounded-lg text-xs font-medium">
                     <span>◉</span> PIX
                   </button>
-                  <button className="flex items-center justify-center gap-1.5 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-medium">
+                  <button className="flex items-center justify-center gap-1.5 py-2 bg-muted text-foreground rounded-lg text-xs font-medium">
                     <span>▤</span> Boleto
                   </button>
                 </div>
                 
-                <div className="bg-slate-50 rounded-lg p-3 flex items-center justify-center">
-                  <div className="w-16 h-16 bg-white border-2 border-slate-200 rounded-lg flex items-center justify-center">
+                <div className="bg-muted/50 rounded-lg p-3 flex items-center justify-center">
+                  <div className="w-16 h-16 bg-background border-2 border-border rounded-lg flex items-center justify-center">
                     <div className="grid grid-cols-4 gap-0.5">
                       {Array.from({ length: 16 }).map((_, i) => (
-                        <div key={i} className={`w-2 h-2 ${Math.random() > 0.5 ? 'bg-slate-900' : 'bg-white'}`} />
+                        <div key={i} className={`w-2 h-2 ${Math.random() > 0.5 ? 'bg-foreground' : 'bg-background'}`} />
                       ))}
                     </div>
                   </div>
                 </div>
                 
-                <div className="text-center text-[10px] text-slate-400">
+                <div className="text-center text-[10px] text-muted-foreground">
                   Escaneie o QR Code para pagar
                 </div>
               </div>
             </div>
 
             {/* Receita Card */}
-            <div className="absolute bottom-8 right-8 w-[220px] bg-white rounded-xl shadow-xl border border-slate-100 p-4">
+            <div className="absolute bottom-8 right-8 w-[220px] bg-card rounded-xl shadow-xl border border-border p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-medium text-slate-600">Receita Mensal</span>
-                <span className="text-[10px] text-green-600 font-medium bg-green-50 px-1.5 py-0.5 rounded">+18%</span>
+                <span className="text-xs font-medium text-muted-foreground">Receita Mensal</span>
+                <span className="text-[10px] text-green-600 font-medium bg-green-50 dark:bg-green-950/30 px-1.5 py-0.5 rounded">+18%</span>
               </div>
-              <div className="text-2xl font-bold text-slate-900 mb-3">R$ 124.500</div>
+              <div className="text-2xl font-bold text-foreground mb-3">R$ 124.500</div>
               {/* Mini area chart */}
               <svg className="w-full h-10" viewBox="0 0 200 40">
                 <defs>
