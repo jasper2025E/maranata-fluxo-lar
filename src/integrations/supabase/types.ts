@@ -2319,6 +2319,60 @@ export type Database = {
           },
         ]
       }
+      school_website_blocks: {
+        Row: {
+          block_order: number
+          block_type: string
+          content: Json | null
+          created_at: string | null
+          id: string
+          is_visible: boolean | null
+          page_id: string
+          settings: Json | null
+          tenant_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          block_order?: number
+          block_type: string
+          content?: Json | null
+          created_at?: string | null
+          id?: string
+          is_visible?: boolean | null
+          page_id: string
+          settings?: Json | null
+          tenant_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          block_order?: number
+          block_type?: string
+          content?: Json | null
+          created_at?: string | null
+          id?: string
+          is_visible?: boolean | null
+          page_id?: string
+          settings?: Json | null
+          tenant_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_website_blocks_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "school_website_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_website_blocks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_website_config: {
         Row: {
           about_description: string | null
@@ -2329,6 +2383,8 @@ export type Database = {
           contact_title: string | null
           created_at: string
           custom_domain: string | null
+          custom_domain_ssl_status: string | null
+          custom_domain_verified: boolean | null
           differentials: Json | null
           enabled: boolean
           facebook_pixel_id: string | null
@@ -2374,6 +2430,8 @@ export type Database = {
           contact_title?: string | null
           created_at?: string
           custom_domain?: string | null
+          custom_domain_ssl_status?: string | null
+          custom_domain_verified?: boolean | null
           differentials?: Json | null
           enabled?: boolean
           facebook_pixel_id?: string | null
@@ -2419,6 +2477,8 @@ export type Database = {
           contact_title?: string | null
           created_at?: string
           custom_domain?: string | null
+          custom_domain_ssl_status?: string | null
+          custom_domain_verified?: boolean | null
           differentials?: Json | null
           enabled?: boolean
           facebook_pixel_id?: string | null
@@ -2461,6 +2521,66 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: true
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_website_pages: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          is_homepage: boolean | null
+          is_published: boolean | null
+          seo_description: string | null
+          seo_title: string | null
+          slug: string
+          tenant_id: string
+          title: string
+          updated_at: string | null
+          website_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_homepage?: boolean | null
+          is_published?: boolean | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug: string
+          tenant_id: string
+          title: string
+          updated_at?: string | null
+          website_id: string
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_homepage?: boolean | null
+          is_published?: boolean | null
+          seo_description?: string | null
+          seo_title?: string | null
+          slug?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string | null
+          website_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_website_pages_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "school_website_pages_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "school_website_config"
             referencedColumns: ["id"]
           },
         ]

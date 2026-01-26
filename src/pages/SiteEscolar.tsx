@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { motion } from "framer-motion";
 import { 
   Globe, 
   Eye, 
@@ -16,7 +15,8 @@ import {
   Image,
   Quote,
   Monitor,
-  Users
+  Layers,
+  ArrowLeft
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/PageLayout";
@@ -39,6 +39,9 @@ import { WebsiteEditorTestimonials } from "@/components/website/WebsiteEditorTes
 import { WebsitePreview } from "@/components/website/WebsitePreview";
 import { WebsiteThemeSelector } from "@/components/website/WebsiteThemeSelector";
 import { WebsiteThemeImportExport } from "@/components/website/WebsiteThemeImportExport";
+import { WebsitePagesManager } from "@/components/website/WebsitePagesManager";
+import { WebsiteBlockEditor } from "@/components/website/WebsiteBlockEditor";
+import { WebsitePage } from "@/hooks/useWebsiteBuilder";
 import { toast } from "sonner";
 
 export default function SiteEscolar() {
@@ -49,6 +52,7 @@ export default function SiteEscolar() {
   const createWebsite = useCreateSchoolWebsite();
   const toggleWebsite = useToggleSchoolWebsite();
   const [copied, setCopied] = useState(false);
+  const [editingPage, setEditingPage] = useState<WebsitePage | null>(null);
 
   const baseUrl = window.location.origin;
   const publicUrl = website?.slug ? `${baseUrl}/escola/${website.slug}` : null;
@@ -96,11 +100,7 @@ export default function SiteEscolar() {
           />
           <div className="mt-6">
             <PremiumGate feature="schoolWebsite">
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col items-center justify-center min-h-[400px] text-center"
-              >
+              <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
                 <div className="p-6 rounded-full bg-primary/10 mb-6">
                   <Globe className="h-12 w-12 text-primary" />
                 </div>
@@ -117,9 +117,46 @@ export default function SiteEscolar() {
                   <Sparkles className="mr-2 h-5 w-5" />
                   {createWebsite.isPending ? "Criando..." : "Criar Site Escolar"}
                 </Button>
-              </motion.div>
+              </div>
             </PremiumGate>
           </div>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  // Se está editando uma página específica, mostrar editor de blocos
+  if (editingPage) {
+    return (
+      <DashboardLayout>
+        <div className="container max-w-4xl mx-auto px-4 py-8">
+          <div className="mb-6">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setEditingPage(null)}
+              className="mb-4"
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Voltar para páginas
+            </Button>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold">{editingPage.title}</h1>
+                <p className="text-muted-foreground">
+                  Edite os blocos desta página
+                </p>
+              </div>
+              <Badge variant={editingPage.is_published ? "default" : "secondary"}>
+                {editingPage.is_published ? "Publicada" : "Rascunho"}
+              </Badge>
+            </div>
+          </div>
+          
+          <WebsiteBlockEditor 
+            pageId={editingPage.id} 
+            primaryColor={website.primary_color}
+          />
         </div>
       </DashboardLayout>
     );
@@ -139,9 +176,9 @@ export default function SiteEscolar() {
               <CardContent className="pt-6">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
-                    <div className={`p-3 rounded-xl ${website.enabled ? 'bg-green-500/10' : 'bg-muted'}`}>
+                    <div className={`p-3 rounded-xl ${website.enabled ? 'bg-success/10' : 'bg-muted'}`}>
                       {website.enabled ? (
-                        <Eye className="h-6 w-6 text-green-600" />
+                        <Eye className="h-6 w-6 text-success" />
                       ) : (
                         <EyeOff className="h-6 w-6 text-muted-foreground" />
                       )}
@@ -167,7 +204,7 @@ export default function SiteEscolar() {
                             onClick={handleCopyUrl}
                           >
                             {copied ? (
-                              <Check className="h-3 w-3 text-green-600" />
+                              <Check className="h-3 w-3 text-success" />
                             ) : (
                               <Copy className="h-3 w-3" />
                             )}
@@ -201,8 +238,12 @@ export default function SiteEscolar() {
             </Card>
 
             {/* Editor Tabs */}
-            <Tabs defaultValue="themes" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8">
+            <Tabs defaultValue="pages" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9">
+                <TabsTrigger value="pages" className="gap-2">
+                  <Layers className="h-4 w-4" />
+                  <span className="hidden sm:inline">Páginas</span>
+                </TabsTrigger>
                 <TabsTrigger value="themes" className="gap-2">
                   <Sparkles className="h-4 w-4" />
                   <span className="hidden sm:inline">Temas</span>
@@ -236,6 +277,13 @@ export default function SiteEscolar() {
                   <span className="hidden sm:inline">Preview</span>
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="pages">
+                <WebsitePagesManager 
+                  config={website} 
+                  onEditPage={(page) => setEditingPage(page)}
+                />
+              </TabsContent>
 
               <TabsContent value="themes" className="space-y-6">
                 <WebsiteThemeSelector config={website} />
