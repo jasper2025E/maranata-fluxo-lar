@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useSubscriptionPlans, getPlanPriceFormatted } from "@/hooks/useSubscriptionPlans";
+import { translateStripeApiError } from "@/lib/stripeErrors";
 
 interface TenantValidation {
   isValid: boolean;
@@ -164,7 +165,8 @@ export function UpgradePlanDialog({
       }
     } catch (error) {
       console.error("Erro no checkout:", error);
-      toast.error(error instanceof Error ? error.message : "Erro ao processar upgrade");
+      const message = error instanceof Error ? error.message : "Erro ao processar upgrade";
+      toast.error(translateStripeApiError(message));
     } finally {
       setLoading(null);
     }
