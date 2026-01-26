@@ -26,7 +26,8 @@ interface CardFormContentProps {
   onError: (message: string) => void;
   schoolName: string;
   adminEmail: string;
-  paymentIntentClientSecret: string;
+  setupIntentClientSecret: string;
+  setupIntentId: string;
   tenantId: string;
 }
 
@@ -36,7 +37,8 @@ function CardFormContent({
   onError,
   schoolName,
   adminEmail,
-  paymentIntentClientSecret,
+  setupIntentClientSecret,
+  setupIntentId,
   tenantId,
 }: CardFormContentProps) {
   const stripe = useStripe();
@@ -64,9 +66,9 @@ function CardFormContent({
         throw new Error("Elemento do cartão não encontrado");
       }
 
-      // Use confirmCardPayment - this charges R$1.00 and saves the card
-      const { paymentIntent, error: confirmError } = await stripe.confirmCardPayment(
-        paymentIntentClientSecret,
+      // Use confirmCardSetup - validates and saves the card WITHOUT charging
+      const { setupIntent, error: confirmError } = await stripe.confirmCardSetup(
+        setupIntentClientSecret,
         {
           payment_method: {
             card: cardElement,
@@ -79,37 +81,38 @@ function CardFormContent({
       );
 
       if (confirmError) {
+        console.error("[Stripe] confirmCardSetup error", confirmError);
         throw new Error(translateStripeError(confirmError));
       }
 
-      if (!paymentIntent) {
-        throw new Error("Pagamento não foi processado. Tente novamente.");
+      if (!setupIntent) {
+        throw new Error("Verificação não foi processada. Tente novamente.");
       }
 
       // If Stripe requires customer action, inform user clearly
-      if (paymentIntent.status === "requires_action") {
+      if (setupIntent.status === "requires_action") {
         throw new Error(
           isTestMode
-            ? "Pagamento precisa de autenticação (3D Secure). No modo teste, use um cartão de teste compatível."
-            : "Pagamento precisa de autenticação (3D Secure). Autorize no app do banco e tente novamente."
+            ? "Verificação precisa de autenticação (3D Secure). No modo teste, use um cartão de teste compatível."
+            : "Verificação precisa de autenticação (3D Secure). Autorize no app do banco e tente novamente."
         );
       }
 
-      if (paymentIntent.status !== "succeeded") {
+      if (setupIntent.status !== "succeeded") {
         throw new Error(
           isTestMode
-            ? `Pagamento não concluído (status: ${paymentIntent.status}). Em modo teste, use cartões de teste do Stripe.`
-            : "Pagamento não foi processado. Tente novamente."
+            ? `Verificação não concluída (status: ${setupIntent.status}). Em modo teste, use cartões de teste do Stripe.`
+            : "Verificação não foi processada. Tente novamente."
         );
       }
 
-      // Complete the setup on the backend
+      // Complete the setup on the backend (save payment method)
       const { data, error: completeError } = await supabase.functions.invoke(
         "complete-card-setup",
         {
           body: {
             tenant_id: tenantId,
-            payment_intent_id: paymentIntent.id,
+            setup_intent_id: setupIntent.id,
           },
         }
       );
@@ -243,7 +246,8 @@ function CardFormContent({
 interface OnboardingCardFormProps {
   schoolName: string;
   adminEmail: string;
-  paymentIntentClientSecret: string;
+  setupIntentClientSecret: string;
+  setupIntentId: string;
   tenantId: string;
   onSuccess: () => void;
   onBack: () => void;
@@ -252,7 +256,8 @@ interface OnboardingCardFormProps {
 export function OnboardingCardForm({
   schoolName,
   adminEmail,
-  paymentIntentClientSecret,
+  setupIntentClientSecret,
+  setupIntentId,
   tenantId,
   onSuccess,
   onBack,
@@ -303,7 +308,7 @@ export function OnboardingCardForm({
         </div>
         <div>
           <h3 className="font-semibold text-slate-900">Verificar cartão</h3>
-          <p className="text-sm text-slate-500">Taxa de R$ 1,00 para ativação</p>
+          <p className="text-sm text-slate-500">Sem cobrança (modo teste)</p>
         </div>
       </div>
 
@@ -321,7 +326,8 @@ export function OnboardingCardForm({
           onError={handleError}
           schoolName={schoolName}
           adminEmail={adminEmail}
-          paymentIntentClientSecret={paymentIntentClientSecret}
+          setupIntentClientSecret={setupIntentClientSecret}
+          setupIntentId={setupIntentId}
           tenantId={tenantId}
         />
       </Elements>

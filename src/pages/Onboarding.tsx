@@ -142,8 +142,9 @@ export default function Onboarding() {
     setErrors({});
     return true;
   };
-  // State for PaymentIntent flow (R$1.00 verification charge)
-  const [paymentIntentSecret, setPaymentIntentSecret] = useState<string | null>(null);
+  // State for SetupIntent flow (card verification without charge)
+  const [setupIntentSecret, setSetupIntentSecret] = useState<string | null>(null);
+  const [setupIntentId, setSetupIntentId] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
 
   const handleNextStep = () => {
@@ -157,7 +158,7 @@ export default function Onboarding() {
     }
   };
 
-  // Step 1: Create tenant and get PaymentIntent for R$1.00 verification
+  // Step 1: Create tenant and get SetupIntent for card verification (no charge)
   const handleCreateTenant = async () => {
     setLoading(true);
     try {
@@ -195,8 +196,9 @@ export default function Onboarding() {
       }
       if (data?.error) throw new Error(data.error);
 
-      // Save PaymentIntent secret and tenant ID for card form
-      setPaymentIntentSecret(data.payment_intent_client_secret);
+      // Save SetupIntent secret and tenant ID for card form
+      setSetupIntentSecret(data.setup_intent_client_secret);
+      setSetupIntentId(data.setup_intent_id);
       setTenantId(data.tenant_id);
       setStep(4);
     } catch (error: any) {
@@ -207,7 +209,7 @@ export default function Onboarding() {
     }
   };
 
-  // Step 2: Card verified and R$1.00 charged successfully
+  // Step 2: Card verified successfully (no charge)
   const handleCardSuccess = () => {
     setStep(5);
     toast.success("Cartão verificado! R$1,00 cobrado com sucesso.");
@@ -690,7 +692,8 @@ export default function Onboarding() {
                 <OnboardingCardForm
                   schoolName={escola.nome}
                   adminEmail={admin.email}
-                  paymentIntentClientSecret={paymentIntentSecret || ""}
+                  setupIntentClientSecret={setupIntentSecret || ""}
+                  setupIntentId={setupIntentId || ""}
                   tenantId={tenantId || ""}
                   onSuccess={handleCardSuccess}
                   onBack={() => setStep(3)}

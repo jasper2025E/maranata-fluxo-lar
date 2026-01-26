@@ -317,19 +317,14 @@ serve(async (req) => {
       );
     }
 
-    // 2. Create a PaymentIntent for R$1.00 verification charge
-    // This will charge R$1.00 AND save the card for future use
-    let paymentIntent;
+    // 2. Create a SetupIntent to verify and save the card (NO charge)
+    // This validates the card and saves it for future off-session charges
+    let setupIntent;
     try {
-      paymentIntent = await stripe.paymentIntents.create({
-        amount: 100, // R$1.00 in centavos
-        currency: "brl",
+      setupIntent = await stripe.setupIntents.create({
         customer: stripeCustomer.id,
-        description: "Verificação de cartão - Taxa de ativação (reembolsável)",
-        setup_future_usage: "off_session", // Save the card for future automatic charges
-        automatic_payment_methods: {
-          enabled: true,
-        },
+        payment_method_types: ["card"],
+        usage: "off_session", // Save the card for future automatic charges
         metadata: {
           type: "card_verification",
           escola_nome: escola.nome,
@@ -337,9 +332,9 @@ serve(async (req) => {
           plan: selectedPlan,
         },
       });
-      createdPaymentIntentId = paymentIntent.id;
-    } catch (paymentError: any) {
-      console.error("Error creating PaymentIntent:", paymentError);
+      createdPaymentIntentId = setupIntent.id; // Reuse variable for cleanup tracking
+    } catch (setupError: any) {
+      console.error("Error creating SetupIntent:", setupError);
       // Cleanup Stripe customer
       await stripe.customers.del(stripeCustomer.id).catch(() => {});
       return new Response(
@@ -375,7 +370,7 @@ serve(async (req) => {
     if (tenantError) {
       console.error("Error creating tenant:", tenantError);
       // Cleanup Stripe
-      await stripe.paymentIntents.cancel(paymentIntent.id).catch(() => {});
+      await stripe.setupIntents.cancel(setupIntent.id).catch(() => {});
       await stripe.customers.del(stripeCustomer.id).catch(() => {});
       return new Response(
         JSON.stringify({ error: "Erro ao criar escola. Tente novamente." }),
@@ -399,7 +394,7 @@ serve(async (req) => {
     if (authError) {
       // Rollback: delete tenant and Stripe
       await supabaseAdmin.from("tenants").delete().eq("id", tenant.id);
-      await stripe.paymentIntents.cancel(paymentIntent.id).catch(() => {});
+      await stripe.setupIntents.cancel(setupIntent.id).catch(() => {});
       await stripe.customers.del(stripeCustomer.id).catch(() => {});
       
       console.error("Error creating user:", authError);
@@ -425,7 +420,7 @@ serve(async (req) => {
       // Rollback everything
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
       await supabaseAdmin.from("tenants").delete().eq("id", tenant.id);
-      await stripe.paymentIntents.cancel(paymentIntent.id).catch(() => {});
+      await stripe.setupIntents.cancel(setupIntent.id).catch(() => {});
       await stripe.customers.del(stripeCustomer.id).catch(() => {});
       
       console.error("Error creating profile:", profileError);
@@ -448,7 +443,7 @@ serve(async (req) => {
       await supabaseAdmin.from("profiles").delete().eq("id", authUser.user.id);
       await supabaseAdmin.auth.admin.deleteUser(authUser.user.id);
       await supabaseAdmin.from("tenants").delete().eq("id", tenant.id);
-      await stripe.paymentIntents.cancel(paymentIntent.id).catch(() => {});
+      await stripe.setupIntents.cancel(setupIntent.id).catch(() => {});
       await stripe.customers.del(stripeCustomer.id).catch(() => {});
       
       console.error("Error assigning role:", roleError);
@@ -481,15 +476,15 @@ serve(async (req) => {
       tenant_id: tenant.id,
       event_type: "onboarding_started",
       new_status: "trial",
-      amount: 100, // R$1.00 verification charge
+      amount: 0, // No verification charge
       metadata: {
         admin_email: admin.email,
         escola_nome: escola.nome,
         selected_plan: selectedPlan,
         trial_ends_at: trialEndsAt.toISOString(),
         stripe_customer_id: stripeCustomer.id,
-        payment_intent_id: paymentIntent.id,
-        verification_charge: "R$1,00",
+        setup_intent_id: setupIntent.id,
+        verification_charge: "Nenhuma (modo teste)",
       },
     });
 
@@ -498,12 +493,12 @@ serve(async (req) => {
       user_id: authUser.user.id,
       tenant_id: tenant.id,
       title: "Bem-vindo ao sistema!",
-      message: `Sua escola ${escola.nome} foi criada com sucesso. Você tem 14 dias de teste grátis no plano ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}. Foi cobrado R$1,00 para verificação do cartão. Após o período de teste, a mensalidade será cobrada automaticamente.`,
+      message: `Sua escola ${escola.nome} foi criada com sucesso. Você tem 14 dias de teste grátis no plano ${selectedPlan.charAt(0).toUpperCase() + selectedPlan.slice(1)}. Após o período de teste, a mensalidade será cobrada automaticamente.`,
       type: "success",
       read: false,
     });
 
-    // Return PaymentIntent client_secret for frontend to confirm the R$1.00 charge
+    // Return SetupIntent client_secret for frontend to confirm the card (no charge)
     return new Response(
       JSON.stringify({
         success: true,
@@ -512,8 +507,9 @@ serve(async (req) => {
         plan: selectedPlan,
         trial_ends_at: trialEndsAt.toISOString(),
         stripe_customer_id: stripeCustomer.id,
-        payment_intent_client_secret: paymentIntent.client_secret,
-        verification_amount: "R$ 1,00",
+        setup_intent_client_secret: setupIntent.client_secret,
+        setup_intent_id: setupIntent.id,
+        verification_amount: null, // No charge
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -543,7 +539,7 @@ serve(async (req) => {
         const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
         if (createdPaymentIntentId) {
           try {
-            await stripe.paymentIntents.cancel(createdPaymentIntentId);
+            await stripe.setupIntents.cancel(createdPaymentIntentId);
           } catch {
             // ignore
           }
