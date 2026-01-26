@@ -64,7 +64,7 @@ const staggerContainer = {
 
 export function InstitucionalBeneficios() {
   return (
-    <section id="beneficios" className="py-24 lg:py-32 bg-background">
+    <section id="beneficios" className="py-24 lg:py-32 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -74,15 +74,12 @@ export function InstitucionalBeneficios() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16 lg:mb-20"
         >
-          <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full mb-4">
-            Por que escolher
-          </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight mb-6">
+          <p className="text-primary font-medium mb-4">Por que escolher</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 tracking-tight mb-6">
             Resultados reais para sua escola
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Mais de 500 escolas já transformaram sua gestão. 
-            Veja como podemos ajudar você também.
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Instituições de ensino de todos os tamanhos já transformaram sua gestão.
           </p>
         </motion.div>
 
@@ -98,23 +95,20 @@ export function InstitucionalBeneficios() {
             <motion.div
               key={index}
               variants={fadeInUp}
-              className="group relative p-6 lg:p-8 rounded-2xl bg-card border border-border/50 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all duration-300"
+              className="group relative p-6 lg:p-8 rounded-2xl bg-slate-50 hover:bg-white border border-transparent hover:border-slate-200 hover:shadow-lg transition-all duration-300"
             >
               {/* Icon */}
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-5 group-hover:bg-primary group-hover:text-primary-foreground transition-colors duration-300">
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-primary/10 text-primary mb-5 group-hover:bg-primary group-hover:text-white transition-colors duration-300">
                 <benefit.icon className="w-6 h-6" />
               </div>
 
               {/* Content */}
-              <h3 className="text-lg font-semibold text-foreground mb-3">
+              <h3 className="text-lg font-semibold text-slate-900 mb-3">
                 {benefit.title}
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
+              <p className="text-slate-600 leading-relaxed">
                 {benefit.description}
               </p>
-
-              {/* Hover accent */}
-              <div className="absolute inset-x-0 bottom-0 h-1 bg-gradient-to-r from-primary/0 via-primary to-primary/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-b-2xl" />
             </motion.div>
           ))}
         </motion.div>
@@ -125,7 +119,7 @@ export function InstitucionalBeneficios() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.3 }}
-          className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12"
+          className="mt-20 grid grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-12 border-t border-slate-200 pt-16"
         >
           {[
             { value: "500+", label: "Escolas ativas" },
@@ -134,10 +128,10 @@ export function InstitucionalBeneficios() {
             { value: "4.9/5", label: "Avaliação média" },
           ].map((stat, index) => (
             <div key={index} className="text-center">
-              <div className="text-3xl lg:text-4xl font-bold text-foreground mb-2">
+              <div className="text-3xl lg:text-4xl font-bold text-slate-900 mb-2">
                 {stat.value}
               </div>
-              <div className="text-muted-foreground">{stat.label}</div>
+              <div className="text-slate-500">{stat.label}</div>
             </div>
           ))}
         </motion.div>

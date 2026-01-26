@@ -66,7 +66,7 @@ const plans = [
 
 export function InstitucionalPrecos() {
   return (
-    <section id="precos" className="py-24 lg:py-32 bg-background">
+    <section id="precos" className="py-24 lg:py-32 bg-slate-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -76,15 +76,12 @@ export function InstitucionalPrecos() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full mb-4">
-            Preços
-          </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight mb-6">
+          <p className="text-primary font-medium mb-4">Preços</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 tracking-tight mb-6">
             Planos que crescem com você
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Sem surpresas, sem taxas escondidas. Escolha o plano ideal 
-            e comece hoje mesmo. Teste grátis por 14 dias.
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Sem surpresas, sem taxas escondidas. Teste grátis por 14 dias.
           </p>
         </motion.div>
 
