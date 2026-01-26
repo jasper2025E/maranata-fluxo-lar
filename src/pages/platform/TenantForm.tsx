@@ -57,10 +57,19 @@ export default function TenantForm() {
     return generateSlugFromName(form.nome);
   }, [form.nome]);
 
-  // Get system domain for preview
-  const systemDomain = platformSettings?.system_domain || platformSettings?.platform_url || "";
-  const cleanDomain = systemDomain.replace(/^https?:\/\//, "").replace(/\/$/, "");
-  const previewSubdomain = generatedSlug && cleanDomain ? `${generatedSlug}.${cleanDomain}` : null;
+  // Get system domain for preview - uses custom domain or Lovable domain
+  const hasCustomDomain = platformSettings?.system_domain && platformSettings.system_domain.trim() !== "";
+  const baseDomain = hasCustomDomain 
+    ? platformSettings.system_domain.replace(/^https?:\/\//, "").replace(/\/$/, "")
+    : window.location.host;
+  
+  // If custom domain configured: escola.dominio.com.br (subdomain)
+  // If Lovable domain: dominio.lovable.app/escola/slug (path)
+  const previewSubdomain = generatedSlug 
+    ? hasCustomDomain 
+      ? `${generatedSlug}.${baseDomain}`
+      : `${baseDomain}/escola/${generatedSlug}`
+    : null;
 
   useEffect(() => {
     if (!isPlatformAdmin()) {
@@ -227,12 +236,12 @@ export default function TenantForm() {
                 <div className="p-4 border rounded-lg bg-muted/30 space-y-2">
                   <div className="flex items-center gap-2 text-sm font-medium">
                     <Globe className="h-4 w-4 text-primary" />
-                    Subdomínio Automático
+                    {hasCustomDomain ? "Subdomínio Automático" : "Link da Escola"}
                   </div>
-                  {previewSubdomain ? (
-                    <div className="flex items-center gap-2">
-                      <code className="px-3 py-1.5 rounded bg-background text-primary font-medium">
-                        {previewSubdomain}
+                  {previewSubdomain && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <code className="px-3 py-1.5 rounded bg-background text-primary font-medium text-sm break-all">
+                        https://{previewSubdomain}
                       </code>
                       {generatedSlug && !isValidSubdomainSlug(generatedSlug) && (
                         <span className="text-xs text-amber-600">
@@ -240,13 +249,11 @@ export default function TenantForm() {
                         </span>
                       )}
                     </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      Configure o domínio do sistema em Configurações para habilitar subdomínios automáticos.
-                    </p>
                   )}
                   <p className="text-xs text-muted-foreground">
-                    A escola terá este endereço gratuito assim que for cadastrada.
+                    {hasCustomDomain 
+                      ? "A escola terá este subdomínio gratuito assim que for cadastrada."
+                      : "A escola terá este endereço no sistema Lovable."}
                   </p>
                 </div>
               )}
