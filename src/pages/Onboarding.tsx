@@ -365,7 +365,7 @@ export default function Onboarding() {
                   </div>
 
                   {/* Card footer */}
-                  <div className="px-5 py-4 bg-muted/30">
+                  <div className="px-5 py-4 bg-muted/30 border-t border-border">
                     <Button onClick={handleNextStep} className="w-full h-10">
                       Continuar
                       <ArrowRight className="ml-2 h-4 w-4" />
