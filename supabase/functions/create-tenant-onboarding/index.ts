@@ -120,9 +120,66 @@ serve(async (req) => {
       });
     } catch (stripeError: any) {
       console.error("Error creating Stripe customer:", stripeError);
-      const errorMessage = stripeError.code === 'card_declined' 
-        ? "Cartão recusado. Por favor, verifique os dados ou use outro cartão."
-        : stripeError.message || "Erro ao processar cartão de crédito";
+      
+      // Traduzir mensagens de erro do Stripe para português
+      let errorMessage = "Erro ao processar cartão de crédito. Tente novamente.";
+      
+      if (stripeError.code === 'card_declined') {
+        const declineCode = stripeError.decline_code || stripeError.raw?.decline_code;
+        switch (declineCode) {
+          case 'generic_decline':
+            errorMessage = "Cartão recusado pelo banco. Entre em contato com sua operadora ou use outro cartão.";
+            break;
+          case 'insufficient_funds':
+            errorMessage = "Saldo insuficiente. Verifique seu limite ou use outro cartão.";
+            break;
+          case 'lost_card':
+            errorMessage = "Este cartão foi reportado como perdido. Use outro cartão.";
+            break;
+          case 'stolen_card':
+            errorMessage = "Este cartão foi reportado como roubado. Use outro cartão.";
+            break;
+          case 'expired_card':
+            errorMessage = "Cartão expirado. Verifique a data de validade ou use outro cartão.";
+            break;
+          case 'incorrect_cvc':
+            errorMessage = "Código de segurança (CVV) incorreto. Verifique e tente novamente.";
+            break;
+          case 'processing_error':
+            errorMessage = "Erro no processamento. Aguarde alguns minutos e tente novamente.";
+            break;
+          case 'incorrect_number':
+            errorMessage = "Número do cartão incorreto. Verifique os dados e tente novamente.";
+            break;
+          case 'card_not_supported':
+            errorMessage = "Este tipo de cartão não é aceito. Use Visa, Mastercard ou outro cartão.";
+            break;
+          case 'currency_not_supported':
+            errorMessage = "Seu cartão não suporta pagamentos em Real. Use outro cartão.";
+            break;
+          case 'duplicate_transaction':
+            errorMessage = "Transação duplicada detectada. Aguarde alguns minutos.";
+            break;
+          case 'fraudulent':
+            errorMessage = "Transação bloqueada por segurança. Entre em contato com seu banco.";
+            break;
+          default:
+            errorMessage = "Cartão recusado. Entre em contato com seu banco ou use outro cartão.";
+        }
+      } else if (stripeError.code === 'expired_card') {
+        errorMessage = "Cartão expirado. Verifique a data de validade ou use outro cartão.";
+      } else if (stripeError.code === 'incorrect_cvc') {
+        errorMessage = "Código de segurança (CVV) incorreto. Verifique e tente novamente.";
+      } else if (stripeError.code === 'incorrect_number') {
+        errorMessage = "Número do cartão incorreto. Verifique os dados e tente novamente.";
+      } else if (stripeError.code === 'invalid_expiry_month' || stripeError.code === 'invalid_expiry_year') {
+        errorMessage = "Data de validade inválida. Verifique mês e ano de expiração.";
+      } else if (stripeError.code === 'invalid_cvc') {
+        errorMessage = "Código de segurança (CVV) inválido. Use 3 dígitos do verso do cartão.";
+      } else if (stripeError.code === 'authentication_required') {
+        errorMessage = "Autenticação adicional necessária. Use um cartão com 3D Secure habilitado.";
+      }
+      
       return new Response(
         JSON.stringify({ error: errorMessage }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
