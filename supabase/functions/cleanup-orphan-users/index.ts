@@ -136,7 +136,39 @@ serve(async (req) => {
       });
     }
 
+    // 4.5) Load ALL system managers (Gestores) - CRITICAL: NEVER DELETE THESE
+    const systemManagerIds = new Set<string>();
+    const systemManagerEmails = new Set<string>();
+    {
+      const { data: managers, error } = await supabaseAdmin
+        .from("system_managers")
+        .select("id, email")
+        .eq("is_active", true);
+      if (!error && managers) {
+        managers.forEach((m: any) => {
+          systemManagerIds.add(m.id);
+          if (m.email) systemManagerEmails.add(m.email.toLowerCase());
+        });
+      }
+    }
+
+    // 4.6) Load ALL platform_admin roles - CRITICAL: NEVER DELETE THESE
+    const platformAdminIds = new Set<string>();
+    {
+      const { data: admins, error } = await supabaseAdmin
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "platform_admin");
+      if (!error && admins) {
+        admins.forEach((a: any) => platformAdminIds.add(a.user_id));
+      }
+    }
+
     // 5) Identify orphans - STRICT CRITERIA
+    // NEVER delete:
+    // - System managers (Gestores)
+    // - Users with platform_admin role
+    // - Users whose email matches a tenant email
     // Only consider orphan if:
     // - No profile exists AND email doesn't match any tenant email
     // - Profile exists but tenant_id is null AND email doesn't match any tenant
@@ -147,6 +179,27 @@ serve(async (req) => {
 
     for (const u of users) {
       const userEmail = (u.email || "").toLowerCase();
+
+      // CRITICAL: NEVER delete system managers (Gestores)
+      if (systemManagerIds.has(u.id) || systemManagerEmails.has(userEmail)) {
+        protected_users.push({ 
+          id: u.id, 
+          email: u.email, 
+          reason: "system_manager" 
+        });
+        continue;
+      }
+
+      // CRITICAL: NEVER delete platform admins
+      if (platformAdminIds.has(u.id)) {
+        protected_users.push({ 
+          id: u.id, 
+          email: u.email, 
+          reason: "platform_admin" 
+        });
+        continue;
+      }
+
       const profile = profileMap.get(u.id);
       
       // SAFETY: If user's email matches any active tenant's email, NEVER delete
