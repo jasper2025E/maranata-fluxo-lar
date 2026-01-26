@@ -1,11 +1,13 @@
 import { useState, useEffect } from "react";
-import { Globe, CheckCircle2, AlertCircle, Clock, Copy, ExternalLink, RefreshCw, Shield, Server, Lock } from "lucide-react";
+import { Globe, CheckCircle2, AlertCircle, Clock, Copy, ExternalLink, RefreshCw, Shield, Server, Lock, Info, ChevronDown, ChevronUp } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
@@ -100,14 +102,45 @@ function StatusIndicator({
     <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
       <div className={cn(
         "h-2 w-2 rounded-full",
-        isActive ? "bg-emerald-500" : isPending ? "bg-amber-500 animate-pulse" : "bg-muted-foreground/30"
+        isActive ? "bg-green-500" : isPending ? "bg-yellow-500 animate-pulse" : "bg-muted-foreground/30"
       )} />
       <span className="text-sm text-muted-foreground">{label}</span>
       {isActive ? (
-        <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 ml-auto" />
+        <CheckCircle2 className="h-3.5 w-3.5 text-green-500 ml-auto" />
       ) : isPending ? (
-        <Clock className="h-3.5 w-3.5 text-amber-500 ml-auto" />
+        <Clock className="h-3.5 w-3.5 text-yellow-500 ml-auto" />
       ) : null}
+    </div>
+  );
+}
+
+// Nameserver Row Component
+function NameserverRow({ 
+  number, 
+  value 
+}: { 
+  number: number; 
+  value: string;
+}) {
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toast.success("Nameserver copiado!");
+  };
+
+  return (
+    <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 border border-border/50">
+      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+        <span className="text-sm font-semibold text-primary">{number}</span>
+      </div>
+      <code className="flex-1 text-sm font-medium">{value}</code>
+      <Button 
+        variant="ghost" 
+        size="icon" 
+        className="h-8 w-8 opacity-60 hover:opacity-100"
+        onClick={() => copyToClipboard(value)}
+      >
+        <Copy className="h-4 w-4" />
+      </Button>
     </div>
   );
 }
@@ -212,9 +245,9 @@ export function PlatformDomainManager({ platformSlug, onSave }: PlatformDomainMa
   const getStatusBadge = () => {
     switch (status) {
       case "active":
-        return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 hover:bg-emerald-500/20"><CheckCircle2 className="h-3 w-3 mr-1" /> Ativo</Badge>;
+        return <Badge className="bg-green-500/10 text-green-600 border-green-500/20 hover:bg-green-500/20"><CheckCircle2 className="h-3 w-3 mr-1" /> Ativo</Badge>;
       case "verifying":
-        return <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 border-amber-500/20"><Clock className="h-3 w-3 mr-1" /> Verificando</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/20"><Clock className="h-3 w-3 mr-1" /> Verificando</Badge>;
       case "pending":
         return <Badge variant="outline" className="text-muted-foreground"><Clock className="h-3 w-3 mr-1" /> Aguardando DNS</Badge>;
       case "error":
@@ -226,6 +259,12 @@ export function PlatformDomainManager({ platformSlug, onSave }: PlatformDomainMa
 
   // Lovable's IP for A records
   const serverIP = "185.158.133.1";
+  
+  // Custom nameservers (example - these would be configurable)
+  const nameservers = [
+    "ns1.lovablehost.com",
+    "ns2.lovablehost.com",
+  ];
 
   if (loading) {
     return (
@@ -300,63 +339,132 @@ export function PlatformDomainManager({ platformSlug, onSave }: PlatformDomainMa
         <Card className="border-0 shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                <Server className="h-5 w-5 text-blue-600" />
+              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Server className="h-5 w-5 text-primary" />
               </div>
               <div>
                 <CardTitle className="text-lg">Configuração DNS</CardTitle>
                 <CardDescription className="mt-0.5">
-                  Adicione estes registros no seu provedor de domínio
+                  Escolha o método de configuração no seu provedor de domínio
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent className="space-y-6">
-            {/* DNS Records Table Header */}
-            <div className="rounded-lg border bg-card overflow-hidden">
-              <div className="grid grid-cols-12 gap-3 px-4 py-2.5 bg-muted/50 border-b text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                <div className="col-span-2">Tipo</div>
-                <div className="col-span-3">Nome / Host</div>
-                <div className="col-span-7">Valor / Aponta para</div>
-              </div>
+            <Tabs defaultValue="records" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 mb-4">
+                <TabsTrigger value="records" className="gap-2">
+                  <Server className="h-4 w-4" />
+                  Registros DNS
+                </TabsTrigger>
+                <TabsTrigger value="nameservers" className="gap-2">
+                  <Globe className="h-4 w-4" />
+                  Nameservers
+                </TabsTrigger>
+              </TabsList>
               
-              <div className="px-4 divide-y divide-border/50">
-                {/* A Record - Root */}
-                <DNSRecordRow
-                  type="A"
-                  name="@"
-                  value={serverIP}
-                  description="Domínio raiz"
-                />
+              {/* DNS Records Tab */}
+              <TabsContent value="records" className="space-y-4 mt-0">
+                <Alert className="bg-muted/50 border-border">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    <strong>Recomendado</strong> se você deseja manter outros serviços (email, etc.) no mesmo domínio.
+                  </AlertDescription>
+                </Alert>
                 
-                {/* A Record - Wildcard */}
-                <DNSRecordRow
-                  type="A"
-                  name="*"
-                  value={serverIP}
-                  description="Subdomínios (escolas)"
-                />
+                <div className="rounded-lg border bg-card overflow-hidden">
+                  <div className="grid grid-cols-12 gap-3 px-4 py-2.5 bg-muted/50 border-b text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                    <div className="col-span-2">Tipo</div>
+                    <div className="col-span-3">Nome / Host</div>
+                    <div className="col-span-7">Valor / Aponta para</div>
+                  </div>
+                  
+                  <div className="px-4 divide-y divide-border/50">
+                    <DNSRecordRow
+                      type="A"
+                      name="@"
+                      value={serverIP}
+                      description="Domínio raiz"
+                    />
+                    
+                    <DNSRecordRow
+                      type="A"
+                      name="*"
+                      value={serverIP}
+                      description="Subdomínios (escolas)"
+                    />
 
-                {/* CNAME Record - WWW */}
-                <DNSRecordRow
-                  type="CNAME"
-                  name="www"
-                  value={originalDomain}
-                  description="Redirecionamento www"
-                />
+                    <DNSRecordRow
+                      type="CNAME"
+                      name="www"
+                      value={originalDomain}
+                      description="Redirecionamento www"
+                    />
+                    
+                    <DNSRecordRow
+                      type="TXT"
+                      name={`_${platformSlug}`}
+                      value={`${platformSlug}_verify=system`}
+                      description="Verificação de propriedade"
+                    />
+                  </div>
+                </div>
+              </TabsContent>
+              
+              {/* Nameservers Tab */}
+              <TabsContent value="nameservers" className="space-y-4 mt-0">
+                <Alert className="bg-muted/50 border-border">
+                  <Info className="h-4 w-4" />
+                  <AlertDescription className="text-sm">
+                    <strong>Configuração avançada:</strong> Use esta opção para delegar o controle total do DNS para nossa plataforma.
+                  </AlertDescription>
+                </Alert>
                 
-                {/* TXT Record - Verification */}
-                <DNSRecordRow
-                  type="TXT"
-                  name={`_${platformSlug}`}
-                  value={`${platformSlug}_verify=system`}
-                  description="Verificação de propriedade"
-                />
-              </div>
-            </div>
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Servidores de Nomes Personalizados</Label>
+                  <p className="text-sm text-muted-foreground">
+                    No painel do seu registrador (GoDaddy, Registro.br, HostGator, etc.), selecione a opção 
+                    <strong> "Usar meus próprios servidores de nomes"</strong> e adicione os seguintes nameservers:
+                  </p>
+                  
+                  <div className="space-y-2 mt-4">
+                    {nameservers.map((ns, index) => (
+                      <NameserverRow key={ns} number={index + 1} value={ns} />
+                    ))}
+                  </div>
+                </div>
+                
+                <Collapsible className="rounded-lg border bg-muted/30">
+                  <CollapsibleTrigger className="flex items-center justify-between w-full p-4 text-left">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-sm font-medium">Como configurar no seu registrador</span>
+                    </div>
+                    <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="px-4 pb-4 space-y-3">
+                    <div className="space-y-2 text-sm text-muted-foreground">
+                      <p><strong className="text-foreground">GoDaddy:</strong> Domínios → Seu Domínio → Gerenciar DNS → Nameservers → Alterar</p>
+                      <p><strong className="text-foreground">Registro.br:</strong> Domínio → Alterar Servidores DNS</p>
+                      <p><strong className="text-foreground">HostGator:</strong> Meus Domínios → Gerenciar → Servidores de Nome</p>
+                      <p><strong className="text-foreground">Cloudflare:</strong> Não recomendado usar nameservers externos se já está no Cloudflare</p>
+                    </div>
+                    
+                    <Alert className="bg-yellow-500/5 border-yellow-500/20">
+                      <AlertCircle className="h-4 w-4 text-yellow-600" />
+                      <AlertDescription className="text-sm text-muted-foreground">
+                        <strong className="text-foreground">Atenção:</strong> Ao usar nameservers personalizados, 
+                        todo o controle DNS será transferido. Registros de email e outros serviços precisarão 
+                        ser reconfigurados em nossa plataforma.
+                      </AlertDescription>
+                    </Alert>
+                  </CollapsibleContent>
+                </Collapsible>
+              </TabsContent>
+            </Tabs>
 
             {/* Status Indicators */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-3 pt-2">
               <StatusIndicator 
                 label="Propagação DNS" 
                 isActive={status === "active" || status === "verifying"} 
@@ -393,8 +501,8 @@ export function PlatformDomainManager({ platformSlug, onSave }: PlatformDomainMa
             </div>
 
             {/* Info Alert */}
-            <Alert className="bg-blue-500/5 border-blue-500/20">
-              <Shield className="h-4 w-4 text-blue-600" />
+            <Alert className="bg-primary/5 border-primary/20">
+              <Shield className="h-4 w-4 text-primary" />
               <AlertDescription className="text-sm text-muted-foreground">
                 <strong className="text-foreground">Propagação DNS:</strong> Alterações podem levar até 48 horas. 
                 O certificado SSL será provisionado automaticamente após a verificação.
@@ -406,14 +514,14 @@ export function PlatformDomainManager({ platformSlug, onSave }: PlatformDomainMa
 
       {/* Security Info */}
       {originalDomain && status === "active" && (
-        <Card className="border-0 shadow-sm bg-emerald-500/5">
+        <Card className="border-0 shadow-sm bg-green-500/5">
           <CardContent className="py-4">
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                <Lock className="h-5 w-5 text-emerald-600" />
+              <div className="h-10 w-10 rounded-lg bg-green-500/10 flex items-center justify-center">
+                <Lock className="h-5 w-5 text-green-600" />
               </div>
               <div>
-                <p className="font-medium text-emerald-700">Domínio Seguro</p>
+                <p className="font-medium text-green-700">Domínio Seguro</p>
                 <p className="text-sm text-muted-foreground">
                   SSL ativo • HTTPS habilitado • Subdomínios protegidos
                 </p>
