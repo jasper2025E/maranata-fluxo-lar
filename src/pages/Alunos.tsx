@@ -94,6 +94,7 @@ const Alunos = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterSemTurma, setFilterSemTurma] = useState(false);
   const [gerarNovasFaturas, setGerarNovasFaturas] = useState(false);
+  const [modoFaturamento, setModoFaturamento] = useState<"nenhum" | "novas" | "substituir">("nenhum");
   const [formData, setFormData] = useState({
     nome_completo: "",
     data_nascimento: "",
@@ -246,7 +247,7 @@ const Alunos = () => {
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: string; gerarNovasFaturas?: boolean } & typeof formData) => {
+    mutationFn: async (data: { id: string; modoFaturamento?: "nenhum" | "novas" | "substituir" } & typeof formData) => {
       const { error } = await supabase
         .from("alunos")
         .update({
@@ -272,12 +273,22 @@ const Alunos = () => {
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
       toast.success(t("students.updateSuccess"));
 
-      // Gerar novas faturas se solicitado
-      if (data.gerarNovasFaturas && data.quantidade_parcelas > 0) {
+      // Gerar novas faturas ou substituir existentes
+      if (data.modoFaturamento && data.modoFaturamento !== "nenhum" && data.quantidade_parcelas > 0) {
         void (async () => {
           try {
             const curso = cursos.find((c) => c.id === data.curso_id);
             if (!curso) return;
+
+            // Se modo for "substituir", cancela as faturas abertas existentes
+            if (data.modoFaturamento === "substituir") {
+              await supabase
+                .from("faturas")
+                .update({ status: "Cancelada", motivo_cancelamento: "Substituída por nova configuração" })
+                .eq("aluno_id", data.id)
+                .eq("status", "Aberta");
+              toast.info("Faturas antigas foram canceladas");
+            }
 
             const dataInicio = new Date(data.data_inicio_cobranca);
             dataInicio.setDate(data.dia_vencimento);
@@ -352,12 +363,14 @@ const Alunos = () => {
     });
     setEditingAluno(null);
     setGerarNovasFaturas(false);
+    setModoFaturamento("nenhum");
     setIsOpen(false);
   };
 
   const handleEdit = (aluno: Aluno) => {
     setEditingAluno(aluno);
     setGerarNovasFaturas(false);
+    setModoFaturamento("nenhum");
     setFormData({
       nome_completo: aluno.nome_completo,
       data_nascimento: aluno.data_nascimento,
@@ -419,8 +432,8 @@ const Alunos = () => {
       return;
     }
     if (editingAluno) {
-      // Usa o estado gerarNovasFaturas controlado pelo Switch
-      updateMutation.mutate({ id: editingAluno.id, ...formData, gerarNovasFaturas });
+      // Usa o modo de faturamento selecionado
+      updateMutation.mutate({ id: editingAluno.id, ...formData, modoFaturamento });
     } else {
       createMutation.mutate(formData);
     }
@@ -607,31 +620,75 @@ const Alunos = () => {
 
                   {/* Configuração de Faturamento */}
                   <div className="border-t pt-5 mt-2">
-                    <div className="flex items-center justify-between mb-4">
-                      <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-                        <Calendar className="h-4 w-4" />
-                        {editingAluno ? "Gerar Novas Faturas" : "Configuração de Faturamento"}
-                      </h4>
-                      {editingAluno && (
-                        <div className="flex items-center gap-2">
-                          <Switch 
-                            checked={gerarNovasFaturas} 
-                            onCheckedChange={setGerarNovasFaturas}
-                          />
-                          <Label className="text-xs text-muted-foreground">
-                            {gerarNovasFaturas ? "Ativado" : "Desativado"}
-                          </Label>
-                        </div>
-                      )}
-                    </div>
+                    <h4 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      {editingAluno ? "Gerenciamento de Faturas" : "Configuração de Faturamento"}
+                    </h4>
                     
-                    {editingAluno && !gerarNovasFaturas && (
-                      <p className="text-xs text-muted-foreground mb-4 bg-muted/50 p-3 rounded-md">
-                        Ative o switch acima para gerar novas faturas para este aluno. As faturas existentes não serão afetadas.
-                      </p>
+                    {/* Opções de modo de faturamento (apenas para edição) */}
+                    {editingAluno && (
+                      <div className="mb-4 space-y-2">
+                        <div 
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                            modoFaturamento === "nenhum" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/50"
+                          )}
+                          onClick={() => setModoFaturamento("nenhum")}
+                        >
+                          <div className={cn(
+                            "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                            modoFaturamento === "nenhum" ? "border-primary" : "border-muted-foreground"
+                          )}>
+                            {modoFaturamento === "nenhum" && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Apenas salvar dados</p>
+                            <p className="text-xs text-muted-foreground">Atualiza o cadastro sem mexer nas faturas</p>
+                          </div>
+                        </div>
+                        
+                        <div 
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                            modoFaturamento === "novas" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/50"
+                          )}
+                          onClick={() => setModoFaturamento("novas")}
+                        >
+                          <div className={cn(
+                            "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                            modoFaturamento === "novas" ? "border-primary" : "border-muted-foreground"
+                          )}>
+                            {modoFaturamento === "novas" && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Gerar novas faturas</p>
+                            <p className="text-xs text-muted-foreground">Mantém as faturas antigas e cria novas</p>
+                          </div>
+                        </div>
+                        
+                        <div 
+                          className={cn(
+                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                            modoFaturamento === "substituir" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/50"
+                          )}
+                          onClick={() => setModoFaturamento("substituir")}
+                        >
+                          <div className={cn(
+                            "w-4 h-4 rounded-full border-2 flex items-center justify-center",
+                            modoFaturamento === "substituir" ? "border-primary" : "border-muted-foreground"
+                          )}>
+                            {modoFaturamento === "substituir" && <div className="w-2 h-2 rounded-full bg-primary" />}
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Substituir faturas existentes</p>
+                            <p className="text-xs text-muted-foreground">Cancela as faturas abertas e gera novas</p>
+                          </div>
+                        </div>
+                      </div>
                     )}
                     
-                    {(!editingAluno || gerarNovasFaturas) && (
+                    {/* Campos de configuração (mostrar sempre para novo, ou quando modo != nenhum para edição) */}
+                    {(!editingAluno || modoFaturamento !== "nenhum") && (
                       <>
                         <div className="grid grid-cols-3 gap-4">
                           <div className="grid gap-2">
@@ -692,9 +749,6 @@ const Alunos = () => {
                         </p>
                       </>
                     )}
-                    <p className="text-xs text-muted-foreground mt-2">
-                      {formData.quantidade_parcelas} faturas serão geradas a partir de {formData.data_inicio_cobranca ? format(new Date(formData.data_inicio_cobranca + "T00:00:00"), "dd/MM/yyyy") : "-"}, vencendo todo dia {formData.dia_vencimento}.
-                    </p>
                   </div>
                 </div>
                 <DialogFooter className="gap-2">
