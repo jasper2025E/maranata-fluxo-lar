@@ -16,7 +16,9 @@ import {
   Quote,
   Monitor,
   Layers,
-  ArrowLeft
+  ArrowLeft,
+  Link2,
+  BarChart3
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/PageLayout";
@@ -41,6 +43,8 @@ import { WebsiteThemeSelector } from "@/components/website/WebsiteThemeSelector"
 import { WebsiteThemeImportExport } from "@/components/website/WebsiteThemeImportExport";
 import { WebsitePagesManager } from "@/components/website/WebsitePagesManager";
 import { WebsiteBlockEditor } from "@/components/website/WebsiteBlockEditor";
+import { WebsiteDomainManager } from "@/components/website/WebsiteDomainManager";
+import { WebsiteAnalyticsCard } from "@/components/website/WebsiteAnalyticsCard";
 import { WebsitePage } from "@/hooks/useWebsiteBuilder";
 import { toast } from "sonner";
 
@@ -239,7 +243,7 @@ export default function SiteEscolar() {
 
             {/* Editor Tabs */}
             <Tabs defaultValue="pages" className="space-y-6">
-              <TabsList className="grid w-full grid-cols-4 lg:grid-cols-9">
+              <TabsList className="grid w-full grid-cols-5 lg:grid-cols-11">
                 <TabsTrigger value="pages" className="gap-2">
                   <Layers className="h-4 w-4" />
                   <span className="hidden sm:inline">Páginas</span>
@@ -271,6 +275,14 @@ export default function SiteEscolar() {
                 <TabsTrigger value="seo" className="gap-2">
                   <FileText className="h-4 w-4" />
                   <span className="hidden sm:inline">SEO</span>
+                </TabsTrigger>
+                <TabsTrigger value="domain" className="gap-2">
+                  <Link2 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Domínio</span>
+                </TabsTrigger>
+                <TabsTrigger value="analytics" className="gap-2">
+                  <BarChart3 className="h-4 w-4" />
+                  <span className="hidden sm:inline">Métricas</span>
                 </TabsTrigger>
                 <TabsTrigger value="preview" className="gap-2">
                   <Monitor className="h-4 w-4" />
@@ -312,6 +324,14 @@ export default function SiteEscolar() {
 
               <TabsContent value="seo">
                 <WebsiteEditorSEO config={website} />
+              </TabsContent>
+
+              <TabsContent value="domain">
+                <WebsiteDomainManager config={website} />
+              </TabsContent>
+
+              <TabsContent value="analytics">
+                <WebsiteAnalyticsCard tenantId={website.tenant_id} />
               </TabsContent>
 
               <TabsContent value="preview">
