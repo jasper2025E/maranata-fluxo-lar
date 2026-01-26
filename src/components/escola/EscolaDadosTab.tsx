@@ -61,6 +61,8 @@ const EscolaDadosTab = () => {
         .from("escola")
         .select("*")
         .eq("tenant_id", profile.tenant_id)
+        .order("created_at", { ascending: true })
+        .limit(1)
         .maybeSingle();
       if (error) throw error;
       return data as Escola | null;
