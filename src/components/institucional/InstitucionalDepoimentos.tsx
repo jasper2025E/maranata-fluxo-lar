@@ -30,7 +30,7 @@ const testimonials = [
 
 export function InstitucionalDepoimentos() {
   return (
-    <section className="py-24 lg:py-32 bg-muted/30">
+    <section className="py-24 lg:py-32 bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -40,15 +40,12 @@ export function InstitucionalDepoimentos() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full mb-4">
-            Depoimentos
-          </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight mb-6">
+          <p className="text-primary font-medium mb-4">Depoimentos</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 tracking-tight mb-6">
             O que nossos clientes dizem
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Centenas de escolas já transformaram sua gestão. 
-            Veja o que elas têm a dizer.
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
+            Escolas de todo o Brasil já transformaram sua gestão.
           </p>
         </motion.div>
 
@@ -61,7 +58,7 @@ export function InstitucionalDepoimentos() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="relative bg-card rounded-2xl p-8 border border-border/50 shadow-sm"
+              className="relative bg-slate-50 rounded-2xl p-8 border border-transparent hover:border-slate-200 hover:bg-white hover:shadow-lg transition-all"
             >
               {/* Quote icon */}
               <Quote className="w-10 h-10 text-primary/20 mb-4" />
@@ -77,7 +74,7 @@ export function InstitucionalDepoimentos() {
               </div>
 
               {/* Quote */}
-              <p className="text-foreground mb-6 leading-relaxed">
+              <p className="text-slate-700 mb-6 leading-relaxed">
                 "{testimonial.quote}"
               </p>
 
@@ -87,10 +84,10 @@ export function InstitucionalDepoimentos() {
                   {testimonial.avatar}
                 </div>
                 <div>
-                  <div className="font-semibold text-foreground">
+                  <div className="font-semibold text-slate-900">
                     {testimonial.author}
                   </div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm text-slate-500">
                     {testimonial.role} • {testimonial.company}
                   </div>
                 </div>
@@ -105,12 +102,12 @@ export function InstitucionalDepoimentos() {
           whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
           transition={{ delay: 0.4 }}
-          className="mt-16 pt-16 border-t border-border"
+          className="mt-16 pt-16 border-t border-slate-200"
         >
-          <p className="text-center text-sm text-muted-foreground mb-8">
-            Mais de 500 escolas confiam em nossa plataforma
+          <p className="text-center text-sm text-slate-500 mb-8">
+            Escolas de todo o Brasil confiam em nossa plataforma
           </p>
-          <div className="flex flex-wrap justify-center gap-8 lg:gap-12 opacity-50">
+          <div className="flex flex-wrap justify-center gap-8 lg:gap-12 opacity-40">
             {[
               "Colégio Alpha",
               "Escola Beta",
@@ -120,7 +117,7 @@ export function InstitucionalDepoimentos() {
             ].map((name, index) => (
               <div
                 key={index}
-                className="text-lg font-bold text-muted-foreground"
+                className="text-lg font-bold text-slate-600"
               >
                 {name}
               </div>

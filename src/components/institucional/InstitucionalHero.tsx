@@ -1,200 +1,229 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, CheckCircle2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 import type { PlatformBranding } from "@/hooks/usePlatformBranding";
-import { GRADIENT_MAIN, MESH_OVERLAY } from "./colors";
 
 interface InstitucionalHeroProps {
   branding?: PlatformBranding | null;
 }
 
-const fadeInUp = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { opacity: 1, y: 0 },
-};
-
-const staggerContainer = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.15,
-      delayChildren: 0.2,
-    },
-  },
-};
-
-const trustBadges = [
-  "14 dias grátis",
-  "Suporte brasileiro",
-  "LGPD compliant",
-];
-
 export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
+  const [email, setEmail] = useState("");
+
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
-      {/* Gradient Background */}
-      <div
-        className="absolute inset-0"
-        style={{ background: GRADIENT_MAIN }}
-      />
+    <section className="relative min-h-screen overflow-hidden bg-white">
+      {/* Gradient blob - top left */}
+      <div className="absolute top-0 left-0 w-[70%] h-[90%] pointer-events-none">
+        <svg
+          viewBox="0 0 800 800"
+          className="w-full h-full"
+          preserveAspectRatio="xMinYMin slice"
+        >
+          <defs>
+            <linearGradient id="stripe-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#80e9ff" />
+              <stop offset="25%" stopColor="#a855f7" />
+              <stop offset="50%" stopColor="#ec4899" />
+              <stop offset="75%" stopColor="#f97316" />
+              <stop offset="100%" stopColor="#fbbf24" />
+            </linearGradient>
+          </defs>
+          <path
+            d="M0,0 L800,0 L800,400 Q700,600 500,550 Q300,500 200,650 Q100,750 0,700 Z"
+            fill="url(#stripe-gradient)"
+            opacity="0.9"
+          />
+        </svg>
+      </div>
 
-      {/* Mesh gradient overlay */}
-      <div
-        className="absolute inset-0 opacity-40"
-        style={{ backgroundImage: MESH_OVERLAY }}
-      />
-
-      {/* Grid pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.03]"
+      {/* Subtle grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.02] pointer-events-none"
         style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px),
+                           linear-gradient(to bottom, #000 1px, transparent 1px)`,
+          backgroundSize: '60px 60px'
         }}
       />
 
-      {/* Content */}
-      <div className="relative z-10 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 lg:py-40">
-        <motion.div
-          variants={staggerContainer}
-          initial="hidden"
-          animate="visible"
-          className="max-w-4xl mx-auto text-center"
-        >
-          {/* Badge */}
-          <motion.div variants={fadeInUp} className="mb-8">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium">
-              <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
-              </span>
-              Plataforma líder em gestão escolar
-            </span>
-          </motion.div>
-
-          {/* Headline */}
-          <motion.h1
-            variants={fadeInUp}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-[1.1] tracking-tight mb-6"
-          >
-            Gestão escolar{" "}
-            <span className="relative">
-              simplificada
-              <svg
-                className="absolute -bottom-2 left-0 w-full"
-                viewBox="0 0 300 12"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M2 10C50 4 150 2 298 10"
-                  stroke="rgba(255,255,255,0.4)"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                />
-              </svg>
-            </span>
-            <br />
-            para escolas que crescem
-          </motion.h1>
-
-          {/* Subheadline */}
-          <motion.p
-            variants={fadeInUp}
-            className="text-lg sm:text-xl text-white/80 max-w-2xl mx-auto mb-10 leading-relaxed"
-          >
-            Gerencie alunos, matrículas, mensalidades, funcionários e 
-            contabilidade em uma única plataforma multi-tenant. 
-            Segura, escalável e 100% na nuvem.
-          </motion.p>
-
-          {/* CTAs */}
+      {/* Content container */}
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-32 lg:pt-40 pb-20">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+          {/* Left column - Text */}
           <motion.div
-            variants={fadeInUp}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            className="max-w-xl"
           >
-            <Link to="/cadastro">
-              <Button
-                size="lg"
-                className="h-14 px-8 text-base font-semibold bg-white text-foreground hover:bg-white/90 shadow-xl shadow-black/10 gap-2 group"
-              >
-                Começar gratuitamente
-                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-              </Button>
-            </Link>
-            <Button
-              size="lg"
-              variant="ghost"
-              className="h-14 px-8 text-base font-semibold text-white hover:bg-white/10 gap-2 group border border-white/20"
-              onClick={() =>
-                document
-                  .getElementById("como-funciona")
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
-            >
-              <Play className="h-4 w-4 fill-current" />
-              Ver demonstração
-            </Button>
+            {/* Main headline - Stripe style typography */}
+            <h1 className="text-[2.75rem] sm:text-5xl lg:text-[3.5rem] xl:text-6xl font-semibold leading-[1.1] tracking-tight text-slate-900 mb-6">
+              Infraestrutura{" "}
+              <span className="text-primary">financeira</span>{" "}
+              para escolas
+            </h1>
+
+            {/* Subheadline */}
+            <p className="text-lg sm:text-xl text-slate-600 leading-relaxed mb-8 max-w-lg">
+              Faça como as melhores instituições de ensino: gerencie alunos, 
+              cobranças e funcionários em uma plataforma completa, segura e escalável.
+            </p>
+
+            {/* Email input with CTA - Stripe style */}
+            <div className="flex flex-col sm:flex-row gap-3 max-w-md">
+              <Input
+                type="email"
+                placeholder="E-mail"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="h-12 px-4 text-base border-slate-300 bg-white focus:border-primary focus:ring-primary rounded-md"
+              />
+              <Link to="/cadastro">
+                <Button 
+                  size="lg" 
+                  className="h-12 px-6 text-base font-medium gap-2 group whitespace-nowrap"
+                >
+                  Comece agora
+                  <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+                </Button>
+              </Link>
+            </div>
           </motion.div>
 
-          {/* Trust badges */}
+          {/* Right column - Dashboard mockups */}
           <motion.div
-            variants={fadeInUp}
-            className="flex flex-wrap justify-center gap-6"
+            initial={{ opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.8, delay: 0.2 }}
+            className="relative lg:h-[600px] hidden lg:block"
           >
-            {trustBadges.map((badge, index) => (
-              <div
-                key={index}
-                className="flex items-center gap-2 text-white/80 text-sm"
-              >
-                <CheckCircle2 className="h-4 w-4 text-white" />
-                {badge}
-              </div>
-            ))}
-          </motion.div>
-        </motion.div>
-
-        {/* Dashboard Preview */}
-        <motion.div
-          initial={{ opacity: 0, y: 60 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.8, duration: 0.8 }}
-          className="mt-16 lg:mt-24 max-w-5xl mx-auto"
-        >
-          <div className="relative">
-            {/* Glow effect */}
-            <div className="absolute -inset-4 bg-gradient-to-r from-white/20 via-white/10 to-white/20 rounded-3xl blur-2xl" />
-            
-            {/* Browser mockup */}
-            <div className="relative bg-slate-900/90 backdrop-blur-xl rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-              {/* Browser bar */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-white/10">
-                <div className="flex gap-1.5">
-                  <div className="w-3 h-3 rounded-full bg-red-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-yellow-500/80" />
-                  <div className="w-3 h-3 rounded-full bg-green-500/80" />
+            {/* Main Dashboard Card */}
+            <div className="absolute top-0 right-0 w-[320px] bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden">
+              {/* Dashboard header */}
+              <div className="bg-slate-800 px-4 py-3 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-6 bg-primary rounded flex items-center justify-center">
+                    <span className="text-[10px] text-white font-bold">E</span>
+                  </div>
+                  <span className="text-white text-sm font-medium">ESCOLA DEMO</span>
                 </div>
-                <div className="flex-1 flex justify-center">
-                  <div className="px-4 py-1 bg-white/10 rounded-md text-white/40 text-xs">
-                    app.maranata.com.br
+                <div className="flex items-center gap-2 bg-slate-700 rounded px-2 py-1">
+                  <span className="text-slate-400 text-xs">🔍 Pesquisar</span>
+                </div>
+              </div>
+              
+              {/* Dashboard content */}
+              <div className="p-4">
+                <div className="text-sm text-slate-500 mb-1">Hoje</div>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <div className="text-xs text-slate-400 mb-1">Volume líquido ↓</div>
+                    <div className="text-xl font-semibold text-slate-900">R$ 52.198,72</div>
+                    <div className="text-xs text-slate-400">14:00</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-slate-400 mb-1">Ontem ↓</div>
+                    <div className="text-xl font-semibold text-slate-900">R$ 48.931,34</div>
+                  </div>
+                </div>
+                
+                {/* Mini chart */}
+                <div className="h-20 flex items-end gap-1 mb-4">
+                  {[40, 55, 45, 60, 50, 70, 65, 80, 75, 85, 90, 70].map((h, i) => (
+                    <div 
+                      key={i} 
+                      className="flex-1 bg-primary/20 rounded-t"
+                      style={{ height: `${h}%` }}
+                    />
+                  ))}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-slate-500">Receita mensal</span>
+                      <span className="text-xs text-green-600 font-medium">+12,8%</span>
+                    </div>
+                    <div className="text-lg font-semibold text-slate-900">R$ 89.274,29</div>
+                  </div>
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs text-slate-500">Novos alunos</span>
+                      <span className="text-xs text-green-600 font-medium">+8</span>
+                    </div>
+                    <div className="text-lg font-semibold text-slate-900">127</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Payment Card - overlapping */}
+            <div className="absolute top-32 left-0 w-[280px] bg-white rounded-xl shadow-2xl border border-slate-100 overflow-hidden">
+              {/* Product info */}
+              <div className="p-4 border-b border-slate-100">
+                <div className="flex items-start gap-3">
+                  <div className="w-12 h-14 bg-gradient-to-br from-primary to-purple-600 rounded-lg flex items-center justify-center">
+                    <span className="text-white text-lg">📚</span>
+                  </div>
+                  <div>
+                    <div className="font-medium text-slate-900">Mensalidade Maio</div>
+                    <div className="text-sm text-slate-500">R$ 450 por mês</div>
                   </div>
                 </div>
               </div>
               
-              {/* Dashboard preview */}
-              <div className="aspect-[16/9] bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center">
-                <div className="text-white/20 text-lg font-medium">
-                  Dashboard Preview
+              {/* Payment button */}
+              <div className="p-4 space-y-3">
+                <button className="w-full bg-slate-900 text-white py-2.5 rounded-md text-sm font-medium flex items-center justify-center gap-2">
+                  <span>Pay</span>
+                </button>
+                <div className="text-center text-xs text-slate-400">Ou pague com cartão</div>
+                
+                {/* Card form preview */}
+                <div className="space-y-2">
+                  <div className="h-9 bg-slate-50 rounded border border-slate-200 px-3 flex items-center">
+                    <span className="text-sm text-slate-400">E-mail</span>
+                  </div>
+                  <div className="h-9 bg-slate-50 rounded border border-slate-200 px-3 flex items-center justify-between">
+                    <span className="text-sm text-slate-400">Número do cartão</span>
+                    <div className="flex gap-1">
+                      <div className="w-6 h-4 bg-blue-600 rounded-sm" />
+                      <div className="w-6 h-4 bg-red-500 rounded-sm" />
+                      <div className="w-6 h-4 bg-yellow-500 rounded-sm" />
+                    </div>
+                  </div>
                 </div>
+                
+                <button className="w-full bg-primary text-white py-2.5 rounded-md text-sm font-medium">
+                  Pagar
+                </button>
               </div>
             </div>
-          </div>
-        </motion.div>
-      </div>
 
-      {/* Bottom gradient fade */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-background to-transparent" />
+            {/* Small floating chart card */}
+            <div className="absolute bottom-10 right-10 w-[200px] bg-white rounded-xl shadow-xl border border-slate-100 p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-xs text-slate-500">Taxa de adimplência</span>
+                <span className="text-xs text-green-600 font-medium">+5,2%</span>
+              </div>
+              <div className="text-2xl font-bold text-slate-900 mb-2">97,8%</div>
+              {/* Mini line chart */}
+              <svg className="w-full h-12" viewBox="0 0 200 50">
+                <path
+                  d="M0,40 Q30,35 50,30 T100,25 T150,15 T200,10"
+                  fill="none"
+                  stroke="hsl(var(--primary))"
+                  strokeWidth="2"
+                />
+                <circle cx="200" cy="10" r="4" fill="hsl(var(--primary))" />
+              </svg>
+            </div>
+          </motion.div>
+        </div>
+      </div>
     </section>
   );
 }

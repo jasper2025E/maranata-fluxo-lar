@@ -39,14 +39,8 @@ export function InstitucionalComoFunciona() {
   return (
     <section
       id="como-funciona"
-      className="py-24 lg:py-32 bg-muted/30 relative overflow-hidden"
+      className="py-24 lg:py-32 bg-slate-50 relative overflow-hidden"
     >
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-primary/5 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-[600px] h-[600px] bg-secondary/5 rounded-full blur-3xl" />
-      </div>
-
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
@@ -56,14 +50,12 @@ export function InstitucionalComoFunciona() {
           transition={{ duration: 0.6 }}
           className="text-center mb-16 lg:mb-20"
         >
-          <span className="inline-block px-4 py-1.5 bg-primary/10 text-primary text-sm font-medium rounded-full mb-4">
-            Como funciona
-          </span>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight mb-6">
+          <p className="text-primary font-medium mb-4">Como funciona</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 tracking-tight mb-6">
             Simples de começar,{" "}
             <span className="text-primary">poderoso de usar</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
             Em apenas 3 passos sua escola está pronta para uma gestão 
             moderna e eficiente.
           </p>
@@ -82,22 +74,20 @@ export function InstitucionalComoFunciona() {
             >
               {/* Connector line */}
               {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-20 left-full w-full h-0.5 bg-gradient-to-r from-border to-transparent z-0" />
+                <div className="hidden lg:block absolute top-20 left-full w-full h-px bg-slate-300 z-0" />
               )}
 
-              <div className="relative bg-card rounded-2xl p-8 border border-border/50 shadow-sm hover:shadow-md transition-shadow">
+              <div className="relative bg-white rounded-2xl p-8 border border-slate-200 shadow-sm hover:shadow-lg transition-shadow">
                 {/* Step number */}
-                <div
-                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${stepColors[index]} text-white font-bold text-lg mb-6 shadow-lg`}
-                >
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary text-white font-bold text-lg mb-6">
                   {step.number}
                 </div>
 
                 {/* Content */}
-                <h3 className="text-xl font-semibold text-foreground mb-3">
+                <h3 className="text-xl font-semibold text-slate-900 mb-3">
                   {step.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-slate-600 leading-relaxed">
                   {step.description}
                 </p>
               </div>
