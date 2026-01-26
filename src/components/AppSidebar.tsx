@@ -15,11 +15,7 @@ import {
   Wallet,
   Briefcase,
   Activity,
-  Crown,
   ChevronDown,
-  TrendingUp,
-  Calculator,
-  PieChart,
   Globe,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -63,8 +59,7 @@ const menuItems = [
 // Escola Sub-items
 const escolaItems = [
   { titleKey: "nav.escola.dados", url: "/escola", tab: "dados" },
-  { titleKey: "nav.escola.assinatura", url: "/escola?tab=assinatura", tab: "assinatura" },
-  { titleKey: "nav.escola.website", url: "/site-escolar", tab: "website", premium: true },
+  { titleKey: "nav.escola.website", url: "/site-escolar", tab: "website" },
 ];
 
 // HR Sub-items
@@ -90,8 +85,8 @@ const operationsItems = [
 const analysisItems = [
   { titleKey: "nav.financialDashboard", url: "/dashboard/financeiro", icon: Wallet },
   { titleKey: "nav.reports", url: "/relatorios", icon: BarChart3 },
-  { titleKey: "nav.financialHealth", url: "/saude-financeira", icon: Activity, roles: ["admin"], premium: true },
-  { titleKey: "nav.accounting", url: "/contabilidade", icon: BookOpen, roles: ["admin"], premium: true },
+  { titleKey: "nav.financialHealth", url: "/saude-financeira", icon: Activity, roles: ["admin"] },
+  { titleKey: "nav.accounting", url: "/contabilidade", icon: BookOpen, roles: ["admin"] },
 ];
 
 // System Sub-items
@@ -102,14 +97,13 @@ const configItems = [
   { titleKey: "nav.config.billing", url: "/configuracoes?tab=cobranca", tab: "cobranca", adminOnly: true },
   { titleKey: "nav.config.users", url: "/configuracoes?tab=usuarios", tab: "usuarios", adminOnly: true },
   { titleKey: "nav.config.gateways", url: "/configuracoes?tab=gateways", tab: "gateways", adminOnly: true },
-  { titleKey: "nav.config.integrations", url: "/configuracoes?tab=integracoes", tab: "integracoes", platformAdminOnly: true },
   { titleKey: "nav.config.system", url: "/configuracoes?tab=sistema", tab: "sistema", adminOnly: true },
 ];
 
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut, hasRole, isPlatformAdmin } = useAuth();
+  const { signOut, hasRole } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const { t } = useTranslation();
@@ -138,11 +132,11 @@ export function AppSidebar() {
   // Check if Escola route is active
   const isEscolaActive = location.pathname.startsWith("/escola") || location.pathname.startsWith("/site-escolar");
   const [isEscolaOpen, setIsEscolaOpen] = useState(isEscolaActive);
-  const escolaTab = location.pathname.startsWith("/site-escolar") ? "website" : (new URLSearchParams(location.search).get("tab") || "dados");
+  const escolaTab = location.pathname.startsWith("/site-escolar") ? "website" : "dados";
 
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
-  const escolaNome = escola?.nome || "Maranata";
+  const escolaNome = escola?.nome || "Escola Maranata";
   const logoUrl = escola?.logo_url;
   const escolaCnpj = escola?.cnpj;
   const escolaEndereco = escola?.endereco;
@@ -157,16 +151,14 @@ export function AppSidebar() {
     }
   };
 
-  const filterByRole = (items: Array<{ titleKey: string; url: string; icon?: any; roles?: string[]; excludePlatformAdmin?: boolean; premium?: boolean }>) => {
+  const filterByRole = (items: Array<{ titleKey: string; url: string; icon?: any; roles?: string[] }>) => {
     return items.filter((item) => {
-      // Exclude items marked as excludePlatformAdmin for platform admins
-      if (item.excludePlatformAdmin && isPlatformAdmin()) return false;
       if (!item.roles) return true;
       return item.roles.some((role) => hasRole(role as any));
     });
   };
 
-  const renderMenuItem = (item: typeof menuItems[0] & { premium?: boolean }) => (
+  const renderMenuItem = (item: typeof menuItems[0]) => (
     <SidebarMenuItem key={item.titleKey}>
       {isCollapsed ? (
         <Tooltip>
@@ -186,9 +178,8 @@ export function AppSidebar() {
               </NavLink>
             </SidebarMenuButton>
           </TooltipTrigger>
-          <TooltipContent side="right" className="font-medium flex items-center gap-2">
+          <TooltipContent side="right" className="font-medium">
             {t(item.titleKey)}
-            {item.premium && <Crown className="h-3 w-3 text-amber-500" />}
           </TooltipContent>
         </Tooltip>
       ) : (
@@ -205,14 +196,13 @@ export function AppSidebar() {
           >
             <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
             <span className="text-sm flex-1">{t(item.titleKey)}</span>
-            {item.premium && <Crown className="h-3.5 w-3.5 text-amber-500" />}
           </NavLink>
         </SidebarMenuButton>
       )}
     </SidebarMenuItem>
   );
 
-  // Memoize logo component to prevent re-renders
+  // Logo component
   const LogoContent = logoUrl ? (
     <img 
       src={logoUrl} 
@@ -318,7 +308,6 @@ export function AppSidebar() {
                                     activeClassName=""
                                   >
                                     <span className="flex-1">{t(item.titleKey)}</span>
-                                    {item.premium && <Crown className="h-3 w-3 text-amber-500" />}
                                   </NavLink>
                                 </SidebarMenuButton>
                               </SidebarMenuItem>
@@ -378,8 +367,6 @@ export function AppSidebar() {
                                       : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
                                     "transition-all duration-150"
                                   )}
-                                  // React Router NavLink considers only pathname for active state.
-                                  // We disable it here and drive the active styling by `tab`.
                                   activeClassName=""
                                 >
                                   <span className="flex-1">{t(item.titleKey)}</span>
@@ -498,9 +485,6 @@ export function AppSidebar() {
                                   activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
                                 >
                                   <span>{t(item.titleKey)}</span>
-                                  {item.premium && (
-                                    <Crown className="h-3 w-3 text-amber-500 shrink-0" />
-                                  )}
                                 </NavLink>
                               </SidebarMenuButton>
                             </SidebarMenuItem>
@@ -548,14 +532,13 @@ export function AppSidebar() {
                         <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
                           {configItems
                             .filter(item => {
-                              if (item.platformAdminOnly) return isPlatformAdmin();
                               if (item.adminOnly) return hasRole("admin");
                               return true;
                             })
                             .map((item) => {
                               const isTabActive = item.tab 
                                 ? (location.pathname === "/configuracoes" && configTab === item.tab)
-                                : location.pathname === "/assinatura";
+                                : false;
                               return (
                                 <SidebarMenuItem key={item.titleKey}>
                                   <SidebarMenuButton asChild>

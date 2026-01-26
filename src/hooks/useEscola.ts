@@ -11,33 +11,21 @@ export function useEscola() {
   return useQuery({
     queryKey: queryKeys.escola.info(),
     queryFn: async (): Promise<Escola | null> => {
-      // Primeiro, pegar o tenant_id do usuário atual
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("tenant_id")
-        .eq("id", user.id)
-        .single();
-      
-      if (!profile?.tenant_id) return null;
-      
-      // Buscar escola do tenant específico
+      // Buscar a primeira escola (sistema single-tenant)
       const { data, error } = await supabase
         .from("escola")
         .select("*")
-        .eq("tenant_id", profile.tenant_id)
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
       return data;
     },
-    staleTime: 1000 * 60 * 10, // 10 minutes - dados da escola mudam raramente
+    staleTime: 1000 * 60 * 10, // 10 minutes
     gcTime: 1000 * 60 * 60, // 1 hour cache
     retry: 2,
     refetchOnWindowFocus: false,
-    refetchOnMount: false, // Prevent refetch on component mount during navigation
+    refetchOnMount: false,
     refetchOnReconnect: false,
   });
 }

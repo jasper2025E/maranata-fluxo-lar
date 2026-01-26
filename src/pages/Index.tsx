@@ -4,10 +4,16 @@ import { Navigate } from "react-router-dom";
 import { Loader2, GraduationCap, CreditCard, Users, BarChart3, Shield, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { motion } from "framer-motion";
-import { usePlatformBranding, usePlatformAnnouncements } from "@/hooks/usePlatformBranding";
 import { GradientBackground } from "@/components/landing/GradientBackground";
-import { AnnouncementBanner } from "@/components/landing/AnnouncementBanner";
-import { PlatformNavbar } from "@/components/landing/PlatformNavbar";
+
+const features = [
+  { icon: "GraduationCap", text: "Gestão completa de alunos e turmas" },
+  { icon: "CreditCard", text: "Controle financeiro integrado" },
+  { icon: "Users", text: "Módulo de RH e folha de pagamento" },
+  { icon: "BarChart3", text: "Relatórios e dashboards em tempo real" },
+  { icon: "Shield", text: "Segurança e backup automático" },
+  { icon: "Zap", text: "Integração com PIX e boleto" },
+];
 
 const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   GraduationCap,
@@ -19,12 +25,10 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
 };
 
 export default function Index() {
-  const { user, loading, isPlatformAdmin } = useAuth();
-  const { data: branding, isLoading: brandingLoading } = usePlatformBranding();
-  const { data: announcements = [] } = usePlatformAnnouncements("landing");
+  const { user, loading } = useAuth();
 
   // Show loading while checking auth
-  if (loading || brandingLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="absolute inset-0">
@@ -37,34 +41,30 @@ export default function Index() {
 
   // Redirect if already logged in
   if (user) {
-    if (isPlatformAdmin()) {
-      return <Navigate to="/platform" replace />;
-    }
     return <Navigate to="/dashboard" replace />;
   }
-
-  const features = branding?.features || [];
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-x-hidden">
       {/* Background */}
       <div className="fixed inset-0 z-0">
-        <GradientBackground
-          gradientFrom={branding?.gradientFrom}
-          gradientVia={branding?.gradientVia}
-          gradientTo={branding?.gradientTo}
-        />
+        <GradientBackground />
       </div>
 
-      {/* Stripe-style Navbar */}
-      <PlatformNavbar />
-
-      {/* Announcements */}
-      {announcements.length > 0 && (
-        <div className="relative z-10 px-6 max-w-2xl mx-auto w-full flex-shrink-0">
-          <AnnouncementBanner announcements={announcements} />
+      {/* Navbar */}
+      <header className="relative z-10 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <GraduationCap className="h-8 w-8 text-white" />
+            <span className="text-xl font-bold text-white">Escola Maranata</span>
+          </div>
+          <Link to="/auth">
+            <Button variant="ghost" className="text-white hover:bg-white/10">
+              Entrar
+            </Button>
+          </Link>
         </div>
-      )}
+      </header>
 
       {/* Main Content */}
       <main className="relative z-10 flex-1 flex items-center justify-center p-6">
@@ -78,10 +78,10 @@ export default function Index() {
             {/* Hero Section */}
             <div className="text-center mb-10">
               <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
-                {branding?.heroTitle}
+                Sistema de Gestão Escolar
               </h1>
               <p className="text-lg text-muted-foreground max-w-lg mx-auto">
-                {branding?.heroSubtitle}
+                Gestão completa para a Escola Maranata. Controle financeiro, alunos, turmas e muito mais.
               </p>
             </div>
 
@@ -113,15 +113,9 @@ export default function Index() {
                   size="lg" 
                   className="w-full md:w-auto md:min-w-[200px] font-semibold py-6 text-lg"
                 >
-                  {branding?.ctaPrimary}
+                  Acessar Sistema
                 </Button>
               </Link>
-              <p className="mt-4 text-sm text-muted-foreground">
-                Ainda não tem conta?{" "}
-                <Link to="/cadastro" className="text-primary hover:text-primary/80 font-medium">
-                  {branding?.ctaSecondary}
-                </Link>
-              </p>
             </div>
           </div>
         </motion.div>
@@ -131,7 +125,7 @@ export default function Index() {
       <footer className="relative z-10 py-4 flex-shrink-0">
         <div className="max-w-7xl mx-auto text-center">
           <p className="text-sm text-white/70">
-            © {new Date().getFullYear()} {branding?.platformName}. Todos os direitos reservados.
+            © {new Date().getFullYear()} Escola Maranata. Todos os direitos reservados.
           </p>
         </div>
       </footer>

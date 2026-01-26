@@ -9,27 +9,16 @@ import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, ShieldCheck, ArrowLeft, GraduationCap } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { usePlatformBranding, usePlatformAnnouncements } from "@/hooks/usePlatformBranding";
 import { GradientBackground } from "@/components/landing/GradientBackground";
-import { AnnouncementBanner } from "@/components/landing/AnnouncementBanner";
+
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres")
 });
+
 const Auth = () => {
   const navigate = useNavigate();
-  const {
-    data: branding,
-    isLoading: brandingLoading
-  } = usePlatformBranding();
-  const {
-    data: announcements = []
-  } = usePlatformAnnouncements("login");
-  const {
-    user,
-    loading: authLoading,
-    isPlatformAdmin
-  } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -46,23 +35,13 @@ const Auth = () => {
   const [mfaCode, setMfaCode] = useState("");
   const [mfaVerifying, setMfaVerifying] = useState(false);
 
-  // Platform branding
-  const platformName = branding?.platformName || "Sistema de Gestão";
-
-  // Redirect if already authenticated - route based on role
+  // Redirect if already authenticated
   useEffect(() => {
     if (user && !authLoading) {
-      if (isPlatformAdmin()) {
-        navigate("/platform", {
-          replace: true
-        });
-      } else {
-        navigate("/dashboard", {
-          replace: true
-        });
-      }
+      navigate("/dashboard", { replace: true });
     }
-  }, [user, authLoading, isPlatformAdmin, navigate]);
+  }, [user, authLoading, navigate]);
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -129,6 +108,7 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
   const handleMFAVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (mfaCode.length !== 6) {
@@ -165,6 +145,7 @@ const Auth = () => {
       setMfaVerifying(false);
     }
   };
+
   const handleBackToLogin = async () => {
     await supabase.auth.signOut();
     setMfaRequired(false);
@@ -172,30 +153,31 @@ const Auth = () => {
     setMfaCode("");
     setPassword("");
   };
-  if (authLoading || brandingLoading) {
-    return <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-        <GradientBackground gradientFrom={branding?.gradientFrom} gradientVia={branding?.gradientVia} gradientTo={branding?.gradientTo} />
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <GradientBackground />
         <Loader2 className="h-8 w-8 animate-spin text-white relative z-10" />
-      </div>;
+      </div>
+    );
   }
 
   // MFA Verification Screen
   if (mfaRequired) {
-    return <div className="min-h-screen flex flex-col relative overflow-x-hidden">
-        {/* Dynamic Gradient Background */}
+    return (
+      <div className="min-h-screen flex flex-col relative overflow-x-hidden">
         <div className="fixed inset-0 z-0">
-          <GradientBackground gradientFrom={branding?.gradientFrom} gradientVia={branding?.gradientVia} gradientTo={branding?.gradientTo} />
+          <GradientBackground />
         </div>
         
-        {/* Header */}
         <header className="relative z-10 p-6 flex-shrink-0">
           <div className="flex items-center gap-2">
-            {branding?.platformLogo ? <img src={branding.platformLogo} alt={platformName} className="h-7 w-auto" /> : <GraduationCap className="h-7 w-7 text-white" />}
-            <span className="text-xl font-bold text-white">{platformName}</span>
+            <GraduationCap className="h-7 w-7 text-white" />
+            <span className="text-xl font-bold text-white">Escola Maranata</span>
           </div>
         </header>
 
-        {/* Content */}
         <main className="relative z-10 flex-1 flex items-center justify-center p-6">
           <div className="w-full max-w-md">
             <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
@@ -214,13 +196,25 @@ const Auth = () => {
                 </p>
 
                 <form onSubmit={handleMFAVerify} className="space-y-6">
-                  <Input value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" className="text-center text-3xl tracking-[0.5em] font-mono h-14 border-border" maxLength={6} autoFocus autoComplete="one-time-code" inputMode="numeric" disabled={mfaVerifying} />
+                  <Input 
+                    value={mfaCode} 
+                    onChange={e => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} 
+                    placeholder="000000" 
+                    className="text-center text-3xl tracking-[0.5em] font-mono h-14 border-border" 
+                    maxLength={6} 
+                    autoFocus 
+                    autoComplete="one-time-code" 
+                    inputMode="numeric" 
+                    disabled={mfaVerifying} 
+                  />
 
                   <Button type="submit" disabled={mfaVerifying || mfaCode.length !== 6} className="w-full h-11 font-medium">
-                    {mfaVerifying ? <>
+                    {mfaVerifying ? (
+                      <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Verificando...
-                      </> : "Verificar"}
+                      </>
+                    ) : "Verificar"}
                   </Button>
 
                   <Button type="button" variant="ghost" className="w-full text-muted-foreground" onClick={handleBackToLogin} disabled={mfaVerifying}>
@@ -233,40 +227,32 @@ const Auth = () => {
           </div>
         </main>
 
-        {/* Footer */}
         <footer className="relative z-10 py-4 flex-shrink-0 text-center text-white/70 text-sm">
-          © {new Date().getFullYear()} {platformName}
+          © {new Date().getFullYear()} Escola Maranata
         </footer>
-      </div>;
+      </div>
+    );
   }
-  return <div className="min-h-screen flex flex-col relative overflow-x-hidden">
-      {/* Dynamic Gradient Background */}
+
+  return (
+    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
       <div className="fixed inset-0 z-0">
-        <GradientBackground gradientFrom={branding?.gradientFrom} gradientVia={branding?.gradientVia} gradientTo={branding?.gradientTo} />
+        <GradientBackground />
       </div>
 
-      {/* Announcements */}
-      {announcements.length > 0 && <div className="relative z-10 px-6 pt-6 max-w-md mx-auto w-full flex-shrink-0">
-          <AnnouncementBanner announcements={announcements} />
-        </div>}
-
-      {/* Content */}
       <main className="relative z-10 flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-md">
-          {/* Glassmorphic Card */}
           <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-8 sm:p-10">
-              {/* Logo */}
               <div className="flex justify-center mb-8">
-                {branding?.platformLogo ? <img src={branding.platformLogo} alt={platformName} className="h-24 w-auto" /> : <div className="flex items-center gap-4">
-                    <GraduationCap className="h-14 w-14 text-white" />
-                    <span className="text-3xl font-bold text-white">{platformName}</span>
-                  </div>}
+                <div className="flex items-center gap-4">
+                  <GraduationCap className="h-14 w-14 text-white" />
+                  <span className="text-3xl font-bold text-white">Escola Maranata</span>
+                </div>
               </div>
 
-              {/* Title */}
               <h1 className="text-white mb-6 text-center font-mono font-light text-lg mx-px">
-                {branding?.loginTitle || "Entrar"}
+                Entrar no Sistema
               </h1>
 
               <form onSubmit={handleLogin} className="space-y-4">
@@ -274,7 +260,16 @@ const Auth = () => {
                   <Label htmlFor="email" className="text-white/90 text-sm font-medium">
                     E-mail
                   </Label>
-                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seuemail@exemplo.com" className={`h-12 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    value={email} 
+                    onChange={e => setEmail(e.target.value)} 
+                    placeholder="seuemail@exemplo.com" 
+                    className={`h-12 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.email ? "border-red-400" : ""}`} 
+                    disabled={loading} 
+                    autoComplete="email" 
+                  />
                   {errors.email && <p className="text-xs text-red-300">{errors.email}</p>}
                 </div>
 
@@ -283,8 +278,21 @@ const Auth = () => {
                     Senha
                   </Label>
                   <div className="relative">
-                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className={`h-12 pr-10 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
-                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white" onClick={() => setShowPassword(!showPassword)}>
+                    <Input 
+                      id="password" 
+                      type={showPassword ? "text" : "password"} 
+                      value={password} 
+                      onChange={e => setPassword(e.target.value)} 
+                      placeholder="••••••••" 
+                      className={`h-12 pr-10 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.password ? "border-red-400" : ""}`} 
+                      disabled={loading} 
+                      autoComplete="current-password" 
+                    />
+                    <button 
+                      type="button" 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white" 
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -293,43 +301,40 @@ const Auth = () => {
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked as boolean)} className="border-white/40 data-[state=checked]:bg-white data-[state=checked]:text-primary" />
+                    <Checkbox 
+                      id="remember" 
+                      checked={rememberMe} 
+                      onCheckedChange={checked => setRememberMe(checked as boolean)} 
+                      className="border-white/40 data-[state=checked]:bg-white data-[state=checked]:text-primary" 
+                    />
                     <Label htmlFor="remember" className="text-sm text-white/80 font-normal cursor-pointer">
                       Lembrar
                     </Label>
                   </div>
-                  <button type="button" className="text-sm text-white/80 hover:text-white hover:underline" onClick={() => toast.info("Funcionalidade em desenvolvimento")}>
+                  <button 
+                    type="button" 
+                    className="text-sm text-white/80 hover:text-white hover:underline" 
+                    onClick={() => toast.info("Funcionalidade em desenvolvimento")}
+                  >
                     Esqueceu a senha?
                   </button>
                 </div>
 
                 <Button type="submit" disabled={loading} className="w-full h-12 font-medium text-base rounded-lg bg-slate-800 hover:bg-slate-700 text-white mt-2">
-                  {loading ? <>
+                  {loading ? (
+                    <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Entrando...
-                    </> : "Entrar"}
+                    </>
+                  ) : "Entrar"}
                 </Button>
               </form>
-
-
-              {/* Register Link */}
-              <p className="text-sm text-center text-white/70 mt-6">
-                Não tem uma conta?{" "}
-                <Link to="/cadastro" className="text-white hover:underline font-medium">
-                  Cadastre-se grátis
-                </Link>
-              </p>
             </div>
           </div>
-
-          {/* Footer */}
-          {branding?.privacyTermsUrl && <div className="mt-6 text-center">
-              <a href={branding.privacyTermsUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-white/60 hover:text-white hover:underline transition-colors">
-                Privacidade e termos
-              </a>
-            </div>}
         </div>
       </main>
-    </div>;
+    </div>
+  );
 };
+
 export default Auth;

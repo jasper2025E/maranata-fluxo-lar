@@ -14,7 +14,6 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (requiredRole: AppRole) => boolean;
-  isPlatformAdmin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -37,21 +36,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     isFetching.current = true;
     setLoading(true);
-    // Only mark as fetched after a successful fetch. If we mark it here and the
-    // query errors, we can get stuck with role=null and no retries.
     
     try {
+      // Roles para escola (sem platform_admin)
       const rolePriority: AppRole[] = [
-        "platform_admin",
         "admin",
         "financeiro",
         "secretaria",
         "staff",
       ];
 
-      // IMPORTANT: avoid direct SELECT on user_roles (can fail under RLS/recursion).
-      // Use the SECURITY DEFINER function `has_role(user_id, role)` to resolve the
-      // highest privilege role deterministically.
       let resolvedRole: AppRole | null = null;
       for (const candidate of rolePriority) {
         const { data, error } = await supabase.rpc("has_role", {
@@ -71,7 +65,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } catch (error) {
       console.error("Error fetching user role:", error);
       setRole(null);
-      // Allow retry on next auth event/page load
       lastFetchedUserId.current = null;
     } finally {
       isFetching.current = false;
@@ -101,7 +94,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       (event, session) => {
         if (!mounted) return;
         
-        // CRITICAL: Se o usuário mudou, limpar cache para evitar vazamento de dados
         const previousUserId = lastFetchedUserId.current;
         const newUserId = session?.user?.id;
         
@@ -114,12 +106,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          // Only fetch role on actual auth changes
           if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
             fetchUserRole(session.user.id);
           }
         } else {
-          // Usuário deslogou - limpar cache
           if (previousUserId) {
             clearQueryCache();
           }
@@ -137,7 +127,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [fetchUserRole]);
 
   const signIn = async (email: string, password: string) => {
-    // Reset cache on new sign in attempt
     lastFetchedUserId.current = null;
     isFetching.current = false;
     
@@ -153,7 +142,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    // CRITICAL: Limpar cache ANTES de fazer logout para evitar vazamento de dados
     clearQueryCache();
     
     lastFetchedUserId.current = null;
@@ -166,15 +154,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hasRole = (requiredRole: AppRole): boolean => {
     if (!role) return false;
-    // Platform admin has access to everything
-    if (role === "platform_admin") return true;
-    // Admin has access to everything except platform_admin-only features
-    if (role === "admin" && requiredRole !== "platform_admin") return true;
+    // Admin tem acesso total
+    if (role === "admin") return true;
     return role === requiredRole;
-  };
-
-  const isPlatformAdmin = (): boolean => {
-    return role === "platform_admin";
   };
 
   return (
@@ -187,7 +169,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signOut,
         hasRole,
-        isPlatformAdmin,
       }}
     >
       {children}
