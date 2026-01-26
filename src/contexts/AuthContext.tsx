@@ -38,8 +38,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setLoading(true);
     
     try {
-      // Roles para escola (sem platform_admin)
+      // Roles em ordem de prioridade (mais privilegiado primeiro)
       const rolePriority: AppRole[] = [
+        "platform_admin",
         "admin",
         "financeiro",
         "secretaria",

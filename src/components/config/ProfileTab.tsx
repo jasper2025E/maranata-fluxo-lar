@@ -16,9 +16,9 @@ interface ProfileTabProps {
 }
 
 const roleLabels: Record<string, string> = {
-  platform_admin: "Gestor da Plataforma",
+  platform_admin: "Proprietário",
   admin: "Administrador",
-  staff: "Funcionário",
+  staff: "Colaborador",
   financeiro: "Financeiro",
   secretaria: "Secretaria",
 };
