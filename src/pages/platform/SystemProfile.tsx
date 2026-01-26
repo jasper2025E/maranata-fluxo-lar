@@ -250,10 +250,7 @@ export default function SystemProfile() {
           className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between"
         >
           <div>
-            <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
-                <Settings className="h-5 w-5 text-primary" />
-              </div>
+            <h1 className="text-2xl font-bold text-foreground">
               Configurações do Sistema
             </h1>
             <p className="text-muted-foreground mt-1">
