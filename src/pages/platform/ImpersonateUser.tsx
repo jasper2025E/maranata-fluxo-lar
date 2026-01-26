@@ -174,7 +174,7 @@ export default function ImpersonateUser() {
       <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-semibold text-foreground">Acessar Como</h1>
+          <h1 className="text-2xl font-bold text-foreground">Acessar Como</h1>
           <p className="text-sm text-muted-foreground mt-1">
             Acesse o sistema como qualquer usuário para suporte técnico
           </p>

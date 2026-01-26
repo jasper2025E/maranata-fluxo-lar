@@ -327,7 +327,9 @@ export default function PlatformMonitoring() {
         >
           <div>
             <h1 className="text-2xl font-bold text-foreground flex items-center gap-3">
-              <Activity className="h-6 w-6 text-primary" />
+              <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
+                <Activity className="h-5 w-5 text-primary" />
+              </div>
               Monitoramento em Tempo Real
             </h1>
             <p className="text-muted-foreground mt-1">
@@ -336,7 +338,7 @@ export default function PlatformMonitoring() {
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50">
               <div className={`h-2 w-2 rounded-full ${
                 metrics.systemStatus === "online" ? "bg-green-500 animate-pulse" : 
                 metrics.systemStatus === "degraded" ? "bg-yellow-500" : "bg-red-500"
@@ -350,8 +352,9 @@ export default function PlatformMonitoring() {
               size="sm"
               onClick={fetchData}
               disabled={refreshing}
+              className="gap-2"
             >
-              <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
               {refreshing ? "Atualizando..." : "Atualizar"}
             </Button>
           </div>

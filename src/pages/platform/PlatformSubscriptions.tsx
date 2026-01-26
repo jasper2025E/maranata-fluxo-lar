@@ -280,7 +280,7 @@ export default function PlatformSubscriptions() {
         >
           <div>
             <h1 className="text-2xl font-bold text-foreground">Assinaturas</h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mt-1">
               Gerencie as assinaturas e pagamentos das escolas
             </p>
           </div>
@@ -288,8 +288,9 @@ export default function PlatformSubscriptions() {
             variant="outline"
             size="sm"
             onClick={fetchData}
+            className="gap-2"
           >
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4" />
             Atualizar
           </Button>
         </motion.div>

@@ -207,15 +207,15 @@ export default function TenantsList() {
     <PlatformLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-foreground">Escolas</h1>
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-2xl font-bold text-foreground">Escolas</h1>
+            <p className="text-sm text-muted-foreground mt-1">
               Gerencie todas as escolas cadastradas na plataforma
             </p>
           </div>
-          <Button onClick={() => navigate("/platform/tenants/new")}>
-            <Plus className="h-4 w-4 mr-2" />
+          <Button onClick={() => navigate("/platform/tenants/new")} className="gap-2">
+            <Plus className="h-4 w-4" />
             Nova Escola
           </Button>
         </div>
@@ -227,37 +227,42 @@ export default function TenantsList() {
             placeholder="Buscar por nome, CNPJ ou email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10"
+            className="pl-10 bg-muted/30 border-border/50 focus-visible:ring-primary/30"
           />
         </div>
 
         {/* List */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Lista de Escolas</CardTitle>
-            <CardDescription>
-              {filteredTenants.length} escola(s) encontrada(s)
-            </CardDescription>
+        <Card className="border-border/50">
+          <CardHeader className="border-b border-border/50">
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle className="text-lg font-semibold">Lista de Escolas</CardTitle>
+                <CardDescription>
+                  {filteredTenants.length} escola(s) encontrada(s)
+                </CardDescription>
+              </div>
+            </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-12 text-muted-foreground">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4" />
                 Carregando...
               </div>
             ) : filteredTenants.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-12 text-muted-foreground">
                 <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
                 <p>Nenhuma escola encontrada</p>
               </div>
             ) : (
-              <div className="space-y-2">
-                {filteredTenants.map((tenant) => (
+              <div className="divide-y divide-border/50">
+                {filteredTenants.map((tenant, index) => (
                   <div
                     key={tenant.id}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className="group flex items-center justify-between p-4 hover:bg-muted/30 transition-colors"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                      <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center group-hover:from-primary/30 group-hover:to-primary/20 transition-colors">
                         <Building2 className="h-5 w-5 text-primary" />
                       </div>
                       <div>
@@ -267,12 +272,12 @@ export default function TenantsList() {
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center gap-4">
-                      <Badge variant="outline">{tenant.plano}</Badge>
+                    <div className="flex items-center gap-3">
+                      <Badge variant="outline" className="hidden sm:flex">{tenant.plano}</Badge>
                       {getStatusBadge(tenant.status)}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
+                          <Button variant="ghost" size="icon" className="opacity-0 group-hover:opacity-100 transition-opacity">
                             <MoreVertical className="h-4 w-4" />
                           </Button>
                         </DropdownMenuTrigger>
