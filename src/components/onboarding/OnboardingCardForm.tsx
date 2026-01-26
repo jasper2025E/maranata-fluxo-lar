@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import {
   CreditCard,
@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { translateStripeError, isStripeTestMode } from "@/lib/stripeErrors";
+import { translateStripeError } from "@/lib/stripeErrors";
 
 interface CardFormContentProps {
   onSuccess: () => void;
@@ -29,6 +29,7 @@ interface CardFormContentProps {
   setupIntentClientSecret: string;
   setupIntentId: string;
   tenantId: string;
+  isTestMode: boolean;
 }
 
 // Card form component inside Stripe Elements
@@ -40,6 +41,7 @@ function CardFormContent({
   setupIntentClientSecret,
   setupIntentId,
   tenantId,
+  isTestMode,
 }: CardFormContentProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -47,7 +49,6 @@ function CardFormContent({
   const [error, setError] = useState<string | null>(null);
   const [cardComplete, setCardComplete] = useState(false);
   const [focused, setFocused] = useState(false);
-  const isTestMode = isStripeTestMode();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -252,6 +253,7 @@ interface OnboardingCardFormProps {
   tenantId: string;
   onSuccess: () => void;
   onBack: () => void;
+  stripePublishableKey?: string | null;
 }
 
 export function OnboardingCardForm({
@@ -262,18 +264,19 @@ export function OnboardingCardForm({
   tenantId,
   onSuccess,
   onBack,
+  stripePublishableKey,
 }: OnboardingCardFormProps) {
-  const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
-  const isTestMode = Boolean(publishableKey?.startsWith("pk_test"));
+  const envKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+  const resolvedKey = stripePublishableKey || envKey;
+  const isTestMode = Boolean(resolvedKey?.startsWith("pk_test"));
 
-  const [stripePromise] = useState(() => {
-    const key = publishableKey;
-    if (!key) {
+  const stripePromise = useMemo(() => {
+    if (!resolvedKey) {
       console.error("Stripe publishable key not found");
       return null;
     }
-    return loadStripe(key);
-  });
+    return loadStripe(resolvedKey);
+  }, [resolvedKey]);
 
   const handleError = (message: string) => {
     toast.error(message);
@@ -333,6 +336,7 @@ export function OnboardingCardForm({
           setupIntentClientSecret={setupIntentClientSecret}
           setupIntentId={setupIntentId}
           tenantId={tenantId}
+          isTestMode={isTestMode}
         />
       </Elements>
 

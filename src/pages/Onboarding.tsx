@@ -146,6 +146,7 @@ export default function Onboarding() {
   const [setupIntentSecret, setSetupIntentSecret] = useState<string | null>(null);
   const [setupIntentId, setSetupIntentId] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
+  const [stripePublishableKey, setStripePublishableKey] = useState<string | null>(null);
 
   const handleNextStep = () => {
     if (step === 1 && validateStep1()) {
@@ -200,6 +201,7 @@ export default function Onboarding() {
       setSetupIntentSecret(data.setup_intent_client_secret);
       setSetupIntentId(data.setup_intent_id);
       setTenantId(data.tenant_id);
+      setStripePublishableKey(data.stripe_publishable_key || null);
       setStep(4);
     } catch (error: any) {
       console.error("Onboarding error:", error);
@@ -212,7 +214,7 @@ export default function Onboarding() {
   // Step 2: Card verified successfully (no charge)
   const handleCardSuccess = () => {
     setStep(5);
-    toast.success("Cartão verificado! R$1,00 cobrado com sucesso.");
+    toast.success("Cartão verificado com sucesso! Nenhuma cobrança foi realizada agora.");
   };
 
   const handleGoToLogin = () => {
@@ -695,6 +697,7 @@ export default function Onboarding() {
                   setupIntentClientSecret={setupIntentSecret || ""}
                   setupIntentId={setupIntentId || ""}
                   tenantId={tenantId || ""}
+                  stripePublishableKey={stripePublishableKey}
                   onSuccess={handleCardSuccess}
                   onBack={() => setStep(3)}
                 />

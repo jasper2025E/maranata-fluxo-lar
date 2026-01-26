@@ -184,6 +184,35 @@ serve(async (req) => {
       );
     }
 
+    // Publishable key is safe to return to the frontend. We keep it in backend secrets
+    // to avoid relying on frontend build-time env (prevents live/test mismatches).
+    const stripePublishableKey =
+      Deno.env.get("VITE_STRIPE_PUBLISHABLE_KEY") ||
+      Deno.env.get("STRIPE_PUBLIC_KEY") ||
+      null;
+
+    if (!stripePublishableKey) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Chave publicável do Stripe não configurada. Configure VITE_STRIPE_PUBLISHABLE_KEY (ou STRIPE_PUBLIC_KEY).",
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const secretMode = stripeSecretKey.startsWith("sk_live") ? "live" : "test";
+    const publishableMode = stripePublishableKey.startsWith("pk_live") ? "live" : "test";
+    if (secretMode !== publishableMode) {
+      return new Response(
+        JSON.stringify({
+          error:
+            "Configuração do Stripe inconsistente (teste/produção). Ajuste as chaves para o mesmo ambiente.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const stripe = new Stripe(stripeSecretKey, {
       apiVersion: "2023-10-16",
     });
@@ -229,7 +258,7 @@ serve(async (req) => {
             tenant.auto_billing_enabled === false;
 
           if (canResume) {
-            // Create a new verification PaymentIntent for the existing customer
+            // Create a new SetupIntent for the existing customer (no charge)
             const customerId = await ensureStripeCustomer(
               stripe,
               tenant.stripe_customer_id,
@@ -246,13 +275,10 @@ serve(async (req) => {
                 .eq("id", tenant.id);
             }
 
-            const paymentIntent = await stripe.paymentIntents.create({
-              amount: 100,
-              currency: "brl",
+            const setupIntent = await stripe.setupIntents.create({
               customer: customerId,
-              description: "Verificação de cartão - Taxa de ativação (reembolsável)",
-              setup_future_usage: "off_session",
-              automatic_payment_methods: { enabled: true },
+              payment_method_types: ["card"],
+              usage: "off_session",
               metadata: {
                 type: "card_verification_resume",
                 tenant_id: tenant.id,
@@ -270,8 +296,11 @@ serve(async (req) => {
                 user_id: existingUser.id,
                 trial_ends_at: tenant.trial_ends_at,
                 stripe_customer_id: customerId,
-                payment_intent_client_secret: paymentIntent.client_secret,
-                verification_amount: "R$ 1,00",
+                setup_intent_client_secret: setupIntent.client_secret,
+                setup_intent_id: setupIntent.id,
+                verification_amount: null,
+                stripe_publishable_key: stripePublishableKey,
+                stripe_mode: secretMode,
               }),
               { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
             );
@@ -510,6 +539,8 @@ serve(async (req) => {
         setup_intent_client_secret: setupIntent.client_secret,
         setup_intent_id: setupIntent.id,
         verification_amount: null, // No charge
+        stripe_publishable_key: stripePublishableKey,
+        stripe_mode: secretMode,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
