@@ -26,11 +26,92 @@ interface OnboardingRequest {
   };
 }
 
+type AdminUser = {
+  id: string;
+  email?: string;
+  user_metadata?: Record<string, unknown>;
+};
+
+async function findUserByEmail(
+  // Deno edge functions don't have generated DB typings; keep this permissive.
+  supabaseAdmin: any,
+  email: string
+): Promise<AdminUser | null> {
+  const emailLower = email.trim().toLowerCase();
+  // We avoid relying on a single page to prevent false negatives.
+  const perPage = 200;
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({ page, perPage });
+    if (error) throw error;
+
+    const users = (data?.users || []) as AdminUser[];
+    const match = users.find((u) => (u.email || "").toLowerCase() === emailLower);
+    if (match) return match;
+
+    if (users.length < perPage) break;
+  }
+  return null;
+}
+
+async function isOrphanUser(
+  supabaseAdmin: any,
+  userId: string
+): Promise<boolean> {
+  // Orphan = auth user exists but there is no valid profile+tenant binding.
+  const { data: profile, error: profileError } = await supabaseAdmin
+    .from("profiles")
+    .select("id, tenant_id")
+    .eq("id", userId)
+    .maybeSingle();
+  if (profileError) throw profileError;
+
+  if (!profile) return true;
+  const tenantId = (profile as any).tenant_id as string | null | undefined;
+  if (!tenantId) return true;
+
+  const { data: tenant, error: tenantError } = await supabaseAdmin
+    .from("tenants")
+    .select("id")
+    .eq("id", tenantId)
+    .maybeSingle();
+  if (tenantError) throw tenantError;
+
+  return !tenant;
+}
+
+async function cleanupOrphanUser(
+  supabaseAdmin: any,
+  userId: string
+) {
+  // Best-effort cleanup. Ignore errors to avoid blocking onboarding retries.
+  try {
+    await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+  } catch {
+    // ignore
+  }
+  try {
+    await supabaseAdmin.from("profiles").delete().eq("id", userId);
+  } catch {
+    // ignore
+  }
+  try {
+    await supabaseAdmin.auth.admin.deleteUser(userId);
+  } catch {
+    // ignore
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
+
+  // Track created resources for catch-all cleanup (edge cases/timeouts between steps)
+  let createdStripeCustomerId: string | null = null;
+  let createdPaymentIntentId: string | null = null;
+  let createdTenantId: string | null = null;
+  let createdAuthUserId: string | null = null;
 
   try {
     const supabaseAdmin = createClient(
@@ -73,17 +154,21 @@ serve(async (req) => {
       );
     }
 
-    // Check if email already exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const emailExists = existingUsers?.users?.some(
-      (u) => u.email?.toLowerCase() === admin.email.toLowerCase()
-    );
-
-    if (emailExists) {
-      return new Response(
-        JSON.stringify({ error: "Este e-mail já está cadastrado no sistema" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    // Check if email already exists (and auto-clean orphan users)
+    const existingUser = await findUserByEmail(supabaseAdmin, admin.email);
+    if (existingUser) {
+      const orphan = await isOrphanUser(supabaseAdmin, existingUser.id);
+      if (orphan) {
+        await cleanupOrphanUser(supabaseAdmin, existingUser.id);
+      } else {
+        return new Response(
+          JSON.stringify({
+            error:
+              "Este e-mail já está cadastrado. Faça login para continuar ou use 'Esqueci minha senha'.",
+          }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Calculate trial end date (14 days from now)
@@ -106,6 +191,7 @@ serve(async (req) => {
           cnpj: escola.cnpj || "",
         },
       });
+      createdStripeCustomerId = stripeCustomer.id;
     } catch (stripeError: any) {
       console.error("Error creating Stripe customer:", stripeError);
       return new Response(
@@ -134,6 +220,7 @@ serve(async (req) => {
           plan: selectedPlan,
         },
       });
+      createdPaymentIntentId = paymentIntent.id;
     } catch (paymentError: any) {
       console.error("Error creating PaymentIntent:", paymentError);
       // Cleanup Stripe customer
@@ -179,6 +266,8 @@ serve(async (req) => {
       );
     }
 
+    createdTenantId = tenant.id;
+
     // 4. Create the admin user
     const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
       email: admin.email,
@@ -202,6 +291,8 @@ serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+
+    createdAuthUserId = authUser.user.id;
 
     // 5. Create the profile (upsert to handle edge cases)
     const { error: profileError } = await supabaseAdmin
@@ -310,6 +401,48 @@ serve(async (req) => {
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error: any) {
+    // Catch-all cleanup for edge cases/timeouts between steps.
+    try {
+      const supabaseAdmin = createClient(
+        Deno.env.get("SUPABASE_URL") ?? "",
+        Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
+        { auth: { autoRefreshToken: false, persistSession: false } }
+      );
+
+      if (createdAuthUserId) {
+        await cleanupOrphanUser(supabaseAdmin, createdAuthUserId);
+      }
+
+      if (createdTenantId) {
+        try {
+          await supabaseAdmin.from("tenants").delete().eq("id", createdTenantId);
+        } catch {
+          // ignore
+        }
+      }
+
+      const stripeSecretKey = Deno.env.get("STRIPE_SECRET_KEY") || Deno.env.get("STRIPESECRETAPI");
+      if (stripeSecretKey) {
+        const stripe = new Stripe(stripeSecretKey, { apiVersion: "2023-10-16" });
+        if (createdPaymentIntentId) {
+          try {
+            await stripe.paymentIntents.cancel(createdPaymentIntentId);
+          } catch {
+            // ignore
+          }
+        }
+        if (createdStripeCustomerId) {
+          try {
+            await stripe.customers.del(createdStripeCustomerId);
+          } catch {
+            // ignore
+          }
+        }
+      }
+    } catch {
+      // ignore cleanup failures
+    }
+
     console.error("Onboarding error:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Erro interno" }),
