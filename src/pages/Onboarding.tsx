@@ -3,28 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { z } from "zod";
 import { useQuery } from "@tanstack/react-query";
-import { 
-  Building2, 
-  User, 
-  Mail, 
-  Phone, 
-  Lock, 
-  Eye, 
-  EyeOff, 
-  ArrowRight, 
-  ArrowLeft,
-  CheckCircle,
-  Loader2,
-  Sparkles,
-  Shield,
-  Zap,
-  Gift,
-  Crown,
-  GraduationCap,
-  Check,
-  Users,
-  CreditCard
-} from "lucide-react";
+import { Building2, User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight, ArrowLeft, CheckCircle, Loader2, Sparkles, Shield, Zap, Gift, Crown, GraduationCap, Check, Users, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,26 +12,22 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { usePlatformSettings } from "@/hooks/usePlatformSettings";
 import { OnboardingCardForm } from "@/components/onboarding/OnboardingCardForm";
-
 const escolaSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
   cnpj: z.string().optional(),
   telefone: z.string().min(10, "Telefone inválido"),
-  endereco: z.string().optional(),
+  endereco: z.string().optional()
 });
-
 const adminSchema = z.object({
   nome: z.string().min(3, "Nome deve ter no mínimo 3 caracteres"),
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
   message: "As senhas não coincidem",
-  path: ["confirmPassword"],
+  path: ["confirmPassword"]
 });
-
 type Step = 1 | 2 | 3 | 4 | 5;
-
 interface Plan {
   id: string;
   name: string;
@@ -64,62 +39,60 @@ interface Plan {
   limite_alunos: number | null;
   limite_usuarios: number | null;
 }
-
 const iconMap: Record<string, React.ElementType> = {
   Zap,
   Sparkles,
-  Crown,
+  Crown
 };
-
 export default function Onboarding() {
   const navigate = useNavigate();
-  const { data: platformSettings } = usePlatformSettings();
+  const {
+    data: platformSettings
+  } = usePlatformSettings();
   const platformName = platformSettings?.platform_name || "Sistema de Gestão";
-  
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<string>("basic");
-  
+
   // Fetch plans from database
-  const { data: plans = [], isLoading: plansLoading } = useQuery({
+  const {
+    data: plans = [],
+    isLoading: plansLoading
+  } = useQuery({
     queryKey: ["subscription-plans-onboarding"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("subscription_plans")
-        .select("*")
-        .eq("active", true)
-        .order("display_order");
-      
+      const {
+        data,
+        error
+      } = await supabase.from("subscription_plans").select("*").eq("active", true).order("display_order");
       if (error) throw error;
       return data as Plan[];
-    },
+    }
   });
-  
+
   // School data
   const [escola, setEscola] = useState({
     nome: "",
     cnpj: "",
     telefone: "",
-    endereco: "",
+    endereco: ""
   });
-  
+
   // Admin data
   const [admin, setAdmin] = useState({
     nome: "",
     email: "",
     password: "",
-    confirmPassword: "",
+    confirmPassword: ""
   });
-  
   const [errors, setErrors] = useState<Record<string, string>>({});
-
   const validateStep1 = () => {
     const result = escolaSchema.safeParse(escola);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
+      result.error.errors.forEach(err => {
         fieldErrors[err.path[0] as string] = err.message;
       });
       setErrors(fieldErrors);
@@ -128,12 +101,11 @@ export default function Onboarding() {
     setErrors({});
     return true;
   };
-
   const validateStep3 = () => {
     const result = adminSchema.safeParse(admin);
     if (!result.success) {
       const fieldErrors: Record<string, string> = {};
-      result.error.errors.forEach((err) => {
+      result.error.errors.forEach(err => {
         fieldErrors[err.path[0] as string] = err.message;
       });
       setErrors(fieldErrors);
@@ -147,7 +119,6 @@ export default function Onboarding() {
   const [setupIntentId, setSetupIntentId] = useState<string | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [stripePublishableKey, setStripePublishableKey] = useState<string | null>(null);
-
   const handleNextStep = () => {
     if (step === 1 && validateStep1()) {
       setStep(2);
@@ -164,28 +135,29 @@ export default function Onboarding() {
     setLoading(true);
     try {
       const selectedPlanData = plans.find(p => p.id === selectedPlan);
-      
-      const { data, error } = await supabase.functions.invoke("create-tenant-onboarding", {
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke("create-tenant-onboarding", {
         body: {
           escola: {
             nome: escola.nome,
             cnpj: escola.cnpj || null,
             telefone: escola.telefone,
-            endereco: escola.endereco || null,
+            endereco: escola.endereco || null
           },
           admin: {
             nome: admin.nome,
             email: admin.email,
-            password: admin.password,
+            password: admin.password
           },
           plan: selectedPlan,
           planLimits: {
             limite_alunos: selectedPlanData?.limite_alunos || 50,
-            limite_usuarios: selectedPlanData?.limite_usuarios || 3,
-          },
-        },
+            limite_usuarios: selectedPlanData?.limite_usuarios || 3
+          }
+        }
       });
-
       if (error) {
         // Handle FunctionsHttpError - extract message from response body
         if (error.name === "FunctionsHttpError") {
@@ -216,38 +188,35 @@ export default function Onboarding() {
     setStep(5);
     toast.success("Cartão verificado com sucesso! Nenhuma cobrança foi realizada agora.");
   };
-
   const handleGoToLogin = () => {
     navigate("/auth");
   };
-
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat("pt-BR", {
       style: "currency",
-      currency: "BRL",
+      currency: "BRL"
     }).format(price / 100);
   };
-
-  const features = [
-    { icon: GraduationCap, label: "Gestão completa de alunos" },
-    { icon: CreditCard, label: "Controle financeiro" },
-    { icon: Users, label: "Gestão de RH" },
-    { icon: Shield, label: "Dados protegidos" },
-  ];
-
+  const features = [{
+    icon: GraduationCap,
+    label: "Gestão completa de alunos"
+  }, {
+    icon: CreditCard,
+    label: "Controle financeiro"
+  }, {
+    icon: Users,
+    label: "Gestão de RH"
+  }, {
+    icon: Shield,
+    label: "Dados protegidos"
+  }];
   const stepLabels = ["Escola", "Plano", "Admin", "Cartão", "Pronto"];
-
-  return (
-    <div className="min-h-screen relative overflow-x-hidden">
+  return <div className="min-h-screen relative overflow-x-hidden">
       {/* Stripe-style gradient background - fixed */}
       <div className="fixed inset-0 z-0">
         {/* Main gradient blob - top left */}
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none">
-          <svg
-            viewBox="0 0 1200 800"
-            className="w-full h-full"
-            preserveAspectRatio="xMidYMid slice"
-          >
+          <svg viewBox="0 0 1200 800" className="w-full h-full" preserveAspectRatio="xMidYMid slice">
             <defs>
               <linearGradient id="onboarding-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
                 <stop offset="0%" stopColor="#80e9ff" />
@@ -258,21 +227,13 @@ export default function Onboarding() {
                 <stop offset="100%" stopColor="#80e9ff" />
               </linearGradient>
             </defs>
-            <path
-              d="M0,0 L600,0 Q800,100 700,300 Q600,500 400,450 Q200,400 150,550 Q100,700 0,800 Z"
-              fill="url(#onboarding-gradient)"
-              opacity="0.85"
-            />
+            <path d="M0,0 L600,0 Q800,100 700,300 Q600,500 400,450 Q200,400 150,550 Q100,700 0,800 Z" fill="url(#onboarding-gradient)" opacity="0.85" />
           </svg>
         </div>
 
         {/* Secondary gradient - bottom right */}
         <div className="absolute bottom-0 right-0 w-[60%] h-[60%] pointer-events-none">
-          <svg
-            viewBox="0 0 600 600"
-            className="w-full h-full"
-            preserveAspectRatio="xMaxYMax slice"
-          >
+          <svg viewBox="0 0 600 600" className="w-full h-full" preserveAspectRatio="xMaxYMax slice">
             <defs>
               <linearGradient id="onboarding-gradient-2" x1="100%" y1="0%" x2="0%" y2="100%">
                 <stop offset="0%" stopColor="#fbbf24" />
@@ -280,23 +241,16 @@ export default function Onboarding() {
                 <stop offset="100%" stopColor="#ec4899" />
               </linearGradient>
             </defs>
-            <path
-              d="M600,600 L600,200 Q500,300 400,350 Q300,400 350,500 Q400,600 200,600 Z"
-              fill="url(#onboarding-gradient-2)"
-              opacity="0.6"
-            />
+            <path d="M600,600 L600,200 Q500,300 400,350 Q300,400 350,500 Q400,600 200,600 Z" fill="url(#onboarding-gradient-2)" opacity="0.6" />
           </svg>
         </div>
 
         {/* Subtle grid pattern */}
-        <div 
-          className="absolute inset-0 opacity-[0.015] pointer-events-none"
-          style={{
-            backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px),
+        <div className="absolute inset-0 opacity-[0.015] pointer-events-none" style={{
+        backgroundImage: `linear-gradient(to right, #000 1px, transparent 1px),
                              linear-gradient(to bottom, #000 1px, transparent 1px)`,
-            backgroundSize: '60px 60px'
-          }}
-        />
+        backgroundSize: '60px 60px'
+      }} />
 
         {/* White overlay for readability */}
         <div className="absolute inset-0 bg-white/40 backdrop-blur-[1px]" />
@@ -306,7 +260,7 @@ export default function Onboarding() {
       <div className="relative z-10 min-h-screen flex items-center justify-center p-6 lg:p-8 overflow-y-auto">
         <div className="w-full max-w-xl">
           {/* Logo */}
-          <div className="flex items-center justify-center gap-3 mb-8">
+          <div className="mb-8 border-dotted border-0 rounded gap-[100px] items-center justify-center flex flex-row shadow-large">
             <div className="h-11 w-11 rounded-xl bg-slate-900 flex items-center justify-center shadow-lg">
               <GraduationCap className="h-6 w-6 text-white" />
             </div>
@@ -321,69 +275,36 @@ export default function Onboarding() {
             </div>
           </div>
 
-          {/* Progress Steps - Professional minimal design */}
-          <nav className="flex items-center justify-center mb-10" aria-label="Progress">
-            <ol className="flex items-center gap-0">
-              {stepLabels.map((label, index) => {
-                const s = index + 1;
-                const isCompleted = step > s;
-                const isCurrent = step === s;
-                const isUpcoming = step < s;
-                
-                return (
-                  <li key={s} className="flex items-center">
-                    <div className="flex flex-col items-center">
-                      <div
-                        className={`
-                          relative h-9 w-9 rounded-full flex items-center justify-center text-sm font-medium
-                          transition-colors duration-200
-                          ${isCompleted 
-                            ? "bg-slate-900 text-white" 
-                            : isCurrent 
-                              ? "bg-slate-900 text-white ring-4 ring-slate-900/10" 
-                              : "bg-slate-100 text-slate-400"
-                          }
-                        `}
-                      >
-                        {isCompleted ? (
-                          <Check className="h-4 w-4" strokeWidth={2.5} />
-                        ) : (
-                          <span>{s}</span>
-                        )}
-                      </div>
-                      <span 
-                        className={`
-                          text-xs mt-2 font-medium whitespace-nowrap
-                          ${isCompleted || isCurrent ? "text-slate-900" : "text-slate-400"}
-                        `}
-                      >
-                        {label}
-                      </span>
+          {/* Progress Steps */}
+          <div className="flex items-center justify-center gap-1 mb-8">
+            {stepLabels.map((label, index) => {
+            const s = index + 1;
+            return <div key={s} className="flex items-center">
+                  <div className="flex flex-col items-center">
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center font-semibold text-xs transition-all ${step >= s ? "bg-primary text-primary-foreground" : "bg-slate-200 text-slate-500"}`}>
+                      {step > s ? <CheckCircle className="h-4 w-4" /> : s}
                     </div>
-                    {s < 5 && (
-                      <div
-                        className={`
-                          w-8 sm:w-12 h-px mx-2 sm:mx-3
-                          transition-colors duration-200
-                          ${isCompleted ? "bg-slate-900" : "bg-slate-200"}
-                        `}
-                      />
-                    )}
-                  </li>
-                );
-              })}
-            </ol>
-          </nav>
+                    <span className={`text-[10px] mt-1 ${step >= s ? "text-slate-900" : "text-slate-400"}`}>
+                      {label}
+                    </span>
+                  </div>
+                  {s < 5 && <div className={`w-6 sm:w-8 h-0.5 mx-0.5 rounded ${step > s ? "bg-primary" : "bg-slate-200"}`} />}
+                </div>;
+          })}
+          </div>
 
           <AnimatePresence mode="wait">
             {/* Step 1: School Info */}
-            {step === 1 && (
-              <motion.div
-                key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
+            {step === 1 && <motion.div key="step1" initial={{
+            opacity: 0,
+            x: 20
+          }} animate={{
+            opacity: 1,
+            x: 0
+          }} exit={{
+            opacity: 0,
+            x: -20
+          }}>
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold text-slate-900 mb-2">
                     Dados da Escola
@@ -399,50 +320,40 @@ export default function Onboarding() {
                       <Label htmlFor="escola-nome">Nome da Escola *</Label>
                       <div className="relative">
                         <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="escola-nome"
-                          placeholder="Ex: Escola Municipal São José"
-                          value={escola.nome}
-                          onChange={(e) => setEscola({ ...escola, nome: e.target.value })}
-                          className={`pl-10 ${errors.nome ? "border-destructive" : ""}`}
-                        />
+                        <Input id="escola-nome" placeholder="Ex: Escola Municipal São José" value={escola.nome} onChange={e => setEscola({
+                      ...escola,
+                      nome: e.target.value
+                    })} className={`pl-10 ${errors.nome ? "border-destructive" : ""}`} />
                       </div>
                       {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="escola-cnpj">CNPJ (opcional)</Label>
-                      <Input
-                        id="escola-cnpj"
-                        placeholder="00.000.000/0001-00"
-                        value={escola.cnpj}
-                        onChange={(e) => setEscola({ ...escola, cnpj: e.target.value })}
-                      />
+                      <Input id="escola-cnpj" placeholder="00.000.000/0001-00" value={escola.cnpj} onChange={e => setEscola({
+                    ...escola,
+                    cnpj: e.target.value
+                  })} />
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="escola-telefone">Telefone *</Label>
                       <div className="relative">
                         <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="escola-telefone"
-                          placeholder="(00) 00000-0000"
-                          value={escola.telefone}
-                          onChange={(e) => setEscola({ ...escola, telefone: e.target.value })}
-                          className={`pl-10 ${errors.telefone ? "border-destructive" : ""}`}
-                        />
+                        <Input id="escola-telefone" placeholder="(00) 00000-0000" value={escola.telefone} onChange={e => setEscola({
+                      ...escola,
+                      telefone: e.target.value
+                    })} className={`pl-10 ${errors.telefone ? "border-destructive" : ""}`} />
                       </div>
                       {errors.telefone && <p className="text-xs text-destructive">{errors.telefone}</p>}
                     </div>
 
                     <div className="space-y-2">
                       <Label htmlFor="escola-endereco">Endereço (opcional)</Label>
-                      <Input
-                        id="escola-endereco"
-                        placeholder="Rua, número, bairro, cidade"
-                        value={escola.endereco}
-                        onChange={(e) => setEscola({ ...escola, endereco: e.target.value })}
-                      />
+                      <Input id="escola-endereco" placeholder="Rua, número, bairro, cidade" value={escola.endereco} onChange={e => setEscola({
+                    ...escola,
+                    endereco: e.target.value
+                  })} />
                     </div>
 
                     <Button onClick={handleNextStep} className="w-full mt-6">
@@ -454,24 +365,23 @@ export default function Onboarding() {
 
                 <p className="text-center text-sm text-slate-500 mt-6">
                   Já tem uma conta?{" "}
-                  <button
-                    onClick={handleGoToLogin}
-                    className="text-primary hover:underline font-medium"
-                  >
+                  <button onClick={handleGoToLogin} className="text-primary hover:underline font-medium">
                     Fazer login
                   </button>
                 </p>
-              </motion.div>
-            )}
+              </motion.div>}
 
             {/* Step 2: Plan Selection */}
-            {step === 2 && (
-              <motion.div
-                key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
+            {step === 2 && <motion.div key="step2" initial={{
+            opacity: 0,
+            x: 20
+          }} animate={{
+            opacity: 1,
+            x: 0
+          }} exit={{
+            opacity: 0,
+            x: -20
+          }}>
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold text-slate-900 mb-2">
                     Escolha seu Plano
@@ -481,41 +391,24 @@ export default function Onboarding() {
                   </p>
                 </div>
 
-                {plansLoading ? (
-                  <div className="flex items-center justify-center py-12">
+                {plansLoading ? <div className="flex items-center justify-center py-12">
                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {plans.map((plan) => {
-                      const IconComponent = iconMap[plan.icon] || Zap;
-                      const isSelected = selectedPlan === plan.id;
-                      
-                      return (
-                        <div
-                          key={plan.id}
-                          className={`bg-white rounded-xl border p-4 cursor-pointer transition-all hover:shadow-md ${
-                            isSelected
-                              ? "ring-2 ring-primary border-primary shadow-md"
-                              : "border-slate-200 hover:border-primary/50"
-                          }`}
-                          onClick={() => setSelectedPlan(plan.id)}
-                        >
+                  </div> : <div className="space-y-4">
+                    {plans.map(plan => {
+                const IconComponent = iconMap[plan.icon] || Zap;
+                const isSelected = selectedPlan === plan.id;
+                return <div key={plan.id} className={`bg-white rounded-xl border p-4 cursor-pointer transition-all hover:shadow-md ${isSelected ? "ring-2 ring-primary border-primary shadow-md" : "border-slate-200 hover:border-primary/50"}`} onClick={() => setSelectedPlan(plan.id)}>
                           <div className="flex items-start gap-4">
-                            <div
-                              className={`h-12 w-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center shrink-0`}
-                            >
+                            <div className={`h-12 w-12 rounded-xl bg-gradient-to-br ${plan.color} flex items-center justify-center shrink-0`}>
                               <IconComponent className="h-6 w-6 text-white" />
                             </div>
                             
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className="font-semibold text-slate-900">{plan.name}</h3>
-                                {plan.popular && (
-                                  <Badge variant="secondary" className="text-xs">
+                                {plan.popular && <Badge variant="secondary" className="text-xs">
                                     Popular
-                                  </Badge>
-                                )}
+                                  </Badge>}
                               </div>
                               
                               <div className="flex items-baseline gap-1 mb-2">
@@ -535,21 +428,13 @@ export default function Onboarding() {
                               </div>
                             </div>
                             
-                            <div
-                              className={`h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
-                                isSelected
-                                  ? "border-primary bg-primary"
-                                  : "border-slate-300"
-                              }`}
-                            >
+                            <div className={`h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 ${isSelected ? "border-primary bg-primary" : "border-slate-300"}`}>
                               {isSelected && <Check className="h-4 w-4 text-white" />}
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                        </div>;
+              })}
+                  </div>}
 
                 <div className="flex gap-3 mt-6">
                   <Button variant="outline" onClick={() => setStep(1)}>
@@ -565,17 +450,19 @@ export default function Onboarding() {
                 <p className="text-center text-xs text-slate-500 mt-4">
                   Você pode mudar de plano a qualquer momento
                 </p>
-              </motion.div>
-            )}
+              </motion.div>}
 
             {/* Step 3: Admin Info */}
-            {step === 3 && (
-              <motion.div
-                key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
+            {step === 3 && <motion.div key="step3" initial={{
+            opacity: 0,
+            x: 20
+          }} animate={{
+            opacity: 1,
+            x: 0
+          }} exit={{
+            opacity: 0,
+            x: -20
+          }}>
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold text-slate-900 mb-2">
                     Dados do Administrador
@@ -591,13 +478,10 @@ export default function Onboarding() {
                       <Label htmlFor="admin-nome">Seu Nome *</Label>
                       <div className="relative">
                         <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="admin-nome"
-                          placeholder="Nome completo"
-                          value={admin.nome}
-                          onChange={(e) => setAdmin({ ...admin, nome: e.target.value })}
-                          className={`pl-10 ${errors.nome ? "border-destructive" : ""}`}
-                        />
+                        <Input id="admin-nome" placeholder="Nome completo" value={admin.nome} onChange={e => setAdmin({
+                      ...admin,
+                      nome: e.target.value
+                    })} className={`pl-10 ${errors.nome ? "border-destructive" : ""}`} />
                       </div>
                       {errors.nome && <p className="text-xs text-destructive">{errors.nome}</p>}
                     </div>
@@ -606,14 +490,10 @@ export default function Onboarding() {
                       <Label htmlFor="admin-email">E-mail *</Label>
                       <div className="relative">
                         <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="admin-email"
-                          type="email"
-                          placeholder="seu@email.com"
-                          value={admin.email}
-                          onChange={(e) => setAdmin({ ...admin, email: e.target.value })}
-                          className={`pl-10 ${errors.email ? "border-destructive" : ""}`}
-                        />
+                        <Input id="admin-email" type="email" placeholder="seu@email.com" value={admin.email} onChange={e => setAdmin({
+                      ...admin,
+                      email: e.target.value
+                    })} className={`pl-10 ${errors.email ? "border-destructive" : ""}`} />
                       </div>
                       {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                     </div>
@@ -622,19 +502,11 @@ export default function Onboarding() {
                       <Label htmlFor="admin-password">Senha *</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="admin-password"
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Mínimo 6 caracteres"
-                          value={admin.password}
-                          onChange={(e) => setAdmin({ ...admin, password: e.target.value })}
-                          className={`pl-10 pr-10 ${errors.password ? "border-destructive" : ""}`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowPassword(!showPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
+                        <Input id="admin-password" type={showPassword ? "text" : "password"} placeholder="Mínimo 6 caracteres" value={admin.password} onChange={e => setAdmin({
+                      ...admin,
+                      password: e.target.value
+                    })} className={`pl-10 pr-10 ${errors.password ? "border-destructive" : ""}`} />
+                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                           {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
@@ -645,19 +517,11 @@ export default function Onboarding() {
                       <Label htmlFor="admin-confirm-password">Confirmar Senha *</Label>
                       <div className="relative">
                         <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                        <Input
-                          id="admin-confirm-password"
-                          type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Digite a senha novamente"
-                          value={admin.confirmPassword}
-                          onChange={(e) => setAdmin({ ...admin, confirmPassword: e.target.value })}
-                          className={`pl-10 pr-10 ${errors.confirmPassword ? "border-destructive" : ""}`}
-                        />
-                        <button
-                          type="button"
-                          onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                        >
+                        <Input id="admin-confirm-password" type={showConfirmPassword ? "text" : "password"} placeholder="Digite a senha novamente" value={admin.confirmPassword} onChange={e => setAdmin({
+                      ...admin,
+                      confirmPassword: e.target.value
+                    })} className={`pl-10 pr-10 ${errors.confirmPassword ? "border-destructive" : ""}`} />
+                        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
                           {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </button>
                       </div>
@@ -665,45 +529,35 @@ export default function Onboarding() {
                     </div>
 
                     <div className="flex gap-3 mt-6">
-                      <Button
-                        variant="outline"
-                        onClick={() => setStep(2)}
-                        disabled={loading}
-                      >
+                      <Button variant="outline" onClick={() => setStep(2)} disabled={loading}>
                         <ArrowLeft className="mr-2 h-4 w-4" />
                         Voltar
                       </Button>
-                      <Button 
-                        onClick={handleNextStep} 
-                        className="flex-1"
-                        disabled={loading}
-                      >
-                        {loading ? (
-                          <>
+                      <Button onClick={handleNextStep} className="flex-1" disabled={loading}>
+                        {loading ? <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             Criando conta...
-                          </>
-                        ) : (
-                          <>
+                          </> : <>
                             Criar Conta
                             <ArrowRight className="ml-2 h-4 w-4" />
-                          </>
-                        )}
+                          </>}
                       </Button>
                     </div>
                   </div>
                 </div>
-              </motion.div>
-            )}
+              </motion.div>}
 
             {/* Step 4: Credit Card */}
-            {step === 4 && (
-              <motion.div
-                key="step4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-              >
+            {step === 4 && <motion.div key="step4" initial={{
+            opacity: 0,
+            x: 20
+          }} animate={{
+            opacity: 1,
+            x: 0
+          }} exit={{
+            opacity: 0,
+            x: -20
+          }}>
                 <div className="text-center mb-6">
                   <h2 className="text-2xl font-bold text-slate-900 mb-2">
                     Adicione seu Cartão
@@ -713,27 +567,17 @@ export default function Onboarding() {
                   </p>
                 </div>
 
-                <OnboardingCardForm
-                  schoolName={escola.nome}
-                  adminEmail={admin.email}
-                  setupIntentClientSecret={setupIntentSecret || ""}
-                  setupIntentId={setupIntentId || ""}
-                  tenantId={tenantId || ""}
-                  stripePublishableKey={stripePublishableKey}
-                  onSuccess={handleCardSuccess}
-                  onBack={() => setStep(3)}
-                />
-              </motion.div>
-            )}
+                <OnboardingCardForm schoolName={escola.nome} adminEmail={admin.email} setupIntentClientSecret={setupIntentSecret || ""} setupIntentId={setupIntentId || ""} tenantId={tenantId || ""} stripePublishableKey={stripePublishableKey} onSuccess={handleCardSuccess} onBack={() => setStep(3)} />
+              </motion.div>}
 
             {/* Step 5: Success */}
-            {step === 5 && (
-              <motion.div
-                key="step5"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                className="text-center"
-              >
+            {step === 5 && <motion.div key="step5" initial={{
+            opacity: 0,
+            scale: 0.95
+          }} animate={{
+            opacity: 1,
+            scale: 1
+          }} className="text-center">
                 <div className="mx-auto w-20 h-20 rounded-full bg-green-100 flex items-center justify-center mb-6">
                   <CheckCircle className="h-10 w-10 text-green-600" />
                 </div>
@@ -777,11 +621,9 @@ export default function Onboarding() {
                 <p className="text-sm text-slate-500 mt-4">
                   Use o e-mail <strong>{admin.email}</strong> para fazer login
                 </p>
-              </motion.div>
-            )}
+              </motion.div>}
           </AnimatePresence>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 }
