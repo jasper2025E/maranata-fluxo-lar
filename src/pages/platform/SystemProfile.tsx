@@ -325,7 +325,7 @@ export default function SystemProfile() {
                             placeholder="Sistema de Gestão Escolar"
                             maxLength={60}
                           />
-                          <p className="text-xs text-muted-foreground">{data.meta_title.length}/60</p>
+                          <p className="text-xs text-muted-foreground">{(data.meta_title || "").length}/60</p>
                         </div>
                         <div className="space-y-2">
                           <Label>URL do Favicon</Label>
@@ -346,7 +346,7 @@ export default function SystemProfile() {
                           rows={2}
                           maxLength={160}
                         />
-                        <p className="text-xs text-muted-foreground">{data.meta_description.length}/160</p>
+                        <p className="text-xs text-muted-foreground">{(data.meta_description || "").length}/160</p>
                       </div>
                     </CardContent>
                   </Card>
