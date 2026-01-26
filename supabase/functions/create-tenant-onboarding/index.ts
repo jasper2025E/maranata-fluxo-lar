@@ -126,7 +126,6 @@ serve(async (req) => {
         setup_future_usage: "off_session", // Save the card for future automatic charges
         automatic_payment_methods: {
           enabled: true,
-          allow_redirects: "never", // Only allow card payments, no redirects
         },
         metadata: {
           type: "card_verification",
