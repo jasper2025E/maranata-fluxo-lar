@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, CheckCircle2 } from "lucide-react";
 import { motion } from "framer-motion";
 import type { PlatformBranding } from "@/hooks/usePlatformBranding";
+import { GRADIENT_MAIN, MESH_OVERLAY } from "./colors";
 
 interface InstitucionalHeroProps {
   branding?: PlatformBranding | null;
@@ -36,28 +37,13 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
       {/* Gradient Background */}
       <div
         className="absolute inset-0"
-        style={{
-          background: `linear-gradient(135deg, 
-            hsl(262 83% 58%) 0%, 
-            hsl(280 75% 55%) 25%,
-            hsl(310 70% 55%) 50%,
-            hsl(340 80% 58%) 75%,
-            hsl(25 95% 55%) 100%
-          )`,
-        }}
+        style={{ background: GRADIENT_MAIN }}
       />
 
       {/* Mesh gradient overlay */}
       <div
         className="absolute inset-0 opacity-40"
-        style={{
-          backgroundImage: `
-            radial-gradient(at 20% 30%, hsla(262, 80%, 60%, 0.5) 0px, transparent 50%),
-            radial-gradient(at 80% 20%, hsla(180, 70%, 60%, 0.4) 0px, transparent 40%),
-            radial-gradient(at 40% 80%, hsla(340, 70%, 55%, 0.3) 0px, transparent 50%),
-            radial-gradient(at 90% 70%, hsla(25, 90%, 55%, 0.3) 0px, transparent 50%)
-          `,
-        }}
+        style={{ backgroundImage: MESH_OVERLAY }}
       />
 
       {/* Grid pattern */}
@@ -80,8 +66,8 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
           <motion.div variants={fadeInUp} className="mb-8">
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 backdrop-blur-sm border border-white/20 text-white text-sm font-medium">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-white" />
               </span>
               Plataforma líder em gestão escolar
             </span>
@@ -162,7 +148,7 @@ export function InstitucionalHero({ branding }: InstitucionalHeroProps) {
                 key={index}
                 className="flex items-center gap-2 text-white/80 text-sm"
               >
-                <CheckCircle2 className="h-4 w-4 text-emerald-400" />
+                <CheckCircle2 className="h-4 w-4 text-white" />
                 {badge}
               </div>
             ))}

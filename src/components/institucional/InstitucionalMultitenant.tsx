@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Building2, Lock, Users, BarChart3, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { INSTITUCIONAL_COLORS } from "./colors";
 
 const features = [
   {
@@ -59,10 +60,10 @@ export function InstitucionalMultitenant() {
                 {/* Schools list */}
                 <div className="space-y-3">
                   {[
-                    { name: "Unidade Centro", students: 800, color: "bg-violet-500" },
-                    { name: "Unidade Norte", students: 650, color: "bg-blue-500" },
-                    { name: "Unidade Sul", students: 580, color: "bg-emerald-500" },
-                    { name: "Unidade Oeste", students: 470, color: "bg-amber-500" },
+                    { name: "Unidade Centro", students: 800, color: `bg-[hsl(${INSTITUCIONAL_COLORS.gradient.from})]` },
+                    { name: "Unidade Norte", students: 650, color: `bg-[hsl(${INSTITUCIONAL_COLORS.gradient.via1})]` },
+                    { name: "Unidade Sul", students: 580, color: `bg-[hsl(${INSTITUCIONAL_COLORS.gradient.via2})]` },
+                    { name: "Unidade Oeste", students: 470, color: `bg-[hsl(${INSTITUCIONAL_COLORS.gradient.to})]` },
                   ].map((school, index) => (
                     <motion.div
                       key={index}
@@ -107,7 +108,7 @@ export function InstitucionalMultitenant() {
                 transition={{ delay: 0.4 }}
                 className="absolute -left-4 -bottom-4 bg-card rounded-xl p-4 border border-border/50 shadow-lg"
               >
-                <div className="text-2xl font-bold text-emerald-600">97.2%</div>
+                <div className="text-2xl font-bold text-primary">97.2%</div>
                 <div className="text-sm text-muted-foreground">
                   Taxa de adimplência
                 </div>

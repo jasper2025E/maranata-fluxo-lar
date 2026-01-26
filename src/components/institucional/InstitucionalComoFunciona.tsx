@@ -2,6 +2,14 @@ import { motion } from "framer-motion";
 import { UserPlus, Settings, Rocket, ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { INSTITUCIONAL_COLORS } from "./colors";
+
+// Usando cores da paleta unificada
+const stepColors = [
+  `from-[hsl(${INSTITUCIONAL_COLORS.gradient.from})] to-[hsl(${INSTITUCIONAL_COLORS.gradient.via1})]`,
+  `from-[hsl(${INSTITUCIONAL_COLORS.gradient.via2})] to-[hsl(${INSTITUCIONAL_COLORS.gradient.via3})]`,
+  `from-[hsl(${INSTITUCIONAL_COLORS.gradient.via3})] to-[hsl(${INSTITUCIONAL_COLORS.gradient.to})]`,
+];
 
 const steps = [
   {
@@ -10,7 +18,6 @@ const steps = [
     title: "Crie sua conta",
     description:
       "Cadastre sua escola em menos de 2 minutos. Sem cartão de crédito, sem compromisso.",
-    color: "from-violet-500 to-purple-500",
   },
   {
     icon: Settings,
@@ -18,7 +25,6 @@ const steps = [
     title: "Configure sua escola",
     description:
       "Personalize cursos, turmas, formas de pagamento e automatize processos. Nossa equipe ajuda você.",
-    color: "from-blue-500 to-cyan-500",
   },
   {
     icon: Rocket,
@@ -26,7 +32,6 @@ const steps = [
     title: "Comece a crescer",
     description:
       "Gerencie tudo em um só lugar. Matrículas, pagamentos, funcionários e relatórios.",
-    color: "from-emerald-500 to-teal-500",
   },
 ];
 
@@ -83,7 +88,7 @@ export function InstitucionalComoFunciona() {
               <div className="relative bg-card rounded-2xl p-8 border border-border/50 shadow-sm hover:shadow-md transition-shadow">
                 {/* Step number */}
                 <div
-                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} text-white font-bold text-lg mb-6 shadow-lg`}
+                  className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br ${stepColors[index]} text-white font-bold text-lg mb-6 shadow-lg`}
                 >
                   {step.number}
                 </div>
