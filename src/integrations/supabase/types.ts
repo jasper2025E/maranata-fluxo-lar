@@ -3813,15 +3813,26 @@ export type Database = {
         Args: { p_funcionario_id: string }
         Returns: string
       }
-      gerar_faturas_aluno: {
-        Args: {
-          p_aluno_id: string
-          p_curso_id: string
-          p_data_inicio: string
-          p_valor: number
-        }
-        Returns: undefined
-      }
+      gerar_faturas_aluno:
+        | {
+            Args: {
+              p_aluno_id: string
+              p_curso_id: string
+              p_data_inicio: string
+              p_valor: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_aluno_id: string
+              p_curso_id: string
+              p_data_inicio: string
+              p_quantidade_meses?: number
+              p_valor: number
+            }
+            Returns: undefined
+          }
       get_escola_public_info: {
         Args: never
         Returns: {
