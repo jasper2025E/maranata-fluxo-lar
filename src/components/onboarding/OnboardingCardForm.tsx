@@ -29,7 +29,6 @@ interface CardFormContentProps {
   setupIntentClientSecret: string;
   setupIntentId: string;
   tenantId: string;
-  isTestMode: boolean;
 }
 
 // Card form component inside Stripe Elements
@@ -41,7 +40,6 @@ function CardFormContent({
   setupIntentClientSecret,
   setupIntentId,
   tenantId,
-  isTestMode,
 }: CardFormContentProps) {
   const stripe = useStripe();
   const elements = useElements();
@@ -93,18 +91,12 @@ function CardFormContent({
       // If Stripe requires customer action, inform user clearly
       if (setupIntent.status === "requires_action") {
         throw new Error(
-          isTestMode
-            ? "Verificação precisa de autenticação (3D Secure). No modo teste, use um cartão de teste compatível."
-            : "Verificação precisa de autenticação (3D Secure). Autorize no app do banco e tente novamente."
+          "Verificação precisa de autenticação (3D Secure). Autorize no app do banco e tente novamente."
         );
       }
 
       if (setupIntent.status !== "succeeded") {
-        throw new Error(
-          isTestMode
-            ? `Verificação não concluída (status: ${setupIntent.status}). Em modo teste, use cartões de teste do Stripe.`
-            : "Verificação não foi processada. Tente novamente."
-        );
+        throw new Error("Verificação não foi processada. Tente novamente.");
       }
 
       // Complete the setup on the backend (save payment method)
@@ -268,7 +260,6 @@ export function OnboardingCardForm({
 }: OnboardingCardFormProps) {
   const envKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
   const resolvedKey = stripePublishableKey || envKey;
-  const isTestMode = Boolean(resolvedKey?.startsWith("pk_test"));
 
   const stripePromise = useMemo(() => {
     if (!resolvedKey) {
@@ -314,18 +305,9 @@ export function OnboardingCardForm({
           <h3 className="font-semibold text-slate-900">Verificar cartão</h3>
           <p className="text-sm text-slate-500">
             Sem cobrança (apenas verificação)
-            {isTestMode ? " • modo teste" : ""}
           </p>
         </div>
       </div>
-
-      {isTestMode && (
-        <div className="mb-4 p-3 rounded-lg bg-amber-50 border border-amber-200">
-          <p className="text-xs text-amber-800">
-            <strong>Ambiente de teste</strong>: pagamentos não chegam ao seu banco. Use cartões de teste ou configure as chaves de produção.
-          </p>
-        </div>
-      )}
 
       <Elements stripe={stripePromise} options={{ locale: "pt-BR" }}>
         <CardFormContent
@@ -336,7 +318,6 @@ export function OnboardingCardForm({
           setupIntentClientSecret={setupIntentClientSecret}
           setupIntentId={setupIntentId}
           tenantId={tenantId}
-          isTestMode={isTestMode}
         />
       </Elements>
 
