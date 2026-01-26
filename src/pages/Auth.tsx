@@ -320,13 +320,13 @@ const Auth = () => {
 
               {/* Title */}
               <h1 className="text-2xl font-semibold text-white mb-6">
-                {branding?.loginTitle || "Login"}
+                {branding?.loginTitle || "Entrar"}
               </h1>
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-white/90 text-sm font-medium">
-                    Email
+                    E-mail
                   </Label>
                   <Input
                     id="email" 
@@ -343,7 +343,7 @@ const Auth = () => {
 
                 <div className="space-y-1.5">
                   <Label htmlFor="password" className="text-white/90 text-sm font-medium">
-                    Password
+                    Senha
                   </Label>
                   <div className="relative">
                     <Input 
@@ -351,7 +351,7 @@ const Auth = () => {
                       type={showPassword ? "text" : "password"} 
                       value={password} 
                       onChange={e => setPassword(e.target.value)} 
-                      placeholder="Password"
+                      placeholder="Senha"
                       className={`h-12 pr-10 rounded-lg bg-white/10 border-white/20 text-white placeholder:text-white/50 focus:border-white/40 focus:ring-white/20 ${errors.password ? "border-destructive" : ""}`} 
                       disabled={loading} 
                       autoComplete="current-password" 
@@ -384,7 +384,7 @@ const Auth = () => {
                     className="text-sm text-white/80 hover:text-white hover:underline"
                     onClick={() => toast.info("Funcionalidade em desenvolvimento")}
                   >
-                    Forgot Password?
+                    Esqueceu a senha?
                   </button>
                 </div>
 
@@ -399,7 +399,7 @@ const Auth = () => {
                       Entrando...
                     </>
                   ) : (
-                    "Sign in"
+                    "Entrar"
                   )}
                 </Button>
               </form>
@@ -410,7 +410,7 @@ const Auth = () => {
                   <div className="w-full border-t border-white/20"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-3 bg-transparent text-white/60">or continue with</span>
+                  <span className="px-3 bg-transparent text-white/60">ou continue com</span>
                 </div>
               </div>
 
@@ -453,9 +453,9 @@ const Auth = () => {
 
               {/* Register Link */}
               <p className="text-sm text-center text-white/70 mt-6">
-                Don't have an account yet?{" "}
+                Não tem uma conta?{" "}
                 <Link to="/cadastro" className="text-white hover:underline font-medium">
-                  Register for free
+                  Cadastre-se grátis
                 </Link>
               </p>
             </div>
