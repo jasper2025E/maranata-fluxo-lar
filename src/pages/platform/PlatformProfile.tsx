@@ -237,10 +237,10 @@ export default function PlatformProfile() {
             <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center">
               <User className="h-5 w-5 text-primary" />
             </div>
-            Meu Perfil
+            Minha Conta
           </h1>
           <p className="text-muted-foreground mt-1">
-            Gerencie suas informações pessoais
+            Gerencie suas informações pessoais de acesso
           </p>
         </motion.div>
 
