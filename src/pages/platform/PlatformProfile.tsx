@@ -36,6 +36,7 @@ export default function PlatformProfile() {
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [passwords, setPasswords] = useState({
     current: "",
@@ -140,6 +141,64 @@ export default function PlatformProfile() {
     }
   };
 
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !user) return;
+
+    // Validate file type
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
+      toast.error("Formato inválido. Use JPG, PNG, WEBP ou GIF.");
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Arquivo muito grande. Máximo 5MB.");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      // Create unique filename
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/avatar.${fileExt}`;
+
+      // Upload to Supabase Storage
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, file, { 
+          upsert: true,
+          cacheControl: '3600'
+        });
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(fileName);
+
+      // Add cache buster to force refresh
+      const avatarUrl = `${publicUrl}?t=${Date.now()}`;
+
+      // Update profile state
+      setProfile(prev => ({ ...prev, avatar_url: avatarUrl }));
+
+      // Update profiles table
+      await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", user.id);
+
+      toast.success("Foto atualizada com sucesso!");
+    } catch (error: any) {
+      console.error("Error uploading avatar:", error);
+      toast.error("Erro ao enviar foto");
+    } finally {
+      setUploadingAvatar(false);
+    }
+  };
+
   const getInitials = (name: string) => {
     if (!name) return "G";
     return name
@@ -197,9 +256,24 @@ export default function PlatformProfile() {
                           {getInitials(profile.nome)}
                         </AvatarFallback>
                       </Avatar>
-                      <button className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors">
-                        <Camera className="h-4 w-4" />
-                      </button>
+                      <label 
+                        htmlFor="avatar-upload"
+                        className="absolute bottom-0 right-0 h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors cursor-pointer"
+                      >
+                        {uploadingAvatar ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Camera className="h-4 w-4" />
+                        )}
+                        <input
+                          id="avatar-upload"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp,image/gif"
+                          onChange={handleAvatarUpload}
+                          className="sr-only"
+                          disabled={uploadingAvatar}
+                        />
+                      </label>
                     </div>
                     <div>
                       <p className="font-semibold text-foreground text-lg">{profile.nome || "Gestor"}</p>
