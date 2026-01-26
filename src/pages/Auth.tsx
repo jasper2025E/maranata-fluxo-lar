@@ -16,7 +16,9 @@ import {
 } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { usePlatformSettings } from "@/hooks/usePlatformSettings";
+import { usePlatformBranding, usePlatformAnnouncements } from "@/hooks/usePlatformBranding";
+import { GradientBackground } from "@/components/landing/GradientBackground";
+import { AnnouncementBanner } from "@/components/landing/AnnouncementBanner";
 
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
@@ -25,7 +27,8 @@ const loginSchema = z.object({
 
 const Auth = () => {
   const navigate = useNavigate();
-  const { data: platformSettings, isLoading: platformLoading } = usePlatformSettings();
+  const { data: branding, isLoading: brandingLoading } = usePlatformBranding();
+  const { data: announcements = [] } = usePlatformAnnouncements("login");
   const {
     user,
     loading: authLoading,
@@ -48,7 +51,7 @@ const Auth = () => {
   const [mfaVerifying, setMfaVerifying] = useState(false);
 
   // Platform branding
-  const platformName = platformSettings?.platform_name || "Sistema de Gestão";
+  const platformName = branding?.platformName || "Sistema de Gestão";
 
   // Redirect if already authenticated - route based on role
   useEffect(() => {
@@ -171,10 +174,15 @@ const Auth = () => {
     setPassword("");
   };
 
-  if (authLoading || platformLoading) {
+  if (authLoading || brandingLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-500 via-pink-400 to-orange-300">
-        <Loader2 className="h-8 w-8 animate-spin text-white" />
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <GradientBackground
+          gradientFrom={branding?.gradientFrom}
+          gradientVia={branding?.gradientVia}
+          gradientTo={branding?.gradientTo}
+        />
+        <Loader2 className="h-8 w-8 animate-spin text-white relative z-10" />
       </div>
     );
   }
@@ -183,14 +191,21 @@ const Auth = () => {
   if (mfaRequired) {
     return (
       <div className="min-h-screen flex flex-col relative overflow-hidden">
-        {/* Gradient Background */}
-        <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-fuchsia-500 via-40% via-pink-400 via-60% to-orange-300 to-90%" />
-        <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400/30 via-transparent to-transparent" />
+        {/* Dynamic Gradient Background */}
+        <GradientBackground
+          gradientFrom={branding?.gradientFrom}
+          gradientVia={branding?.gradientVia}
+          gradientTo={branding?.gradientTo}
+        />
         
         {/* Header */}
         <header className="relative z-10 p-6">
           <div className="flex items-center gap-2">
-            <GraduationCap className="h-7 w-7 text-white" />
+            {branding?.platformLogo ? (
+              <img src={branding.platformLogo} alt={platformName} className="h-7 w-auto" />
+            ) : (
+              <GraduationCap className="h-7 w-7 text-white" />
+            )}
             <span className="text-xl font-bold text-white">{platformName}</span>
           </div>
         </header>
@@ -267,26 +282,31 @@ const Auth = () => {
 
   return (
     <div className="min-h-screen flex flex-col relative overflow-hidden">
-      {/* Gradient Background - Stripe style */}
-      <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-fuchsia-500 via-40% via-pink-400 via-60% to-orange-300 to-90%" />
-      <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400/30 via-transparent to-transparent" />
-      
-      {/* Subtle mesh overlay */}
-      <div className="absolute inset-0 opacity-30" style={{
-        backgroundImage: `radial-gradient(at 40% 20%, hsla(280, 80%, 60%, 0.3) 0px, transparent 50%),
-                          radial-gradient(at 80% 0%, hsla(340, 80%, 60%, 0.2) 0px, transparent 50%),
-                          radial-gradient(at 0% 50%, hsla(200, 80%, 60%, 0.2) 0px, transparent 50%),
-                          radial-gradient(at 80% 50%, hsla(30, 80%, 60%, 0.2) 0px, transparent 50%),
-                          radial-gradient(at 0% 100%, hsla(280, 80%, 60%, 0.2) 0px, transparent 50%)`
-      }} />
+      {/* Dynamic Gradient Background */}
+      <GradientBackground
+        gradientFrom={branding?.gradientFrom}
+        gradientVia={branding?.gradientVia}
+        gradientTo={branding?.gradientTo}
+      />
 
       {/* Header */}
       <header className="relative z-10 p-6">
         <div className="flex items-center gap-2">
-          <GraduationCap className="h-7 w-7 text-white" />
+          {branding?.platformLogo ? (
+            <img src={branding.platformLogo} alt={platformName} className="h-7 w-auto" />
+          ) : (
+            <GraduationCap className="h-7 w-7 text-white" />
+          )}
           <span className="text-xl font-bold text-white">{platformName}</span>
         </div>
       </header>
+
+      {/* Announcements */}
+      {announcements.length > 0 && (
+        <div className="relative z-10 px-6 max-w-md mx-auto w-full mb-4">
+          <AnnouncementBanner announcements={announcements} />
+        </div>
+      )}
 
       {/* Content */}
       <main className="relative z-10 flex-1 flex items-center justify-center p-6">
@@ -294,13 +314,16 @@ const Auth = () => {
           <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
             {/* Form Section */}
             <div className="p-8">
-              <h1 className="text-2xl font-semibold text-gray-900 mb-8">
-                Acesse sua conta
+              <h1 className="text-2xl font-semibold text-foreground mb-2">
+                {branding?.loginTitle}
               </h1>
+              <p className="text-muted-foreground text-sm mb-8">
+                {branding?.loginSubtitle}
+              </p>
 
               <form onSubmit={handleLogin} className="space-y-5">
                 <div className="space-y-2">
-                  <Label htmlFor="email" className="text-gray-700 text-sm font-medium">
+                  <Label htmlFor="email" className="text-foreground text-sm font-medium">
                     E-mail
                   </Label>
                   <Input 
@@ -308,21 +331,21 @@ const Auth = () => {
                     type="email" 
                     value={email} 
                     onChange={e => setEmail(e.target.value)} 
-                    className={`h-11 border-gray-300 focus:border-violet-500 focus:ring-violet-500 ${errors.email ? "border-red-400" : ""}`} 
+                    className={`h-11 ${errors.email ? "border-destructive" : ""}`} 
                     disabled={loading} 
                     autoComplete="email" 
                   />
-                  {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                  {errors.email && <p className="text-xs text-destructive">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="password" className="text-gray-700 text-sm font-medium">
+                    <Label htmlFor="password" className="text-foreground text-sm font-medium">
                       Senha
                     </Label>
                     <button
                       type="button"
-                      className="text-sm text-violet-600 hover:text-violet-700 font-medium"
+                      className="text-sm text-primary hover:text-primary/80 font-medium"
                       onClick={() => toast.info("Funcionalidade em desenvolvimento")}
                     >
                       Esqueceu sua senha?
@@ -334,19 +357,19 @@ const Auth = () => {
                       type={showPassword ? "text" : "password"} 
                       value={password} 
                       onChange={e => setPassword(e.target.value)} 
-                      className={`h-11 pr-10 border-gray-300 focus:border-violet-500 focus:ring-violet-500 ${errors.password ? "border-red-400" : ""}`} 
+                      className={`h-11 pr-10 ${errors.password ? "border-destructive" : ""}`} 
                       disabled={loading} 
                       autoComplete="current-password" 
                     />
                     <button 
                       type="button" 
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600" 
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground" 
                       onClick={() => setShowPassword(!showPassword)}
                     >
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+                  {errors.password && <p className="text-xs text-destructive">{errors.password}</p>}
                 </div>
 
                 <div className="flex items-center space-x-2">
@@ -354,9 +377,8 @@ const Auth = () => {
                     id="remember" 
                     checked={rememberMe}
                     onCheckedChange={(checked) => setRememberMe(checked as boolean)}
-                    className="border-gray-300 data-[state=checked]:bg-violet-600 data-[state=checked]:border-violet-600"
                   />
-                  <Label htmlFor="remember" className="text-sm text-gray-600 font-normal cursor-pointer">
+                  <Label htmlFor="remember" className="text-sm text-muted-foreground font-normal cursor-pointer">
                     Lembrar de mim neste dispositivo
                   </Label>
                 </div>
@@ -364,7 +386,7 @@ const Auth = () => {
                 <Button 
                   type="submit" 
                   disabled={loading} 
-                  className="w-full h-11 bg-violet-500 hover:bg-violet-600 text-white font-medium"
+                  className="w-full h-11 font-medium"
                 >
                   {loading ? (
                     <>
@@ -379,10 +401,10 @@ const Auth = () => {
             </div>
 
             {/* Footer Section */}
-            <div className="px-8 py-4 bg-gray-50 border-t border-gray-100">
-              <p className="text-sm text-center text-gray-600">
+            <div className="px-8 py-4 bg-muted/50 border-t">
+              <p className="text-sm text-center text-muted-foreground">
                 Começando agora?{" "}
-                <Link to="/cadastro" className="text-violet-600 hover:text-violet-700 font-medium">
+                <Link to="/cadastro" className="text-primary hover:text-primary/80 font-medium">
                   Crie uma conta
                 </Link>
               </p>
