@@ -213,8 +213,8 @@ async function drawCompactCarne(
     doc.setFont("helvetica", "bold");
     doc.text("PIX", qrX + (rightWidth - 10) / 2, qrY + 3, { align: "center" });
     
-    // QR Code limpo
-    const qrSize = 22;
+    // QR Code maior para melhor leitura
+    const qrSize = 28;
     const qrPosX = qrX + ((rightWidth - 10 - qrSize) / 2);
     
     try {
