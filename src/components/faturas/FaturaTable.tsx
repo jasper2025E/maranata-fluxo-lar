@@ -259,7 +259,7 @@ function FaturaRow({
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem onClick={() => onPayment(fatura)} className="text-success">
-                  <CreditCard className="h-4 w-4 mr-2" />Registrar pagamento manual
+                  <CreditCard className="h-4 w-4 mr-2" />Registrar pagamento
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onParcelar(fatura)}>
                   <SplitSquareVertical className="h-4 w-4 mr-2" />Parcelar
