@@ -124,14 +124,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             </div>
 
             <div className="flex items-center gap-3">
-              {/* Biblical Verse - between search and notifications */}
+              {/* Biblical Verse - responsive, adapts to available space */}
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 border border-primary/10 max-w-[320px] cursor-default">
+                    <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 border border-primary/10 cursor-default min-w-0 flex-shrink">
                       <BookOpen className="h-4 w-4 text-primary shrink-0" strokeWidth={1.75} />
-                      <p className="text-xs text-muted-foreground truncate italic">
-                        "{dailyVerse.text.length > 50 ? dailyVerse.text.slice(0, 50) + '...' : dailyVerse.text}"
+                      <p className="text-xs text-muted-foreground truncate italic min-w-0">
+                        "{dailyVerse.text}"
                       </p>
                     </div>
                   </TooltipTrigger>
