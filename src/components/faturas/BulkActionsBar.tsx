@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { 
   AlertDialog,
@@ -257,53 +256,60 @@ export function BulkActionsBar({
 
   return (
     <>
-      <div className="flex items-center justify-between gap-4 px-4 py-2 bg-muted/50 border rounded-lg">
-        <div className="flex items-center gap-2 text-sm">
-          <Badge variant="secondary" className="font-semibold">
+      <div className="sticky top-0 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-primary/5 border-2 border-primary/20 rounded-lg shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary font-bold">
             {selectedCount}
-          </Badge>
-          <span className="text-muted-foreground">
-            selecionada{selectedCount !== 1 && "s"} • {formatCurrency(totalValue)}
-          </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-medium text-sm">
+              {selectedCount} fatura{selectedCount !== 1 && "s"} selecionada{selectedCount !== 1 && "s"}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              Total: {formatCurrency(totalValue)} • {pendingCount} pendente{pendingCount !== 1 && "s"}
+            </span>
+          </div>
         </div>
 
         {isProcessing ? (
-          <div className="flex items-center gap-2">
-            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-            <span className="text-sm text-muted-foreground">{progressMessage}</span>
-            <Progress value={progressValue} className="h-1.5 w-24" />
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <Loader2 className="h-4 w-4 animate-spin text-primary" />
+            <div className="flex-1 sm:flex-none sm:w-48">
+              <span className="text-sm text-muted-foreground block mb-1">{progressMessage}</span>
+              <Progress value={progressValue} className="h-2" />
+            </div>
           </div>
         ) : (
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={handleGenerateCarne}
-              className="h-8 gap-1.5 text-xs"
+              className="h-9 gap-2 flex-1 sm:flex-none"
             >
-              <Printer className="h-3.5 w-3.5" />
-              Carnê
+              <Printer className="h-4 w-4" />
+              <span className="hidden sm:inline">Gerar</span> Carnê
             </Button>
             
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={handleGenerateAsaas}
               disabled={pendingCount === 0}
-              className="h-8 gap-1.5 text-xs"
+              className="h-9 gap-2 flex-1 sm:flex-none"
             >
-              <QrCode className="h-3.5 w-3.5" />
+              <QrCode className="h-4 w-4" />
               PIX/Boleto
             </Button>
 
             <Button
-              variant="ghost"
+              variant="outline"
               size="sm"
               onClick={() => setIsCancelDialogOpen(true)}
               disabled={pendingCount === 0}
-              className="h-8 gap-1.5 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+              className="h-9 gap-2 flex-1 sm:flex-none border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
             >
-              <Ban className="h-3.5 w-3.5" />
+              <Ban className="h-4 w-4" />
               Cancelar
             </Button>
 
@@ -311,7 +317,7 @@ export function BulkActionsBar({
               variant="ghost"
               size="icon"
               onClick={onClearSelection}
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
+              className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-background"
             >
               <X className="h-4 w-4" />
             </Button>
