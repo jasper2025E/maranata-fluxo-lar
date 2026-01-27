@@ -29,6 +29,15 @@ const MARGIN = 6;
 // Cache de códigos de barras gerados
 const barcodeCache = new Map<string, string>();
 
+async function getImageDimensions(dataUrl: string): Promise<{ w: number; h: number }> {
+  return await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth || img.width, h: img.naturalHeight || img.height });
+    img.onerror = () => reject(new Error("Falha ao carregar imagem"));
+    img.src = dataUrl;
+  });
+}
+
 /**
  * Converte linha digitável (47 dígitos) para código de barras (44 dígitos)
  * Formato linha digitável: AAABC.CCCCX DDDDD.DDDDDY EEEEE.EEEEEZ K UUUUVVVVVVVVVV
@@ -307,7 +316,28 @@ async function drawCompactCarne(
     // Código de barras REAL (ITF-25)
     if (barcodeImage) {
       try {
-        doc.addImage(barcodeImage, 'PNG', startX + 3, barcodeAreaY, contentWidth * 0.75, 8);
+        // Evita distorção (distorção = leitura inválida em apps bancários)
+        const maxW = contentWidth * 0.88;
+        const targetH = 10; // mm (altura típica para leitura)
+
+        const { w, h } = await getImageDimensions(barcodeImage);
+        const ratio = w > 0 && h > 0 ? w / h : 8;
+
+        let widthMm = targetH * ratio;
+        let heightMm = targetH;
+
+        if (widthMm > maxW) {
+          widthMm = maxW;
+          heightMm = widthMm / ratio;
+        }
+
+        const x = startX + (contentWidth - widthMm) / 2;
+        const yImg = barcodeAreaY;
+
+        // Quiet zone (margem branca) melhora leitura
+        doc.setFillColor(255, 255, 255);
+        doc.rect(x - 1, yImg - 1, widthMm + 2, heightMm + 2, 'F');
+        doc.addImage(barcodeImage, 'PNG', x, yImg, widthMm, heightMm);
       } catch (error) {
         console.warn('Erro ao inserir código de barras:', error);
       }
