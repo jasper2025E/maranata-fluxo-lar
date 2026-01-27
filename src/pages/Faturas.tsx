@@ -448,10 +448,16 @@ const Faturas = () => {
               size="sm" 
               onClick={handleBulkSyncAsaas}
               disabled={isSyncing}
-              className="gap-2"
+              className={`gap-2 transition-all duration-300 hover:scale-105 hover:shadow-md ${
+                isSyncing 
+                  ? 'bg-primary/5 border-primary/30' 
+                  : 'hover:bg-primary/5 hover:border-primary/50'
+              }`}
             >
-              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar'}
+              <RefreshCw className={`h-4 w-4 transition-transform duration-500 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+              <span className="font-medium">
+                {isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar'}
+              </span>
             </Button>
             <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
