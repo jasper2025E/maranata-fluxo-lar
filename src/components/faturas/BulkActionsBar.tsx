@@ -35,6 +35,7 @@ import {
   Calendar,
   DollarSign,
   FileText,
+  Percent,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,13 +68,19 @@ export function BulkActionsBar({
   
   // Edit dialog state - matching individual edit fields
   const [editData, setEditData] = useState({
-    editMode: "vencimento" as "vencimento" | "emissao" | "referencia" | "valor",
+    editMode: "vencimento" as "vencimento" | "emissao" | "referencia" | "valor" | "desconto",
     novaDataVencimento: "",
     novoDiaVencimento: "",
     novaDataEmissao: "",
     novoMesReferencia: "",
     novoAnoReferencia: "",
     novoValor: "",
+    // Discount fields
+    descontoTipo: "manual" as "convenio" | "bolsa" | "campanha" | "pontualidade" | "manual",
+    descontoDescricao: "",
+    descontoValor: "",
+    descontoPercentual: "",
+    descontoIsPercentual: false,
   });
   
   const { createPayment } = useAsaas();
@@ -463,9 +470,66 @@ export function BulkActionsBar({
               updateData.saldo_restante = novoValor;
             }
             break;
+
+          case "desconto":
+            // Desconto é tratado separadamente pois insere em outra tabela
+            break;
         }
         
-        if (Object.keys(updateData).length > 1) {
+        // Handle desconto separately - inserts into fatura_descontos table
+        if (editData.editMode === "desconto") {
+          const valorBase = fatura.valor || 0;
+          const valorAplicado = editData.descontoIsPercentual
+            ? valorBase * (parseFloat(editData.descontoPercentual) / 100)
+            : parseFloat(editData.descontoValor);
+
+          if (valorAplicado > 0) {
+            const { error: descontoError } = await supabase
+              .from("fatura_descontos")
+              .insert({
+                fatura_id: fatura.id,
+                tipo: editData.descontoTipo,
+                descricao: editData.descontoDescricao,
+                valor: editData.descontoIsPercentual ? 0 : parseFloat(editData.descontoValor),
+                percentual: editData.descontoIsPercentual ? parseFloat(editData.descontoPercentual) : 0,
+                valor_aplicado: valorAplicado,
+              });
+
+            if (!descontoError) {
+              // Recalculate totals
+              const { data: allDescontos } = await supabase
+                .from("fatura_descontos")
+                .select("valor_aplicado")
+                .eq("fatura_id", fatura.id);
+              
+              const totalDescontos = (allDescontos || []).reduce((sum, d) => sum + Number(d.valor_aplicado), 0);
+              const novoValorTotal = Math.max(0, valorBase - totalDescontos);
+              
+              await supabase
+                .from("faturas")
+                .update({
+                  valor_total: novoValorTotal,
+                  valor_desconto_aplicado: totalDescontos,
+                  saldo_restante: novoValorTotal,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", fatura.id);
+
+              success++;
+
+              // Sync with Asaas
+              if (fatura.asaas_payment_id) {
+                try {
+                  await supabase.functions.invoke("asaas-update-payment", {
+                    body: { faturaId: fatura.id },
+                  });
+                } catch (err) {
+                  console.warn("Erro ao atualizar Asaas:", err);
+                }
+              }
+            }
+          }
+        } else if (Object.keys(updateData).length > 1) {
           const { error } = await supabase
             .from("faturas")
             .update(updateData)
@@ -512,6 +576,11 @@ export function BulkActionsBar({
       novoMesReferencia: "",
       novoAnoReferencia: "",
       novoValor: "",
+      descontoTipo: "manual",
+      descontoDescricao: "",
+      descontoValor: "",
+      descontoPercentual: "",
+      descontoIsPercentual: false,
     });
   };
 
@@ -694,7 +763,7 @@ export function BulkActionsBar({
           
           <div className="space-y-4">
             {/* Edit Mode Selector */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button
                 variant={editData.editMode === "vencimento" ? "default" : "outline"}
                 size="sm"
@@ -730,6 +799,15 @@ export function BulkActionsBar({
               >
                 <DollarSign className="h-4 w-4" />
                 Valor
+              </Button>
+              <Button
+                variant={editData.editMode === "desconto" ? "default" : "outline"}
+                size="sm"
+                className="gap-2 col-span-2"
+                onClick={() => setEditData({ ...editData, editMode: "desconto" })}
+              >
+                <Percent className="h-4 w-4" />
+                Aplicar Desconto
               </Button>
             </div>
 
@@ -857,6 +935,73 @@ export function BulkActionsBar({
                 </p>
               </div>
             )}
+
+            {/* Desconto Mode */}
+            {editData.editMode === "desconto" && (
+              <div className="space-y-4 pt-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Select 
+                    value={editData.descontoTipo} 
+                    onValueChange={(v: typeof editData.descontoTipo) => setEditData({ ...editData, descontoTipo: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="convenio">Convênio</SelectItem>
+                      <SelectItem value="bolsa">Bolsa</SelectItem>
+                      <SelectItem value="campanha">Campanha</SelectItem>
+                      <SelectItem value="pontualidade">Pontualidade</SelectItem>
+                      <SelectItem value="manual">Manual</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <div className="flex gap-1">
+                    <Button
+                      variant={!editData.descontoIsPercentual ? "default" : "outline"}
+                      size="sm"
+                      className="flex-1"
+                      type="button"
+                      onClick={() => setEditData({ ...editData, descontoIsPercentual: false })}
+                    >
+                      R$
+                    </Button>
+                    <Button
+                      variant={editData.descontoIsPercentual ? "default" : "outline"}
+                      size="sm"
+                      className="flex-1"
+                      type="button"
+                      onClick={() => setEditData({ ...editData, descontoIsPercentual: true })}
+                    >
+                      %
+                    </Button>
+                  </div>
+                </div>
+                
+                <Input
+                  placeholder="Descrição do desconto"
+                  value={editData.descontoDescricao}
+                  onChange={(e) => setEditData({ ...editData, descontoDescricao: e.target.value })}
+                />
+                
+                <Input
+                  type="number"
+                  step="0.01"
+                  placeholder={editData.descontoIsPercentual ? "Percentual (%)" : "Valor (R$)"}
+                  value={editData.descontoIsPercentual ? editData.descontoPercentual : editData.descontoValor}
+                  onChange={(e) => setEditData({
+                    ...editData,
+                    [editData.descontoIsPercentual ? "descontoPercentual" : "descontoValor"]: e.target.value,
+                  })}
+                />
+                
+                <p className="text-xs text-muted-foreground">
+                  O desconto será aplicado em todas as faturas selecionadas. 
+                  {editData.descontoIsPercentual 
+                    ? " O percentual será calculado sobre o valor de cada fatura." 
+                    : " O mesmo valor fixo será aplicado em cada fatura."}
+                </p>
+              </div>
+            )}
           </div>
 
           <AlertDialogFooter>
@@ -869,10 +1014,11 @@ export function BulkActionsBar({
             <AlertDialogAction
               onClick={handleBulkEdit}
               disabled={isProcessing || (
-                editData.editMode === "vencimento" && !editData.novaDataVencimento && !editData.novoDiaVencimento ||
-                editData.editMode === "emissao" && !editData.novaDataEmissao ||
-                editData.editMode === "referencia" && !editData.novoMesReferencia && !editData.novoAnoReferencia ||
-                editData.editMode === "valor" && !editData.novoValor
+                (editData.editMode === "vencimento" && !editData.novaDataVencimento && !editData.novoDiaVencimento) ||
+                (editData.editMode === "emissao" && !editData.novaDataEmissao) ||
+                (editData.editMode === "referencia" && !editData.novoMesReferencia && !editData.novoAnoReferencia) ||
+                (editData.editMode === "valor" && !editData.novoValor) ||
+                (editData.editMode === "desconto" && (!editData.descontoDescricao || (!editData.descontoValor && !editData.descontoPercentual)))
               )}
             >
               {isProcessing ? (
