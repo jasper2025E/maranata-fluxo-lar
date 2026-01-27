@@ -483,7 +483,7 @@ export function useCreateFatura() {
       // Forçar refetch imediato para garantir dados ASAAS visíveis
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list(), refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       
       const hasAsaas = !!faturaRetornada?.asaas_payment_id;
       if (hasAsaas) {
@@ -513,7 +513,7 @@ export function useUpdateFatura() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(variables.id), refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success("Fatura atualizada!");
     },
     onError: (error: Error) => {
@@ -570,7 +570,7 @@ export function useCancelarFatura() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success("Fatura cancelada com sucesso!");
     },
     onError: (error: Error) => {
@@ -644,7 +644,7 @@ export function useRegistrarPagamento() {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list(), refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.pagamentos(variables.fatura_id), refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(variables.fatura_id), refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success("Pagamento registrado!");
     },
     onError: (error: Error) => {
@@ -906,7 +906,7 @@ export function useDeleteFatura() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list(), refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       
       if (result.hadAsaas) {
         toast.success("Fatura excluída do sistema e do ASAAS!");
@@ -968,7 +968,7 @@ export function useReabrirFatura() {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list(), refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(result.id), refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.pagamentos(result.id), refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success(`Fatura reaberta com status "${result.novoStatus}"!`);
     },
     onError: (error: Error) => {
