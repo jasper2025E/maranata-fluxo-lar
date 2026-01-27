@@ -1,6 +1,5 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Fatura, formatCurrency, meses } from "@/hooks/useFaturas";
 
 interface EscolaInfo {
@@ -13,7 +12,7 @@ interface EscolaInfo {
 }
 
 // Cores profissionais estilo bancário
-const PRIMARY_COLOR: [number, number, number] = [0, 47, 108]; // Azul escuro bancário
+const PRIMARY_COLOR: [number, number, number] = [0, 47, 108];
 const DARK_COLOR: [number, number, number] = [17, 24, 39];
 const MUTED_COLOR: [number, number, number] = [107, 114, 128];
 const LIGHT_BG: [number, number, number] = [249, 250, 251];
@@ -22,15 +21,14 @@ const PIX_GREEN: [number, number, number] = [0, 128, 85];
 
 // A4 dimensions in mm
 const A4_WIDTH = 210;
-const A4_HEIGHT = 297;
 
 // Compact carnê dimensions (3 per A4 page)
-const COMPACT_HEIGHT = 99; // 297 / 3 = 99mm per carnê
+const COMPACT_HEIGHT = 99;
 const COMPACT_WIDTH = A4_WIDTH;
-const MARGIN = 8;
+const MARGIN = 6;
 
 /**
- * Draw a single compact carnê - Professional bank-style layout without stub
+ * Draw a single compact carnê - Professional bank-style layout
  */
 function drawCompactCarne(
   doc: jsPDF,
@@ -41,246 +39,241 @@ function drawCompactCarne(
 ): void {
   const contentWidth = COMPACT_WIDTH - (MARGIN * 2);
   const startX = MARGIN;
-  let currentY = yOffset + MARGIN;
+  let currentY = yOffset + 4;
   
   // ========== BORDER ==========
   doc.setDrawColor(...BORDER_COLOR);
-  doc.setLineWidth(0.5);
-  doc.rect(MARGIN - 2, yOffset + 2, COMPACT_WIDTH - (MARGIN * 2) + 4, COMPACT_HEIGHT - 4);
+  doc.setLineWidth(0.4);
+  doc.rect(MARGIN - 1, yOffset + 2, contentWidth + 2, COMPACT_HEIGHT - 4);
   
   // ========== HEADER - Beneficiário ==========
   doc.setFillColor(...PRIMARY_COLOR);
-  doc.rect(startX, currentY, contentWidth, 14, 'F');
+  doc.rect(startX, currentY, contentWidth, 11, 'F');
   
-  // Nome da escola (beneficiário)
-  doc.setFontSize(11);
+  doc.setFontSize(10);
   doc.setFont("helvetica", "bold");
   doc.setTextColor(255, 255, 255);
-  doc.text(escola.nome.toUpperCase(), startX + 4, currentY + 6);
+  doc.text(escola.nome.toUpperCase(), startX + 3, currentY + 5);
   
-  // CNPJ
   if (escola.cnpj) {
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setFont("helvetica", "normal");
-    doc.text(`CNPJ: ${escola.cnpj}`, startX + 4, currentY + 11);
+    doc.text(`CNPJ: ${escola.cnpj}`, startX + 3, currentY + 9);
   }
   
-  // Nosso número no header
-  doc.setFontSize(8);
+  doc.setFontSize(7);
   doc.setFont("helvetica", "bold");
-  doc.text(`Nosso Número: ${fatura.codigo_sequencial || fatura.id.substring(0, 10).toUpperCase()}`, contentWidth - 40, currentY + 8, { align: "right" });
+  const nossoNumero = fatura.codigo_sequencial || fatura.id.substring(0, 10).toUpperCase();
+  doc.text(`Nosso Número: ${nossoNumero}`, contentWidth - 2, currentY + 7, { align: "right" });
   
-  currentY += 18;
+  currentY += 13;
   
   // ========== LINHA DE DADOS PRINCIPAIS ==========
-  const dataBoxHeight = 16;
+  const dataBoxHeight = 12;
   const boxWidth = contentWidth / 4;
   
-  // Background cinza claro
   doc.setFillColor(...LIGHT_BG);
   doc.rect(startX, currentY, contentWidth, dataBoxHeight, 'F');
   
-  // Bordas dos boxes
   doc.setDrawColor(...BORDER_COLOR);
-  doc.setLineWidth(0.3);
+  doc.setLineWidth(0.2);
   
   // Box 1: Vencimento
   doc.rect(startX, currentY, boxWidth, dataBoxHeight);
-  doc.setFontSize(6);
+  doc.setFontSize(5);
   doc.setTextColor(...MUTED_COLOR);
   doc.setFont("helvetica", "normal");
-  doc.text("VENCIMENTO", startX + 3, currentY + 4);
-  doc.setFontSize(10);
+  doc.text("VENCIMENTO", startX + 2, currentY + 3);
+  doc.setFontSize(9);
   doc.setTextColor(...DARK_COLOR);
   doc.setFont("helvetica", "bold");
-  doc.text(format(new Date(fatura.data_vencimento), "dd/MM/yyyy"), startX + 3, currentY + 11);
+  doc.text(format(new Date(fatura.data_vencimento), "dd/MM/yyyy"), startX + 2, currentY + 9);
   
   // Box 2: Valor do Documento
   doc.rect(startX + boxWidth, currentY, boxWidth, dataBoxHeight);
-  doc.setFontSize(6);
+  doc.setFontSize(5);
   doc.setTextColor(...MUTED_COLOR);
   doc.setFont("helvetica", "normal");
-  doc.text("VALOR DO DOCUMENTO", startX + boxWidth + 3, currentY + 4);
-  doc.setFontSize(10);
+  doc.text("VALOR DO DOCUMENTO", startX + boxWidth + 2, currentY + 3);
+  doc.setFontSize(9);
   doc.setTextColor(...DARK_COLOR);
   doc.setFont("helvetica", "bold");
-  doc.text(formatCurrency(fatura.valor_total || fatura.valor), startX + boxWidth + 3, currentY + 11);
+  doc.text(formatCurrency(fatura.valor_total || fatura.valor), startX + boxWidth + 2, currentY + 9);
   
   // Box 3: Referência
   doc.rect(startX + boxWidth * 2, currentY, boxWidth, dataBoxHeight);
-  doc.setFontSize(6);
+  doc.setFontSize(5);
   doc.setTextColor(...MUTED_COLOR);
   doc.setFont("helvetica", "normal");
-  doc.text("REFERÊNCIA", startX + boxWidth * 2 + 3, currentY + 4);
-  doc.setFontSize(10);
+  doc.text("REFERÊNCIA", startX + boxWidth * 2 + 2, currentY + 3);
+  doc.setFontSize(9);
   doc.setTextColor(...DARK_COLOR);
   doc.setFont("helvetica", "bold");
-  doc.text(`${meses[fatura.mes_referencia - 1]}/${fatura.ano_referencia}`, startX + boxWidth * 2 + 3, currentY + 11);
+  doc.text(`${meses[fatura.mes_referencia - 1]}/${fatura.ano_referencia}`, startX + boxWidth * 2 + 2, currentY + 9);
   
   // Box 4: Espécie
   doc.rect(startX + boxWidth * 3, currentY, boxWidth, dataBoxHeight);
-  doc.setFontSize(6);
+  doc.setFontSize(5);
   doc.setTextColor(...MUTED_COLOR);
   doc.setFont("helvetica", "normal");
-  doc.text("ESPÉCIE", startX + boxWidth * 3 + 3, currentY + 4);
-  doc.setFontSize(10);
+  doc.text("ESPÉCIE", startX + boxWidth * 3 + 2, currentY + 3);
+  doc.setFontSize(9);
   doc.setTextColor(...DARK_COLOR);
   doc.setFont("helvetica", "bold");
-  doc.text("R$", startX + boxWidth * 3 + 3, currentY + 11);
+  doc.text("R$", startX + boxWidth * 3 + 2, currentY + 9);
   
-  currentY += dataBoxHeight + 4;
+  currentY += dataBoxHeight + 2;
   
-  // ========== PAGADOR E PIX LADO A LADO ==========
-  const leftColWidth = contentWidth * 0.55;
-  const rightColWidth = contentWidth * 0.45;
+  // ========== ÁREA PRINCIPAL: PAGADOR (esquerda) + PIX (direita) ==========
+  const leftColWidth = contentWidth * 0.58;
+  const rightColWidth = contentWidth * 0.42;
+  const pixStartX = startX + leftColWidth;
   
-  // --- Coluna Esquerda: Pagador e Instruções ---
-  doc.setFontSize(6);
+  // --- Coluna Esquerda: Pagador ---
+  doc.setFontSize(5);
   doc.setTextColor(...MUTED_COLOR);
   doc.setFont("helvetica", "normal");
   doc.text("PAGADOR", startX, currentY + 3);
   
-  doc.setFontSize(9);
+  doc.setFontSize(8);
   doc.setTextColor(...DARK_COLOR);
   doc.setFont("helvetica", "bold");
   const pagadorNome = responsavel?.nome || fatura.responsaveis?.nome || "—";
-  doc.text(pagadorNome.substring(0, 40), startX, currentY + 8);
+  doc.text(pagadorNome.substring(0, 35), startX, currentY + 7);
   
   if (responsavel?.cpf) {
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setFont("helvetica", "normal");
-    doc.text(`CPF: ${responsavel.cpf}`, startX, currentY + 12);
+    doc.text(`CPF: ${responsavel.cpf}`, startX, currentY + 11);
   }
   
   // Aluno e Curso
-  currentY += 16;
-  doc.setFontSize(6);
+  let infoY = currentY + 14;
+  doc.setFontSize(5);
   doc.setTextColor(...MUTED_COLOR);
-  doc.text("ALUNO / CURSO", startX, currentY);
-  doc.setFontSize(8);
+  doc.text("ALUNO / CURSO", startX, infoY);
+  doc.setFontSize(7);
   doc.setTextColor(...DARK_COLOR);
   doc.setFont("helvetica", "normal");
-  const alunoInfo = `${fatura.alunos?.nome_completo || "—"} - ${fatura.cursos?.nome || ""}`;
-  doc.text(alunoInfo.substring(0, 55), startX, currentY + 4);
+  const alunoNome = fatura.alunos?.nome_completo || "—";
+  const cursoNome = fatura.cursos?.nome || "";
+  doc.text(alunoNome.substring(0, 30), startX, infoY + 4);
+  doc.text(cursoNome.substring(0, 30), startX, infoY + 8);
   
-  // Instruções
-  currentY += 10;
-  doc.setFontSize(6);
+  // Instruções compactas
+  infoY += 13;
+  doc.setFontSize(5);
   doc.setTextColor(...MUTED_COLOR);
-  doc.text("INSTRUÇÕES DE PAGAMENTO", startX, currentY);
-  doc.setFontSize(6);
+  doc.text("INSTRUÇÕES", startX, infoY);
+  doc.setFontSize(5);
   doc.setTextColor(...DARK_COLOR);
-  const instrucoes = [
-    "• Após o vencimento, cobrar multa de 2% e juros de 1% ao mês.",
-    "• Não receber após 30 dias do vencimento.",
-    `• Até o vencimento, pagar: ${formatCurrency(fatura.valor_total || fatura.valor)}`
-  ];
-  instrucoes.forEach((line, i) => {
-    doc.text(line, startX, currentY + 4 + (i * 3.5));
-  });
+  doc.text("• Após vencimento: multa 2% + juros 1% a.m.", startX, infoY + 3);
+  doc.text("• Não receber após 30 dias do vencimento.", startX, infoY + 6);
   
   // --- Coluna Direita: PIX ---
-  const pixStartX = startX + leftColWidth;
-  let pixY = yOffset + MARGIN + 38;
+  const pixBoxHeight = 38;
+  const pixY = currentY;
   
   if (fatura.asaas_pix_qrcode) {
-    // Box PIX com fundo verde claro
-    doc.setFillColor(236, 253, 245);
+    // Box PIX
+    doc.setFillColor(240, 253, 244);
     doc.setDrawColor(...PIX_GREEN);
-    doc.setLineWidth(0.5);
-    doc.roundedRect(pixStartX, pixY - 2, rightColWidth - 4, 42, 2, 2, 'FD');
+    doc.setLineWidth(0.4);
+    doc.roundedRect(pixStartX + 2, pixY, rightColWidth - 4, pixBoxHeight, 1.5, 1.5, 'FD');
     
     // Título PIX
-    doc.setFontSize(7);
+    doc.setFontSize(6);
     doc.setTextColor(...PIX_GREEN);
     doc.setFont("helvetica", "bold");
-    doc.text("PAGUE COM PIX", pixStartX + (rightColWidth - 4) / 2, pixY + 4, { align: "center" });
+    doc.text("PAGUE COM PIX", pixStartX + (rightColWidth / 2), pixY + 4, { align: "center" });
     
     // QR Code
-    const qrSize = 28;
-    const qrX = pixStartX + ((rightColWidth - 4 - qrSize) / 2);
+    const qrSize = 26;
+    const qrX = pixStartX + ((rightColWidth - qrSize) / 2);
     
     try {
       let qrCodeData = fatura.asaas_pix_qrcode;
       if (!qrCodeData.startsWith('data:')) {
         qrCodeData = `data:image/png;base64,${qrCodeData}`;
       }
-      doc.addImage(qrCodeData, 'PNG', qrX, pixY + 7, qrSize, qrSize);
+      doc.addImage(qrCodeData, 'PNG', qrX, pixY + 6, qrSize, qrSize);
     } catch (error) {
       console.error('Erro ao renderizar QR Code:', error);
       doc.setDrawColor(...MUTED_COLOR);
-      doc.rect(qrX, pixY + 7, qrSize, qrSize);
+      doc.rect(qrX, pixY + 6, qrSize, qrSize);
       doc.setFontSize(5);
       doc.setTextColor(...MUTED_COLOR);
-      doc.text("QR indisponível", qrX + qrSize/2, pixY + 20, { align: "center" });
+      doc.text("QR indisponível", qrX + qrSize/2, pixY + 18, { align: "center" });
     }
     
-    // Texto "Escaneie e pague"
-    doc.setFontSize(5);
+    // Texto inferior
+    doc.setFontSize(4);
     doc.setTextColor(...PIX_GREEN);
     doc.setFont("helvetica", "normal");
-    doc.text("Escaneie com o app do seu banco", pixStartX + (rightColWidth - 4) / 2, pixY + 38, { align: "center" });
+    doc.text("Escaneie com seu banco", pixStartX + (rightColWidth / 2), pixY + 35, { align: "center" });
+  } else {
+    // Sem PIX disponível
+    doc.setFillColor(...LIGHT_BG);
+    doc.roundedRect(pixStartX + 2, pixY, rightColWidth - 4, pixBoxHeight, 1.5, 1.5, 'F');
+    doc.setFontSize(6);
+    doc.setTextColor(...MUTED_COLOR);
+    doc.setFont("helvetica", "italic");
+    doc.text("PIX não disponível", pixStartX + (rightColWidth / 2), pixY + 20, { align: "center" });
   }
   
   // ========== LINHA DIGITÁVEL (BOLETO) ==========
-  const barcodeY = yOffset + COMPACT_HEIGHT - 18;
+  const barcodeY = yOffset + COMPACT_HEIGHT - 16;
   
   if (fatura.asaas_boleto_barcode) {
-    // Fundo amarelo claro para destaque
+    // Fundo amarelo claro
     doc.setFillColor(254, 252, 232);
     doc.setDrawColor(250, 204, 21);
     doc.setLineWidth(0.3);
-    doc.rect(startX, barcodeY - 2, contentWidth, 14, 'FD');
+    doc.rect(startX, barcodeY, contentWidth, 12, 'FD');
     
     // Label
-    doc.setFontSize(5);
+    doc.setFontSize(4);
     doc.setTextColor(146, 64, 14);
     doc.setFont("helvetica", "bold");
-    doc.text("LINHA DIGITÁVEL - COPIE E COLE NO SEU BANCO", startX + 3, barcodeY + 2);
+    doc.text("LINHA DIGITÁVEL - COPIE E COLE NO SEU BANCO", startX + 2, barcodeY + 3);
     
-    // Código de barras (linha digitável) em fonte mono
-    doc.setFontSize(8);
+    // Código de barras formatado
+    doc.setFontSize(7);
     doc.setTextColor(...DARK_COLOR);
     doc.setFont("courier", "bold");
     
     const barcode = fatura.asaas_boleto_barcode;
-    // Formatar em grupos para melhor legibilidade
-    const formattedBarcode = barcode.replace(/(.{5})/g, '$1 ').trim();
-    doc.text(formattedBarcode.substring(0, 60), startX + 3, barcodeY + 8);
-    if (formattedBarcode.length > 60) {
-      doc.text(formattedBarcode.substring(60), startX + 3, barcodeY + 11);
-    }
+    // Formatar em grupos de 5 para melhor legibilidade
+    const formattedBarcode = barcode.replace(/\s/g, '').replace(/(.{5})/g, '$1 ').trim();
+    doc.text(formattedBarcode, startX + 2, barcodeY + 9);
   } else {
-    // Mensagem quando não há boleto
     doc.setFillColor(...LIGHT_BG);
-    doc.rect(startX, barcodeY - 2, contentWidth, 14, 'F');
-    doc.setFontSize(7);
+    doc.rect(startX, barcodeY, contentWidth, 12, 'F');
+    doc.setFontSize(6);
     doc.setTextColor(...MUTED_COLOR);
     doc.setFont("helvetica", "italic");
-    doc.text("Linha digitável não disponível - sincronize a fatura com o gateway", startX + contentWidth / 2, barcodeY + 5, { align: "center" });
+    doc.text("Linha digitável não disponível", startX + contentWidth / 2, barcodeY + 7, { align: "center" });
   }
   
   // ========== MARCA D'ÁGUA PAGO ==========
   if (fatura.status.toLowerCase() === "paga") {
-    doc.setFontSize(32);
+    doc.setFontSize(28);
     doc.setTextColor(16, 185, 129);
     doc.setFont("helvetica", "bold");
-    // Desenhar com rotação manual usando transformação
     const centerX = startX + contentWidth / 2;
     const centerY = yOffset + COMPACT_HEIGHT / 2;
-    doc.text("PAGO", centerX, centerY, { align: "center", angle: 25 });
+    doc.text("PAGO", centerX, centerY, { align: "center", angle: 20 });
   }
   
   // ========== LINHA PONTILHADA DE CORTE ==========
-  doc.setDrawColor(...BORDER_COLOR);
-  doc.setLineDashPattern([2, 2], 0);
+  doc.setDrawColor(180, 180, 180);
+  doc.setLineDashPattern([1.5, 1.5], 0);
   doc.line(0, yOffset + COMPACT_HEIGHT, COMPACT_WIDTH, yOffset + COMPACT_HEIGHT);
   doc.setLineDashPattern([], 0);
 }
 
 /**
  * Generate compact carnês - 3 per A4 page
- * Professional bank-style layout without logo and without stub
  */
 export async function generateCarneCompacto(
   faturas: Fatura[],
@@ -291,7 +284,6 @@ export async function generateCarneCompacto(
     throw new Error("Nenhuma fatura para gerar carnê");
   }
   
-  // Sort invoices chronologically
   const faturasOrdenadas = [...faturas].sort((a, b) => {
     if (a.ano_referencia !== b.ano_referencia) {
       return a.ano_referencia - b.ano_referencia;
@@ -305,7 +297,7 @@ export async function generateCarneCompacto(
     format: "a4",
   });
   
-  let positionOnPage = 0; // 0, 1, or 2
+  let positionOnPage = 0;
   
   for (let i = 0; i < faturasOrdenadas.length; i++) {
     if (positionOnPage === 0 && i > 0) {
