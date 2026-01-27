@@ -743,40 +743,52 @@ export function BulkActionsBar({
 
   return (
     <>
-      <div className="sticky top-0 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-primary/5 border-2 border-primary/20 rounded-lg shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-10 w-10 rounded-full bg-primary/10 text-primary font-bold">
+      <div className="sticky top-0 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 px-5 py-4 bg-background border border-border rounded-xl shadow-lg animate-in fade-in slide-in-from-top-2 duration-300">
+        {/* Left side - Selection info */}
+        <div className="flex items-center gap-4">
+          <div className="flex items-center justify-center h-11 w-11 rounded-xl bg-primary text-primary-foreground font-bold text-lg shadow-md">
             {selectedCount}
           </div>
           <div className="flex flex-col">
-            <span className="font-medium text-sm">
+            <span className="font-semibold text-foreground">
               {selectedCount} fatura{selectedCount !== 1 && "s"} selecionada{selectedCount !== 1 && "s"}
             </span>
-            <span className="text-xs text-muted-foreground">
-              Total: {formatCurrency(totalValue)} • {pendingCount} pendente{pendingCount !== 1 && "s"}
-            </span>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">{formatCurrency(totalValue)}</span>
+              <span className="text-muted-foreground/50">•</span>
+              <span>{pendingCount} pendente{pendingCount !== 1 && "s"}</span>
+              {paidCount > 0 && (
+                <>
+                  <span className="text-muted-foreground/50">•</span>
+                  <span className="text-success">{paidCount} paga{paidCount !== 1 && "s"}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
         {isProcessing ? (
-          <div className="flex items-center gap-3 w-full sm:w-auto">
-            <Loader2 className="h-4 w-4 animate-spin text-primary" />
-            <div className="flex-1 sm:flex-none sm:w-48">
-              <span className="text-sm text-muted-foreground block mb-1">{progressMessage}</span>
-              <Progress value={progressValue} className="h-2" />
+          <div className="flex items-center gap-4 w-full sm:w-auto">
+            <Loader2 className="h-5 w-5 animate-spin text-primary" />
+            <div className="flex-1 sm:flex-none sm:w-56">
+              <span className="text-sm font-medium text-foreground block mb-1.5">{progressMessage}</span>
+              <Progress value={progressValue} className="h-2.5" />
             </div>
           </div>
         ) : (
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            {/* Dropdown Menu with all actions */}
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            {/* Main Action Button */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="default" size="sm" className="h-9 gap-2">
+                <Button 
+                  size="default" 
+                  className="h-10 gap-2 font-semibold shadow-md hover:shadow-lg transition-all duration-200"
+                >
                   Ações em Lote
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-background">
+              <DropdownMenuContent align="end" className="w-60 bg-background border shadow-xl rounded-xl p-1">
                 {/* Edição */}
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                   Edição
@@ -848,11 +860,12 @@ export function BulkActionsBar({
               </DropdownMenuContent>
             </DropdownMenu>
 
+            {/* Close Button - Shopify style */}
             <Button
-              variant="ghost"
+              variant="outline"
               size="icon"
               onClick={onClearSelection}
-              className="h-9 w-9 text-muted-foreground hover:text-foreground hover:bg-background"
+              className="h-10 w-10 rounded-xl border-border hover:bg-muted transition-colors"
             >
               <X className="h-4 w-4" />
             </Button>
