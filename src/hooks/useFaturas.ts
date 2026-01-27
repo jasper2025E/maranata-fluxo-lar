@@ -499,12 +499,42 @@ export function useCancelarFatura() {
 
   return useMutation({
     mutationFn: async ({ id, motivo }: { id: string; motivo: string }) => {
+      // 1. Buscar fatura para verificar se tem cobrança ASAAS
+      const { data: fatura, error: fetchError } = await supabase
+        .from("faturas")
+        .select("asaas_payment_id")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // 2. Se tem cobrança ASAAS, cancelar lá primeiro
+      if (fatura?.asaas_payment_id) {
+        console.log("Cancelando cobrança no ASAAS:", fatura.asaas_payment_id);
+        const { data: cancelResult, error: cancelError } = await supabase.functions.invoke("asaas-cancel-payment", {
+          body: { faturaId: id, motivo },
+        });
+
+        if (cancelError) {
+          console.error("Erro ao cancelar no ASAAS:", cancelError);
+          // Continua mesmo com erro - fallback silencioso
+          toast.warning("Cobrança cancelada localmente. Sincronização com gateway pode estar pendente.");
+        } else if (!cancelResult?.success) {
+          console.warn("ASAAS retornou erro:", cancelResult?.error);
+          toast.warning("Cobrança cancelada localmente. Gateway reportou: " + (cancelResult?.error || "erro desconhecido"));
+        } else {
+          console.log("Cobrança ASAAS cancelada com sucesso");
+        }
+      }
+
+      // 3. Atualizar banco local (sempre executa)
       const { error } = await supabase
         .from("faturas")
         .update({
           status: 'Cancelada',
           cancelada_em: new Date().toISOString(),
           motivo_cancelamento: motivo,
+          asaas_status: fatura?.asaas_payment_id ? 'DELETED' : undefined,
         })
         .eq("id", id);
 
@@ -513,10 +543,10 @@ export function useCancelarFatura() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      toast.success("Fatura cancelada");
+      toast.success("Fatura cancelada com sucesso!");
     },
     onError: (error: Error) => {
-      toast.error(`Erro: ${error.message}`);
+      toast.error(`Erro ao cancelar fatura: ${error.message}`);
     },
   });
 }
