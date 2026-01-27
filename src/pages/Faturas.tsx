@@ -366,7 +366,7 @@ const Faturas = () => {
     }
   };
 
-  // Sincronização em lote com ASAAS
+  // Sincronização em lote com gateway (paralelo)
   const handleBulkSyncAsaas = async () => {
     // Determinar quais faturas sincronizar
     const faturasParaSincronizar = selectedFaturasIds.size > 0
@@ -386,45 +386,48 @@ const Faturas = () => {
     setIsSyncing(true);
     const toastId = toast.loading(`Sincronizando ${faturasPendentes.length} faturas...`);
     
+    // Processar em lotes paralelos de 5 para não sobrecarregar API
+    const BATCH_SIZE = 5;
     let successCount = 0;
     let errorCount = 0;
+    let processed = 0;
     
-    for (let i = 0; i < faturasPendentes.length; i++) {
-      const fatura = faturasPendentes[i];
-      toast.loading(`Sincronizando ${i + 1}/${faturasPendentes.length}...`, { id: toastId });
+    for (let i = 0; i < faturasPendentes.length; i += BATCH_SIZE) {
+      const batch = faturasPendentes.slice(i, i + BATCH_SIZE);
       
-      try {
-        if (fatura.asaas_payment_id) {
-          // Já tem cobrança, só atualizar dados
-          const result = await syncFaturaAsaasData(fatura.id);
-          if (result.success) {
-            successCount++;
+      toast.loading(`Sincronizando ${Math.min(i + BATCH_SIZE, faturasPendentes.length)}/${faturasPendentes.length}...`, { id: toastId });
+      
+      // Processar lote em paralelo
+      const results = await Promise.allSettled(
+        batch.map(async (fatura) => {
+          if (fatura.asaas_payment_id) {
+            return syncFaturaAsaasData(fatura.id);
           } else {
-            errorCount++;
+            return createAsaasPaymentWithFullSync(fatura.id, 3);
           }
+        })
+      );
+      
+      // Contar resultados
+      results.forEach(result => {
+        processed++;
+        if (result.status === 'fulfilled' && result.value?.success) {
+          successCount++;
         } else {
-          // Criar cobrança no ASAAS
-          const result = await createAsaasPaymentWithFullSync(fatura.id, 3);
-          if (result.success) {
-            successCount++;
-          } else {
-            errorCount++;
-          }
+          errorCount++;
         }
-      } catch {
-        errorCount++;
-      }
+      });
       
-      // Pequeno delay entre requests para não sobrecarregar API
-      if (i < faturasPendentes.length - 1) {
-        await new Promise(r => setTimeout(r, 300));
+      // Delay mínimo entre lotes
+      if (i + BATCH_SIZE < faturasPendentes.length) {
+        await new Promise(r => setTimeout(r, 100));
       }
     }
     
     setIsSyncing(false);
     
     if (errorCount === 0) {
-      toast.success(`${successCount} faturas sincronizadas com sucesso!`, { id: toastId });
+      toast.success(`${successCount} faturas sincronizadas!`, { id: toastId });
     } else {
       toast.warning(`${successCount} sincronizadas, ${errorCount} com erro`, { id: toastId });
     }
