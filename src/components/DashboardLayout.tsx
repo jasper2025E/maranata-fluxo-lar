@@ -149,7 +149,6 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="ghost" size="icon" className="relative h-10 w-10 rounded-xl hover:bg-muted">
-                    <Bell className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.75} />
                     {unreadCount > 0 && (
                       <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-destructive animate-pulse-subtle" />
                     )}
