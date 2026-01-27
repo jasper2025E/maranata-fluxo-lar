@@ -31,6 +31,7 @@ import {
   Fatura 
 } from "@/hooks/useFaturas";
 import { generateFaturaPDF, generateReciboPDF } from "@/lib/pdfGenerator";
+import { generateBoletoForFatura } from "@/lib/boletoGenerator";
 import { toast } from "sonner";
 
 type ViewMode = "list" | "status" | "aluno" | "mes";
@@ -248,6 +249,20 @@ const Faturas = () => {
     }
   };
 
+  const handleDownloadBoleto = async (fatura: Fatura) => {
+    if (!escola) {
+      toast.error(t("invoices.schoolNotFound"));
+      return;
+    }
+    try {
+      await generateBoletoForFatura(fatura, escola);
+      toast.success("Boleto gerado com sucesso!");
+    } catch (error) {
+      console.error("Erro ao gerar boleto:", error);
+      toast.error("Erro ao gerar boleto");
+    }
+  };
+
   const handleAsaasSuccess = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
   };
@@ -356,6 +371,7 @@ const Faturas = () => {
           onDownloadPDF={handleDownloadPDF}
           onAsaasPayment={handleAsaasPayment}
           onDownloadReceipt={handleDownloadReceipt}
+          onDownloadBoleto={handleDownloadBoleto}
           selectedFaturas={selectedFaturasIds}
           onSelectionChange={setSelectedFaturasIds}
         />
