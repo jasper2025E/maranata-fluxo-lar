@@ -352,7 +352,7 @@ const Faturas = () => {
     }
     
     setIsSyncing(true);
-    const toastId = toast.loading(`Sincronizando ${faturasPendentes.length} faturas com ASAAS...`);
+    const toastId = toast.loading(`Sincronizando ${faturasPendentes.length} faturas...`);
     
     let successCount = 0;
     let errorCount = 0;
@@ -460,7 +460,7 @@ const Faturas = () => {
               className="gap-2"
             >
               <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar ASAAS'}
+              {isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar'}
             </Button>
             <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />

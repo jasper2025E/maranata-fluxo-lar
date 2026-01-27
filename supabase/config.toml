@@ -47,3 +47,6 @@ verify_jwt = false
 
 [functions.complete-card-setup]
 verify_jwt = false
+
+[functions.gateway-sync-payment]
+verify_jwt = false
