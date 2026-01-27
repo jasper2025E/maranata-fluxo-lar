@@ -700,14 +700,15 @@ export function useAddFaturaDesconto() {
 
   return useMutation({
     mutationFn: async (data: Omit<FaturaDesconto, 'id'> & { fatura_id: string }) => {
-      // Buscar o tenant_id da fatura para garantir consistência
+      // Buscar o tenant_id e dados da fatura para garantir consistência
       const { data: faturaInfo, error: faturaInfoError } = await supabase
         .from("faturas")
-        .select("tenant_id")
+        .select("tenant_id, valor, valor_original, valor_bruto, saldo_restante, asaas_payment_id, alunos(nome_completo), cursos(nome), mes_referencia, ano_referencia")
         .eq("id", data.fatura_id)
         .maybeSingle();
 
       if (faturaInfoError) throw faturaInfoError;
+      if (!faturaInfo) throw new Error("Fatura não encontrada");
       
       // Inserir o desconto com tenant_id
       const { error } = await supabase.from("fatura_descontos").insert({
@@ -722,43 +723,68 @@ export function useAddFaturaDesconto() {
       });
       if (error) throw error;
 
-      // Buscar fatura atual e todos os descontos para recalcular
-      const { data: fatura } = await supabase
-        .from("faturas")
-        .select("valor, valor_original, valor_bruto, saldo_restante")
-        .eq("id", data.fatura_id)
-        .maybeSingle();
-
+      // Buscar todos os descontos para recalcular
       const { data: todosDescontos } = await supabase
         .from("fatura_descontos")
         .select("valor_aplicado")
         .eq("fatura_id", data.fatura_id);
 
-      if (fatura) {
-        const valorBase = fatura.valor_original || fatura.valor_bruto || fatura.valor;
-        const totalDescontos = (todosDescontos || []).reduce(
-          (sum, d) => sum + Number(d.valor_aplicado || 0), 
-          0
-        );
-        const novoValorTotal = Math.max(0, valorBase - totalDescontos);
+      const valorBase = faturaInfo.valor_original || faturaInfo.valor_bruto || faturaInfo.valor;
+      const totalDescontos = (todosDescontos || []).reduce(
+        (sum, d) => sum + Number(d.valor_aplicado || 0), 
+        0
+      );
+      const novoValorTotal = Math.max(0, valorBase - totalDescontos);
 
-        // Atualizar fatura com novo valor total
-        await supabase
-          .from("faturas")
-          .update({ 
-            valor_total: novoValorTotal,
-            valor_desconto_aplicado: totalDescontos,
-            saldo_restante: novoValorTotal,
-          })
-          .eq("id", data.fatura_id);
+      // Atualizar fatura com novo valor total
+      await supabase
+        .from("faturas")
+        .update({ 
+          valor_total: novoValorTotal,
+          valor_desconto_aplicado: totalDescontos,
+          saldo_restante: novoValorTotal,
+        })
+        .eq("id", data.fatura_id);
+
+      // Se existe cobrança no Asaas, atualizar o valor
+      if (faturaInfo.asaas_payment_id) {
+        try {
+          const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+            "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+          const mesRef = meses[(faturaInfo.mes_referencia as number) - 1] || "";
+          const alunoNome = (faturaInfo.alunos as { nome_completo: string })?.nome_completo || "Aluno";
+          const cursoNome = (faturaInfo.cursos as { nome: string })?.nome || "Curso";
+          const descricaoAsaas = `Mensalidade ${mesRef}/${faturaInfo.ano_referencia} - ${alunoNome} - ${cursoNome} (com desconto: ${data.descricao})`;
+          
+          const { error: asaasError } = await supabase.functions.invoke("asaas-update-payment", {
+            body: { 
+              faturaId: data.fatura_id, 
+              novoValor: novoValorTotal,
+              descricao: descricaoAsaas,
+            },
+          });
+          
+          if (asaasError) {
+            console.warn("Aviso: Não foi possível atualizar o boleto Asaas:", asaasError);
+            // Não lança erro, pois o desconto já foi aplicado no banco
+            toast.warning("Desconto aplicado, mas o boleto Asaas pode precisar ser atualizado manualmente.");
+          } else {
+            console.log("Boleto Asaas atualizado com novo valor:", novoValorTotal);
+          }
+        } catch (asaasErr) {
+          console.warn("Erro ao atualizar Asaas:", asaasErr);
+          toast.warning("Desconto aplicado. Verifique se o boleto precisa de atualização.");
+        }
       }
+
+      return { novoValorTotal, totalDescontos };
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.descontos(variables.fatura_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(variables.fatura_id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list() });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
-      toast.success("Desconto adicionado!");
+      toast.success("Desconto aplicado e boleto atualizado!");
     },
     onError: (error: Error) => {
       toast.error(`Erro ao adicionar desconto: ${error.message}`);
