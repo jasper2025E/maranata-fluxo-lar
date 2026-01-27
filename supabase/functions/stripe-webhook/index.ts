@@ -338,6 +338,15 @@ serve(async (req) => {
           },
         });
 
+        // Criar notificação no sistema
+        await supabase.from("notifications").insert({
+          tenant_id: tenantId,
+          title: "Falha no Pagamento da Assinatura",
+          message: `Não foi possível processar o pagamento de R$ ${(invoice.amount_due / 100).toFixed(2)}. Atualize seus dados de pagamento.`,
+          type: "error",
+          link: "/configuracoes"
+        });
+
         // Enviar notificação por email
         try {
           await fetch(`${supabaseUrl}/functions/v1/send-subscription-notification`, {

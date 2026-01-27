@@ -168,9 +168,21 @@ serve(async (req) => {
       }
     } else if (["OVERDUE", "DUNNING_REQUESTED"].includes(payment.status)) {
       updateData.status = "Vencida";
-    } else if (["REFUNDED", "REFUND_REQUESTED", "CHARGEBACK_REQUESTED"].includes(payment.status)) {
+    } else if (["REFUNDED", "REFUND_REQUESTED", "CHARGEBACK_REQUESTED", "CHARGEBACK_DISPUTE", "AWAITING_CHARGEBACK_REVERSAL"].includes(payment.status)) {
       updateData.status = "Cancelada";
       updateData.motivo_cancelamento = `Asaas: ${payment.status}`;
+
+      // Notificar sobre estorno/chargeback
+      if (fatura) {
+        const alertType = payment.status.includes("CHARGEBACK") ? "Contestação" : "Estorno";
+        await supabase.from("notifications").insert({
+          tenant_id: fatura.tenant_id,
+          title: `Alerta: ${alertType} de Pagamento`,
+          message: `Cobrança ${payment.status === 'REFUNDED' ? 'estornada' : 'contestada'} - R$ ${payment.value.toFixed(2)}`,
+          type: "warning",
+          link: "/faturas"
+        });
+      }
     }
 
     await supabase
@@ -199,6 +211,26 @@ serve(async (req) => {
     console.error("Erro no webhook:", error);
     errorMessage = error instanceof Error ? error.message : "Erro desconhecido";
     logStatus = 'failed';
+
+    // Notificar erro de integração
+    try {
+      // Tentar extrair tenant_id do payload se disponível
+      const tenantId = payload?.payment?.externalReference 
+        ? (await supabase.from("faturas").select("tenant_id").eq("id", payload.payment.externalReference).single())?.data?.tenant_id
+        : null;
+      
+      if (tenantId) {
+        await supabase.from("notifications").insert({
+          tenant_id: tenantId,
+          title: "Erro na Integração Asaas",
+          message: `Falha ao processar webhook: ${errorMessage}`,
+          type: "error",
+          link: "/configuracoes"
+        });
+      }
+    } catch (notifError) {
+      console.error("Erro ao criar notificação:", notifError);
+    }
 
     // Log failed webhook event
     await supabase.from("webhook_logs").insert({

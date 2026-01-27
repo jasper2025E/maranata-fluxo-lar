@@ -146,11 +146,22 @@ serve(async (req) => {
 
       responsavelId = newResp.id;
       console.log("Created new responsavel:", responsavelId);
+
+      // Notificar novo responsável cadastrado via site
+      await supabase.from("notifications").insert({
+        tenant_id: tenant_id,
+        title: "Novo Responsável Cadastrado",
+        message: `${responsavel.nome} se cadastrou via site da escola`,
+        type: "info",
+        link: "/responsaveis"
+      });
     }
 
     // Create alunos with status "pendente" (pre-matricula)
     const createdAlunos: string[] = [];
     for (const aluno of alunos) {
+      const cursoInfo = cursos?.find(c => c.id === aluno.curso_id);
+      
       const { data: newAluno, error: alunoError } = await supabase
         .from("alunos")
         .insert({
@@ -173,6 +184,15 @@ serve(async (req) => {
 
       createdAlunos.push(newAluno.id);
       console.log("Created aluno:", newAluno.id);
+
+      // Notificar nova pré-matrícula
+      await supabase.from("notifications").insert({
+        tenant_id: tenant_id,
+        title: "Nova Pré-Matrícula",
+        message: `${aluno.nome_completo} - ${cursoInfo?.nome || 'Curso'} (aguardando aprovação)`,
+        type: "info",
+        link: "/alunos"
+      });
     }
 
     // Track conversion (optional)
