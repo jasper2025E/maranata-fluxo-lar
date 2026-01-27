@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Plus,
   FileText,
@@ -15,9 +17,13 @@ import {
   Trash2,
   Receipt,
   Calendar,
+  AlertTriangle,
+  User,
+  CheckCircle2,
 } from "lucide-react";
 import { format, addDays, setDate } from "date-fns";
 import { useCreateFatura, formatCurrency, meses, FaturaItem } from "@/hooks/useFaturas";
+import { supabase } from "@/integrations/supabase/client";
 
 interface Aluno {
   id: string;
@@ -60,6 +66,39 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
     quantidade: 1,
     valor_unitario: 0,
   });
+
+  // Buscar dados do responsável quando aluno é selecionado
+  const selectedAluno = useMemo(() => alunos.find(a => a.id === data.aluno_id), [alunos, data.aluno_id]);
+  
+  const { data: responsavel } = useQuery({
+    queryKey: ["responsavel-fatura", selectedAluno?.responsavel_id],
+    queryFn: async () => {
+      if (!selectedAluno?.responsavel_id) return null;
+      const { data } = await supabase
+        .from("responsaveis")
+        .select("id, nome, cpf, email, telefone, asaas_customer_id")
+        .eq("id", selectedAluno.responsavel_id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!selectedAluno?.responsavel_id,
+  });
+
+  // Validar CPF do responsável
+  const responsavelStatus = useMemo(() => {
+    if (!selectedAluno) return null;
+    if (!selectedAluno.responsavel_id) return { type: "error" as const, message: "Aluno sem responsável vinculado. A cobrança não será criada no Asaas." };
+    if (!responsavel) return { type: "loading" as const, message: "Carregando dados do responsável..." };
+    
+    const cpf = responsavel.cpf?.replace(/\D/g, '') || '';
+    if (!cpf) return { type: "warning" as const, message: `Responsável "${responsavel.nome}" não tem CPF cadastrado. A cobrança será criada, mas pode haver problemas.` };
+    if (cpf.length !== 11 && cpf.length !== 14) return { type: "warning" as const, message: `CPF/CNPJ do responsável "${responsavel.nome}" parece inválido (${cpf.length} dígitos).` };
+    
+    return { 
+      type: "success" as const, 
+      message: `Responsável: ${responsavel.nome}${responsavel.asaas_customer_id ? ' (já cadastrado no Asaas)' : ''}` 
+    };
+  }, [selectedAluno, responsavel]);
 
   const handleCursoSelect = (cursoId: string) => {
     const curso = cursos.find(c => c.id === cursoId);
@@ -221,6 +260,30 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                 </Select>
               </div>
             </div>
+
+            {/* Status do Responsável */}
+            {data.aluno_id && responsavelStatus && (
+              <Alert 
+                variant={responsavelStatus.type === "error" ? "destructive" : "default"}
+                className={
+                  responsavelStatus.type === "success" ? "border-primary/50 bg-primary/10" :
+                  responsavelStatus.type === "warning" ? "border-warning/50 bg-warning/10" : ""
+                }
+              >
+                {responsavelStatus.type === "success" ? (
+                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                ) : responsavelStatus.type === "warning" ? (
+                  <AlertTriangle className="h-4 w-4 text-warning" />
+                ) : responsavelStatus.type === "error" ? (
+                  <AlertTriangle className="h-4 w-4" />
+                ) : (
+                  <User className="h-4 w-4" />
+                )}
+                <AlertDescription className="text-sm">
+                  {responsavelStatus.message}
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Referência */}
             <div className="grid grid-cols-2 gap-4">

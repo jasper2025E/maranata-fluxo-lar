@@ -54,8 +54,13 @@ serve(async (req) => {
     // Buscar QR Code PIX atualizado se necessário
     let pixQrCode = fatura.asaas_pix_qrcode;
     let pixPayload = fatura.asaas_pix_payload;
+    let boletoBarcode = fatura.asaas_boleto_barcode;
+    let boletoUrl = fatura.asaas_boleto_url;
+    let needsUpdate = false;
     
-    if (!pixQrCode && payment.billingType !== "CREDIT_CARD") {
+    // Buscar PIX QR Code se não existir
+    if (!pixQrCode && payment.billingType !== "CREDIT_CARD" && payment.status !== "RECEIVED" && payment.status !== "CONFIRMED") {
+      console.log("Buscando QR Code PIX para pagamento:", fatura.asaas_payment_id);
       const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${fatura.asaas_payment_id}/pixQrCode`, {
         headers: { "access_token": ASAAS_API_KEY },
       });
@@ -64,34 +69,62 @@ serve(async (req) => {
         const pixData = await pixResponse.json();
         pixQrCode = pixData.encodedImage;
         pixPayload = pixData.payload;
-        
-        // Salvar no banco
-        await supabase
-          .from("faturas")
-          .update({
-            asaas_pix_qrcode: pixQrCode,
-            asaas_pix_payload: pixPayload,
-          })
-          .eq("id", faturaId);
+        needsUpdate = true;
+        console.log("PIX QR Code obtido com sucesso");
+      } else {
+        console.warn("Falha ao obter PIX QR Code:", pixResponse.status);
       }
     }
 
-    // Atualizar status no banco
-    await supabase
-      .from("faturas")
-      .update({
-        asaas_status: payment.status,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", faturaId);
+    // Buscar código de barras do boleto se não existir
+    if (!boletoBarcode && payment.billingType !== "CREDIT_CARD" && payment.status !== "RECEIVED" && payment.status !== "CONFIRMED") {
+      console.log("Buscando código de barras do boleto para pagamento:", fatura.asaas_payment_id);
+      const boletoResponse = await fetch(`${ASAAS_API_URL}/payments/${fatura.asaas_payment_id}/identificationField`, {
+        headers: { "access_token": ASAAS_API_KEY },
+      });
+      
+      if (boletoResponse.ok) {
+        const boletoData = await boletoResponse.json();
+        boletoBarcode = boletoData.identificationField;
+        boletoUrl = payment.bankSlipUrl;
+        needsUpdate = true;
+        console.log("Boleto barcode obtido com sucesso");
+      } else {
+        console.warn("Falha ao obter barcode do boleto:", boletoResponse.status);
+      }
+    }
+
+    // Atualizar banco se houve mudanças
+    if (needsUpdate) {
+      await supabase
+        .from("faturas")
+        .update({
+          asaas_pix_qrcode: pixQrCode,
+          asaas_pix_payload: pixPayload,
+          asaas_boleto_barcode: boletoBarcode,
+          asaas_boleto_url: boletoUrl || payment.bankSlipUrl,
+          asaas_status: payment.status,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", faturaId);
+    } else {
+      // Só atualiza status
+      await supabase
+        .from("faturas")
+        .update({
+          asaas_status: payment.status,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", faturaId);
+    }
 
     return new Response(JSON.stringify({ 
       success: true, 
       payment,
       pixQrCode,
       pixPayload,
-      boletoUrl: fatura.asaas_boleto_url || payment.bankSlipUrl,
-      boletoBarcode: fatura.asaas_boleto_barcode,
+      boletoUrl: boletoUrl || payment.bankSlipUrl,
+      boletoBarcode,
       invoiceUrl: payment.invoiceUrl,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
