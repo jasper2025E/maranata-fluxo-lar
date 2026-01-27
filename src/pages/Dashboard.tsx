@@ -99,17 +99,7 @@ const Dashboard = () => {
           {/* Accent Line */}
           <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/60 to-accent/20" />
           
-          <div className="relative flex items-center gap-4">
-            {/* Icon */}
-            <motion.div 
-              initial={{ rotate: -10 }}
-              animate={{ rotate: 0 }}
-              transition={{ type: "spring", stiffness: 200, damping: 10 }}
-              className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-inner"
-            >
-              <GreetingIcon className="h-5 w-5 text-primary" strokeWidth={1.75} />
-            </motion.div>
-            
+          <div className="relative">
             {/* Content */}
             <div className="flex-1 min-w-0">
               <h2 className="text-xl font-semibold text-foreground tracking-tight">
