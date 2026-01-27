@@ -1,155 +1,187 @@
 
-# Plano: Corrigir Geração de Boletos com QR Code e Desvinculação da Matrícula
 
-## Problema Identificado
+# Plano: Sincronização Bidirecional Completa Sistema ↔ ASAAS
 
-1. **QR Code/Código de Barras sumindo**: Ao gerar uma cobrança Asaas, o sistema chama a API corretamente, mas há cenários onde os dados de PIX/Boleto não são salvos ou exibidos no carnê gerado.
-
-2. **Faturamento automático na matrícula**: Atualmente, ao cadastrar ou enturmar um aluno, o sistema gera faturas automaticamente usando a mensalidade do curso. Você quer poder criar faturas manualmente depois, com valores personalizados.
-
-3. **Famílias com múltiplos alunos**: Quer gerar faturas separadas por aluno com possibilidade de aplicar descontos (ex: segundo filho com 50% off).
+## Objetivo
+Garantir que **TODAS** as alterações feitas no sistema reflitam automaticamente no ASAAS, eliminando a necessidade de mexer em dois lugares.
 
 ---
 
 ## Mudanças Propostas
 
-### 1. Desabilitar Geração Automática de Faturas na Matrícula
+### 1. Cancelar Fatura → Cancelar no ASAAS
+
+**Problema atual:** `useCancelarFatura` só atualiza banco local, não chama o ASAAS.
+
+**Solução:** Integrar a Edge Function `asaas-cancel-payment` no hook de cancelamento.
 
 **Arquivos afetados:**
-- `src/pages/Alunos.tsx` - Remover a lógica de `gerar_faturas_aluno` no `createMutation.onSuccess`
-- `src/hooks/useEnturmacao.ts` - Alterar o padrão `gerarFaturas = false`
+- `src/hooks/useFaturas.ts` - Alterar `useCancelarFatura` para chamar `asaas-cancel-payment`
 
-**O que será feito:**
-- Remover a chamada automática para gerar faturas quando um aluno é criado
-- Alterar o hook `useEnturmar` para NÃO gerar faturas por padrão
-- Manter os campos de configuração (dia_vencimento, quantidade_parcelas) no cadastro do aluno para uso futuro quando você decidir gerar faturas manualmente
-
-**Resultado:** Ao cadastrar/enturmar aluno, apenas os dados são salvos. Você vai em Faturas → Nova Fatura e cria manualmente com o valor desejado.
+**Comportamento:**
+1. Usuário cancela fatura no sistema
+2. Sistema chama `asaas-cancel-payment` (DELETE na cobrança)
+3. ASAAS marca como cancelada
+4. Banco local atualiza status para "Cancelada"
 
 ---
 
-### 2. Garantir QR Code PIX + Código de Barras do Boleto
+### 2. Excluir Aluno → Cancelar Faturas e Cobranças
+
+**Problema atual:** Excluir aluno faz soft delete mas não cancela faturas/cobranças pendentes.
+
+**Solução:** Ao desativar aluno, cancelar automaticamente todas as faturas abertas e suas cobranças no ASAAS.
 
 **Arquivos afetados:**
-- `supabase/functions/asaas-create-payment/index.ts` - Ajustar para sempre buscar ambos (PIX + Boleto)
-- `src/lib/carneCompactoGenerator.ts` - Verificar se exibe corretamente quando há dados
-- `src/components/faturas/CarneDialog.tsx` - Forçar atualização dos dados antes de gerar o PDF
+- `src/hooks/useAlunos.ts` - Alterar `useDeleteAluno` para:
+  1. Buscar faturas abertas do aluno
+  2. Para cada fatura com `asaas_payment_id`, chamar `asaas-cancel-payment`
+  3. Marcar faturas como canceladas
+  4. Fazer soft delete do aluno
 
-**O que será feito:**
-
-a) **Edge Function `asaas-create-payment`:**
-   - Forçar `billingType: "UNDEFINED"` para que o Asaas gere tanto PIX quanto Boleto
-   - Adicionar logs para debug se a API não retornar QR Code
-   - Garantir que os campos `asaas_pix_qrcode`, `asaas_pix_payload`, `asaas_boleto_barcode`, `asaas_boleto_url` sejam salvos
-
-b) **Geração do Carnê:**
-   - Antes de gerar o PDF, chamar `asaas-get-payment` para garantir dados atualizados
-   - Se não houver QR Code/barcode, exibir aviso ao usuário
-
-c) **Fallback de segurança:**
-   - Se a fatura não tiver dados Asaas, tentar buscar novamente via API antes de imprimir
+**Comportamento:**
+1. Usuário exclui/desativa aluno
+2. Sistema busca faturas abertas
+3. Cancela cada cobrança no ASAAS
+4. Atualiza status das faturas para "Cancelada"
+5. Desativa o aluno
 
 ---
 
-### 3. Fluxo de Trabalho Simplificado Proposto
+### 3. Atualizar Responsável → Atualizar Cliente no ASAAS
 
+**Problema atual:** Não existe função para atualizar cliente no ASAAS quando CPF/email mudam.
+
+**Solução:** Criar nova Edge Function `asaas-update-customer`.
+
+**Arquivos a criar:**
+- `supabase/functions/asaas-update-customer/index.ts`
+
+**Arquivos afetados:**
+- `src/pages/Responsaveis.tsx` - Após atualizar responsável, chamar `asaas-update-customer`
+
+**Comportamento:**
+1. Usuário edita responsável (CPF, email, telefone, nome)
+2. Sistema salva no banco
+3. Se responsável tem `asaas_customer_id`, chama `asaas-update-customer`
+4. ASAAS atualiza dados do cliente
+
+---
+
+### 4. Registrar Pagamento Manual → Sincronizar com ASAAS (Opcional)
+
+**Nota:** Esta é uma funcionalidade mais complexa, pois o ASAAS normalmente detecta pagamentos automaticamente via webhook.
+
+**Recomendação:** Manter o fluxo atual onde pagamentos são detectados pelo webhook. Se você registrar pagamento manual no sistema, ele fica apenas local - o que é válido para casos excepcionais (dinheiro em mãos, por exemplo).
+
+---
+
+## Resumo Visual do Fluxo
+
+```text
+┌─────────────────────────────────────────────────────────────┐
+│                    SISTEMA LOCAL                             │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  [Cancelar Fatura] ──────► asaas-cancel-payment ────┐       │
+│                                                      │       │
+│  [Excluir Aluno] ─► Cancel faturas ─► asaas-cancel ─┼──►    │
+│                                                      │       │
+│  [Editar Responsável] ──► asaas-update-customer ────┼──►    │
+│                                                      │       │
+│  [Criar Fatura] ────────► asaas-create-payment ─────┼──►    │
+│                                                      │       │
+│  [Aplicar Desconto] ────► asaas-update-payment ─────┘       │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│                         ASAAS                                │
+├─────────────────────────────────────────────────────────────┤
+│  • Cobranças criadas/atualizadas/canceladas automaticamente │
+│  • Clientes atualizados quando dados mudam                  │
+│  • Webhook notifica sistema quando pagamento é recebido     │
+└─────────────────────────────────────────────────────────────┘
 ```
-1. Cadastrar Aluno → Apenas salva dados, NÃO gera faturas
-2. (Opcional) Enturmar Aluno → Apenas vincula à turma, NÃO gera faturas
-3. Ir em Faturas → Nova Fatura:
-   - Selecionar aluno
-   - Definir valor desejado (pode ser R$ 0 para um irmão)
-   - Sistema gera automaticamente a cobrança Asaas com PIX + Boleto
-4. Imprimir Carnê → Sempre terá QR Code + linha digitável
-```
+
+---
+
+## Ordem de Implementação
+
+1. **Cancelar Fatura com ASAAS** (mais urgente)
+2. **Excluir Aluno cancela cobranças**
+3. **Criar Edge Function `asaas-update-customer`**
+4. **Integrar atualização de responsável**
+
+---
+
+## Garantias de Segurança
+
+- Todas as alterações são **incrementais** - não afetam código existente
+- **Nenhum dado será apagado** - apenas status serão alterados
+- **API Key e configurações preservadas** - usamos as credenciais já existentes
+- **Fallback silencioso** - se ASAAS falhar, operação local continua (com aviso)
 
 ---
 
 ## Detalhes Técnicos
 
-### Alterações no `src/pages/Alunos.tsx`:
+### Alteração em `useCancelarFatura` (useFaturas.ts):
 
 ```typescript
-// ANTES (onSuccess do createMutation):
-void (async () => {
-  await supabase.rpc("gerar_faturas_aluno", { ... });
-  // Criar cobranças Asaas...
-})();
-
-// DEPOIS:
-// Remover todo esse bloco - apenas salvar o aluno, sem gerar faturas
-```
-
-### Alterações no `src/hooks/useEnturmacao.ts`:
-
-```typescript
-// ANTES:
-gerarFaturas = true
-
-// DEPOIS:
-gerarFaturas = false
-```
-
-### Alterações no `supabase/functions/asaas-create-payment/index.ts`:
-
-```typescript
-// Garantir que sempre busca PIX + Boleto
-if (pixResponse.ok) {
-  const pixData = await pixResponse.json();
-  pixQrCode = pixData.encodedImage;
-  pixPayload = pixData.payload;
-  console.log("PIX QR Code obtido:", !!pixQrCode); // Log para debug
-} else {
-  console.error("Falha ao obter PIX QR Code:", await pixResponse.text());
-}
-
-// Mesmo tratamento para boleto
-if (boletoResponse.ok) {
-  const boletoData = await boletoResponse.json();
-  boletoBarcode = boletoData.identificationField;
-  console.log("Boleto barcode obtido:", !!boletoBarcode);
-} else {
-  console.error("Falha ao obter barcode do boleto:", await boletoResponse.text());
+export function useCancelarFatura() {
+  return useMutation({
+    mutationFn: async ({ id, motivo }: { id: string; motivo: string }) => {
+      // 1. Buscar fatura para verificar se tem cobrança ASAAS
+      const { data: fatura } = await supabase
+        .from("faturas")
+        .select("asaas_payment_id")
+        .eq("id", id)
+        .single();
+      
+      // 2. Se tem cobrança ASAAS, cancelar lá primeiro
+      if (fatura?.asaas_payment_id) {
+        await supabase.functions.invoke("asaas-cancel-payment", {
+          body: { faturaId: id, motivo },
+        });
+      }
+      
+      // 3. Atualizar banco local
+      await supabase.from("faturas").update({
+        status: 'Cancelada',
+        cancelada_em: new Date().toISOString(),
+        motivo_cancelamento: motivo,
+      }).eq("id", id);
+    },
+  });
 }
 ```
 
-### Alterações no `src/components/faturas/CarneDialog.tsx`:
+### Nova Edge Function `asaas-update-customer`:
 
 ```typescript
-// Antes de gerar o PDF, garantir dados atualizados
-const handleGenerateCarne = async () => {
-  // ... código existente ...
-  
-  // ADICIONAR: Para faturas que têm asaas_payment_id mas não têm QR/barcode,
-  // buscar dados atualizados via edge function
-  for (const fatura of faturasParaImprimir) {
-    if (fatura.asaas_payment_id && (!fatura.asaas_pix_qrcode || !fatura.asaas_boleto_barcode)) {
-      await supabase.functions.invoke("asaas-get-payment", {
-        body: { faturaId: fatura.id }
-      });
-    }
-  }
-  
-  // Buscar dados atualizados novamente
-  await refetchFaturas();
-  // ... continuar com geração do PDF ...
-}
+// PUT /customers/{customerId}
+const updateData = {
+  name: responsavel.nome,
+  cpfCnpj: responsavel.cpf?.replace(/\D/g, ''),
+  email: responsavel.email,
+  phone: responsavel.telefone?.replace(/\D/g, ''),
+};
+
+await fetch(`${ASAAS_API_URL}/customers/${asaas_customer_id}`, {
+  method: "PUT",
+  headers: { "access_token": ASAAS_API_KEY },
+  body: JSON.stringify(updateData),
+});
 ```
 
 ---
 
 ## Benefícios
 
-1. **Controle total sobre valores**: Você define o valor de cada fatura manualmente
-2. **Flexibilidade para famílias**: Pode criar fatura de R$ 0 para um aluno e valor cheio para outro
-3. **Boletos sempre completos**: PIX + código de barras garantidos
-4. **Fluxo simplificado**: Cadastro rápido, faturamento quando você quiser
+- **Zero retrabalho**: Alterar no sistema = alterar no ASAAS
+- **Dados consistentes**: Nunca haverá divergência
+- **Operação simplificada**: Um lugar só para gerenciar tudo
+- **Cobranças limpas**: Ao desativar aluno, cobranças são automaticamente canceladas
 
----
-
-## Ordem de Implementação
-
-1. Desativar geração automática na matrícula/enturmação
-2. Melhorar logs e tratamento de erros na Edge Function
-3. Adicionar verificação de dados Asaas antes de gerar carnê
-4. Testar fluxo completo: cadastrar → criar fatura manual → gerar carnê
