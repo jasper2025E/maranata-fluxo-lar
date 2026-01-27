@@ -210,12 +210,35 @@ export function BulkActionsBar({
           }
           processed++;
           setProgressMessage(`Gerando cobranças (${processed}/${faturasWithoutPayment.length})...`);
-          setProgressValue((processed / (faturasWithoutPayment.length + 1)) * 50);
+          setProgressValue((processed / (faturasWithoutPayment.length + 1)) * 40);
+        }
+      }
+
+      // Sincronizar dados de pagamento (PIX/Boleto) para faturas que já têm cobrança
+      setProgressMessage("Sincronizando dados de pagamento...");
+      const faturasToSync = pendingFaturas.filter(
+        f => f.asaas_payment_id && (!f.asaas_pix_qrcode || !f.asaas_boleto_barcode)
+      );
+      
+      if (faturasToSync.length > 0) {
+        for (let i = 0; i < faturasToSync.length; i++) {
+          const fatura = faturasToSync[i];
+          setProgressMessage(`Sincronizando ${i + 1}/${faturasToSync.length}...`);
+          try {
+            await supabase.functions.invoke("gateway-sync-payment", {
+              body: { faturaId: fatura.id, action: "sync" }
+            });
+          } catch (err) {
+            console.warn(`Erro ao sincronizar fatura ${fatura.id}:`, err);
+          }
+          setProgressValue(40 + ((i + 1) / faturasToSync.length) * 30);
         }
       }
 
       // Buscar faturas atualizadas com dados do gateway
       setProgressMessage("Buscando dados atualizados...");
+      setProgressValue(75);
+      
       const { data: updatedFaturas } = await supabase
         .from("faturas")
         .select(`
@@ -230,7 +253,7 @@ export function BulkActionsBar({
         throw new Error("Não foi possível buscar faturas atualizadas");
       }
 
-      setProgressMessage("Gerando PDF do carnê...");
+      setProgressMessage("Gerando PDF do carnê (3 por página A4)...");
       setProgressValue(90);
 
       await generateCarneCompacto(
@@ -246,7 +269,7 @@ export function BulkActionsBar({
       );
 
       setProgressValue(100);
-      toast.success(`Carnê gerado com ${updatedFaturas.length} fatura(s)!`);
+      toast.success(`Carnê gerado com ${updatedFaturas.length} fatura(s) - 3 por página A4!`);
       onClearSelection();
     } catch (error: any) {
       console.error("Erro ao gerar carnê:", error);
