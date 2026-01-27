@@ -37,12 +37,13 @@ import {
   FileText,
   Percent,
   CreditCard,
+  Trash2,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
 import { generateFaturaPDF } from "@/lib/pdfGenerator";
-import { Fatura, formatCurrency, useCancelarFatura } from "@/hooks/useFaturas";
+import { Fatura, formatCurrency, useCancelarFatura, useDeleteFatura } from "@/hooks/useFaturas";
 import { useAsaas } from "@/hooks/useAsaas";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
@@ -61,6 +62,7 @@ export function BulkActionsBar({
   onActionComplete 
 }: BulkActionsBarProps) {
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [cancelMotivo, setCancelMotivo] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
@@ -89,6 +91,8 @@ export function BulkActionsBar({
   
   const { createPayment } = useAsaas();
   const cancelMutation = useCancelarFatura();
+  const deleteMutation = useDeleteFatura();
+
 
   // Buscar escola do tenant atual para geração do carnê
   const { data: escola } = useQuery({
@@ -416,6 +420,49 @@ export function BulkActionsBar({
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedFaturas.length === 0) {
+      toast.error("Nenhuma fatura selecionada");
+      return;
+    }
+
+    setIsProcessing(true);
+    setProgressValue(0);
+    let deleted = 0;
+    let errors = 0;
+
+    try {
+      for (const fatura of selectedFaturas) {
+        setProgressMessage(`Excluindo ${deleted + 1} de ${selectedFaturas.length}...`);
+        
+        try {
+          await deleteMutation.mutateAsync(fatura.id);
+          deleted++;
+        } catch (err) {
+          console.warn(`Erro ao excluir fatura ${fatura.id}:`, err);
+          errors++;
+        }
+        
+        setProgressValue(((deleted + errors) / selectedFaturas.length) * 100);
+      }
+
+      if (errors === 0) {
+        toast.success(`${deleted} fatura(s) excluída(s) permanentemente!`);
+      } else {
+        toast.warning(`${deleted} excluída(s), ${errors} com erro`);
+      }
+      
+      onClearSelection();
+      onActionComplete();
+    } catch (error) {
+      toast.error("Erro ao excluir faturas");
+    } finally {
+      setIsProcessing(false);
+      setIsDeleteDialogOpen(false);
+      setProgressMessage("");
+    }
+  };
+
   const handleBulkEdit = async () => {
     const editableFaturas = selectedFaturas.filter(
       f => f.status === "Aberta" || f.status === "Vencida"
@@ -735,6 +782,13 @@ export function BulkActionsBar({
                   <Ban className="h-4 w-4" />
                   Cancelar Faturas
                 </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={() => setIsDeleteDialogOpen(true)}
+                  className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  Excluir Permanentemente
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -785,6 +839,52 @@ export function BulkActionsBar({
                 </>
               ) : (
                 "Confirmar Cancelamento"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Dialog */}
+      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-destructive">
+              Excluir {selectedCount} fatura(s) permanentemente?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="space-y-2">
+              <p>
+                <strong className="text-destructive">ATENÇÃO:</strong> Esta ação é irreversível!
+              </p>
+              <p>
+                As {selectedCount} fatura(s) selecionadas serão excluídas permanentemente do sistema 
+                e do gateway de pagamento (ASAAS).
+              </p>
+              <p>
+                Todos os dados relacionados (itens, descontos, pagamentos, histórico) serão removidos.
+              </p>
+              {selectedFaturas.some(f => f.status === "Paga") && (
+                <p className="text-destructive font-medium">
+                  ⚠️ Algumas faturas selecionadas já estão PAGAS. Os registros de pagamento também serão excluídos.
+                </p>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isProcessing}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkDelete}
+              disabled={isProcessing}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Excluindo...
+                </>
+              ) : (
+                "Excluir Permanentemente"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
