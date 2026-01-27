@@ -76,19 +76,39 @@ const Dashboard = () => {
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="relative overflow-hidden rounded-xl border border-border/50 p-5 bg-card"
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-accent/5 p-6 shadow-sm"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-bl from-primary/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/2" />
-          <div className="relative z-10 flex items-start gap-3">
-            <BookOpen className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="text-foreground italic leading-relaxed">
+          {/* Decorative elements */}
+          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-primary/15 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-accent/10 to-transparent rounded-full translate-y-1/2 -translate-x-1/2 blur-xl" />
+          
+          <div className="relative z-10 flex items-start gap-4">
+            <motion.div 
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ delay: 0.2, duration: 0.3 }}
+              className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"
+            >
+              <BookOpen className="h-5 w-5 text-primary" />
+            </motion.div>
+            <div className="flex-1 min-w-0">
+              <motion.p 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.15, duration: 0.3 }}
+                className="text-foreground/90 italic leading-relaxed text-[15px] font-light"
+              >
                 "{verse.text}"
-              </p>
-              <p className="text-sm text-muted-foreground mt-2 font-medium">
+              </motion.p>
+              <motion.p 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3, duration: 0.3 }}
+                className="text-sm text-primary/80 mt-3 font-semibold tracking-wide"
+              >
                 — {verse.reference}
-              </p>
+              </motion.p>
             </div>
           </div>
         </motion.div>
