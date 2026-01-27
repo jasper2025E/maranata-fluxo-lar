@@ -12,6 +12,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { 
   FaturaKPIs, 
@@ -26,7 +43,9 @@ import {
 } from "@/components/faturas";
 import { 
   useFaturas, 
-  useCancelarFatura, 
+  useCancelarFatura,
+  useDeleteFatura,
+  useReabrirFatura,
   queryKeys,
   Fatura 
 } from "@/hooks/useFaturas";
@@ -58,6 +77,9 @@ const Faturas = () => {
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAsaasOpen, setIsAsaasOpen] = useState(false);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isReopenDialogOpen, setIsReopenDialogOpen] = useState(false);
+  const [reopenStatus, setReopenStatus] = useState<'Aberta' | 'Vencida'>('Aberta');
   const [selectedFatura, setSelectedFatura] = useState<Fatura | null>(null);
 
   // Queries
@@ -90,6 +112,8 @@ const Faturas = () => {
   });
 
   const cancelMutation = useCancelarFatura();
+  const deleteMutation = useDeleteFatura();
+  const reopenMutation = useReabrirFatura();
   const queryClient = useQueryClient();
   const { data: escola } = useQuery({
     queryKey: ['escola-info'],
@@ -267,6 +291,47 @@ const Faturas = () => {
 
   const handleAsaasSuccess = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+  };
+
+  // Exclusão permanente de fatura
+  const handleDeleteFatura = (fatura: Fatura) => {
+    setSelectedFatura(fatura);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteFatura = async () => {
+    if (!selectedFatura) return;
+    
+    try {
+      await deleteMutation.mutateAsync(selectedFatura.id);
+      setIsDeleteDialogOpen(false);
+      setSelectedFatura(null);
+    } catch (error) {
+      console.error("Erro ao excluir fatura:", error);
+    }
+  };
+
+  // Reabrir fatura paga
+  const handleReopenFatura = (fatura: Fatura) => {
+    setSelectedFatura(fatura);
+    setReopenStatus('Aberta');
+    setIsReopenDialogOpen(true);
+  };
+
+  const confirmReopenFatura = async () => {
+    if (!selectedFatura) return;
+    
+    try {
+      await reopenMutation.mutateAsync({ 
+        id: selectedFatura.id, 
+        novoStatus: reopenStatus,
+        deletarPagamentos: false,
+      });
+      setIsReopenDialogOpen(false);
+      setSelectedFatura(null);
+    } catch (error) {
+      console.error("Erro ao reabrir fatura:", error);
+    }
   };
 
   // Sincronização em lote com ASAAS
@@ -450,6 +515,8 @@ const Faturas = () => {
           onAsaasPayment={handleAsaasPayment}
           onDownloadReceipt={handleDownloadReceipt}
           onDownloadBoleto={handleDownloadBoleto}
+          onDelete={handleDeleteFatura}
+          onReopen={handleReopenFatura}
           selectedFaturas={selectedFaturasIds}
           onSelectionChange={setSelectedFaturasIds}
         />
@@ -485,6 +552,79 @@ const Faturas = () => {
           onOpenChange={setIsReceiptOpen}
           fatura={selectedFatura}
         />
+
+        {/* Dialog de confirmação de exclusão */}
+        <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir fatura permanentemente?</AlertDialogTitle>
+              <AlertDialogDescription>
+                {selectedFatura?.status === "Paga" ? (
+                  <>
+                    <strong className="text-destructive">Atenção:</strong> Esta fatura já foi paga. 
+                    O registro de pagamento será removido e a cobrança será excluída do gateway de pagamento.
+                    <br /><br />
+                  </>
+                ) : null}
+                A fatura <strong>{selectedFatura?.codigo_sequencial}</strong> e todos os dados relacionados 
+                (itens, descontos, pagamentos, histórico) serão excluídos permanentemente do sistema
+                {selectedFatura?.asaas_payment_id ? " e do ASAAS" : ""}.
+                <br /><br />
+                <strong className="text-destructive">Esta ação NÃO pode ser desfeita.</strong>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmDeleteFatura}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                disabled={deleteMutation.isPending}
+              >
+                {deleteMutation.isPending ? "Excluindo..." : "Excluir permanentemente"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+
+        {/* Dialog de reabrir fatura */}
+        <AlertDialog open={isReopenDialogOpen} onOpenChange={setIsReopenDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Reabrir fatura?</AlertDialogTitle>
+              <AlertDialogDescription className="space-y-4">
+                <p>
+                  Você está prestes a reverter o status da fatura <strong>{selectedFatura?.codigo_sequencial}</strong> de "Paga" para outro status.
+                </p>
+                <p>
+                  O saldo restante será restaurado para o valor total da fatura. 
+                  Os registros de pagamento serão mantidos (você pode estorná-los depois se necessário).
+                </p>
+                
+                <div className="pt-2">
+                  <label className="text-sm font-medium">Novo status:</label>
+                  <Select value={reopenStatus} onValueChange={(v) => setReopenStatus(v as 'Aberta' | 'Vencida')}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Aberta">Aberta</SelectItem>
+                      <SelectItem value="Vencida">Vencida</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={confirmReopenFatura}
+                disabled={reopenMutation.isPending}
+              >
+                {reopenMutation.isPending ? "Reabrindo..." : "Reabrir fatura"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </DashboardLayout>
   );

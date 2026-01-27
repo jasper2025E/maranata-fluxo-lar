@@ -851,6 +851,132 @@ export function useAddFaturaDesconto() {
   });
 }
 
+/**
+ * Hook para deletar fatura permanentemente (não apenas cancelar)
+ * Remove do banco de dados E do ASAAS
+ */
+export function useDeleteFatura() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (faturaId: string) => {
+      // 1. Buscar fatura
+      const { data: fatura, error: fetchError } = await supabase
+        .from("faturas")
+        .select("asaas_payment_id, status, tenant_id")
+        .eq("id", faturaId)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // 2. Se tem cobrança ASAAS, cancelar/deletar lá primeiro
+      if (fatura?.asaas_payment_id) {
+        console.log("Cancelando cobrança no ASAAS antes de deletar:", fatura.asaas_payment_id);
+        try {
+          const { error: cancelError } = await supabase.functions.invoke("asaas-cancel-payment", {
+            body: { faturaId, motivo: "Fatura excluída permanentemente" },
+          });
+
+          if (cancelError) {
+            console.warn("Erro ao cancelar no ASAAS:", cancelError);
+            // Continua mesmo com erro - a fatura será deletada localmente
+          }
+        } catch (asaasErr) {
+          console.warn("Erro ao comunicar com ASAAS:", asaasErr);
+        }
+      }
+
+      // 3. Deletar registros relacionados em cascata
+      await supabase.from("fatura_itens").delete().eq("fatura_id", faturaId);
+      await supabase.from("fatura_descontos").delete().eq("fatura_id", faturaId);
+      await supabase.from("fatura_historico").delete().eq("fatura_id", faturaId);
+      await supabase.from("pagamentos").delete().eq("fatura_id", faturaId);
+      await supabase.from("fatura_documentos").delete().eq("fatura_id", faturaId);
+
+      // 4. Deletar a fatura permanentemente
+      const { error: deleteError } = await supabase
+        .from("faturas")
+        .delete()
+        .eq("id", faturaId);
+
+      if (deleteError) throw deleteError;
+
+      return { deletedId: faturaId, hadAsaas: !!fatura?.asaas_payment_id };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list() });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      
+      if (result.hadAsaas) {
+        toast.success("Fatura excluída do sistema e do ASAAS!");
+      } else {
+        toast.success("Fatura excluída permanentemente!");
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao excluir fatura: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Hook para reabrir fatura paga (reverter status)
+ * Permite corrigir erros de marcação
+ */
+export function useReabrirFatura() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, novoStatus, deletarPagamentos = false }: { 
+      id: string; 
+      novoStatus: 'Aberta' | 'Vencida';
+      deletarPagamentos?: boolean;
+    }) => {
+      // Buscar fatura para saber o valor original
+      const { data: fatura, error: fetchError } = await supabase
+        .from("faturas")
+        .select("valor_total, valor, valor_original")
+        .eq("id", id)
+        .single();
+
+      if (fetchError) throw fetchError;
+
+      // Calcular saldo (valor total da fatura)
+      const valorTotal = fatura?.valor_total || fatura?.valor_original || fatura?.valor || 0;
+
+      // Atualizar status e restaurar saldo
+      const { error: updateError } = await supabase
+        .from("faturas")
+        .update({
+          status: novoStatus,
+          saldo_restante: valorTotal,
+        })
+        .eq("id", id);
+
+      if (updateError) throw updateError;
+
+      // Opcionalmente deletar pagamentos registrados
+      if (deletarPagamentos) {
+        await supabase.from("pagamentos").delete().eq("fatura_id", id);
+      }
+
+      return { id, novoStatus };
+    },
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(result.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.pagamentos(result.id) });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      toast.success(`Fatura reaberta com status "${result.novoStatus}"!`);
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao reabrir fatura: ${error.message}`);
+    },
+  });
+}
+
 // Helper functions
 export function getValorFinal(fatura: Fatura): number {
   if (fatura.valor_total && fatura.valor_total > 0) return fatura.valor_total;

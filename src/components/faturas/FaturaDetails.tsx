@@ -760,7 +760,8 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
   if (!fatura) return null;
 
   const valorFinal = getValorFinal(fatura);
-  const isEditable = !fatura.bloqueada && fatura.status !== 'Paga' && fatura.status !== 'Cancelada';
+  // Permitir edição de faturas pagas (para corrigir erros)
+  const isEditable = !fatura.bloqueada && fatura.status !== 'Cancelada';
 
   const handleDownloadFatura = async () => {
     if (!escola) {
