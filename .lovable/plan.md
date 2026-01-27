@@ -1,155 +1,318 @@
 
-# Plano: Correções no Sistema de Boleto/Carnê e Reorganização do Botão de Impressão
+# Plano: Sistema Completo de Notificações em Tempo Real
 
-## Resumo dos Problemas Identificados
-1. **QR Code PIX e linha digitável não funcionando** no boleto gerado
-2. **Botão "Imprimir Carnê" no lugar errado** (no topo, deveria estar nas ações em lote)
-3. **Layout de 1 por folha A4** - precisa ser **3 por folha A4** em todos os casos
+## Visão Geral
 
----
+Implementar um sistema robusto de notificações que alerta o administrador sobre eventos importantes em todos os módulos do sistema, incluindo:
 
-## Mudanças Propostas
+- Pagamentos registrados (manuais e via gateway)
+- Novos alunos cadastrados via pré-matrícula no site
+- Novos responsáveis cadastrados via site
+- Folha de pagamento do RH (criação, pagamento)
+- Problemas de integração com gateways de pagamento
+- Alertas de erros em qualquer módulo
 
-### 1. Corrigir Geração de QR Code PIX e Linha Digitável
+## Arquitetura da Solução
 
-**Arquivos afetados:**
-- `src/lib/boletoGenerator.ts`
-- `src/lib/carneCompactoGenerator.ts`
-- `src/lib/carneGenerator.ts`
+A implementação será feita em três camadas:
 
-**Problema:**
-- O campo `asaas_pix_qrcode` contém uma imagem base64 (encodedImage da API Asaas)
-- O campo `asaas_boleto_barcode` contém a linha digitável (identificationField)
-- Esses campos estão sendo usados corretamente, mas a verificação de dados está falhando ou os dados não estão sincronizados
+1. **Database Triggers** - Para eventos que ocorrem diretamente no banco (pagamentos manuais, folha de pagamento)
+2. **Edge Functions** - Para eventos que passam por funções (pré-matrícula, webhooks)
+3. **Frontend Hooks** - Para capturar erros de integração e criar notificações contextuais
 
-**Solução:**
-- Garantir que o gerador de boleto leia corretamente os campos `asaas_pix_qrcode` e `asaas_boleto_barcode` da fatura
-- Adicionar validação antes de gerar: se faltar PIX ou boleto, forçar sincronização com o gateway
-- Atualizar a lógica de renderização do QR Code para tratar o formato base64 corretamente
+## Etapas de Implementação
 
----
+### Etapa 1: Criar Função Utilitária para Notificações
 
-### 2. Mover "Imprimir Carnê" para Ações em Lote
+Criar uma função no banco de dados para facilitar a criação de notificações:
 
-**Arquivo afetado:**
-- `src/pages/Faturas.tsx`
-- `src/components/faturas/BulkActionsBar.tsx`
+```sql
+CREATE OR REPLACE FUNCTION public.criar_notificacao(
+  p_tenant_id UUID,
+  p_title TEXT,
+  p_message TEXT,
+  p_type TEXT DEFAULT 'info',
+  p_link TEXT DEFAULT NULL
+) RETURNS UUID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_notification_id UUID;
+BEGIN
+  INSERT INTO public.notifications (tenant_id, title, message, type, link)
+  VALUES (p_tenant_id, p_title, p_message, p_type, p_link)
+  RETURNING id INTO v_notification_id;
+  
+  RETURN v_notification_id;
+END;
+$$;
+```
 
-**Mudanças:**
-- **Remover** o dropdown "Imprimir Carnê" do header da página Faturas (linhas 414-453)
-- **Manter** a funcionalidade "Gerar Carnê" que já existe no `BulkActionsBar` (linha 737)
-- O botão só aparecerá quando houver faturas selecionadas (comportamento padrão das ações em lote)
+### Etapa 2: Trigger para Pagamentos Manuais
 
----
+Criar trigger que dispara quando um pagamento é inserido diretamente no banco (pagamentos manuais):
 
-### 3. Alterar Layout para 3 Carnês por Folha A4
+```sql
+CREATE OR REPLACE FUNCTION public.notify_on_payment()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_aluno_nome TEXT;
+  v_valor_formatado TEXT;
+BEGIN
+  -- Buscar nome do aluno via fatura
+  SELECT a.nome_completo INTO v_aluno_nome
+  FROM faturas f
+  JOIN alunos a ON a.id = f.aluno_id
+  WHERE f.id = NEW.fatura_id;
+  
+  v_valor_formatado := 'R$ ' || TO_CHAR(NEW.valor, 'FM999G999D00');
+  
+  -- Criar notificação apenas para pagamentos não-estorno
+  IF NEW.tipo IS DISTINCT FROM 'estorno' THEN
+    INSERT INTO notifications (tenant_id, title, message, type, link)
+    VALUES (
+      NEW.tenant_id,
+      'Pagamento Registrado',
+      v_valor_formatado || ' recebido de ' || COALESCE(v_aluno_nome, 'Aluno') || ' via ' || COALESCE(NEW.metodo, 'Manual'),
+      'success',
+      '/faturas'
+    );
+  ELSE
+    INSERT INTO notifications (tenant_id, title, message, type, link)
+    VALUES (
+      NEW.tenant_id,
+      'Estorno Registrado',
+      'Estorno de ' || v_valor_formatado || ' para ' || COALESCE(v_aluno_nome, 'Aluno'),
+      'warning',
+      '/faturas'
+    );
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
 
-**Arquivo afetado:**
-- `src/lib/boletoGenerator.ts` (criar nova função para boleto compacto)
-- `src/lib/carneCompactoGenerator.ts` (já está com 3 por página - apenas validar)
-- `src/pages/Faturas.tsx` (usar gerador compacto para "Baixar Boleto")
-- `src/components/faturas/BulkActionsBar.tsx` (garantir uso do compacto)
-- `src/components/faturas/FaturaTable.tsx` (atualizar ação "Baixar Boleto")
+CREATE TRIGGER trigger_notify_payment
+  AFTER INSERT ON pagamentos
+  FOR EACH ROW
+  EXECUTE FUNCTION notify_on_payment();
+```
 
-**Mudanças:**
-- Criar nova função `generateBoletoCompacto` que usa o mesmo layout do carnê (3 por A4)
-- Atualizar `handleDownloadBoleto` em `Faturas.tsx` para usar o layout compacto
-- Manter consistência visual: todos os documentos de cobrança terão 3 por página A4
+### Etapa 3: Trigger para Folha de Pagamento
 
----
+Criar triggers para alertar sobre folha de pagamento:
 
-### 4. Sincronizar Dados Antes de Gerar
+```sql
+-- Notificar nova folha criada
+CREATE OR REPLACE FUNCTION public.notify_on_folha_created()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_func_nome TEXT;
+  v_mes_nome TEXT;
+  v_meses TEXT[] := ARRAY['Janeiro','Fevereiro','Março','Abril','Maio','Junho','Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+BEGIN
+  SELECT nome_completo INTO v_func_nome
+  FROM funcionarios WHERE id = NEW.funcionario_id;
+  
+  v_mes_nome := v_meses[NEW.mes_referencia];
+  
+  INSERT INTO notifications (tenant_id, title, message, type, link)
+  VALUES (
+    NEW.tenant_id,
+    'Folha de Pagamento Gerada',
+    'Folha de ' || COALESCE(v_func_nome, 'Funcionário') || ' - ' || v_mes_nome || '/' || NEW.ano_referencia,
+    'info',
+    '/rh'
+  );
+  
+  RETURN NEW;
+END;
+$$;
 
-**Arquivos afetados:**
-- `src/pages/Faturas.tsx`
-- `src/components/faturas/BulkActionsBar.tsx`
+CREATE TRIGGER trigger_notify_folha_created
+  AFTER INSERT ON folha_pagamento
+  FOR EACH ROW
+  EXECUTE FUNCTION notify_on_folha_created();
 
-**Mudanças:**
-- Antes de gerar qualquer boleto/carnê, verificar se `asaas_pix_qrcode` e `asaas_boleto_barcode` existem
-- Se não existirem, chamar `syncFaturaAsaasData()` ou o novo `useGatewaySync().syncFatura()` antes de prosseguir
-- Mostrar feedback ao usuário: "Sincronizando dados de pagamento..."
+-- Notificar folha paga
+CREATE OR REPLACE FUNCTION public.notify_on_folha_paid()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_func_nome TEXT;
+  v_valor_formatado TEXT;
+BEGIN
+  -- Só notifica se mudou de não-pago para pago
+  IF OLD.pago = false AND NEW.pago = true THEN
+    SELECT nome_completo INTO v_func_nome
+    FROM funcionarios WHERE id = NEW.funcionario_id;
+    
+    v_valor_formatado := 'R$ ' || TO_CHAR(NEW.total_liquido, 'FM999G999D00');
+    
+    INSERT INTO notifications (tenant_id, title, message, type, link)
+    VALUES (
+      NEW.tenant_id,
+      'Folha Paga',
+      'Pagamento de ' || v_valor_formatado || ' para ' || COALESCE(v_func_nome, 'Funcionário') || ' registrado',
+      'success',
+      '/rh'
+    );
+  END IF;
+  
+  RETURN NEW;
+END;
+$$;
 
----
+CREATE TRIGGER trigger_notify_folha_paid
+  AFTER UPDATE ON folha_pagamento
+  FOR EACH ROW
+  EXECUTE FUNCTION notify_on_folha_paid();
+```
 
-## Arquivos a Serem Modificados
+### Etapa 4: Atualizar Edge Function de Pré-Matrícula
 
-| Arquivo | Ação | Descrição |
-|---------|------|-----------|
-| `src/pages/Faturas.tsx` | Modificar | Remover dropdown "Imprimir Carnê" do header; atualizar `handleDownloadBoleto` para usar layout compacto e sincronizar dados antes |
-| `src/lib/boletoGenerator.ts` | Modificar | Criar função `generateBoletoCompacto` para layout 3 por A4; corrigir renderização do QR Code PIX |
-| `src/lib/carneCompactoGenerator.ts` | Modificar | Garantir que PIX e linha digitável sejam renderizados corretamente |
-| `src/components/faturas/BulkActionsBar.tsx` | Modificar | Adicionar sincronização de dados antes de gerar carnê; garantir uso do gerador compacto |
-| `src/components/faturas/FaturaTable.tsx` | Verificar | Garantir que "Baixar Boleto" chame a função correta |
+Modificar `register-prematricula` para criar notificações quando novos alunos/responsáveis são cadastrados via site:
 
----
+```typescript
+// Após criar alunos com sucesso, adicionar:
+
+// Notificar sobre novo responsável (se foi criado novo)
+if (!existingResp) {
+  await supabase.from("notifications").insert({
+    tenant_id: tenant_id,
+    title: "Novo Responsável Cadastrado",
+    message: `${responsavel.nome} se cadastrou via site da escola`,
+    type: "info",
+    link: "/responsaveis"
+  });
+}
+
+// Notificar sobre novos alunos
+for (const alunoId of createdAlunos) {
+  const alunoInfo = alunos.find(a => true); // buscar nome
+  await supabase.from("notifications").insert({
+    tenant_id: tenant_id,
+    title: "Nova Pré-Matrícula",
+    message: `Aluno cadastrado via site - aguardando aprovação`,
+    type: "info",
+    link: "/alunos"
+  });
+}
+```
+
+### Etapa 5: Notificações de Erros de Integração
+
+Atualizar os webhooks do Asaas e Stripe para notificar sobre erros:
+
+```typescript
+// Em asaas-webhook/index.ts - no catch de erro:
+await supabase.from("notifications").insert({
+  tenant_id: fatura?.tenant_id,
+  title: "Erro na Integração Asaas",
+  message: `Falha ao processar webhook: ${errorMessage}`,
+  type: "error",
+  link: "/configuracoes"
+});
+
+// Também para eventos específicos de falha:
+if (["REFUNDED", "CHARGEBACK_REQUESTED"].includes(payment.status)) {
+  await supabase.from("notifications").insert({
+    tenant_id: fatura.tenant_id,
+    title: "Alerta de Pagamento",
+    message: `Cobrança ${payment.status === 'REFUNDED' ? 'estornada' : 'contestada'} - verificar`,
+    type: "warning",
+    link: "/faturas"
+  });
+}
+```
+
+### Etapa 6: Hook de Notificação para Erros no Frontend
+
+Criar utilitário para capturar erros de integração no frontend:
+
+```typescript
+// src/lib/notifyError.ts
+export async function notifySystemError(
+  title: string,
+  message: string,
+  link?: string
+) {
+  try {
+    await supabase.from("notifications").insert({
+      title,
+      message,
+      type: "error",
+      link: link || "/configuracoes"
+    });
+  } catch (e) {
+    console.error("Failed to create error notification:", e);
+  }
+}
+```
+
+Integrar nos hooks existentes (useFaturas, useRH, useAsaas) para capturar erros de integração.
+
+### Etapa 7: Habilitar Realtime na Tabela de Notificações
+
+Garantir que a tabela notifications está habilitada para realtime:
+
+```sql
+ALTER PUBLICATION supabase_realtime ADD TABLE public.notifications;
+```
+
+## Resumo das Mudanças
+
+| Componente | Arquivo | Mudança |
+|------------|---------|---------|
+| Função SQL | Migration | `criar_notificacao()` |
+| Trigger | Migration | `notify_on_payment()` |
+| Trigger | Migration | `notify_on_folha_created()` |
+| Trigger | Migration | `notify_on_folha_paid()` |
+| Edge Function | `register-prematricula/index.ts` | Notificar novo aluno/responsável |
+| Edge Function | `asaas-webhook/index.ts` | Notificar erros e estornos |
+| Edge Function | `stripe-webhook/index.ts` | Notificar falhas de assinatura |
+| Utilitário | `src/lib/notifyError.ts` | Novo arquivo |
+| Hooks | `useFaturas.ts`, `useRH.ts` | Integrar notifyError em onError |
+
+## Tipos de Notificação
+
+| Evento | Tipo | Ícone | Link |
+|--------|------|-------|------|
+| Pagamento recebido | success | CheckCircle | /faturas |
+| Estorno | warning | AlertTriangle | /faturas |
+| Nova pré-matrícula | info | Info | /alunos |
+| Novo responsável | info | Info | /responsaveis |
+| Folha gerada | info | Info | /rh |
+| Folha paga | success | CheckCircle | /rh |
+| Erro de integração | error | AlertCircle | /configuracoes |
+| Chargeback/Contestação | warning | AlertTriangle | /faturas |
 
 ## Detalhes Técnicos
 
-### Estrutura do Boleto Compacto (3 por A4)
+### Segurança
+- Triggers usam `SECURITY DEFINER` para garantir permissões adequadas
+- Notificações são isoladas por `tenant_id`
+- RLS existente já filtra notificações por tenant
 
-```text
-┌─────────────────────────────────────────────────────────┐
-│  BOLETO 1 (altura: ~99mm)                               │
-│  ┌──────────────┬────────────────────────┬─────────────┐ │
-│  │ Recibo       │ Dados principais       │ Canhoto     │ │
-│  │ do Pagador   │ + QR Code PIX          │             │ │
-│  │              │ + Linha Digitável      │             │ │
-│  └──────────────┴────────────────────────┴─────────────┘ │
-├─────────────────────────────────────────────────────────┤
-│  BOLETO 2 (altura: ~99mm)                               │
-│  ... mesmo layout ...                                   │
-├─────────────────────────────────────────────────────────┤
-│  BOLETO 3 (altura: ~99mm)                               │
-│  ... mesmo layout ...                                   │
-└─────────────────────────────────────────────────────────┘
-```
+### Performance
+- Realtime já está configurado no hook `useNotifications`
+- Notificações são inseridas de forma assíncrona
+- Limite de 20 notificações no frontend para evitar sobrecarga
 
-### Fluxo de Sincronização Atualizado
-
-```text
-Usuário clica "Gerar Carnê" ou "Baixar Boleto"
-              │
-              ▼
-┌─────────────────────────────────┐
-│ Verificar dados completos:      │
-│ - asaas_pix_qrcode              │
-│ - asaas_boleto_barcode          │
-└───────────────┬─────────────────┘
-                │
-        ┌───────┴───────┐
-        │ Dados faltando?│
-        └───────┬───────┘
-                │
-         Sim ──►│◄── Não
-                │        │
-                ▼        │
-     ┌──────────────────┐│
-     │ Sincronizar com  ││
-     │ gateway-sync     ││
-     │ (com retry)      ││
-     └────────┬─────────┘│
-              │          │
-              ▼          ▼
-        ┌─────────────────────┐
-        │ Gerar PDF com dados │
-        │ completos           │
-        └─────────────────────┘
-```
-
----
-
-## Validações de Segurança
-
-- **Nenhuma chave API será alterada** - apenas lógica de apresentação
-- **Dados existentes preservados** - apenas melhoria na renderização
-- **Retrocompatibilidade** - faturas sem dados Asaas continuam funcionando (mostram placeholder)
-
----
-
-## Resultado Esperado
-
-1. **QR Code PIX funcional** - escaneável em apps bancários
-2. **Linha digitável correta** - copiável para pagamento
-3. **Layout otimizado** - 3 boletos/carnês por folha A4 (economia de papel)
-4. **UX simplificada** - "Imprimir Carnê" disponível apenas em ações em lote
-5. **Sincronização automática** - dados sempre atualizados antes de gerar documentos
+### Experiência do Usuário
+- Notificações aparecem em tempo real no sino
+- Badge animado indica novas notificações
+- Clique na notificação marca como lida e navega para o módulo relevante
