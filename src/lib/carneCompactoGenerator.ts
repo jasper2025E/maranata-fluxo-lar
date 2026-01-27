@@ -1,8 +1,7 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { Fatura, formatCurrency, meses } from "@/hooks/useFaturas";
-// @ts-ignore - bwip-js types
-import bwipjs from "bwip-js";
+import { generateITF25BarcodeDataUrl } from "@/lib/itf25Barcode";
 
 interface EscolaInfo {
   nome: string;
@@ -57,101 +56,8 @@ function drawFittedText(
   doc.text(text, x, y);
 }
 
-/**
- * Converte linha digitável (47 dígitos) para código de barras (44 dígitos)
- * Formato linha digitável: AAABC.CCCCX DDDDD.DDDDDY EEEEE.EEEEEZ K UUUUVVVVVVVVVV
- * Formato código barras:   AAABKUUUUVVVVVVVVVVCCCCCDDDDDDDDDDEEEEEEEEEE
- */
-function linhaDigitavelToBarcode(linhaDigitavel: string): string {
-  const clean = linhaDigitavel.replace(/\D/g, '');
-  
-  // Se já tem 44 dígitos, já é código de barras
-  if (clean.length === 44) {
-    return clean;
-  }
-  
-  // Se tem 47 dígitos, converter de linha digitável para código de barras
-  if (clean.length === 47) {
-    // Extrai os campos da linha digitável
-    const campo1 = clean.slice(0, 10);   // AAABC.CCCCX (sem o X)
-    const campo2 = clean.slice(10, 21);  // DDDDD.DDDDDY (sem o Y)
-    const campo3 = clean.slice(21, 32);  // EEEEE.EEEEEZ (sem o Z)
-    const campo4 = clean.slice(32, 33);  // K (DV geral)
-    const campo5 = clean.slice(33, 47);  // UUUUVVVVVVVVVV
-    
-    // Monta o código de barras: AAABKUUUUVVVVVVVVVVCCCCCDDDDDDDDDDEEEEEEEEEE
-    const barcode = 
-      campo1.slice(0, 4) +      // AAAB (banco + moeda)
-      campo4 +                   // K (DV geral)
-      campo5 +                   // UUUUVVVVVVVVVV (fator vencimento + valor)
-      campo1.slice(4, 9) +      // CCCCC (campo livre parte 1)
-      campo2.slice(0, 10) +     // DDDDDDDDDD (campo livre parte 2)
-      campo3.slice(0, 10);      // EEEEEEEEEE (campo livre parte 3)
-    
-    return barcode;
-  }
-  
-  // Fallback: retorna o que tiver
-  return clean;
-}
-
-/**
- * Gera código de barras ITF-25 real usando bwip-js
- * Retorna base64 da imagem PNG
- */
-async function generateITF25Barcode(linhaDigitavel: string): Promise<string | null> {
-  try {
-    // Converte linha digitável para código de barras de 44 dígitos
-    const barcode = linhaDigitavelToBarcode(linhaDigitavel);
-    
-    // Verifica cache
-    if (barcodeCache.has(barcode)) {
-      return barcodeCache.get(barcode)!;
-    }
-    
-    // ITF requer número par de dígitos (44 é par, ok)
-    const paddedCode = barcode.length % 2 === 0 ? barcode : '0' + barcode;
-    
-    // Gera o código de barras como canvas
-    const canvas = document.createElement('canvas');
-    
-    bwipjs.toCanvas(canvas, {
-      bcid: 'interleaved2of5', // Tipo ITF-25 (boleto brasileiro)
-      text: paddedCode,
-      // Mais resolução = leitura mais confiável em apps bancários
-      scale: 6,
-      height: 14,
-      includetext: false,
-      backgroundcolor: 'ffffff',
-    });
-    
-    const dataUrl = canvas.toDataURL('image/png');
-    barcodeCache.set(barcode, dataUrl);
-    
-    return dataUrl;
-  } catch (error) {
-    console.warn('Erro ao gerar código de barras ITF-25:', error);
-    return null;
-  }
-}
-
-/**
- * Formata a linha digitável no padrão brasileiro
- * Formato: XXXXX.XXXXX XXXXX.XXXXXX XXXXX.XXXXXX X XXXXXXXXXXXXXX
- */
-function formatLinhaDigitavel(code: string): string {
-  const clean = code.replace(/\D/g, '');
-  
-  if (clean.length === 47) {
-    // Formato padrão de boleto com 47 dígitos
-    return `${clean.slice(0,5)}.${clean.slice(5,10)} ${clean.slice(10,15)}.${clean.slice(15,21)} ${clean.slice(21,26)}.${clean.slice(26,32)} ${clean.slice(32,33)} ${clean.slice(33,47)}`;
-  } else if (clean.length === 44) {
-    // Código de barras com 44 dígitos (sem dígitos verificadores)
-    return `${clean.slice(0,5)}.${clean.slice(5,10)} ${clean.slice(10,15)}.${clean.slice(15,20)} ${clean.slice(20,25)}.${clean.slice(25,30)} ${clean.slice(30,31)} ${clean.slice(31,44)}`;
-  }
-  
-  // Fallback: agrupa em blocos de 5
-  return clean.replace(/(.{5})/g, '$1 ').trim();
+function onlyDigits(value: string): string {
+  return (value || "").replace(/\D/g, "");
 }
 
 /**
@@ -364,7 +270,7 @@ async function drawCompactCarne(
       }
     }
     
-    // Linha digitável formatada corretamente
+     // Linha digitável (EXIBIR EXATAMENTE COMO RETORNADO PELO ASAAS)
     doc.setFontSize(5);
     doc.setTextColor(...GRAY_500);
     doc.setFont("helvetica", "normal");
@@ -372,10 +278,8 @@ async function drawCompactCarne(
     
     doc.setTextColor(...DARK);
     doc.setFont("courier", "bold");
-    // Usa formatação correta para linha digitável
-    const formatted = formatLinhaDigitavel(fatura.asaas_boleto_barcode);
-    // Garante que NUNCA seja cortada no PDF (isso causa erro ao digitar no banco)
-    drawFittedText(doc, formatted, startX + 3, barcodeAreaY + 17, contentWidth - 6, 7, 5);
+     const raw = String(fatura.asaas_boleto_barcode || "");
+     drawFittedText(doc, raw, startX + 3, barcodeAreaY + 17, contentWidth - 6, 7, 5);
   } else {
     doc.setFontSize(6);
     doc.setTextColor(...GRAY_400);
@@ -437,11 +341,15 @@ export async function generateCarneCompacto(
     let barcodeImage: string | null = null;
     const barcodeSource =
       // Preferir o barCode oficial (44 dígitos) para evitar divergência com o boleto oficial
-      faturasOrdenadas[i].asaas_boleto_bar_code ||
-      faturasOrdenadas[i].asaas_boleto_barcode;
+      faturasOrdenadas[i].asaas_boleto_bar_code;
 
     if (barcodeSource) {
-      barcodeImage = await generateITF25Barcode(barcodeSource);
+      const clean = onlyDigits(barcodeSource);
+      if (!barcodeCache.has(clean)) {
+        const img = await generateITF25BarcodeDataUrl(clean);
+        if (img) barcodeCache.set(clean, img);
+      }
+      barcodeImage = barcodeCache.get(clean) || null;
     }
     
     await drawCompactCarne(doc, faturasOrdenadas[i], escola, responsavel || null, yOffset, barcodeImage);
