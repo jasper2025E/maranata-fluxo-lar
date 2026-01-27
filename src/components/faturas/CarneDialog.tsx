@@ -208,11 +208,12 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
           setProgressValue(((i + 1) / faturasToRecreate.length) * 35);
 
           try {
-            await supabase.functions.invoke("asaas-cancel-payment", {
-              body: { faturaId: fatura.id, motivo: "Recriação automática (billingType inválido)" },
+            // Usa a nova função que apenas deleta no Asaas sem mudar status local
+            await supabase.functions.invoke("asaas-delete-remote-payment", {
+              body: { faturaId: fatura.id },
             });
           } catch (err) {
-            console.warn(`Falha ao cancelar cobrança antiga para fatura ${fatura.id}:`, err);
+            console.warn(`Falha ao deletar cobrança remota para fatura ${fatura.id}:`, err);
           }
 
           try {
