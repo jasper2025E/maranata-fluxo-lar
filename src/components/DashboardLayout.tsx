@@ -1,13 +1,13 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { LanguageSelector } from "./LanguageSelector";
 import { GracePeriodBanner } from "./GracePeriodBanner";
 import { GlobalSearch } from "./GlobalSearch";
-import { Bell, Clock, Info, AlertTriangle, CheckCircle2, Check } from "lucide-react";
+import { Bell, Clock, Info, AlertTriangle, CheckCircle2, Check, CalendarDays } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
-import { formatDistanceToNow } from "date-fns";
+import { format, formatDistanceToNow } from "date-fns";
 import { ptBR, enUS, es, fr, de } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
 import {
@@ -24,6 +24,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { useProfileData } from "@/hooks/useProfileData";
+import { Calendar } from "@/components/ui/calendar";
+import { cn } from "@/lib/utils";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -34,6 +36,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navigate = useNavigate();
   const { t, i18n } = useTranslation();
   const { notifications, unreadCount, markAsRead, markAllAsRead, loading: loadingNotifications } = useNotifications();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
   // Use cached profile data to prevent flickering
   const { data: profileData } = useProfileData(user?.id);
@@ -215,6 +218,30 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                       </Button>
                     </div>
                   )}
+                </PopoverContent>
+              </Popover>
+
+              {/* Calendar Picker */}
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    className="h-10 px-3 rounded-xl hover:bg-muted flex items-center gap-2"
+                  >
+                    <CalendarDays className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.75} />
+                    <span className="hidden sm:inline text-sm font-medium text-foreground">
+                      {selectedDate ? format(selectedDate, "dd MMM", { locale: getDateLocale() }) : t("common.selectDate")}
+                    </span>
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0 bg-card border-border shadow-large" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={setSelectedDate}
+                    locale={getDateLocale()}
+                    className={cn("p-3 pointer-events-auto")}
+                  />
                 </PopoverContent>
               </Popover>
 
