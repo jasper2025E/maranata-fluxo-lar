@@ -851,7 +851,7 @@ export function BulkActionsBar({
                   className="gap-2 cursor-pointer text-destructive focus:text-destructive"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Excluir Permanentemente
+                  Excluir
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
