@@ -74,41 +74,47 @@ const Dashboard = () => {
 
         {/* Verse Banner */}
         <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-          className="relative overflow-hidden rounded-2xl border border-primary/20 bg-gradient-to-br from-primary/5 via-card to-accent/5 p-6 shadow-sm"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+          className="group relative rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent p-[1px] shadow-lg shadow-primary/20"
         >
-          {/* Decorative elements */}
-          <div className="absolute top-0 right-0 w-40 h-40 bg-gradient-to-bl from-primary/15 to-transparent rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-accent/10 to-transparent rounded-full translate-y-1/2 -translate-x-1/2 blur-xl" />
-          
-          <div className="relative z-10 flex items-start gap-4">
-            <motion.div 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.2, duration: 0.3 }}
-              className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center"
-            >
-              <BookOpen className="h-5 w-5 text-primary" />
-            </motion.div>
-            <div className="flex-1 min-w-0">
-              <motion.p 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.15, duration: 0.3 }}
-                className="text-foreground/90 italic leading-relaxed text-[15px] font-light"
+          <div className="relative overflow-hidden rounded-[15px] bg-background px-6 py-5">
+            {/* Subtle glow */}
+            <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.03] to-accent/[0.03]" />
+            
+            <div className="relative flex items-center gap-5">
+              {/* Icon with gradient background */}
+              <motion.div 
+                initial={{ scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+                className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg shadow-primary/30"
               >
-                "{verse.text}"
-              </motion.p>
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.3 }}
-                className="text-sm text-primary/80 mt-3 font-semibold tracking-wide"
-              >
-                — {verse.reference}
-              </motion.p>
+                <BookOpen className="h-5 w-5 text-white" />
+              </motion.div>
+              
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <motion.blockquote 
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.15, duration: 0.4 }}
+                  className="text-foreground leading-relaxed text-[15px] font-normal"
+                >
+                  <span className="text-primary/60 text-lg font-serif">"</span>
+                  {verse.text}
+                  <span className="text-primary/60 text-lg font-serif">"</span>
+                </motion.blockquote>
+                <motion.cite 
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.35, duration: 0.3 }}
+                  className="block text-xs text-muted-foreground mt-2 not-italic font-medium uppercase tracking-widest"
+                >
+                  {verse.reference}
+                </motion.cite>
+              </div>
             </div>
           </div>
         </motion.div>
