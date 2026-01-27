@@ -254,10 +254,6 @@ function FaturaRow({
                     {fatura.asaas_payment_id ? "Ver cobrança" : "Gerar PIX/Boleto"}
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuItem onClick={() => onPaymentLink(fatura)}>
-                  <Link className="h-4 w-4 mr-2" />
-                  {fatura.payment_url ? "Ver link de pagamento" : "Gerar link de pagamento"}
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onPayment(fatura)} className="text-success">
                   <CreditCard className="h-4 w-4 mr-2" />Registrar pagamento manual
                 </DropdownMenuItem>
