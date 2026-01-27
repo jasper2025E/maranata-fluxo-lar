@@ -121,6 +121,7 @@ export function useCreateAluno() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success("Aluno cadastrado com sucesso!");
     },
     onError: (error: Error) => {
@@ -147,6 +148,7 @@ export function useUpdateAluno() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.alunos.detail(variables.id), refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success("Aluno atualizado com sucesso!");
     },
     onError: (error: Error) => {
@@ -224,7 +226,7 @@ export function useDeleteAluno() {
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ['faturas'], refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       
       if (result.faturasAbertas > 0) {
         toast.success(`Aluno desativado e ${result.faturasAbertas} fatura(s) excluída(s) permanentemente!`);

@@ -124,6 +124,7 @@ export function useCreateResponsavel() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success("Responsável cadastrado com sucesso!");
     },
     onError: (error: Error) => {
@@ -175,6 +176,7 @@ export function useUpdateResponsavel() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all, refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.detail(variables.id), refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success("Responsável atualizado com sucesso!");
     },
     onError: (error: Error) => {
@@ -198,6 +200,7 @@ export function useDeleteResponsavel() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success("Responsável desativado com sucesso!");
     },
     onError: (error: Error) => {

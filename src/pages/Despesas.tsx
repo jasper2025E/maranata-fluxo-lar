@@ -71,7 +71,8 @@ const Despesas = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["despesas"] });
+      queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: 'all' });
       toast.success(t("expenses.createSuccess"));
       resetForm();
     },
@@ -97,7 +98,8 @@ const Despesas = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["despesas"] });
+      queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: 'all' });
       toast.success(t("expenses.updateSuccess"));
       resetForm();
     },
@@ -113,7 +115,8 @@ const Despesas = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["despesas"] });
+      queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: 'all' });
       toast.success(t("expenses.deleteSuccess"));
     },
     onError: (error: Error) => {
@@ -131,7 +134,8 @@ const Despesas = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["despesas"] });
+      queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: 'all' });
       toast.success(t("expenses.markedAsPaid"));
     },
     onError: (error: Error) => {

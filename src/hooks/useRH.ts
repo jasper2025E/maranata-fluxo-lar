@@ -300,8 +300,9 @@ export function useCreateFuncionario() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.funcionarios });
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.funcionarios, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success('Funcionário cadastrado com sucesso!');
     },
     onError: () => toast.error('Erro ao cadastrar funcionário'),
@@ -323,8 +324,9 @@ export function useUpdateFuncionario() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.funcionarios });
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.funcionarios, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success('Funcionário atualizado com sucesso!');
     },
     onError: () => toast.error('Erro ao atualizar funcionário'),
@@ -339,8 +341,9 @@ export function useDeleteFuncionario() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.funcionarios });
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.funcionarios, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success('Funcionário excluído com sucesso!');
     },
     onError: () => toast.error('Erro ao excluir funcionário'),
@@ -494,8 +497,9 @@ export function useCreateFolhaPagamento() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.folha });
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.folha, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success('Folha de pagamento criada com sucesso!');
     },
     onError: () => toast.error('Erro ao criar folha de pagamento'),
@@ -517,8 +521,9 @@ export function useUpdateFolhaPagamento() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.folha });
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.folha, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success('Folha de pagamento atualizada!');
     },
     onError: () => toast.error('Erro ao atualizar folha de pagamento'),
@@ -543,8 +548,9 @@ export function useMarcarFolhaPaga() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.folha });
-      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.folha, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: rhQueryKeys.stats, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
       toast.success('Pagamento registrado com sucesso!');
     },
     onError: () => toast.error('Erro ao registrar pagamento'),
