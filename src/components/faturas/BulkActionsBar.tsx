@@ -11,6 +11,14 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { 
@@ -19,11 +27,16 @@ import {
   Printer, 
   QrCode, 
   Loader2,
-  CheckCircle2,
   Download,
+  Link,
+  CreditCard,
+  ChevronDown,
+  FileText,
+  Mail,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
+import { generateFaturaPDF } from "@/lib/pdfGenerator";
 import { Fatura, formatCurrency, useCancelarFatura } from "@/hooks/useFaturas";
 import { useAsaas } from "@/hooks/useAsaas";
 import { toast } from "sonner";
@@ -254,6 +267,131 @@ export function BulkActionsBar({
     }
   };
 
+  const handleBulkDownloadPDF = async () => {
+    if (!escola) {
+      toast.error("Dados da escola não encontrados");
+      return;
+    }
+
+    const validFaturas = selectedFaturas.filter(f => f.status !== "Cancelada");
+    if (validFaturas.length === 0) {
+      toast.error("Nenhuma fatura válida selecionada");
+      return;
+    }
+
+    setIsProcessing(true);
+    setProgressValue(0);
+    let processed = 0;
+
+    try {
+      for (const fatura of validFaturas) {
+        setProgressMessage(`Gerando PDF ${processed + 1} de ${validFaturas.length}...`);
+        
+        const { data: itens } = await supabase
+          .from("fatura_itens")
+          .select("*")
+          .eq("fatura_id", fatura.id)
+          .order("ordem");
+        
+        await generateFaturaPDF(fatura, escola, itens || undefined);
+        
+        processed++;
+        setProgressValue((processed / validFaturas.length) * 100);
+      }
+
+      toast.success(`${processed} PDF(s) gerado(s)!`);
+    } catch (error: any) {
+      console.error("Erro ao gerar PDFs:", error);
+      toast.error(error.message || "Erro ao gerar PDFs");
+    } finally {
+      setIsProcessing(false);
+      setProgressMessage("");
+    }
+  };
+
+  const handleBulkGenerateStripeLinks = async () => {
+    const faturasWithoutStripe = selectedFaturas.filter(
+      f => !f.payment_url && (f.status === "Aberta" || f.status === "Vencida")
+    );
+
+    if (faturasWithoutStripe.length === 0) {
+      toast.info("Todas as faturas selecionadas já têm link Stripe ou estão pagas/canceladas");
+      return;
+    }
+
+    setIsProcessing(true);
+    setProgressValue(0);
+    let processed = 0;
+    let success = 0;
+
+    try {
+      for (const fatura of faturasWithoutStripe) {
+        setProgressMessage(`Gerando link ${processed + 1} de ${faturasWithoutStripe.length}...`);
+        
+        try {
+          const { error } = await supabase.functions.invoke("create-subscription-checkout", {
+            body: { faturaId: fatura.id },
+          });
+          if (!error) success++;
+        } catch (err) {
+          console.warn(`Erro na fatura ${fatura.id}:`, err);
+        }
+        
+        processed++;
+        setProgressValue((processed / faturasWithoutStripe.length) * 100);
+      }
+
+      toast.success(`${success} link(s) Stripe gerado(s)!`);
+      onActionComplete();
+    } catch (error) {
+      toast.error("Erro ao gerar links");
+    } finally {
+      setIsProcessing(false);
+      setProgressMessage("");
+    }
+  };
+
+  const handleBulkSendReceipts = async () => {
+    const paidFaturas = selectedFaturas.filter(f => f.status === "Paga");
+    
+    if (paidFaturas.length === 0) {
+      toast.error("Selecione faturas pagas para enviar recibos");
+      return;
+    }
+
+    setIsProcessing(true);
+    setProgressValue(0);
+    let processed = 0;
+    let success = 0;
+
+    try {
+      for (const fatura of paidFaturas) {
+        setProgressMessage(`Enviando recibo ${processed + 1} de ${paidFaturas.length}...`);
+        
+        try {
+          const { error } = await supabase.functions.invoke("send-receipt-email", {
+            body: { faturaId: fatura.id },
+          });
+          if (!error) success++;
+        } catch (err) {
+          console.warn(`Erro na fatura ${fatura.id}:`, err);
+        }
+        
+        processed++;
+        setProgressValue((processed / paidFaturas.length) * 100);
+      }
+
+      toast.success(`${success} recibo(s) enviado(s)!`);
+    } catch (error) {
+      toast.error("Erro ao enviar recibos");
+    } finally {
+      setIsProcessing(false);
+      setProgressMessage("");
+    }
+  };
+
+  const paidCount = selectedFaturas.filter(f => f.status === "Paga").length;
+
   return (
     <>
       <div className="sticky top-0 z-20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 px-4 py-3 bg-primary/5 border-2 border-primary/20 rounded-lg shadow-sm animate-in fade-in slide-in-from-top-2 duration-200">
@@ -281,37 +419,72 @@ export function BulkActionsBar({
           </div>
         ) : (
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGenerateCarne}
-              className="h-9 gap-2 flex-1 sm:flex-none"
-            >
-              <Printer className="h-4 w-4" />
-              <span className="hidden sm:inline">Gerar</span> Carnê
-            </Button>
-            
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleGenerateAsaas}
-              disabled={pendingCount === 0}
-              className="h-9 gap-2 flex-1 sm:flex-none"
-            >
-              <QrCode className="h-4 w-4" />
-              PIX/Boleto
-            </Button>
+            {/* Dropdown Menu with all actions */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="default" size="sm" className="h-9 gap-2">
+                  Ações em Lote
+                  <ChevronDown className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  Documentos
+                </DropdownMenuLabel>
+                <DropdownMenuItem onClick={handleBulkDownloadPDF} className="gap-2 cursor-pointer">
+                  <Download className="h-4 w-4" />
+                  Baixar PDFs
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={handleGenerateCarne} className="gap-2 cursor-pointer">
+                  <Printer className="h-4 w-4" />
+                  Gerar Carnê
+                </DropdownMenuItem>
+                
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  Cobranças
+                </DropdownMenuLabel>
+                <DropdownMenuItem 
+                  onClick={handleGenerateAsaas} 
+                  disabled={pendingCount === 0}
+                  className="gap-2 cursor-pointer text-success"
+                >
+                  <QrCode className="h-4 w-4" />
+                  Gerar PIX/Boleto
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleBulkGenerateStripeLinks}
+                  disabled={pendingCount === 0}
+                  className="gap-2 cursor-pointer"
+                >
+                  <Link className="h-4 w-4" />
+                  Gerar Links Stripe
+                </DropdownMenuItem>
 
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setIsCancelDialogOpen(true)}
-              disabled={pendingCount === 0}
-              className="h-9 gap-2 flex-1 sm:flex-none border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
-            >
-              <Ban className="h-4 w-4" />
-              Cancelar
-            </Button>
+                {paidCount > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                      Recibos ({paidCount} paga{paidCount !== 1 && "s"})
+                    </DropdownMenuLabel>
+                    <DropdownMenuItem onClick={handleBulkSendReceipts} className="gap-2 cursor-pointer">
+                      <Mail className="h-4 w-4" />
+                      Enviar Recibos por Email
+                    </DropdownMenuItem>
+                  </>
+                )}
+
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={() => setIsCancelDialogOpen(true)}
+                  disabled={pendingCount === 0}
+                  className="gap-2 cursor-pointer text-destructive focus:text-destructive"
+                >
+                  <Ban className="h-4 w-4" />
+                  Cancelar Faturas
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <Button
               variant="ghost"
