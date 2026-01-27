@@ -17,7 +17,7 @@ interface AsaasPaymentResult {
 export const useAsaas = () => {
   const [isLoading, setIsLoading] = useState(false);
 
-  const createPayment = async (faturaId: string, billingType: string = "UNDEFINED"): Promise<AsaasPaymentResult> => {
+  const createPayment = async (faturaId: string, billingType: string = "BOLETO"): Promise<AsaasPaymentResult> => {
     setIsLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("asaas-create-payment", {

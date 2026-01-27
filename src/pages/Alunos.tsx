@@ -272,7 +272,7 @@ const Alunos = () => {
 
               for (const fatura of faturasGeradas || []) {
                 await supabase.functions.invoke("asaas-create-payment", {
-                  body: { faturaId: fatura.id, billingType: "UNDEFINED" },
+                   body: { faturaId: fatura.id, billingType: "BOLETO" },
                 }).catch(() => {});
               }
             }

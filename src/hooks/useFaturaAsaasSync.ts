@@ -62,7 +62,7 @@ export async function createAsaasPaymentWithFullSync(
   onProgress?.("Criando cobrança no ASAAS...");
   
   const { data: createResult, error: createError } = await supabase.functions.invoke("asaas-create-payment", {
-    body: { faturaId, billingType: "UNDEFINED" },
+    body: { faturaId, billingType: "BOLETO" },
   });
 
   if (createError || !createResult?.success) {

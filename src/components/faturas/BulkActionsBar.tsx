@@ -194,23 +194,56 @@ export function BulkActionsBar({
     let processed = 0;
 
     try {
-      // Primeiro, criar cobranças no gateway para faturas que não têm
+      // 1) Recriar cobranças inválidas (billingType UNDEFINED não gera boleto pagável em apps bancários)
+      const faturasToRecreate = pendingFaturas.filter(
+        f =>
+          (f.status === "Aberta" || f.status === "Vencida") &&
+          !!f.asaas_payment_id &&
+          (f.asaas_billing_type === "UNDEFINED" || !f.asaas_billing_type)
+      );
+
+      // 2) Criar cobranças no gateway para faturas que ainda não têm
       const faturasWithoutPayment = pendingFaturas.filter(
         f => !f.asaas_payment_id && (f.status === "Aberta" || f.status === "Vencida")
       );
 
-      if (faturasWithoutPayment.length > 0) {
-        setProgressMessage(`Gerando cobranças (0/${faturasWithoutPayment.length})...`);
-        
+      const totalCreateOps = faturasToRecreate.length + faturasWithoutPayment.length;
+      let processedCreate = 0;
+
+      if (totalCreateOps > 0) {
+        setProgressMessage(`Preparando cobranças (0/${totalCreateOps})...`);
+
+        // Recria primeiro (cancela cobrança antiga e cria uma nova como BOLETO)
+        for (const fatura of faturasToRecreate) {
+          try {
+            await supabase.functions.invoke("asaas-cancel-payment", {
+              body: { faturaId: fatura.id, motivo: "Recriação automática (billingType inválido)" },
+            });
+          } catch (err) {
+            console.warn(`Erro ao cancelar cobrança antiga para fatura ${fatura.id}:`, err);
+          }
+
+          try {
+            await createPayment(fatura.id, "BOLETO");
+          } catch (err) {
+            console.warn(`Erro ao recriar cobrança para fatura ${fatura.id}:`, err);
+          }
+
+          processedCreate++;
+          setProgressMessage(`Preparando cobranças (${processedCreate}/${totalCreateOps})...`);
+          setProgressValue((processedCreate / totalCreateOps) * 40);
+        }
+
+        // Depois cria as que faltam
         for (const fatura of faturasWithoutPayment) {
           try {
-            await createPayment(fatura.id, "UNDEFINED");
+            await createPayment(fatura.id, "BOLETO");
           } catch (err) {
             console.warn(`Erro ao criar cobrança para fatura ${fatura.id}:`, err);
           }
-          processed++;
-          setProgressMessage(`Gerando cobranças (${processed}/${faturasWithoutPayment.length})...`);
-          setProgressValue((processed / (faturasWithoutPayment.length + 1)) * 40);
+          processedCreate++;
+          setProgressMessage(`Preparando cobranças (${processedCreate}/${totalCreateOps})...`);
+          setProgressValue((processedCreate / totalCreateOps) * 40);
         }
       }
 
@@ -307,7 +340,7 @@ export function BulkActionsBar({
         setProgressMessage(`Gerando cobrança ${processed + 1} de ${faturasWithoutPayment.length}...`);
         
         try {
-          await createPayment(fatura.id, "UNDEFINED");
+          await createPayment(fatura.id, "BOLETO");
           success++;
         } catch (err) {
           console.warn(`Erro na fatura ${fatura.id}:`, err);
