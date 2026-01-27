@@ -137,14 +137,39 @@ export function useUpdateResponsavel() {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: ResponsavelUpdate & { id: string }) => {
+      // 1. Atualizar no banco local
       const { data, error } = await supabase
         .from("responsaveis")
         .update(updates)
         .eq("id", id)
-        .select()
+        .select("*, asaas_customer_id")
         .single();
 
       if (error) throw error;
+
+      // 2. Se tem cliente ASAAS, sincronizar dados
+      if (data?.asaas_customer_id) {
+        console.log("Sincronizando responsável com ASAAS:", data.asaas_customer_id);
+        try {
+          const { data: syncResult, error: syncError } = await supabase.functions.invoke("asaas-update-customer", {
+            body: { responsavelId: id },
+          });
+
+          if (syncError) {
+            console.warn("Erro ao sincronizar com ASAAS:", syncError);
+            toast.warning("Dados salvos localmente. Sincronização com gateway pode estar pendente.");
+          } else if (!syncResult?.success && !syncResult?.skipped) {
+            console.warn("ASAAS retornou erro:", syncResult?.error);
+            toast.warning("Dados salvos localmente. Gateway reportou: " + (syncResult?.error || "erro desconhecido"));
+          } else if (syncResult?.success && !syncResult?.skipped) {
+            console.log("Responsável sincronizado com ASAAS com sucesso");
+          }
+        } catch (err) {
+          console.warn("Falha ao chamar sincronização ASAAS:", err);
+          // Fallback silencioso - dados já salvos localmente
+        }
+      }
+
       return data;
     },
     onSuccess: (_, variables) => {
@@ -202,6 +227,36 @@ export function useToggleResponsavelAtivo() {
     },
     onError: (error: Error) => {
       toast.error(`Erro ao atualizar status: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Hook para sincronizar responsável com ASAAS manualmente
+ */
+export function useSyncResponsavelAsaas() {
+  return useMutation({
+    mutationFn: async (responsavelId: string) => {
+      const { data, error } = await supabase.functions.invoke("asaas-update-customer", {
+        body: { responsavelId },
+      });
+
+      if (error) throw error;
+      if (!data?.success && !data?.skipped) {
+        throw new Error(data?.error || "Erro ao sincronizar com ASAAS");
+      }
+
+      return data;
+    },
+    onSuccess: (result) => {
+      if (result?.skipped) {
+        toast.info("Responsável não possui cliente ASAAS vinculado");
+      } else {
+        toast.success("Responsável sincronizado com ASAAS!");
+      }
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao sincronizar: ${error.message}`);
     },
   });
 }

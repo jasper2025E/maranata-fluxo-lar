@@ -160,17 +160,75 @@ export function useDeleteAluno() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      // PROTEÇÃO: Soft delete - muda status para cancelado em vez de deletar permanentemente
+      // 1. Buscar faturas abertas/vencidas do aluno que têm cobrança no ASAAS
+      const { data: faturasAbertas, error: fetchError } = await supabase
+        .from("faturas")
+        .select("id, asaas_payment_id, status")
+        .eq("aluno_id", id)
+        .in("status", ["Aberta", "Vencida"])
+        .not("asaas_payment_id", "is", null);
+
+      if (fetchError) {
+        console.error("Erro ao buscar faturas:", fetchError);
+        throw fetchError;
+      }
+
+      // 2. Cancelar cada cobrança no ASAAS e marcar faturas como canceladas
+      if (faturasAbertas && faturasAbertas.length > 0) {
+        console.log(`Cancelando ${faturasAbertas.length} faturas do aluno no ASAAS...`);
+        
+        for (const fatura of faturasAbertas) {
+          if (fatura.asaas_payment_id) {
+            try {
+              const { data: cancelResult, error: cancelError } = await supabase.functions.invoke("asaas-cancel-payment", {
+                body: { faturaId: fatura.id, motivo: "Aluno desativado do sistema" },
+              });
+
+              if (cancelError) {
+                console.warn(`Erro ao cancelar fatura ${fatura.id} no ASAAS:`, cancelError);
+              } else if (!cancelResult?.success) {
+                console.warn(`ASAAS retornou erro para fatura ${fatura.id}:`, cancelResult?.error);
+              } else {
+                console.log(`Fatura ${fatura.id} cancelada no ASAAS`);
+              }
+            } catch (err) {
+              console.warn(`Falha ao cancelar fatura ${fatura.id}:`, err);
+            }
+          }
+
+          // Atualizar fatura localmente (sempre executa)
+          await supabase
+            .from("faturas")
+            .update({
+              status: 'Cancelada',
+              cancelada_em: new Date().toISOString(),
+              motivo_cancelamento: "Aluno desativado do sistema",
+              asaas_status: 'DELETED',
+            })
+            .eq("id", fatura.id);
+        }
+      }
+
+      // 3. PROTEÇÃO: Soft delete - muda status para cancelado em vez de deletar permanentemente
       const { error } = await supabase
         .from("alunos")
         .update({ status_matricula: 'cancelado' })
         .eq("id", id);
 
       if (error) throw error;
+
+      return { faturasAbertas: faturasAbertas?.length || 0 };
     },
-    onSuccess: () => {
+    onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
-      toast.success("Aluno desativado com sucesso!");
+      queryClient.invalidateQueries({ queryKey: ['faturas'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      
+      if (result.faturasAbertas > 0) {
+        toast.success(`Aluno desativado e ${result.faturasAbertas} fatura(s) cancelada(s) no sistema e ASAAS!`);
+      } else {
+        toast.success("Aluno desativado com sucesso!");
+      }
     },
     onError: (error: Error) => {
       toast.error(`Erro ao desativar aluno: ${error.message}`);
