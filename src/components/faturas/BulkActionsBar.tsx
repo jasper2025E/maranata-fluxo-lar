@@ -809,7 +809,7 @@ export function BulkActionsBar({
                   className="gap-2 cursor-pointer text-success"
                 >
                   <QrCode className="h-4 w-4" />
-                  Gerar PIX/Boleto
+                  Gerar Cobranças
                 </DropdownMenuItem>
 
 
