@@ -30,21 +30,59 @@ const MARGIN = 6;
 const barcodeCache = new Map<string, string>();
 
 /**
+ * Converte linha digitável (47 dígitos) para código de barras (44 dígitos)
+ * Formato linha digitável: AAABC.CCCCX DDDDD.DDDDDY EEEEE.EEEEEZ K UUUUVVVVVVVVVV
+ * Formato código barras:   AAABKUUUUVVVVVVVVVVCCCCCDDDDDDDDDDEEEEEEEEEE
+ */
+function linhaDigitavelToBarcode(linhaDigitavel: string): string {
+  const clean = linhaDigitavel.replace(/\D/g, '');
+  
+  // Se já tem 44 dígitos, já é código de barras
+  if (clean.length === 44) {
+    return clean;
+  }
+  
+  // Se tem 47 dígitos, converter de linha digitável para código de barras
+  if (clean.length === 47) {
+    // Extrai os campos da linha digitável
+    const campo1 = clean.slice(0, 10);   // AAABC.CCCCX (sem o X)
+    const campo2 = clean.slice(10, 21);  // DDDDD.DDDDDY (sem o Y)
+    const campo3 = clean.slice(21, 32);  // EEEEE.EEEEEZ (sem o Z)
+    const campo4 = clean.slice(32, 33);  // K (DV geral)
+    const campo5 = clean.slice(33, 47);  // UUUUVVVVVVVVVV
+    
+    // Monta o código de barras: AAABKUUUUVVVVVVVVVVCCCCCDDDDDDDDDDEEEEEEEEEE
+    const barcode = 
+      campo1.slice(0, 4) +      // AAAB (banco + moeda)
+      campo4 +                   // K (DV geral)
+      campo5 +                   // UUUUVVVVVVVVVV (fator vencimento + valor)
+      campo1.slice(4, 9) +      // CCCCC (campo livre parte 1)
+      campo2.slice(0, 10) +     // DDDDDDDDDD (campo livre parte 2)
+      campo3.slice(0, 10);      // EEEEEEEEEE (campo livre parte 3)
+    
+    return barcode;
+  }
+  
+  // Fallback: retorna o que tiver
+  return clean;
+}
+
+/**
  * Gera código de barras ITF-25 real usando bwip-js
  * Retorna base64 da imagem PNG
  */
-async function generateITF25Barcode(code: string): Promise<string | null> {
+async function generateITF25Barcode(linhaDigitavel: string): Promise<string | null> {
   try {
-    // Remove espaços e caracteres não numéricos
-    const cleanCode = code.replace(/\D/g, '');
+    // Converte linha digitável para código de barras de 44 dígitos
+    const barcode = linhaDigitavelToBarcode(linhaDigitavel);
     
     // Verifica cache
-    if (barcodeCache.has(cleanCode)) {
-      return barcodeCache.get(cleanCode)!;
+    if (barcodeCache.has(barcode)) {
+      return barcodeCache.get(barcode)!;
     }
     
-    // ITF requer número par de dígitos
-    const paddedCode = cleanCode.length % 2 === 0 ? cleanCode : '0' + cleanCode;
+    // ITF requer número par de dígitos (44 é par, ok)
+    const paddedCode = barcode.length % 2 === 0 ? barcode : '0' + barcode;
     
     // Gera o código de barras como canvas
     const canvas = document.createElement('canvas');
@@ -59,7 +97,7 @@ async function generateITF25Barcode(code: string): Promise<string | null> {
     });
     
     const dataUrl = canvas.toDataURL('image/png');
-    barcodeCache.set(cleanCode, dataUrl);
+    barcodeCache.set(barcode, dataUrl);
     
     return dataUrl;
   } catch (error) {
