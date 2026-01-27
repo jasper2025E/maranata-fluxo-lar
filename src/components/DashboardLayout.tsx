@@ -234,7 +234,10 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                     </span>
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0 bg-card border-border shadow-large" align="end">
+                <PopoverContent
+                  className="w-auto p-0 bg-card border-border shadow-large data-[state=open]:animate-none data-[state=closed]:animate-none"
+                  align="end"
+                >
                   <Calendar
                     mode="single"
                     selected={selectedDate}
