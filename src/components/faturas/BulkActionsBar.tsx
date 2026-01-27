@@ -29,11 +29,13 @@ import {
   Loader2,
   Download,
   Link,
-  CreditCard,
   ChevronDown,
-  FileText,
   Mail,
+  Pencil,
+  SplitSquareVertical,
+  Calendar,
 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
 import { generateFaturaPDF } from "@/lib/pdfGenerator";
@@ -56,10 +58,17 @@ export function BulkActionsBar({
   onActionComplete 
 }: BulkActionsBarProps) {
   const [isCancelDialogOpen, setIsCancelDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [cancelMotivo, setCancelMotivo] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [progressMessage, setProgressMessage] = useState("");
   const [progressValue, setProgressValue] = useState(0);
+  
+  // Edit dialog state
+  const [editData, setEditData] = useState({
+    novaDataVencimento: "",
+    novoDiaVencimento: "",
+  });
   
   const { createPayment } = useAsaas();
   const cancelMutation = useCancelarFatura();
@@ -390,7 +399,86 @@ export function BulkActionsBar({
     }
   };
 
+  const handleBulkEditVencimento = async () => {
+    if (!editData.novaDataVencimento && !editData.novoDiaVencimento) {
+      toast.error("Selecione uma data ou dia de vencimento");
+      return;
+    }
+
+    const editableFaturas = selectedFaturas.filter(
+      f => f.status === "Aberta" || f.status === "Vencida"
+    );
+
+    if (editableFaturas.length === 0) {
+      toast.error("Nenhuma fatura pendente selecionada para editar");
+      return;
+    }
+
+    setIsProcessing(true);
+    setProgressValue(0);
+    let processed = 0;
+    let success = 0;
+
+    try {
+      for (const fatura of editableFaturas) {
+        setProgressMessage(`Editando ${processed + 1} de ${editableFaturas.length}...`);
+        
+        let novaData = editData.novaDataVencimento;
+        
+        // Se escolheu dia fixo, calcular a data baseada no mês/ano da fatura
+        if (editData.novoDiaVencimento && !editData.novaDataVencimento) {
+          const dia = parseInt(editData.novoDiaVencimento);
+          const ano = fatura.ano_referencia;
+          const mes = fatura.mes_referencia - 1; // 0-indexed
+          novaData = new Date(ano, mes, dia).toISOString().split('T')[0];
+        }
+        
+        if (novaData) {
+          const { error } = await supabase
+            .from("faturas")
+            .update({ data_vencimento: novaData, updated_at: new Date().toISOString() })
+            .eq("id", fatura.id);
+          
+          if (!error) {
+            success++;
+            
+            // Se tem cobrança Asaas, atualizar a data
+            if (fatura.asaas_payment_id) {
+              try {
+                await supabase.functions.invoke("asaas-update-payment", {
+                  body: { faturaId: fatura.id },
+                });
+              } catch (err) {
+                console.warn("Erro ao atualizar Asaas:", err);
+              }
+            }
+          }
+        }
+        
+        processed++;
+        setProgressValue((processed / editableFaturas.length) * 100);
+      }
+
+      toast.success(`${success} fatura(s) atualizada(s)!`);
+      onActionComplete();
+      setIsEditDialogOpen(false);
+      setEditData({ novaDataVencimento: "", novoDiaVencimento: "" });
+    } catch (error) {
+      toast.error("Erro ao editar faturas");
+    } finally {
+      setIsProcessing(false);
+      setProgressMessage("");
+    }
+  };
+
+  const handleBulkParcelar = async () => {
+    toast.info("Para parcelar faturas individualmente, use o menu de ações na tabela.");
+    // Parcelamento em lote é complexo pois cada fatura pode ter valores diferentes
+    // Direcionamos para edição individual
+  };
+
   const paidCount = selectedFaturas.filter(f => f.status === "Paga").length;
+  const editableCount = selectedFaturas.filter(f => f.status === "Aberta" || f.status === "Vencida").length;
 
   return (
     <>
@@ -427,7 +515,29 @@ export function BulkActionsBar({
                   <ChevronDown className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuContent align="end" className="w-56 bg-background">
+                {/* Edição */}
+                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+                  Edição
+                </DropdownMenuLabel>
+                <DropdownMenuItem 
+                  onClick={() => setIsEditDialogOpen(true)}
+                  disabled={editableCount === 0}
+                  className="gap-2 cursor-pointer"
+                >
+                  <Pencil className="h-4 w-4" />
+                  Editar Vencimento
+                </DropdownMenuItem>
+                <DropdownMenuItem 
+                  onClick={handleBulkParcelar}
+                  disabled={editableCount === 0}
+                  className="gap-2 cursor-pointer"
+                >
+                  <SplitSquareVertical className="h-4 w-4" />
+                  Parcelar
+                </DropdownMenuItem>
+
+                <DropdownMenuSeparator />
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                   Documentos
                 </DropdownMenuLabel>
@@ -533,6 +643,93 @@ export function BulkActionsBar({
                 </>
               ) : (
                 "Confirmar Cancelamento"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Edit Dialog */}
+      <AlertDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Pencil className="h-5 w-5" />
+              Editar {editableCount} fatura(s)
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Altere a data de vencimento das faturas selecionadas. 
+              Escolha uma data específica ou um dia fixo do mês.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="novaData" className="flex items-center gap-2">
+                <Calendar className="h-4 w-4" />
+                Nova Data de Vencimento
+              </Label>
+              <Input
+                id="novaData"
+                type="date"
+                value={editData.novaDataVencimento}
+                onChange={(e) => setEditData({ ...editData, novaDataVencimento: e.target.value, novoDiaVencimento: "" })}
+              />
+              <p className="text-xs text-muted-foreground">
+                Aplica a mesma data para todas as faturas selecionadas
+              </p>
+            </div>
+
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">ou</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="novoDia">Dia Fixo de Vencimento</Label>
+              <Select 
+                value={editData.novoDiaVencimento} 
+                onValueChange={(v) => setEditData({ ...editData, novoDiaVencimento: v, novaDataVencimento: "" })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o dia" />
+                </SelectTrigger>
+                <SelectContent>
+                  {Array.from({ length: 28 }, (_, i) => i + 1).map(dia => (
+                    <SelectItem key={dia} value={String(dia)}>
+                      Dia {dia}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Ajusta o dia mantendo o mês/ano de referência de cada fatura
+              </p>
+            </div>
+          </div>
+
+          <AlertDialogFooter>
+            <AlertDialogCancel 
+              disabled={isProcessing}
+              onClick={() => setEditData({ novaDataVencimento: "", novoDiaVencimento: "" })}
+            >
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleBulkEditVencimento}
+              disabled={isProcessing || (!editData.novaDataVencimento && !editData.novoDiaVencimento)}
+            >
+              {isProcessing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Atualizando...
+                </>
+              ) : (
+                "Aplicar Alterações"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
