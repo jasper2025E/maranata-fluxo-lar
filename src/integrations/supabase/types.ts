@@ -3802,6 +3802,16 @@ export type Database = {
     }
     Functions: {
       atualizar_status_faturas: { Args: never; Returns: undefined }
+      criar_notificacao: {
+        Args: {
+          p_link?: string
+          p_message: string
+          p_tenant_id: string
+          p_title: string
+          p_type?: string
+        }
+        Returns: string
+      }
       detect_suspicious_patterns: {
         Args: { p_minutes?: number; p_user_id: string }
         Returns: {
