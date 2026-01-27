@@ -128,8 +128,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="hidden xl:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 border border-primary/10 cursor-default min-w-0 flex-shrink">
-                      <BookOpen className="h-4 w-4 text-primary shrink-0" strokeWidth={1.75} />
+                    <div className="hidden xl:flex items-center px-3 py-1.5 rounded-xl bg-primary/5 border border-primary/10 cursor-default min-w-0 flex-shrink">
                       <p className="text-xs text-muted-foreground truncate italic min-w-0">
                         "{dailyVerse.text}"
                       </p>
