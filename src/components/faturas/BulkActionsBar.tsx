@@ -213,14 +213,15 @@ export function BulkActionsBar({
       if (totalCreateOps > 0) {
         setProgressMessage(`Preparando cobranças (0/${totalCreateOps})...`);
 
-        // Recria primeiro (cancela cobrança antiga e cria uma nova como BOLETO)
+        // Recria primeiro: deleta apenas no Asaas (preserva status local) e cria nova como BOLETO
         for (const fatura of faturasToRecreate) {
           try {
-            await supabase.functions.invoke("asaas-cancel-payment", {
-              body: { faturaId: fatura.id, motivo: "Recriação automática (billingType inválido)" },
+            // Usa a nova função que apenas deleta no Asaas sem mudar status local
+            await supabase.functions.invoke("asaas-delete-remote-payment", {
+              body: { faturaId: fatura.id },
             });
           } catch (err) {
-            console.warn(`Erro ao cancelar cobrança antiga para fatura ${fatura.id}:`, err);
+            console.warn(`Erro ao deletar cobrança remota para fatura ${fatura.id}:`, err);
           }
 
           try {
