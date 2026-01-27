@@ -144,9 +144,8 @@ serve(async (req) => {
       return true;
     };
 
-    // Criar cliente no Asaas se não existir
-    let customerId = responsavel.asaas_customer_id;
-    if (!customerId) {
+    // Função para criar cliente no Asaas
+    const createAsaasCustomer = async (): Promise<string> => {
       const rawCpfCnpj = responsavel.cpf?.replace(/\D/g, '') || '';
       let validCpfCnpj: string | null = null;
       
@@ -187,12 +186,21 @@ serve(async (req) => {
         throw new Error(customerResult.errors?.[0]?.description || "Erro ao criar cliente no Asaas");
       }
 
-      customerId = customerResult.id;
+      const newCustomerId = customerResult.id;
       
+      // Salvar novo customer_id no banco
       await supabase
         .from("responsaveis")
-        .update({ asaas_customer_id: customerId })
+        .update({ asaas_customer_id: newCustomerId })
         .eq("id", responsavel.id);
+      
+      return newCustomerId;
+    };
+
+    // Usar customer_id existente ou criar novo
+    let customerId = responsavel.asaas_customer_id;
+    if (!customerId) {
+      customerId = await createAsaasCustomer();
     }
 
     // Calcular valor da fatura
@@ -214,30 +222,52 @@ serve(async (req) => {
       console.log(`Data de vencimento ajustada de ${fatura.data_vencimento} para ${dueDate}`);
     }
 
-    // Criar cobrança no Asaas
-    const paymentData = {
-      customer: customerId,
-      billingType: billingType,
-      value: Number(valorFatura.toFixed(2)),
-      dueDate: dueDate,
-      description: description,
-      externalReference: faturaId,
-      postalService: false,
+    // Função para criar cobrança
+    const createPayment = async (customerIdToUse: string) => {
+      const paymentData = {
+        customer: customerIdToUse,
+        billingType: billingType,
+        value: Number(valorFatura.toFixed(2)),
+        dueDate: dueDate,
+        description: description,
+        externalReference: faturaId,
+        postalService: false,
+      };
+
+      const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "access_token": ASAAS_API_KEY,
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      return { response: paymentResponse, data: await paymentResponse.json() };
     };
 
-    const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "access_token": ASAAS_API_KEY,
-      },
-      body: JSON.stringify(paymentData),
-    });
+    // Tentar criar cobrança
+    let paymentResult = await createPayment(customerId);
 
-    const paymentResult = await paymentResponse.json();
+    // Se falhou com "invalid_customer" (cliente removido), recriar cliente e tentar novamente
+    if (!paymentResult.response.ok && paymentResult.data.errors?.[0]?.code === "invalid_customer") {
+      console.log("Cliente Asaas inválido/removido. Recriando cliente...");
+      
+      // Limpar customer_id antigo
+      await supabase
+        .from("responsaveis")
+        .update({ asaas_customer_id: null })
+        .eq("id", responsavel.id);
+      
+      // Criar novo cliente
+      customerId = await createAsaasCustomer();
+      
+      // Tentar criar cobrança novamente
+      paymentResult = await createPayment(customerId);
+    }
 
-    if (!paymentResponse.ok) {
-      console.error("Erro Asaas Payment:", paymentResult);
+    if (!paymentResult.response.ok) {
+      console.error("Erro Asaas Payment:", paymentResult.data);
       
       await logGatewayTransaction(supabase, {
         tenantId: tenantId || "",
@@ -247,21 +277,24 @@ serve(async (req) => {
         status: "failed",
         faturaId,
         amount: valorFatura,
-        errorMessage: paymentResult.errors?.[0]?.description || "Erro ao criar cobrança",
+        errorMessage: paymentResult.data.errors?.[0]?.description || "Erro ao criar cobrança",
         requestPayload: { billingType, value: valorFatura },
-        responsePayload: paymentResult,
+        responsePayload: paymentResult.data,
         durationMs: Date.now() - startTime,
       });
       
-      throw new Error(paymentResult.errors?.[0]?.description || "Erro ao criar cobrança no Asaas");
+      throw new Error(paymentResult.data.errors?.[0]?.description || "Erro ao criar cobrança no Asaas");
     }
+
+    // Extrair dados do pagamento criado
+    const payment = paymentResult.data;
 
     // Buscar QR Code PIX - SEMPRE tenta buscar para garantir dados completos
     let pixQrCode = null;
     let pixPayload = null;
     
-    console.log("Buscando QR Code PIX para pagamento:", paymentResult.id);
-    const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentResult.id}/pixQrCode`, {
+    console.log("Buscando QR Code PIX para pagamento:", payment.id);
+    const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${payment.id}/pixQrCode`, {
       headers: { "access_token": ASAAS_API_KEY },
     });
     
@@ -279,15 +312,15 @@ serve(async (req) => {
     let boletoUrl = null;
     let boletoBarcode = null;
     
-    console.log("Buscando código de barras do boleto para pagamento:", paymentResult.id);
-    const boletoResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentResult.id}/identificationField`, {
+    console.log("Buscando código de barras do boleto para pagamento:", payment.id);
+    const boletoResponse = await fetch(`${ASAAS_API_URL}/payments/${payment.id}/identificationField`, {
       headers: { "access_token": ASAAS_API_KEY },
     });
     
     if (boletoResponse.ok) {
       const boletoData = await boletoResponse.json();
       boletoBarcode = boletoData.identificationField;
-      boletoUrl = paymentResult.bankSlipUrl;
+      boletoUrl = payment.bankSlipUrl;
       console.log("Boleto barcode obtido com sucesso:", !!boletoBarcode);
     } else {
       const boletoErrorText = await boletoResponse.text();
@@ -298,17 +331,17 @@ serve(async (req) => {
     await supabase
       .from("faturas")
       .update({
-        asaas_payment_id: paymentResult.id,
-        asaas_invoice_url: paymentResult.invoiceUrl,
+        asaas_payment_id: payment.id,
+        asaas_invoice_url: payment.invoiceUrl,
         asaas_pix_qrcode: pixQrCode,
         asaas_pix_payload: pixPayload,
-        asaas_boleto_url: boletoUrl || paymentResult.bankSlipUrl,
+        asaas_boleto_url: boletoUrl || payment.bankSlipUrl,
         asaas_boleto_barcode: boletoBarcode,
-        asaas_status: paymentResult.status,
-        asaas_due_date: paymentResult.dueDate,
-        asaas_billing_type: paymentResult.billingType,
-        payment_url: paymentResult.invoiceUrl,
-        gateway_config_id: gatewayConfigId, // Link to gateway config
+        asaas_status: payment.status,
+        asaas_due_date: payment.dueDate,
+        asaas_billing_type: payment.billingType,
+        payment_url: payment.invoiceUrl,
+        gateway_config_id: gatewayConfigId,
         updated_at: new Date().toISOString(),
       })
       .eq("id", faturaId);
@@ -322,18 +355,18 @@ serve(async (req) => {
       status: "success",
       faturaId,
       amount: valorFatura,
-      externalReference: paymentResult.id,
-      responsePayload: { paymentId: paymentResult.id, status: paymentResult.status },
+      externalReference: payment.id,
+      responsePayload: { paymentId: payment.id, status: payment.status },
       durationMs: Date.now() - startTime,
     });
 
     return new Response(JSON.stringify({ 
       success: true, 
-      payment: paymentResult,
-      invoiceUrl: paymentResult.invoiceUrl,
+      payment: payment,
+      invoiceUrl: payment.invoiceUrl,
       pixQrCode,
       pixPayload,
-      boletoUrl: boletoUrl || paymentResult.bankSlipUrl,
+      boletoUrl: boletoUrl || payment.bankSlipUrl,
       boletoBarcode,
       message: "Cobrança criada com sucesso no Asaas"
     }), {
