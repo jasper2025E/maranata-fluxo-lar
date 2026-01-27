@@ -451,13 +451,13 @@ const Faturas = () => {
               size="sm" 
               onClick={handleBulkSyncAsaas}
               disabled={isSyncing}
-              className={`gap-2 transition-all duration-300 hover:scale-105 hover:shadow-md ${
+              className={`group gap-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-md ${
                 isSyncing 
                   ? 'bg-primary/5 border-primary/30' 
                   : 'hover:bg-primary/5 hover:border-primary/50'
               }`}
             >
-              <RefreshCw className={`h-4 w-4 transition-transform duration-500 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-180'}`} />
+              <RefreshCw className={`h-4 w-4 transition-transform duration-300 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-90'}`} />
               <span className="font-medium">
                 {isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar'}
               </span>
