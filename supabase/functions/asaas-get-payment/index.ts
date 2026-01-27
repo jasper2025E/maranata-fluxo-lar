@@ -23,7 +23,7 @@ serve(async (req) => {
     // Buscar fatura com tenant
     const { data: fatura, error: faturaError } = await supabase
       .from("faturas")
-      .select("asaas_payment_id, asaas_pix_qrcode, asaas_pix_payload, asaas_boleto_url, asaas_boleto_barcode, tenant_id, gateway_config_id")
+      .select("asaas_payment_id, asaas_pix_qrcode, asaas_pix_payload, asaas_boleto_url, asaas_boleto_barcode, asaas_boleto_bar_code, tenant_id, gateway_config_id")
       .eq("id", faturaId)
       .single();
 
@@ -55,6 +55,7 @@ serve(async (req) => {
     let pixQrCode = fatura.asaas_pix_qrcode;
     let pixPayload = fatura.asaas_pix_payload;
     let boletoBarcode = fatura.asaas_boleto_barcode;
+    let boletoBarCode = fatura.asaas_boleto_bar_code;
     let boletoUrl = fatura.asaas_boleto_url;
     let needsUpdate = false;
     
@@ -77,7 +78,7 @@ serve(async (req) => {
     }
 
     // Buscar código de barras do boleto se não existir
-    if (!boletoBarcode && payment.billingType !== "CREDIT_CARD" && payment.status !== "RECEIVED" && payment.status !== "CONFIRMED") {
+    if ((!boletoBarcode || !boletoBarCode) && payment.billingType !== "CREDIT_CARD" && payment.status !== "RECEIVED" && payment.status !== "CONFIRMED") {
       console.log("Buscando código de barras do boleto para pagamento:", fatura.asaas_payment_id);
       const boletoResponse = await fetch(`${ASAAS_API_URL}/payments/${fatura.asaas_payment_id}/identificationField`, {
         headers: { "access_token": ASAAS_API_KEY },
@@ -86,6 +87,7 @@ serve(async (req) => {
       if (boletoResponse.ok) {
         const boletoData = await boletoResponse.json();
         boletoBarcode = boletoData.identificationField;
+        boletoBarCode = boletoData.barCode;
         boletoUrl = payment.bankSlipUrl;
         needsUpdate = true;
         console.log("Boleto barcode obtido com sucesso");
@@ -102,6 +104,7 @@ serve(async (req) => {
           asaas_pix_qrcode: pixQrCode,
           asaas_pix_payload: pixPayload,
           asaas_boleto_barcode: boletoBarcode,
+          asaas_boleto_bar_code: boletoBarCode,
           asaas_boleto_url: boletoUrl || payment.bankSlipUrl,
           asaas_status: payment.status,
           updated_at: new Date().toISOString(),
@@ -125,6 +128,7 @@ serve(async (req) => {
       pixPayload,
       boletoUrl: boletoUrl || payment.bankSlipUrl,
       boletoBarcode,
+      boletoBarCode,
       invoiceUrl: payment.invoiceUrl,
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

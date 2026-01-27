@@ -1083,6 +1083,7 @@ export type Database = {
           aluno_id: string
           ano_referencia: number
           asaas_billing_type: string | null
+          asaas_boleto_bar_code: string | null
           asaas_boleto_barcode: string | null
           asaas_boleto_url: string | null
           asaas_due_date: string | null
@@ -1135,6 +1136,7 @@ export type Database = {
           aluno_id: string
           ano_referencia: number
           asaas_billing_type?: string | null
+          asaas_boleto_bar_code?: string | null
           asaas_boleto_barcode?: string | null
           asaas_boleto_url?: string | null
           asaas_due_date?: string | null
@@ -1187,6 +1189,7 @@ export type Database = {
           aluno_id?: string
           ano_referencia?: number
           asaas_billing_type?: string | null
+          asaas_boleto_bar_code?: string | null
           asaas_boleto_barcode?: string | null
           asaas_boleto_url?: string | null
           asaas_due_date?: string | null

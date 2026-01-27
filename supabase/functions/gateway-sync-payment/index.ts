@@ -259,7 +259,8 @@ async function getAsaasPaymentData(
 
   // Buscar boleto
   let boletoBarcode = fatura.asaas_boleto_barcode;
-  if (!boletoBarcode && payment.bankSlipUrl) {
+  let boletoBarCode = fatura.asaas_boleto_bar_code;
+  if ((!boletoBarcode || !boletoBarCode) && payment.bankSlipUrl) {
     try {
       const boletoRes = await fetch(`${apiUrl}/payments/${paymentId}/identificationField`, {
         headers: { access_token: apiKey },
@@ -267,11 +268,13 @@ async function getAsaasPaymentData(
       if (boletoRes.ok) {
         const boletoData = await boletoRes.json();
         boletoBarcode = boletoData.identificationField;
+        boletoBarCode = boletoData.barCode;
         
         await supabase
           .from("faturas")
           .update({ 
             asaas_boleto_barcode: boletoBarcode,
+            asaas_boleto_bar_code: boletoBarCode,
             asaas_boleto_url: payment.bankSlipUrl,
           })
           .eq("id", fatura.id);
@@ -353,6 +356,7 @@ async function createAsaasPayment(
   // Buscar PIX e boleto (com retry)
   let pixQrCode: string | undefined;
   let boletoBarcode: string | undefined;
+  let boletoBarCode: string | undefined;
 
   for (let attempt = 0; attempt < 3; attempt++) {
     await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
@@ -386,9 +390,13 @@ async function createAsaasPayment(
         if (boletoRes.ok) {
           const boletoData = await boletoRes.json();
           boletoBarcode = boletoData.identificationField;
+          boletoBarCode = boletoData.barCode;
           await supabase
             .from("faturas")
-            .update({ asaas_boleto_barcode: boletoBarcode })
+            .update({ 
+              asaas_boleto_barcode: boletoBarcode,
+              asaas_boleto_bar_code: boletoBarCode,
+            })
             .eq("id", fatura.id);
         }
       } catch (e) {
@@ -396,7 +404,7 @@ async function createAsaasPayment(
       }
     }
 
-    if (pixQrCode && boletoBarcode) break;
+    if (pixQrCode && boletoBarcode && boletoBarCode) break;
   }
 
   return {

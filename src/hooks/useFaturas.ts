@@ -93,6 +93,8 @@ export interface Fatura {
   asaas_pix_payload?: string | null;
   asaas_boleto_url?: string | null;
   asaas_boleto_barcode?: string | null;
+  // barCode oficial (44 dígitos) retornado pelo Asaas (usado para gerar o ITF-25 no PDF)
+  asaas_boleto_bar_code?: string | null;
   asaas_status?: string | null;
   asaas_due_date?: string | null;
   asaas_billing_type?: string | null;

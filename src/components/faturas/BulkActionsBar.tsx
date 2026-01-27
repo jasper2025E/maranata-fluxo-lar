@@ -217,7 +217,14 @@ export function BulkActionsBar({
       // Sincronizar dados de pagamento (PIX/Boleto) para faturas que já têm cobrança
       setProgressMessage("Sincronizando dados de pagamento...");
       const faturasToSync = pendingFaturas.filter(
-        f => f.asaas_payment_id && (!f.asaas_pix_qrcode || !f.asaas_boleto_barcode)
+        f =>
+          f.asaas_payment_id &&
+          (
+            !f.asaas_pix_qrcode ||
+            !f.asaas_boleto_barcode ||
+            // novo campo: barCode oficial (44 dígitos) usado no carnê
+            !f.asaas_boleto_bar_code
+          )
       );
       
       if (faturasToSync.length > 0) {

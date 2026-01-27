@@ -435,8 +435,13 @@ export async function generateCarneCompacto(
     
     // Gera código de barras real para cada fatura
     let barcodeImage: string | null = null;
-    if (faturasOrdenadas[i].asaas_boleto_barcode) {
-      barcodeImage = await generateITF25Barcode(faturasOrdenadas[i].asaas_boleto_barcode);
+    const barcodeSource =
+      // Preferir o barCode oficial (44 dígitos) para evitar divergência com o boleto oficial
+      faturasOrdenadas[i].asaas_boleto_bar_code ||
+      faturasOrdenadas[i].asaas_boleto_barcode;
+
+    if (barcodeSource) {
+      barcodeImage = await generateITF25Barcode(barcodeSource);
     }
     
     await drawCompactCarne(doc, faturasOrdenadas[i], escola, responsavel || null, yOffset, barcodeImage);

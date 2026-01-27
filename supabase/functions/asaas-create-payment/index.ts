@@ -311,6 +311,7 @@ serve(async (req) => {
     // Buscar linha digitável do boleto - SEMPRE tenta buscar para garantir dados completos
     let boletoUrl = null;
     let boletoBarcode = null;
+    let boletoBarCode = null;
     
     console.log("Buscando código de barras do boleto para pagamento:", payment.id);
     const boletoResponse = await fetch(`${ASAAS_API_URL}/payments/${payment.id}/identificationField`, {
@@ -320,6 +321,7 @@ serve(async (req) => {
     if (boletoResponse.ok) {
       const boletoData = await boletoResponse.json();
       boletoBarcode = boletoData.identificationField;
+      boletoBarCode = boletoData.barCode;
       boletoUrl = payment.bankSlipUrl;
       console.log("Boleto barcode obtido com sucesso:", !!boletoBarcode);
     } else {
@@ -337,6 +339,7 @@ serve(async (req) => {
         asaas_pix_payload: pixPayload,
         asaas_boleto_url: boletoUrl || payment.bankSlipUrl,
         asaas_boleto_barcode: boletoBarcode,
+        asaas_boleto_bar_code: boletoBarCode,
         asaas_status: payment.status,
         asaas_due_date: payment.dueDate,
         asaas_billing_type: payment.billingType,
@@ -368,6 +371,7 @@ serve(async (req) => {
       pixPayload,
       boletoUrl: boletoUrl || payment.bankSlipUrl,
       boletoBarcode,
+      boletoBarCode,
       message: "Cobrança criada com sucesso no Asaas"
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
