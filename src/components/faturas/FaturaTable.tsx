@@ -227,15 +227,23 @@ function FaturaRow({
                 <Download className="h-4 w-4 mr-2" />Baixar PDF
               </DropdownMenuItem>
             )}
-            {onDownloadBoleto && fatura.asaas_payment_id && fatura.asaas_pix_qrcode && fatura.asaas_boleto_barcode && (
-              <DropdownMenuItem onClick={() => onDownloadBoleto(fatura)}>
-                <FileBarChart className="h-4 w-4 mr-2" />Baixar Boleto
-              </DropdownMenuItem>
-            )}
-            {onDownloadBoleto && fatura.asaas_payment_id && (!fatura.asaas_pix_qrcode || !fatura.asaas_boleto_barcode) && (
-              <DropdownMenuItem disabled className="text-muted-foreground">
-                <FileBarChart className="h-4 w-4 mr-2" />Sincronizando dados...
-              </DropdownMenuItem>
+            {onDownloadBoleto && fatura.asaas_payment_id && (
+              (() => {
+                // Validação: linha digitável (47 dígitos) e código de barras (44 dígitos)
+                const linhaDigitavel = (fatura.asaas_boleto_barcode || "").replace(/\D/g, "");
+                const barCode = (fatura.asaas_boleto_bar_code || "").replace(/\D/g, "");
+                const isReady = linhaDigitavel.length === 47 && barCode.length === 44;
+                
+                return isReady ? (
+                  <DropdownMenuItem onClick={() => onDownloadBoleto(fatura)}>
+                    <FileBarChart className="h-4 w-4 mr-2" />Baixar Boleto
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem disabled className="text-muted-foreground">
+                    <FileBarChart className="h-4 w-4 mr-2" />Sincronizando dados...
+                  </DropdownMenuItem>
+                );
+              })()
             )}
             {!fatura.bloqueada && fatura.status !== 'Cancelada' && (
               <DropdownMenuItem onClick={() => onEdit(fatura)}>
