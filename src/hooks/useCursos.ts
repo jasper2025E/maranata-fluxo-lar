@@ -8,21 +8,62 @@ type Curso = Database["public"]["Tables"]["cursos"]["Row"];
 type CursoInsert = Database["public"]["Tables"]["cursos"]["Insert"];
 type CursoUpdate = Database["public"]["Tables"]["cursos"]["Update"];
 
-export function useCursos() {
+interface UseCursosOptions {
+  apenasAtivos?: boolean;
+}
+
+/**
+ * Hook para listar cursos
+ * @param options.apenasAtivos - Se true, filtra apenas cursos ativos (padrão: true para seleção em formulários)
+ */
+export function useCursos(options: UseCursosOptions = { apenasAtivos: true }) {
+  const { apenasAtivos = true } = options;
+  
   return useQuery({
-    queryKey: queryKeys.cursos.list(),
+    queryKey: [...queryKeys.cursos.list(), { apenasAtivos }],
     queryFn: async () => {
-      // Validação defensiva: RLS garante isolamento, mas verificamos sessão
+      // Validação defensiva
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) {
         console.warn("useCursos: Usuário não autenticado");
         return [];
       }
 
+      let query = supabase
+        .from("cursos")
+        .select("*")
+        .order("nome");
+
+      // Filtrar apenas ativos se solicitado
+      if (apenasAtivos) {
+        query = query.eq("ativo", true);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data;
+    },
+    ...defaultQueryConfig,
+  });
+}
+
+/**
+ * Hook para listar TODOS os cursos (ativos e inativos) - para tela de gestão
+ */
+export function useCursosAdmin() {
+  return useQuery({
+    queryKey: [...queryKeys.cursos.all, "admin"],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        console.warn("useCursosAdmin: Usuário não autenticado");
+        return [];
+      }
+
       const { data, error } = await supabase
         .from("cursos")
         .select("*")
-        .eq("ativo", true)
         .order("nome");
 
       if (error) throw error;
@@ -34,7 +75,7 @@ export function useCursos() {
 
 export function useCurso(id: string) {
   return useQuery({
-    queryKey: ["cursos", "detail", id],
+    queryKey: queryKeys.cursos.detail(id),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("cursos")
@@ -65,7 +106,8 @@ export function useCreateCurso() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cursos"] });
+      // Invalidar todas as queries de cursos para garantir consistência
+      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all });
       toast.success("Curso cadastrado com sucesso!");
     },
     onError: (error: Error) => {
@@ -89,8 +131,10 @@ export function useUpdateCurso() {
       if (error) throw error;
       return data;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cursos"] });
+    onSuccess: (data, variables) => {
+      // Invalidar todas as queries de cursos para garantir consistência
+      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.detail(variables.id) });
       toast.success("Curso atualizado com sucesso!");
     },
     onError: (error: Error) => {
@@ -104,6 +148,7 @@ export function useDeleteCurso() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Soft delete - apenas desativa
       const { error } = await supabase
         .from("cursos")
         .update({ ativo: false })
@@ -112,11 +157,36 @@ export function useDeleteCurso() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cursos"] });
-      toast.success("Curso removido com sucesso!");
+      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all });
+      toast.success("Curso desativado com sucesso!");
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao remover curso: ${error.message}`);
+      toast.error(`Erro ao desativar curso: ${error.message}`);
+    },
+  });
+}
+
+export function useToggleCursoAtivo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
+      const { data, error } = await supabase
+        .from("cursos")
+        .update({ ativo })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all });
+      toast.success("Status do curso atualizado!");
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao atualizar status: ${error.message}`);
     },
   });
 }
