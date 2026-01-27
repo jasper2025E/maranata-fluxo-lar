@@ -8,14 +8,59 @@ type Responsavel = Database["public"]["Tables"]["responsaveis"]["Row"];
 type ResponsavelInsert = Database["public"]["Tables"]["responsaveis"]["Insert"];
 type ResponsavelUpdate = Database["public"]["Tables"]["responsaveis"]["Update"];
 
-export function useResponsaveis() {
+interface UseResponsaveisOptions {
+  apenasAtivos?: boolean;
+}
+
+/**
+ * Hook para listar responsáveis
+ * @param options.apenasAtivos - Se true, filtra apenas responsáveis ativos (padrão: true)
+ */
+export function useResponsaveis(options: UseResponsaveisOptions = { apenasAtivos: true }) {
+  const { apenasAtivos = true } = options;
+  
   return useQuery({
-    queryKey: queryKeys.responsaveis.list(),
+    queryKey: [...queryKeys.responsaveis.list(), { apenasAtivos }],
     queryFn: async () => {
-      // Validação defensiva: RLS garante isolamento, mas verificamos sessão
+      // Validação defensiva
       const { data: session } = await supabase.auth.getSession();
       if (!session?.session?.user) {
         console.warn("useResponsaveis: Usuário não autenticado");
+        return [];
+      }
+
+      let query = supabase
+        .from("responsaveis")
+        .select(`
+          *,
+          alunos (id, nome_completo, turma_id, curso_id)
+        `)
+        .order("nome");
+
+      // Filtrar apenas ativos se solicitado
+      if (apenasAtivos) {
+        query = query.eq("ativo", true);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data;
+    },
+    ...defaultQueryConfig,
+  });
+}
+
+/**
+ * Hook para listar TODOS os responsáveis (ativos e inativos) - para gestão
+ */
+export function useResponsaveisAdmin() {
+  return useQuery({
+    queryKey: [...queryKeys.responsaveis.all, "admin"],
+    queryFn: async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        console.warn("useResponsaveisAdmin: Usuário não autenticado");
         return [];
       }
 
@@ -25,7 +70,6 @@ export function useResponsaveis() {
           *,
           alunos (id, nome_completo, turma_id, curso_id)
         `)
-        .eq("ativo", true)
         .order("nome");
 
       if (error) throw error;
@@ -37,7 +81,7 @@ export function useResponsaveis() {
 
 export function useResponsavel(id: string) {
   return useQuery({
-    queryKey: ["responsaveis", "detail", id],
+    queryKey: queryKeys.responsaveis.detail(id),
     queryFn: async () => {
       const { data, error } = await supabase
         .from("responsaveis")
@@ -79,7 +123,7 @@ export function useCreateResponsavel() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all });
       toast.success("Responsável cadastrado com sucesso!");
     },
     onError: (error: Error) => {
@@ -104,7 +148,8 @@ export function useUpdateResponsavel() {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.detail(variables.id) });
       toast.success("Responsável atualizado com sucesso!");
     },
     onError: (error: Error) => {
@@ -118,6 +163,7 @@ export function useDeleteResponsavel() {
 
   return useMutation({
     mutationFn: async (id: string) => {
+      // Soft delete - apenas desativa para preservar histórico
       const { error } = await supabase
         .from("responsaveis")
         .update({ ativo: false })
@@ -126,11 +172,36 @@ export function useDeleteResponsavel() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
-      toast.success("Responsável removido com sucesso!");
+      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all });
+      toast.success("Responsável desativado com sucesso!");
     },
     onError: (error: Error) => {
-      toast.error(`Erro ao remover responsável: ${error.message}`);
+      toast.error(`Erro ao desativar responsável: ${error.message}`);
+    },
+  });
+}
+
+export function useToggleResponsavelAtivo() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ativo }: { id: string; ativo: boolean }) => {
+      const { data, error } = await supabase
+        .from("responsaveis")
+        .update({ ativo })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all });
+      toast.success("Status do responsável atualizado!");
+    },
+    onError: (error: Error) => {
+      toast.error(`Erro ao atualizar status: ${error.message}`);
     },
   });
 }
