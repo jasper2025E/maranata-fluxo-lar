@@ -1,187 +1,218 @@
 
 
-# Plano: Sincronização Bidirecional Completa Sistema ↔ ASAAS
+# Plano: Sincronização Imediata e Obrigatória com ASAAS
 
 ## Objetivo
-Garantir que **TODAS** as alterações feitas no sistema reflitam automaticamente no ASAAS, eliminando a necessidade de mexer em dois lugares.
+Garantir que **toda fatura criada já nasça 100% sincronizada** com o ASAAS, incluindo PIX QR Code e código de barras do boleto. Se a sincronização falhar, a fatura **não será salva** no banco de dados.
+
+---
+
+## Problemas Identificados
+
+### 1. Criação Permite Falha Silenciosa
+Atualmente em `src/hooks/useFaturas.ts`:
+- Fatura é criada no banco ANTES de chamar ASAAS
+- Se ASAAS falhar, fatura existe mas sem dados de pagamento
+- Mostra "toast.warning" mas não reverte
+
+### 2. Geração em Lote Não Sincroniza 100%
+Nos fluxos de `src/pages/Alunos.tsx` e `src/hooks/useEnturmacao.ts`:
+- Usa `supabase.rpc("gerar_faturas_aluno")` que cria diretamente no banco
+- Depois tenta sincronizar só as próximas 3 faturas
+- Demais faturas ficam sem ASAAS
+
+### 3. Não Há Bloqueio de Download
+Em `src/components/faturas/FaturaTable.tsx` e `src/pages/Faturas.tsx`:
+- Permite baixar boleto mesmo se `asaas_pix_qrcode` ou `asaas_boleto_barcode` estiverem vazios
 
 ---
 
 ## Mudanças Propostas
 
-### 1. Cancelar Fatura → Cancelar no ASAAS
+### 1. Tornar Sincronização ASAAS Obrigatória na Criação
 
-**Problema atual:** `useCancelarFatura` só atualiza banco local, não chama o ASAAS.
+**Arquivo:** `src/hooks/useFaturas.ts`
 
-**Solução:** Integrar a Edge Function `asaas-cancel-payment` no hook de cancelamento.
-
-**Arquivos afetados:**
-- `src/hooks/useFaturas.ts` - Alterar `useCancelarFatura` para chamar `asaas-cancel-payment`
-
-**Comportamento:**
-1. Usuário cancela fatura no sistema
-2. Sistema chama `asaas-cancel-payment` (DELETE na cobrança)
-3. ASAAS marca como cancelada
-4. Banco local atualiza status para "Cancelada"
-
----
-
-### 2. Excluir Aluno → Cancelar Faturas e Cobranças
-
-**Problema atual:** Excluir aluno faz soft delete mas não cancela faturas/cobranças pendentes.
-
-**Solução:** Ao desativar aluno, cancelar automaticamente todas as faturas abertas e suas cobranças no ASAAS.
-
-**Arquivos afetados:**
-- `src/hooks/useAlunos.ts` - Alterar `useDeleteAluno` para:
-  1. Buscar faturas abertas do aluno
-  2. Para cada fatura com `asaas_payment_id`, chamar `asaas-cancel-payment`
-  3. Marcar faturas como canceladas
-  4. Fazer soft delete do aluno
-
-**Comportamento:**
-1. Usuário exclui/desativa aluno
-2. Sistema busca faturas abertas
-3. Cancela cada cobrança no ASAAS
-4. Atualiza status das faturas para "Cancelada"
-5. Desativa o aluno
-
----
-
-### 3. Atualizar Responsável → Atualizar Cliente no ASAAS
-
-**Problema atual:** Não existe função para atualizar cliente no ASAAS quando CPF/email mudam.
-
-**Solução:** Criar nova Edge Function `asaas-update-customer`.
-
-**Arquivos a criar:**
-- `supabase/functions/asaas-update-customer/index.ts`
-
-**Arquivos afetados:**
-- `src/pages/Responsaveis.tsx` - Após atualizar responsável, chamar `asaas-update-customer`
-
-**Comportamento:**
-1. Usuário edita responsável (CPF, email, telefone, nome)
-2. Sistema salva no banco
-3. Se responsável tem `asaas_customer_id`, chama `asaas-update-customer`
-4. ASAAS atualiza dados do cliente
-
----
-
-### 4. Registrar Pagamento Manual → Sincronizar com ASAAS (Opcional)
-
-**Nota:** Esta é uma funcionalidade mais complexa, pois o ASAAS normalmente detecta pagamentos automaticamente via webhook.
-
-**Recomendação:** Manter o fluxo atual onde pagamentos são detectados pelo webhook. Se você registrar pagamento manual no sistema, ele fica apenas local - o que é válido para casos excepcionais (dinheiro em mãos, por exemplo).
-
----
-
-## Resumo Visual do Fluxo
+**Mudança:** Inverter a ordem das operações:
+1. Verificar se responsável tem dados válidos para ASAAS
+2. Criar cobrança no ASAAS primeiro (com retry e validação)
+3. Aguardar confirmação de PIX + Boleto completos
+4. SÓ DEPOIS inserir fatura no banco local
+5. Se qualquer passo falhar → não salva fatura e mostra erro
 
 ```text
-┌─────────────────────────────────────────────────────────────┐
-│                    SISTEMA LOCAL                             │
-├─────────────────────────────────────────────────────────────┤
-│                                                              │
-│  [Cancelar Fatura] ──────► asaas-cancel-payment ────┐       │
-│                                                      │       │
-│  [Excluir Aluno] ─► Cancel faturas ─► asaas-cancel ─┼──►    │
-│                                                      │       │
-│  [Editar Responsável] ──► asaas-update-customer ────┼──►    │
-│                                                      │       │
-│  [Criar Fatura] ────────► asaas-create-payment ─────┼──►    │
-│                                                      │       │
-│  [Aplicar Desconto] ────► asaas-update-payment ─────┘       │
-│                                                              │
-└─────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────────────────────────────────────────────────────┐
-│                         ASAAS                                │
-├─────────────────────────────────────────────────────────────┤
-│  • Cobranças criadas/atualizadas/canceladas automaticamente │
-│  • Clientes atualizados quando dados mudam                  │
-│  • Webhook notifica sistema quando pagamento é recebido     │
-└─────────────────────────────────────────────────────────────┘
+ANTES:                           DEPOIS:
+┌─────────────────┐              ┌─────────────────┐
+│ 1. Insert local │              │ 1. Validar resp │
+│ 2. Try ASAAS    │              │ 2. ASAAS create │
+│ 3. Se falhar... │              │ 3. PIX + Boleto │
+│    warning only │              │ 4. Se OK:       │
+└─────────────────┘              │    Insert local │
+                                 │ 5. Se FALHAR:   │
+                                 │    Não salva!   │
+                                 └─────────────────┘
 ```
 
 ---
 
-## Ordem de Implementação
+### 2. Eliminar Geração de Faturas via RPC
 
-1. **Cancelar Fatura com ASAAS** (mais urgente)
-2. **Excluir Aluno cancela cobranças**
-3. **Criar Edge Function `asaas-update-customer`**
-4. **Integrar atualização de responsável**
+**Arquivos:**
+- `src/pages/Alunos.tsx`
+- `src/hooks/useEnturmacao.ts`
+
+**Mudança:** Substituir `supabase.rpc("gerar_faturas_aluno")` por loop que usa `useCreateFatura` (ou equivalente) para cada mês, garantindo que cada fatura passe pelo fluxo ASAAS.
+
+**Comportamento:**
+- Gerar 12 faturas = 12 chamadas ao ASAAS (sequenciais com feedback)
+- Se ASAAS falhar em uma, parar e informar quantas foram criadas
+- Mostrar progresso: "Criando fatura 5/12... Sincronizando com ASAAS..."
+
+---
+
+### 3. Bloquear Download de Boleto Incompleto
+
+**Arquivos:**
+- `src/components/faturas/FaturaTable.tsx`
+- `src/pages/Faturas.tsx`
+- `src/components/faturas/CarneDialog.tsx`
+
+**Mudança:** Verificar se `asaas_pix_qrcode` E `asaas_boleto_barcode` existem antes de permitir download.
+
+```typescript
+const canDownloadBoleto = (fatura: Fatura) => {
+  return !!(
+    fatura.asaas_payment_id && 
+    fatura.asaas_pix_qrcode && 
+    fatura.asaas_boleto_barcode
+  );
+};
+```
+
+Se incompleto:
+- Botão desabilitado com tooltip "Sincronizando..."
+- Tentar sincronizar automaticamente via `asaas-get-payment`
+- Após sincronizar, habilitar botão
+
+---
+
+### 4. Aguardar PIX + Boleto Completos na Criação
+
+**Arquivo:** `src/hooks/useFaturas.ts`
+
+**Mudança:** Após criar cobrança no ASAAS, fazer polling até ter QR Code PIX e código de barras:
+
+```typescript
+async function waitForPaymentData(faturaId: string, maxAttempts = 5): Promise<boolean> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    const result = await supabase.functions.invoke("asaas-get-payment", {
+      body: { faturaId }
+    });
+    
+    if (result.data?.pixQrCode && result.data?.boletoBarcode) {
+      return true; // Dados completos!
+    }
+    
+    await new Promise(r => setTimeout(r, 1500 * attempt)); // Backoff
+  }
+  
+  return false; // Timeout
+}
+```
+
+---
+
+### 5. Feedback Visual Durante Criação
+
+**Arquivo:** `src/components/faturas/CreateFaturaDialog.tsx`
+
+**Mudança:** Adicionar estados de progresso:
+- "Validando dados..."
+- "Criando cobrança no ASAAS..." (1/12)
+- "Aguardando confirmação PIX..."
+- "Aguardando código de barras..."
+- "Salvando fatura..."
+- ✅ "Fatura criada e sincronizada!"
+
+Para faturas recorrentes (12 meses):
+- Barra de progresso: "Criando fatura 5 de 12..."
+- Se falhar: "Erro na fatura 5. 4 faturas criadas com sucesso."
+
+---
+
+## Fluxo Visual Completo
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│                    CRIAR FATURA (NOVA LÓGICA)                    │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  [Usuário clica "Criar Fatura"]                                 │
+│          │                                                       │
+│          ▼                                                       │
+│  ┌───────────────────┐                                          │
+│  │ 1. Validar Resp.  │ ── Sem responsável? → ❌ Erro            │
+│  └─────────┬─────────┘                                          │
+│            │                                                     │
+│            ▼                                                     │
+│  ┌───────────────────┐                                          │
+│  │ 2. ASAAS: Criar   │                                          │
+│  │    Cobrança       │ ── Timeout/Erro? → ❌ Cancelar           │
+│  └─────────┬─────────┘                                          │
+│            │                                                     │
+│            ▼                                                     │
+│  ┌───────────────────┐                                          │
+│  │ 3. ASAAS: Buscar  │                                          │
+│  │    PIX + Boleto   │ ── Incompleto após 5x? → ❌ Cancelar     │
+│  └─────────┬─────────┘                                          │
+│            │                                                     │
+│            ▼ (PIX ✓ + Boleto ✓)                                 │
+│  ┌───────────────────┐                                          │
+│  │ 4. INSERT fatura  │                                          │
+│  │    no banco local │                                          │
+│  └─────────┬─────────┘                                          │
+│            │                                                     │
+│            ▼                                                     │
+│  ┌───────────────────┐                                          │
+│  │ ✅ Fatura criada  │                                          │
+│  │ e sincronizada!   │                                          │
+│  └───────────────────┘                                          │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Arquivos a Modificar
+
+| Arquivo | Mudança |
+|---------|---------|
+| `src/hooks/useFaturas.ts` | Reordenar: ASAAS primeiro, banco depois. Validar PIX+Boleto obrigatórios. |
+| `src/components/faturas/CreateFaturaDialog.tsx` | Adicionar feedback de progresso e estados de loading. |
+| `src/pages/Alunos.tsx` | Remover RPC direto, usar loop com sync ASAAS para cada fatura. |
+| `src/hooks/useEnturmacao.ts` | Remover RPC direto, usar loop controlado. |
+| `src/components/faturas/FaturaTable.tsx` | Bloquear botão "Baixar Boleto" se dados incompletos. |
+| `src/pages/Faturas.tsx` | Validar antes de gerar PDF/boleto. |
+| `src/components/faturas/CarneDialog.tsx` | Bloquear geração de carnê se faturas não têm dados completos. |
 
 ---
 
 ## Garantias de Segurança
 
-- Todas as alterações são **incrementais** - não afetam código existente
-- **Nenhum dado será apagado** - apenas status serão alterados
-- **API Key e configurações preservadas** - usamos as credenciais já existentes
-- **Fallback silencioso** - se ASAAS falhar, operação local continua (com aviso)
-
----
-
-## Detalhes Técnicos
-
-### Alteração em `useCancelarFatura` (useFaturas.ts):
-
-```typescript
-export function useCancelarFatura() {
-  return useMutation({
-    mutationFn: async ({ id, motivo }: { id: string; motivo: string }) => {
-      // 1. Buscar fatura para verificar se tem cobrança ASAAS
-      const { data: fatura } = await supabase
-        .from("faturas")
-        .select("asaas_payment_id")
-        .eq("id", id)
-        .single();
-      
-      // 2. Se tem cobrança ASAAS, cancelar lá primeiro
-      if (fatura?.asaas_payment_id) {
-        await supabase.functions.invoke("asaas-cancel-payment", {
-          body: { faturaId: id, motivo },
-        });
-      }
-      
-      // 3. Atualizar banco local
-      await supabase.from("faturas").update({
-        status: 'Cancelada',
-        cancelada_em: new Date().toISOString(),
-        motivo_cancelamento: motivo,
-      }).eq("id", id);
-    },
-  });
-}
-```
-
-### Nova Edge Function `asaas-update-customer`:
-
-```typescript
-// PUT /customers/{customerId}
-const updateData = {
-  name: responsavel.nome,
-  cpfCnpj: responsavel.cpf?.replace(/\D/g, ''),
-  email: responsavel.email,
-  phone: responsavel.telefone?.replace(/\D/g, ''),
-};
-
-await fetch(`${ASAAS_API_URL}/customers/${asaas_customer_id}`, {
-  method: "PUT",
-  headers: { "access_token": ASAAS_API_KEY },
-  body: JSON.stringify(updateData),
-});
-```
+- **Dados nunca serão criados incompletos** - ASAAS precisa confirmar ANTES de salvar
+- **Nenhuma configuração será alterada** - API Key, webhooks, tudo permanece igual
+- **Nenhum dado existente será apagado** - Apenas novos registros seguem a nova lógica
+- **Faturas antigas continuam funcionando** - Lógica de bloqueio só aplica a downloads
 
 ---
 
 ## Benefícios
 
-- **Zero retrabalho**: Alterar no sistema = alterar no ASAAS
-- **Dados consistentes**: Nunca haverá divergência
-- **Operação simplificada**: Um lugar só para gerenciar tudo
-- **Cobranças limpas**: Ao desativar aluno, cobranças são automaticamente canceladas
+| Antes | Depois |
+|-------|--------|
+| Fatura criada, boleto às vezes não | Fatura só existe se boleto existe |
+| Dados incompletos no banco | Dados 100% consistentes |
+| Usuário baixa boleto inválido | Boleto só aparece quando pronto |
+| Sincronização atrasada/falha | Sincronização imediata e obrigatória |
+| Mensagem de "warning" ignorada | Erro claro que impede criação |
 
