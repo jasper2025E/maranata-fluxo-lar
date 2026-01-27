@@ -415,9 +415,11 @@ export function useCreateFatura() {
       if (criarCobrancaAsaas) {
         const maxRetries = 3;
         let lastError: unknown = null;
+        let asaasSuccess = false;
         
         for (let attempt = 1; attempt <= maxRetries; attempt++) {
           try {
+            console.log(`Criando cobrança ASAAS - Tentativa ${attempt}/${maxRetries}...`);
             const { data: asaasResult, error: asaasError } = await supabase.functions.invoke("asaas-create-payment", {
               body: { faturaId: fatura.id, billingType: "UNDEFINED" },
             });
@@ -430,7 +432,8 @@ export function useCreateFatura() {
                 continue;
               }
             } else if (asaasResult?.success) {
-              console.log("Cobrança Asaas criada com sucesso:", asaasResult.payment?.id);
+              console.log("✅ Cobrança Asaas criada com sucesso:", asaasResult.payment?.id);
+              asaasSuccess = true;
               break;
             } else {
               lastError = asaasResult?.error || "Resposta inválida do Asaas";
@@ -450,19 +453,44 @@ export function useCreateFatura() {
           }
         }
         
-        if (lastError) {
-          console.error("Falha ao criar cobrança Asaas após todas as tentativas:", lastError);
-          // A fatura foi criada, mas a cobrança não - notificar mas não bloquear
-          toast.warning("Fatura criada, mas a cobrança Asaas pode estar pendente.");
+        if (lastError && !asaasSuccess) {
+          console.error("❌ Falha ao criar cobrança Asaas após todas as tentativas:", lastError);
+          toast.warning("Fatura criada, mas a cobrança ASAAS pode estar pendente. Tente sincronizar novamente.");
+        }
+
+        // Buscar fatura atualizada com dados do ASAAS para retornar dados frescos
+        if (asaasSuccess) {
+          const { data: faturaAtualizada } = await supabase
+            .from("faturas")
+            .select("*")
+            .eq("id", fatura.id)
+            .single();
+          
+          if (faturaAtualizada) {
+            console.log("Fatura atualizada com dados ASAAS:", {
+              payment_id: faturaAtualizada.asaas_payment_id,
+              pix: !!faturaAtualizada.asaas_pix_qrcode,
+              boleto: !!faturaAtualizada.asaas_boleto_barcode,
+            });
+            return faturaAtualizada;
+          }
         }
       }
 
       return fatura;
     },
-    onSuccess: () => {
+    onSuccess: (faturaRetornada) => {
+      // Forçar refetch imediato para garantir dados ASAAS visíveis
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list() });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
-      toast.success("Fatura criada com sucesso!");
+      
+      const hasAsaas = !!faturaRetornada?.asaas_payment_id;
+      if (hasAsaas) {
+        toast.success("Fatura criada e sincronizada com ASAAS!");
+      } else {
+        toast.success("Fatura criada com sucesso!");
+      }
     },
     onError: (error: Error) => {
       toast.error(`Erro ao criar fatura: ${error.message}`);
