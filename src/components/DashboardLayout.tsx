@@ -117,19 +117,19 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           
           {/* Premium Header */}
           <header className="h-16 border-b border-border/50 bg-card/95 backdrop-blur-sm flex items-center justify-between px-6 sticky top-0 z-10">
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 flex-shrink-0">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
               
               <GlobalSearch />
             </div>
 
-            <div className="flex items-center gap-3">
-              {/* Biblical Verse - responsive, adapts to available space */}
+            {/* Biblical Verse - centered */}
+            <div className="hidden xl:flex flex-1 justify-center px-4">
               <TooltipProvider delayDuration={200}>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <div className="hidden xl:flex items-center px-3 py-1.5 rounded-xl bg-primary/5 border border-primary/10 cursor-default min-w-0 flex-shrink">
-                      <p className="text-xs text-muted-foreground truncate italic min-w-0">
+                    <div className="flex items-center px-4 py-1.5 rounded-xl bg-primary/5 border border-primary/10 cursor-default max-w-md">
+                      <p className="text-xs text-muted-foreground truncate italic">
                         "{dailyVerse.text}"
                       </p>
                     </div>
@@ -140,8 +140,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+            </div>
 
-              {/* Language Selector - disabled for single-language system */}
+            <div className="flex items-center gap-3 flex-shrink-0">
               <LanguageSelector />
 
               {/* Notifications */}
