@@ -51,7 +51,7 @@ import {
 } from "@/hooks/useFaturas";
 import { syncFaturaAsaasData, createAsaasPaymentWithFullSync } from "@/hooks/useFaturaAsaasSync";
 import { generateFaturaPDF, generateReciboPDF } from "@/lib/pdfGenerator";
-import { generateBoletoForFatura } from "@/lib/boletoGenerator";
+import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
 import { toast } from "sonner";
 
 type ViewMode = "list" | "status" | "aluno" | "mes";
@@ -281,7 +281,19 @@ const Faturas = () => {
       return;
     }
     try {
-      await generateBoletoForFatura(fatura, escola);
+      // Usar o gerador compacto (3 por A4)
+      await generateCarneCompacto(
+        [fatura],
+        {
+          nome: escola.nome,
+          cnpj: escola.cnpj,
+          endereco: escola.endereco,
+          telefone: escola.telefone,
+          email: escola.email,
+          logo_url: escola.logo_url,
+        },
+        fatura.responsaveis ? { nome: fatura.responsaveis.nome, cpf: null } : null
+      );
       toast.success("Boleto gerado com sucesso!");
     } catch (error) {
       console.error("Erro ao gerar boleto:", error);
@@ -411,47 +423,6 @@ const Faturas = () => {
             
           </div>
           <div className="flex gap-2">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="gap-2">
-                  <Printer className="h-4 w-4" />
-                  {t("invoices.printCarne")}
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                  Opções de impressão
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => setIsCarneOpen(true)} className="gap-2 cursor-pointer">
-                  <Users className="h-4 w-4" />
-                  Por Responsável
-                  <span className="ml-auto text-xs text-muted-foreground">Selecionar</span>
-                </DropdownMenuItem>
-                {selectedFaturasIds.size > 0 && (
-                  <DropdownMenuItem 
-                    onClick={() => {
-                      toast.info(`Gerando carnê para ${selectedFaturasIds.size} faturas selecionadas...`);
-                    }} 
-                    className="gap-2 cursor-pointer"
-                  >
-                    <FileText className="h-4 w-4" />
-                    Faturas Selecionadas
-                    <span className="ml-auto text-xs font-medium text-primary">{selectedFaturasIds.size}</span>
-                  </DropdownMenuItem>
-                )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  onClick={() => {
-                    toast.info("Exportando relatório de faturas...");
-                  }}
-                  className="gap-2 cursor-pointer"
-                >
-                  <Download className="h-4 w-4" />
-                  Exportar Relatório
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
             <Button 
               variant="outline" 
               size="sm" 

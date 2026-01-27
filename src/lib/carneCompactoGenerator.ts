@@ -242,21 +242,36 @@ function drawCompactCarne(
   if (fatura.asaas_pix_qrcode) {
     // PIX label
     doc.setFillColor(240, 253, 244);
-    doc.roundedRect(qrX - 2, qrY - 3, qrSize + 4, qrSize + 10, 2, 2, 'F');
+    doc.roundedRect(qrX - 2, qrY - 3, qrSize + 4, qrSize + 18, 2, 2, 'F');
     
     doc.setFontSize(5);
     doc.setTextColor(...PIX_GREEN);
     doc.setFont("helvetica", "bold");
-    doc.text("Pagar via PIX", qrX + qrSize/2 - 6, qrY);
+    doc.text("Pagar via PIX", qrX + qrSize/2, qrY, { align: "center" });
     
     try {
-      const qrCodeData = fatura.asaas_pix_qrcode.startsWith('data:') 
-        ? fatura.asaas_pix_qrcode 
-        : `data:image/png;base64,${fatura.asaas_pix_qrcode}`;
+      // Garantir formato correto do base64
+      let qrCodeData = fatura.asaas_pix_qrcode;
+      if (!qrCodeData.startsWith('data:')) {
+        qrCodeData = `data:image/png;base64,${qrCodeData}`;
+      }
       doc.addImage(qrCodeData, 'PNG', qrX, qrY + 2, qrSize, qrSize);
-    } catch {
+    } catch (error) {
+      console.error('Erro ao renderizar QR Code:', error);
       doc.setDrawColor(...MUTED_COLOR);
       doc.rect(qrX, qrY + 2, qrSize, qrSize);
+      doc.setFontSize(4);
+      doc.setTextColor(...MUTED_COLOR);
+      doc.text("QR indisponível", qrX + qrSize/2, qrY + qrSize/2 + 2, { align: "center" });
+    }
+    
+    // PIX Copia e Cola (truncated)
+    if (fatura.asaas_pix_payload) {
+      doc.setFontSize(3);
+      doc.setTextColor(...PIX_GREEN);
+      doc.setFont("helvetica", "normal");
+      const pixTruncated = fatura.asaas_pix_payload.substring(0, 30) + "...";
+      doc.text(pixTruncated, qrX + qrSize/2, qrY + qrSize + 6, { align: "center" });
     }
   }
   
@@ -276,26 +291,32 @@ function drawCompactCarne(
     doc.text(escola.endereco.substring(0, 60), midX, midY + 8);
   }
   
-  // Barcode area
-  midY = yOffset + COMPACT_HEIGHT - 18;
+  // Barcode area - Linha digitável do boleto
+  midY = yOffset + COMPACT_HEIGHT - 20;
   
   if (fatura.asaas_boleto_barcode) {
-    // Simulated barcode representation
-    doc.setFillColor(0, 0, 0);
-    const barcodeWidth = middleColWidth - 10;
-    const barcodeHeight = 10;
-    const barcodeX = midX;
+    // Background para linha digitável
+    doc.setFillColor(255, 251, 235); // Amarelo claro
+    doc.roundedRect(midX - 2, midY - 2, middleColWidth - 6, 16, 1, 1, 'F');
     
-    // Draw barcode pattern
-    for (let i = 0; i < 60; i++) {
-      const barWidth = (i % 3 === 0) ? 1.5 : 0.8;
-      doc.rect(barcodeX + i * 1.5, midY, barWidth, barcodeHeight, 'F');
-    }
+    // Label
+    doc.setFontSize(4);
+    doc.setTextColor(146, 64, 14);
+    doc.setFont("helvetica", "bold");
+    doc.text("LINHA DIGITÁVEL DO BOLETO", midX, midY + 2);
     
-    // Barcode number
+    // Código de barras (linha digitável)
     doc.setFontSize(5);
     doc.setTextColor(...DARK_COLOR);
-    doc.text(fatura.asaas_boleto_barcode.substring(0, 50), midX, midY + 14);
+    doc.setFont("courier", "normal");
+    // Quebrar em duas linhas se necessário
+    const barcode = fatura.asaas_boleto_barcode;
+    if (barcode.length > 47) {
+      doc.text(barcode.substring(0, 47), midX, midY + 7);
+      doc.text(barcode.substring(47), midX, midY + 11);
+    } else {
+      doc.text(barcode, midX, midY + 8);
+    }
   }
   
   // ========== RIGHT COLUMN (Canhoto) ==========
