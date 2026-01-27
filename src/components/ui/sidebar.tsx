@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Slot } from "@radix-ui/react-slot";
 import { VariantProps, cva } from "class-variance-authority";
-import { PanelLeft, ChevronLeft, ChevronRight } from "lucide-react";
+import { PanelLeft, ChevronLeft, ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
@@ -344,16 +344,120 @@ const SidebarSeparator = React.forwardRef<React.ElementRef<typeof Separator>, Re
 SidebarSeparator.displayName = "SidebarSeparator";
 
 const SidebarContent = React.forwardRef<HTMLDivElement, React.ComponentProps<"div">>(({ className, ...props }, ref) => {
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+  const [showScrollUp, setShowScrollUp] = React.useState(false);
+  const [showScrollDown, setShowScrollDown] = React.useState(false);
+
+  const checkScroll = React.useCallback(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    const { scrollTop, scrollHeight, clientHeight } = container;
+    setShowScrollUp(scrollTop > 20);
+    setShowScrollDown(scrollTop < scrollHeight - clientHeight - 20);
+  }, []);
+
+  React.useEffect(() => {
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    
+    checkScroll();
+    container.addEventListener("scroll", checkScroll);
+    
+    // Also check on resize
+    const resizeObserver = new ResizeObserver(checkScroll);
+    resizeObserver.observe(container);
+    
+    return () => {
+      container.removeEventListener("scroll", checkScroll);
+      resizeObserver.disconnect();
+    };
+  }, [checkScroll]);
+
+  const scrollUp = () => {
+    scrollContainerRef.current?.scrollBy({ top: -150, behavior: "smooth" });
+  };
+
+  const scrollDown = () => {
+    scrollContainerRef.current?.scrollBy({ top: 150, behavior: "smooth" });
+  };
+
   return (
-    <div
-      ref={ref}
-      data-sidebar="content"
-      className={cn(
-        "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
-        className,
-      )}
-      {...props}
-    />
+    <div ref={ref} className="relative flex min-h-0 flex-1 flex-col">
+      {/* Scroll Up Button */}
+      <button
+        type="button"
+        onClick={scrollUp}
+        aria-label="Scroll up"
+        className={cn(
+          "absolute top-0 left-0 right-0 z-20 flex items-center justify-center",
+          "h-10 bg-gradient-to-b from-sidebar via-sidebar/95 to-transparent",
+          "transition-all duration-300 ease-out",
+          "group/scroll-btn",
+          showScrollUp 
+            ? "opacity-100 pointer-events-auto" 
+            : "opacity-0 pointer-events-none"
+        )}
+      >
+        <div className={cn(
+          "flex items-center justify-center",
+          "h-7 w-7 rounded-full",
+          "bg-sidebar-accent/80 backdrop-blur-sm",
+          "border border-sidebar-border/50",
+          "shadow-md shadow-black/10",
+          "text-sidebar-foreground/70",
+          "transition-all duration-200 ease-out",
+          "group-hover/scroll-btn:bg-sidebar-primary group-hover/scroll-btn:text-sidebar-primary-foreground",
+          "group-hover/scroll-btn:scale-110 group-hover/scroll-btn:shadow-lg",
+          "group-active/scroll-btn:scale-95"
+        )}>
+          <ChevronUp className="h-4 w-4" strokeWidth={2.5} />
+        </div>
+      </button>
+
+      {/* Scrollable Content */}
+      <div
+        ref={scrollContainerRef}
+        data-sidebar="content"
+        className={cn(
+          "flex min-h-0 flex-1 flex-col gap-2 overflow-auto group-data-[collapsible=icon]:overflow-hidden transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)]",
+          "scrollbar-thin",
+          className,
+        )}
+        {...props}
+      />
+
+      {/* Scroll Down Button */}
+      <button
+        type="button"
+        onClick={scrollDown}
+        aria-label="Scroll down"
+        className={cn(
+          "absolute bottom-0 left-0 right-0 z-20 flex items-center justify-center",
+          "h-10 bg-gradient-to-t from-sidebar via-sidebar/95 to-transparent",
+          "transition-all duration-300 ease-out",
+          "group/scroll-btn",
+          showScrollDown 
+            ? "opacity-100 pointer-events-auto" 
+            : "opacity-0 pointer-events-none"
+        )}
+      >
+        <div className={cn(
+          "flex items-center justify-center",
+          "h-7 w-7 rounded-full",
+          "bg-sidebar-accent/80 backdrop-blur-sm",
+          "border border-sidebar-border/50",
+          "shadow-md shadow-black/10",
+          "text-sidebar-foreground/70",
+          "transition-all duration-200 ease-out",
+          "group-hover/scroll-btn:bg-sidebar-primary group-hover/scroll-btn:text-sidebar-primary-foreground",
+          "group-hover/scroll-btn:scale-110 group-hover/scroll-btn:shadow-lg",
+          "group-active/scroll-btn:scale-95"
+        )}>
+          <ChevronDown className="h-4 w-4" strokeWidth={2.5} />
+        </div>
+      </button>
+    </div>
   );
 });
 SidebarContent.displayName = "SidebarContent";
