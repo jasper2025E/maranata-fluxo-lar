@@ -1,132 +1,155 @@
 
-# Proteção do Proprietário do Sistema
+# Plano: Corrigir Geração de Boletos com QR Code e Desvinculação da Matrícula
 
-## Objetivo
-Proteger a conta do proprietário do sistema (`victordbvtey@outlook.com`) contra exclusão ou alterações de permissão por qualquer outro usuário, incluindo outros administradores.
+## Problema Identificado
 
----
+1. **QR Code/Código de Barras sumindo**: Ao gerar uma cobrança Asaas, o sistema chama a API corretamente, mas há cenários onde os dados de PIX/Boleto não são salvos ou exibidos no carnê gerado.
 
-## Dados do Proprietário
+2. **Faturamento automático na matrícula**: Atualmente, ao cadastrar ou enturmar um aluno, o sistema gera faturas automaticamente usando a mensalidade do curso. Você quer poder criar faturas manualmente depois, com valores personalizados.
 
-| Campo | Valor |
-|-------|-------|
-| Email | victordbvtey@outlook.com |
-| User ID | 464496d1-ed66-4f03-8f86-38b3f148bf5a |
-| Nome | Victor Mendys |
+3. **Famílias com múltiplos alunos**: Quer gerar faturas separadas por aluno com possibilidade de aplicar descontos (ex: segundo filho com 50% off).
 
 ---
 
-## Implementação
+## Mudanças Propostas
 
-### 1. Proteção no Backend (Edge Function)
+### 1. Desabilitar Geração Automática de Faturas na Matrícula
 
-Atualizar `supabase/functions/admin-manage-users/index.ts` para bloquear operações contra o proprietário:
+**Arquivos afetados:**
+- `src/pages/Alunos.tsx` - Remover a lógica de `gerar_faturas_aluno` no `createMutation.onSuccess`
+- `src/hooks/useEnturmacao.ts` - Alterar o padrão `gerarFaturas = false`
+
+**O que será feito:**
+- Remover a chamada automática para gerar faturas quando um aluno é criado
+- Alterar o hook `useEnturmar` para NÃO gerar faturas por padrão
+- Manter os campos de configuração (dia_vencimento, quantidade_parcelas) no cadastro do aluno para uso futuro quando você decidir gerar faturas manualmente
+
+**Resultado:** Ao cadastrar/enturmar aluno, apenas os dados são salvos. Você vai em Faturas → Nova Fatura e cria manualmente com o valor desejado.
+
+---
+
+### 2. Garantir QR Code PIX + Código de Barras do Boleto
+
+**Arquivos afetados:**
+- `supabase/functions/asaas-create-payment/index.ts` - Ajustar para sempre buscar ambos (PIX + Boleto)
+- `src/lib/carneCompactoGenerator.ts` - Verificar se exibe corretamente quando há dados
+- `src/components/faturas/CarneDialog.tsx` - Forçar atualização dos dados antes de gerar o PDF
+
+**O que será feito:**
+
+a) **Edge Function `asaas-create-payment`:**
+   - Forçar `billingType: "UNDEFINED"` para que o Asaas gere tanto PIX quanto Boleto
+   - Adicionar logs para debug se a API não retornar QR Code
+   - Garantir que os campos `asaas_pix_qrcode`, `asaas_pix_payload`, `asaas_boleto_barcode`, `asaas_boleto_url` sejam salvos
+
+b) **Geração do Carnê:**
+   - Antes de gerar o PDF, chamar `asaas-get-payment` para garantir dados atualizados
+   - Se não houver QR Code/barcode, exibir aviso ao usuário
+
+c) **Fallback de segurança:**
+   - Se a fatura não tiver dados Asaas, tentar buscar novamente via API antes de imprimir
+
+---
+
+### 3. Fluxo de Trabalho Simplificado Proposto
+
+```
+1. Cadastrar Aluno → Apenas salva dados, NÃO gera faturas
+2. (Opcional) Enturmar Aluno → Apenas vincula à turma, NÃO gera faturas
+3. Ir em Faturas → Nova Fatura:
+   - Selecionar aluno
+   - Definir valor desejado (pode ser R$ 0 para um irmão)
+   - Sistema gera automaticamente a cobrança Asaas com PIX + Boleto
+4. Imprimir Carnê → Sempre terá QR Code + linha digitável
+```
+
+---
+
+## Detalhes Técnicos
+
+### Alterações no `src/pages/Alunos.tsx`:
 
 ```typescript
-// Definir constante do proprietário do sistema
-const SYSTEM_OWNER_EMAIL = "victordbvtey@outlook.com";
+// ANTES (onSuccess do createMutation):
+void (async () => {
+  await supabase.rpc("gerar_faturas_aluno", { ... });
+  // Criar cobranças Asaas...
+})();
 
-// Na ação "delete" - bloquear exclusão do proprietário
-if (action === "delete") {
-  // Buscar email do usuário alvo
-  const { data: targetUser } = await supabaseAdmin.auth.admin.getUserById(userId);
-  
-  if (targetUser?.user?.email === SYSTEM_OWNER_EMAIL) {
-    return new Response(
-      JSON.stringify({ error: "O proprietário do sistema não pode ser excluído" }),
-      { status: 403 }
-    );
-  }
-}
-
-// Na ação "update" - bloquear mudança de role do proprietário
-if (action === "update" && role) {
-  const { data: targetUser } = await supabaseAdmin.auth.admin.getUserById(userId);
-  
-  if (targetUser?.user?.email === SYSTEM_OWNER_EMAIL) {
-    return new Response(
-      JSON.stringify({ error: "As permissões do proprietário do sistema não podem ser alteradas" }),
-      { status: 403 }
-    );
-  }
-}
+// DEPOIS:
+// Remover todo esse bloco - apenas salvar o aluno, sem gerar faturas
 ```
 
-### 2. Proteção no Frontend
-
-Atualizar `src/components/config/UserManagementTab.tsx` para:
-
-1. Ocultar botão "Excluir" para o proprietário
-2. Desabilitar edição de role para o proprietário
-3. Mostrar badge especial "Proprietário" 
+### Alterações no `src/hooks/useEnturmacao.ts`:
 
 ```typescript
-// Constante do proprietário
-const SYSTEM_OWNER_EMAIL = "victordbvtey@outlook.com";
+// ANTES:
+gerarFaturas = true
 
-// Verificar se é o proprietário
-const isSystemOwner = (email: string) => email === SYSTEM_OWNER_EMAIL;
+// DEPOIS:
+gerarFaturas = false
+```
 
-// No render do usuário:
-{!isSystemOwner(user.email) && user.id !== currentUser?.id && (
-  <AlertDialog>... botão excluir ...</AlertDialog>
-)}
+### Alterações no `supabase/functions/asaas-create-payment/index.ts`:
 
-// Badge especial para o proprietário
-{isSystemOwner(user.email) && (
-  <Badge className="bg-amber-500 text-white">
-    <Shield className="h-3 w-3 mr-1" />
-    Proprietário
-  </Badge>
-)}
+```typescript
+// Garantir que sempre busca PIX + Boleto
+if (pixResponse.ok) {
+  const pixData = await pixResponse.json();
+  pixQrCode = pixData.encodedImage;
+  pixPayload = pixData.payload;
+  console.log("PIX QR Code obtido:", !!pixQrCode); // Log para debug
+} else {
+  console.error("Falha ao obter PIX QR Code:", await pixResponse.text());
+}
+
+// Mesmo tratamento para boleto
+if (boletoResponse.ok) {
+  const boletoData = await boletoResponse.json();
+  boletoBarcode = boletoData.identificationField;
+  console.log("Boleto barcode obtido:", !!boletoBarcode);
+} else {
+  console.error("Falha ao obter barcode do boleto:", await boletoResponse.text());
+}
+```
+
+### Alterações no `src/components/faturas/CarneDialog.tsx`:
+
+```typescript
+// Antes de gerar o PDF, garantir dados atualizados
+const handleGenerateCarne = async () => {
+  // ... código existente ...
+  
+  // ADICIONAR: Para faturas que têm asaas_payment_id mas não têm QR/barcode,
+  // buscar dados atualizados via edge function
+  for (const fatura of faturasParaImprimir) {
+    if (fatura.asaas_payment_id && (!fatura.asaas_pix_qrcode || !fatura.asaas_boleto_barcode)) {
+      await supabase.functions.invoke("asaas-get-payment", {
+        body: { faturaId: fatura.id }
+      });
+    }
+  }
+  
+  // Buscar dados atualizados novamente
+  await refetchFaturas();
+  // ... continuar com geração do PDF ...
+}
 ```
 
 ---
 
-## Diagrama de Proteção
+## Benefícios
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│                  ADMIN-MANAGE-USERS                         │
-├─────────────────────────────────────────────────────────────┤
-│                                                             │
-│  Ação: DELETE                                               │
-│    ├── userId == currentUser? → "Não pode se excluir"       │
-│    ├── email == SYSTEM_OWNER? → "Proprietário protegido" ✨ │
-│    └── else → Executar exclusão                             │
-│                                                             │
-│  Ação: UPDATE (com role)                                    │
-│    ├── email == SYSTEM_OWNER? → "Não pode alterar role" ✨  │
-│    └── else → Executar atualização                          │
-│                                                             │
-└─────────────────────────────────────────────────────────────┘
-```
+1. **Controle total sobre valores**: Você define o valor de cada fatura manualmente
+2. **Flexibilidade para famílias**: Pode criar fatura de R$ 0 para um aluno e valor cheio para outro
+3. **Boletos sempre completos**: PIX + código de barras garantidos
+4. **Fluxo simplificado**: Cadastro rápido, faturamento quando você quiser
 
 ---
 
-## Arquivos a Modificar
+## Ordem de Implementação
 
-| Arquivo | Modificação |
-|---------|-------------|
-| `supabase/functions/admin-manage-users/index.ts` | Adicionar verificações de proteção do proprietário |
-| `src/components/config/UserManagementTab.tsx` | Ocultar ações de exclusão/edição de role para o proprietário |
-
----
-
-## Comportamento Final
-
-| Usuário | Pode Excluir Victor? | Pode Alterar Role de Victor? | Pode Editar Nome/Senha de Victor? |
-|---------|---------------------|------------------------------|-----------------------------------|
-| Outro Admin | Não | Não | Não (protegido) |
-| Victor (ele mesmo) | Não | Não | Sim (próprio perfil) |
-
----
-
-## Segurança
-
-A proteção é implementada em **duas camadas**:
-
-1. **Backend (Edge Function)**: Proteção obrigatória - mesmo que alguém tente burlar o frontend, o backend bloqueará
-2. **Frontend (UI)**: Experiência do usuário - oculta botões para evitar confusão
-
-Isso garante que mesmo se alguém manipular requisições diretamente, a conta do proprietário estará protegida.
+1. Desativar geração automática na matrícula/enturmação
+2. Melhorar logs e tratamento de erros na Edge Function
+3. Adicionar verificação de dados Asaas antes de gerar carnê
+4. Testar fluxo completo: cadastrar → criar fatura manual → gerar carnê
