@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateFaturaPDF, generateReciboPDF } from "@/lib/pdfGenerator";
 import { generateCarneFatura } from "@/lib/carneGenerator";
+import { generateBoletoForFatura } from "@/lib/boletoGenerator";
 import { toast } from "sonner";
 import {
   Fatura,
@@ -719,6 +720,7 @@ function EdicaoTab({ fatura, isEditable }: { fatura: Fatura; isEditable: boolean
 export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: FaturaDetailsProps) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isGeneratingCarne, setIsGeneratingCarne] = useState(false);
+  const [isGeneratingBoleto, setIsGeneratingBoleto] = useState(false);
   
   // Buscar fatura atualizada internamente para refletir mudanças em tempo real
   const { data: faturaAtualizada } = useQuery({
@@ -819,6 +821,23 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
     }
   };
 
+  const handleDownloadBoleto = async () => {
+    if (!escola) {
+      toast.error("Dados da escola não encontrados");
+      return;
+    }
+    setIsGeneratingBoleto(true);
+    try {
+      await generateBoletoForFatura(fatura, escola);
+      toast.success("Boleto profissional gerado!");
+    } catch (error) {
+      console.error("Erro ao gerar boleto:", error);
+      toast.error("Erro ao gerar boleto");
+    } finally {
+      setIsGeneratingBoleto(false);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
@@ -836,6 +855,21 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
             <Button 
               variant="outline" 
               size="sm" 
+              onClick={handleDownloadBoleto}
+              disabled={isGeneratingBoleto}
+              className="gap-2"
+              title="Boleto padrão bancário com PIX"
+            >
+              {isGeneratingBoleto ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <FileDown className="h-4 w-4" />
+              )}
+              <span className="hidden sm:inline">Boleto</span>
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
               onClick={handleDownloadCarne}
               disabled={isGeneratingCarne}
               className="gap-2"
@@ -846,7 +880,7 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
               ) : (
                 <Printer className="h-4 w-4" />
               )}
-              <span className="hidden sm:inline">Imprimir Fatura</span>
+              <span className="hidden sm:inline">Carnê</span>
             </Button>
             <Button 
               variant="outline" 
@@ -860,7 +894,7 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
               ) : (
                 <Download className="h-4 w-4" />
               )}
-              <span className="hidden sm:inline">Baixar PDF</span>
+              <span className="hidden sm:inline">PDF</span>
             </Button>
           </div>
         </DialogHeader>
