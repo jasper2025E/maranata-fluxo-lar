@@ -39,8 +39,7 @@ import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateFaturaPDF, generateReciboPDF } from "@/lib/pdfGenerator";
-import { generateCarneFatura } from "@/lib/carneGenerator";
-import { generateBoletoForFatura } from "@/lib/boletoGenerator";
+import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
 import { toast } from "sonner";
 import {
   Fatura,
@@ -797,8 +796,20 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
         responsavelData = data;
       }
       
-      await generateCarneFatura(fatura, escola, responsavelData);
-      toast.success("Carnê gerado com sucesso!");
+      // Usar gerador compacto (3 por A4)
+      await generateCarneCompacto(
+        [fatura],
+        {
+          nome: escola.nome,
+          cnpj: escola.cnpj,
+          endereco: escola.endereco,
+          telefone: escola.telefone,
+          email: escola.email,
+          logo_url: escola.logo_url,
+        },
+        responsavelData
+      );
+      toast.success("Carnê gerado com sucesso (3 por página A4)!");
     } catch (error) {
       toast.error("Erro ao gerar carnê");
     } finally {
@@ -829,8 +840,31 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
     }
     setIsGeneratingBoleto(true);
     try {
-      await generateBoletoForFatura(fatura, escola);
-      toast.success("Boleto profissional gerado!");
+      // Buscar CPF do responsável
+      let responsavelData = null;
+      if (fatura.responsavel_id) {
+        const { data } = await supabase
+          .from("responsaveis")
+          .select("nome, cpf")
+          .eq("id", fatura.responsavel_id)
+          .maybeSingle();
+        responsavelData = data;
+      }
+      
+      // Usar gerador compacto (3 por A4)
+      await generateCarneCompacto(
+        [fatura],
+        {
+          nome: escola.nome,
+          cnpj: escola.cnpj,
+          endereco: escola.endereco,
+          telefone: escola.telefone,
+          email: escola.email,
+          logo_url: escola.logo_url,
+        },
+        responsavelData
+      );
+      toast.success("Boleto gerado (3 por página A4)!");
     } catch (error) {
       console.error("Erro ao gerar boleto:", error);
       toast.error("Erro ao gerar boleto");
