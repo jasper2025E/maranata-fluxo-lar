@@ -30,6 +30,7 @@ import {
   queryKeys,
   Fatura 
 } from "@/hooks/useFaturas";
+import { syncFaturaAsaasData, createAsaasPaymentWithFullSync } from "@/hooks/useFaturaAsaasSync";
 import { generateFaturaPDF, generateReciboPDF } from "@/lib/pdfGenerator";
 import { generateBoletoForFatura } from "@/lib/boletoGenerator";
 import { toast } from "sonner";
@@ -267,6 +268,38 @@ const Faturas = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
   };
 
+  const handleSyncAsaas = async (fatura: Fatura) => {
+    const toastId = toast.loading("Sincronizando com ASAAS...");
+    
+    try {
+      // Se já tem asaas_payment_id, só buscar dados atualizados
+      if (fatura.asaas_payment_id) {
+        const result = await syncFaturaAsaasData(fatura.id);
+        
+        if (result.success) {
+          toast.success("Fatura sincronizada com sucesso!", { id: toastId });
+          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+        } else {
+          toast.error(result.error || "Erro ao sincronizar", { id: toastId });
+        }
+      } else {
+        // Criar cobrança no ASAAS e aguardar dados completos
+        const result = await createAsaasPaymentWithFullSync(fatura.id, 5, (step) => {
+          toast.loading(step, { id: toastId });
+        });
+        
+        if (result.success) {
+          toast.success("Cobrança criada e sincronizada com ASAAS!", { id: toastId });
+          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+        } else {
+          toast.error(result.error || "Erro ao criar cobrança no ASAAS", { id: toastId });
+        }
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Erro inesperado ao sincronizar", { id: toastId });
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -372,6 +405,7 @@ const Faturas = () => {
           onAsaasPayment={handleAsaasPayment}
           onDownloadReceipt={handleDownloadReceipt}
           onDownloadBoleto={handleDownloadBoleto}
+          onSyncAsaas={handleSyncAsaas}
           selectedFaturas={selectedFaturasIds}
           onSelectionChange={setSelectedFaturasIds}
         />

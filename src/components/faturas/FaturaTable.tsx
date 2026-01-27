@@ -38,6 +38,7 @@ import {
   Download,
   QrCode,
   FileBarChart,
+  RefreshCw,
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -61,6 +62,7 @@ interface FaturaTableProps {
   onAsaasPayment?: (fatura: Fatura) => void;
   onDownloadReceipt?: (fatura: Fatura) => void;
   onDownloadBoleto?: (fatura: Fatura) => void;
+  onSyncAsaas?: (fatura: Fatura) => void;
   selectedFaturas?: Set<string>;
   onSelectionChange?: (selected: Set<string>) => void;
 }
@@ -111,6 +113,7 @@ function FaturaRow({
   onAsaasPayment,
   onDownloadReceipt,
   onDownloadBoleto,
+  onSyncAsaas,
   isSelected,
   onToggleSelect,
 }: {
@@ -127,6 +130,7 @@ function FaturaRow({
   onAsaasPayment?: (fatura: Fatura) => void;
   onDownloadReceipt?: (fatura: Fatura) => void;
   onDownloadBoleto?: (fatura: Fatura) => void;
+  onSyncAsaas?: (fatura: Fatura) => void;
   isSelected?: boolean;
   onToggleSelect?: (faturaId: string) => void;
 }) {
@@ -229,6 +233,11 @@ function FaturaRow({
                 <FileBarChart className="h-4 w-4 mr-2" />Sincronizando dados...
               </DropdownMenuItem>
             )}
+            {onSyncAsaas && fatura.status !== 'Cancelada' && fatura.status !== 'Paga' && (
+              <DropdownMenuItem onClick={() => onSyncAsaas(fatura)} className="text-primary">
+                <RefreshCw className="h-4 w-4 mr-2" />Sincronizar com ASAAS
+              </DropdownMenuItem>
+            )}
             {!fatura.bloqueada && fatura.status !== 'Paga' && (
               <DropdownMenuItem onClick={() => onEdit(fatura)}>
                 <Pencil className="h-4 w-4 mr-2" />Editar
@@ -295,6 +304,7 @@ export function FaturaTable({
   onAsaasPayment,
   onDownloadReceipt,
   onDownloadBoleto,
+  onSyncAsaas,
   selectedFaturas,
   onSelectionChange,
 }: FaturaTableProps) {
@@ -364,6 +374,7 @@ export function FaturaTable({
   const rowProps = { 
     onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, 
     onSendReceipt, onViewHistory, onDownloadPDF, onAsaasPayment, onDownloadReceipt, onDownloadBoleto,
+    onSyncAsaas,
     onToggleSelect: onSelectionChange ? handleToggleSelect : undefined,
   };
 
