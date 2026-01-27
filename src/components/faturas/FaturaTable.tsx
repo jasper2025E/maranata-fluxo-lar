@@ -37,6 +37,7 @@ import {
   History,
   Download,
   QrCode,
+  FileBarChart,
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,7 @@ interface FaturaTableProps {
   onDownloadPDF?: (fatura: Fatura) => void;
   onAsaasPayment?: (fatura: Fatura) => void;
   onDownloadReceipt?: (fatura: Fatura) => void;
+  onDownloadBoleto?: (fatura: Fatura) => void;
   selectedFaturas?: Set<string>;
   onSelectionChange?: (selected: Set<string>) => void;
 }
@@ -108,6 +110,7 @@ function FaturaRow({
   onDownloadPDF,
   onAsaasPayment,
   onDownloadReceipt,
+  onDownloadBoleto,
   isSelected,
   onToggleSelect,
 }: {
@@ -123,6 +126,7 @@ function FaturaRow({
   onDownloadPDF?: (fatura: Fatura) => void;
   onAsaasPayment?: (fatura: Fatura) => void;
   onDownloadReceipt?: (fatura: Fatura) => void;
+  onDownloadBoleto?: (fatura: Fatura) => void;
   isSelected?: boolean;
   onToggleSelect?: (faturaId: string) => void;
 }) {
@@ -187,7 +191,7 @@ function FaturaRow({
             {statusConfig.label}
           </Badge>
           {fatura.asaas_payment_id && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-emerald-500/10 text-emerald-600 border-emerald-500/20">
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-success/10 text-success border-success/20">
               Asaas
             </Badge>
           )}
@@ -215,6 +219,11 @@ function FaturaRow({
                 <Download className="h-4 w-4 mr-2" />Baixar PDF
               </DropdownMenuItem>
             )}
+            {onDownloadBoleto && fatura.asaas_payment_id && (
+              <DropdownMenuItem onClick={() => onDownloadBoleto(fatura)}>
+                <FileBarChart className="h-4 w-4 mr-2" />Baixar Boleto
+              </DropdownMenuItem>
+            )}
             {!fatura.bloqueada && fatura.status !== 'Paga' && (
               <DropdownMenuItem onClick={() => onEdit(fatura)}>
                 <Pencil className="h-4 w-4 mr-2" />Editar
@@ -224,7 +233,7 @@ function FaturaRow({
               <>
                 <DropdownMenuSeparator />
                 {onAsaasPayment && (
-                  <DropdownMenuItem onClick={() => onAsaasPayment(fatura)} className="text-emerald-600">
+                  <DropdownMenuItem onClick={() => onAsaasPayment(fatura)} className="text-success">
                     <QrCode className="h-4 w-4 mr-2" />
                     {fatura.asaas_payment_id ? "Ver cobrança Asaas" : "Gerar PIX/Boleto"}
                   </DropdownMenuItem>
@@ -280,6 +289,7 @@ export function FaturaTable({
   onDownloadPDF,
   onAsaasPayment,
   onDownloadReceipt,
+  onDownloadBoleto,
   selectedFaturas,
   onSelectionChange,
 }: FaturaTableProps) {
@@ -348,7 +358,7 @@ export function FaturaTable({
 
   const rowProps = { 
     onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, 
-    onSendReceipt, onViewHistory, onDownloadPDF, onAsaasPayment, onDownloadReceipt,
+    onSendReceipt, onViewHistory, onDownloadPDF, onAsaasPayment, onDownloadReceipt, onDownloadBoleto,
     onToggleSelect: onSelectionChange ? handleToggleSelect : undefined,
   };
 
