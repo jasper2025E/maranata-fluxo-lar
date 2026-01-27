@@ -794,10 +794,6 @@ export function BulkActionsBar({
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                   Documentos
                 </DropdownMenuLabel>
-                <DropdownMenuItem onClick={handleBulkDownloadPDF} className="gap-2 cursor-pointer">
-                  <Download className="h-4 w-4" />
-                  Baixar PDFs
-                </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleGenerateCarne} className="gap-2 cursor-pointer">
                   <Printer className="h-4 w-4" />
                   Gerar Carnê
