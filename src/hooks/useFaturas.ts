@@ -700,7 +700,16 @@ export function useAddFaturaDesconto() {
 
   return useMutation({
     mutationFn: async (data: Omit<FaturaDesconto, 'id'> & { fatura_id: string }) => {
-      // Inserir o desconto
+      // Buscar o tenant_id da fatura para garantir consistência
+      const { data: faturaInfo, error: faturaInfoError } = await supabase
+        .from("faturas")
+        .select("tenant_id")
+        .eq("id", data.fatura_id)
+        .maybeSingle();
+
+      if (faturaInfoError) throw faturaInfoError;
+      
+      // Inserir o desconto com tenant_id
       const { error } = await supabase.from("fatura_descontos").insert({
         fatura_id: data.fatura_id,
         tipo: data.tipo,
@@ -709,6 +718,7 @@ export function useAddFaturaDesconto() {
         percentual: data.percentual || 0,
         valor_aplicado: data.valor_aplicado,
         condicao: data.condicao || null,
+        tenant_id: faturaInfo?.tenant_id,
       });
       if (error) throw error;
 
