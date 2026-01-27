@@ -173,15 +173,16 @@ export function useDeleteAluno() {
         throw fetchError;
       }
 
-      // 2. Cancelar cada cobrança no ASAAS e marcar faturas como canceladas
+      // 2. Cancelar no ASAAS e DELETAR permanentemente as faturas
       if (faturasAbertas && faturasAbertas.length > 0) {
-        console.log(`Cancelando ${faturasAbertas.length} faturas do aluno no ASAAS...`);
+        console.log(`Excluindo ${faturasAbertas.length} faturas do aluno permanentemente...`);
         
         for (const fatura of faturasAbertas) {
+          // Cancelar no ASAAS primeiro
           if (fatura.asaas_payment_id) {
             try {
               const { data: cancelResult, error: cancelError } = await supabase.functions.invoke("asaas-cancel-payment", {
-                body: { faturaId: fatura.id, motivo: "Aluno desativado do sistema" },
+                body: { faturaId: fatura.id, motivo: "Aluno desativado - fatura excluída" },
               });
 
               if (cancelError) {
@@ -192,20 +193,21 @@ export function useDeleteAluno() {
                 console.log(`Fatura ${fatura.id} cancelada no ASAAS`);
               }
             } catch (err) {
-              console.warn(`Falha ao cancelar fatura ${fatura.id}:`, err);
+              console.warn(`Falha ao cancelar fatura ${fatura.id} no ASAAS:`, err);
             }
           }
 
-          // Atualizar fatura localmente (sempre executa)
-          await supabase
-            .from("faturas")
-            .update({
-              status: 'Cancelada',
-              cancelada_em: new Date().toISOString(),
-              motivo_cancelamento: "Aluno desativado do sistema",
-              asaas_status: 'DELETED',
-            })
-            .eq("id", fatura.id);
+          // Deletar registros relacionados em cascata
+          await supabase.from("fatura_itens").delete().eq("fatura_id", fatura.id);
+          await supabase.from("fatura_descontos").delete().eq("fatura_id", fatura.id);
+          await supabase.from("fatura_historico").delete().eq("fatura_id", fatura.id);
+          await supabase.from("pagamentos").delete().eq("fatura_id", fatura.id);
+          await supabase.from("fatura_documentos").delete().eq("fatura_id", fatura.id);
+
+          // Deletar a fatura permanentemente
+          await supabase.from("faturas").delete().eq("id", fatura.id);
+          
+          console.log(`Fatura ${fatura.id} excluída permanentemente`);
         }
       }
 
@@ -225,7 +227,7 @@ export function useDeleteAluno() {
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       
       if (result.faturasAbertas > 0) {
-        toast.success(`Aluno desativado e ${result.faturasAbertas} fatura(s) cancelada(s) no sistema e ASAAS!`);
+        toast.success(`Aluno desativado e ${result.faturasAbertas} fatura(s) excluída(s) permanentemente!`);
       } else {
         toast.success("Aluno desativado com sucesso!");
       }

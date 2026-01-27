@@ -38,6 +38,8 @@ import {
   Download,
   QrCode,
   FileBarChart,
+  RefreshCw,
+  Trash2,
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -61,6 +63,8 @@ interface FaturaTableProps {
   onAsaasPayment?: (fatura: Fatura) => void;
   onDownloadReceipt?: (fatura: Fatura) => void;
   onDownloadBoleto?: (fatura: Fatura) => void;
+  onDelete?: (fatura: Fatura) => void;
+  onReopen?: (fatura: Fatura) => void;
   selectedFaturas?: Set<string>;
   onSelectionChange?: (selected: Set<string>) => void;
 }
@@ -111,6 +115,8 @@ function FaturaRow({
   onAsaasPayment,
   onDownloadReceipt,
   onDownloadBoleto,
+  onDelete,
+  onReopen,
   isSelected,
   onToggleSelect,
 }: {
@@ -127,6 +133,8 @@ function FaturaRow({
   onAsaasPayment?: (fatura: Fatura) => void;
   onDownloadReceipt?: (fatura: Fatura) => void;
   onDownloadBoleto?: (fatura: Fatura) => void;
+  onDelete?: (fatura: Fatura) => void;
+  onReopen?: (fatura: Fatura) => void;
   isSelected?: boolean;
   onToggleSelect?: (faturaId: string) => void;
 }) {
@@ -229,7 +237,7 @@ function FaturaRow({
                 <FileBarChart className="h-4 w-4 mr-2" />Sincronizando dados...
               </DropdownMenuItem>
             )}
-            {!fatura.bloqueada && fatura.status !== 'Paga' && (
+            {!fatura.bloqueada && fatura.status !== 'Cancelada' && (
               <DropdownMenuItem onClick={() => onEdit(fatura)}>
                 <Pencil className="h-4 w-4 mr-2" />Editar
               </DropdownMenuItem>
@@ -270,6 +278,21 @@ function FaturaRow({
                     <Download className="h-4 w-4 mr-2" />Baixar recibo
                   </DropdownMenuItem>
                 )}
+                {onReopen && (
+                  <DropdownMenuItem onClick={() => onReopen(fatura)} className="text-warning">
+                    <RefreshCw className="h-4 w-4 mr-2" />Reabrir fatura
+                  </DropdownMenuItem>
+                )}
+              </>
+            )}
+            
+            {/* Opção de excluir permanentemente - sempre visível */}
+            {onDelete && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => onDelete(fatura)} className="text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />Excluir permanentemente
+                </DropdownMenuItem>
               </>
             )}
           </DropdownMenuContent>
@@ -295,6 +318,8 @@ export function FaturaTable({
   onAsaasPayment,
   onDownloadReceipt,
   onDownloadBoleto,
+  onDelete,
+  onReopen,
   selectedFaturas,
   onSelectionChange,
 }: FaturaTableProps) {
@@ -364,6 +389,7 @@ export function FaturaTable({
   const rowProps = { 
     onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, 
     onSendReceipt, onViewHistory, onDownloadPDF, onAsaasPayment, onDownloadReceipt, onDownloadBoleto,
+    onDelete, onReopen,
     onToggleSelect: onSelectionChange ? handleToggleSelect : undefined,
   };
 
