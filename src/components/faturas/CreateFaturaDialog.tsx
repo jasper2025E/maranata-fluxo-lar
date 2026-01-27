@@ -95,7 +95,8 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
     : data.valor;
 
   const handleCreate = async () => {
-    if (!data.aluno_id || !data.curso_id || valorTotal <= 0) {
+    // Permite valor 0 para casos de irmãos/bolsas integrais
+    if (!data.aluno_id || !data.curso_id || valorTotal < 0) {
       return;
     }
 
@@ -418,7 +419,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
           </Button>
           <Button
             onClick={handleCreate}
-            disabled={createMutation.isPending || !data.aluno_id || !data.curso_id || valorTotal <= 0}
+            disabled={createMutation.isPending || !data.aluno_id || !data.curso_id || valorTotal < 0}
           >
             {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             Criar {tipo === "recorrente" ? `${data.meses_recorrencia} Faturas` : "Fatura"}
