@@ -38,6 +38,25 @@ async function getImageDimensions(dataUrl: string): Promise<{ w: number; h: numb
   });
 }
 
+function drawFittedText(
+  doc: jsPDF,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  fontSizeStart = 7,
+  fontSizeMin = 5
+): void {
+  let size = fontSizeStart;
+  doc.setFontSize(size);
+  while (size > fontSizeMin && doc.getTextWidth(text) > maxWidth) {
+    size -= 0.25;
+    doc.setFontSize(size);
+  }
+
+  doc.text(text, x, y);
+}
+
 /**
  * Converte linha digitável (47 dígitos) para código de barras (44 dígitos)
  * Formato linha digitável: AAABC.CCCCX DDDDD.DDDDDY EEEEE.EEEEEZ K UUUUVVVVVVVVVV
@@ -99,8 +118,9 @@ async function generateITF25Barcode(linhaDigitavel: string): Promise<string | nu
     bwipjs.toCanvas(canvas, {
       bcid: 'interleaved2of5', // Tipo ITF-25 (boleto brasileiro)
       text: paddedCode,
-      scale: 3,
-      height: 10,
+      // Mais resolução = leitura mais confiável em apps bancários
+      scale: 6,
+      height: 14,
       includetext: false,
       backgroundcolor: 'ffffff',
     });
@@ -318,7 +338,7 @@ async function drawCompactCarne(
       try {
         // Evita distorção (distorção = leitura inválida em apps bancários)
         const maxW = contentWidth * 0.88;
-        const targetH = 10; // mm (altura típica para leitura)
+        const targetH = 12; // mm (altura típica para leitura)
 
         const { w, h } = await getImageDimensions(barcodeImage);
         const ratio = w > 0 && h > 0 ? w / h : 8;
@@ -337,7 +357,8 @@ async function drawCompactCarne(
         // Quiet zone (margem branca) melhora leitura
         doc.setFillColor(255, 255, 255);
         doc.rect(x - 1, yImg - 1, widthMm + 2, heightMm + 2, 'F');
-        doc.addImage(barcodeImage, 'PNG', x, yImg, widthMm, heightMm);
+        // Evita compressão que pode “borrar” barras finas
+        doc.addImage(barcodeImage, 'PNG', x, yImg, widthMm, heightMm, undefined, 'NONE');
       } catch (error) {
         console.warn('Erro ao inserir código de barras:', error);
       }
@@ -349,12 +370,12 @@ async function drawCompactCarne(
     doc.setFont("helvetica", "normal");
     doc.text("LINHA DIGITÁVEL", startX + 3, barcodeAreaY + 12);
     
-    doc.setFontSize(7);
     doc.setTextColor(...DARK);
     doc.setFont("courier", "bold");
     // Usa formatação correta para linha digitável
     const formatted = formatLinhaDigitavel(fatura.asaas_boleto_barcode);
-    doc.text(formatted, startX + 3, barcodeAreaY + 17);
+    // Garante que NUNCA seja cortada no PDF (isso causa erro ao digitar no banco)
+    drawFittedText(doc, formatted, startX + 3, barcodeAreaY + 17, contentWidth - 6, 7, 5);
   } else {
     doc.setFontSize(6);
     doc.setTextColor(...GRAY_400);
