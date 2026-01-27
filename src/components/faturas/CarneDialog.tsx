@@ -205,10 +205,11 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
       }
 
       setProgressMessage("Atualizando dados...");
-      setProgressValue(60);
+      setProgressValue(55);
       await refetchFaturas();
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
+      // Buscar dados atualizados das faturas
       const { data: faturasAtualizadas } = await supabase
         .from("faturas")
         .select(`
@@ -218,6 +219,45 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
           responsaveis(nome, email, telefone, cpf)
         `)
         .in("id", Array.from(selectedFaturas));
+
+      // Verificar faturas que têm asaas_payment_id mas não têm QR Code/barcode
+      setProgressMessage("Verificando dados de pagamento...");
+      setProgressValue(65);
+      
+      const faturasIncompletas = (faturasAtualizadas || []).filter(
+        f => f.asaas_payment_id && (!f.asaas_pix_qrcode || !f.asaas_boleto_barcode)
+      );
+
+      if (faturasIncompletas.length > 0) {
+        console.log(`Buscando dados Asaas para ${faturasIncompletas.length} faturas incompletas`);
+        
+        for (const fatura of faturasIncompletas) {
+          try {
+            await supabase.functions.invoke("asaas-get-payment", {
+              body: { faturaId: fatura.id }
+            });
+          } catch (err) {
+            console.warn(`Falha ao atualizar dados Asaas para fatura ${fatura.id}:`, err);
+          }
+        }
+        
+        // Buscar novamente com dados atualizados
+        await new Promise(resolve => setTimeout(resolve, 500));
+        const { data: faturasFinais } = await supabase
+          .from("faturas")
+          .select(`
+            *,
+            alunos(nome_completo, email_responsavel, responsavel_id),
+            cursos(nome),
+            responsaveis(nome, email, telefone, cpf)
+          `)
+          .in("id", Array.from(selectedFaturas));
+        
+        if (faturasFinais) {
+          (faturasAtualizadas as Fatura[]).length = 0;
+          (faturasAtualizadas as Fatura[]).push(...(faturasFinais as Fatura[]));
+        }
+      }
 
       setProgressMessage("Gerando PDF...");
       setProgressValue(80);
