@@ -42,18 +42,41 @@ export const useAsaas = () => {
     }
   };
 
-  const getPayment = async (faturaId: string): Promise<AsaasPaymentResult> => {
+  const getPayment = async (faturaId: string, retries = 3): Promise<AsaasPaymentResult> => {
     setIsLoading(true);
+    let lastError: any = null;
+    
     try {
-      const { data, error } = await supabase.functions.invoke("asaas-get-payment", {
-        body: { faturaId },
-      });
+      for (let attempt = 1; attempt <= retries; attempt++) {
+        try {
+          const { data, error } = await supabase.functions.invoke("asaas-get-payment", {
+            body: { faturaId },
+          });
 
-      if (error) throw error;
-      return data;
-    } catch (error: any) {
-      console.error("Erro ao buscar pagamento Asaas:", error);
-      return { success: false, error: error.message };
+          if (error) throw error;
+          
+          // Verificar se temos os dados completos (PIX + Boleto)
+          if (data?.success && (!data.pixQrCode || !data.boletoBarcode)) {
+            console.warn(`Tentativa ${attempt}/${retries}: Dados incompletos, aguardando...`);
+            if (attempt < retries) {
+              await new Promise(resolve => setTimeout(resolve, 1500 * attempt));
+              continue;
+            }
+          }
+          
+          return data;
+        } catch (error: any) {
+          lastError = error;
+          console.warn(`Tentativa ${attempt}/${retries} falhou:`, error.message);
+          if (attempt < retries) {
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+            continue;
+          }
+        }
+      }
+      
+      console.error("Erro ao buscar pagamento Asaas após todas as tentativas:", lastError);
+      return { success: false, error: lastError?.message || "Erro ao buscar dados do pagamento" };
     } finally {
       setIsLoading(false);
     }
