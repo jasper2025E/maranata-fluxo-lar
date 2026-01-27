@@ -66,8 +66,10 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const [
     responsaveisResult,
     alunosResult,
-    faturasResult,
+    faturasCurrentMonthResult,
+    faturasAllOpenResult,
     faturasVencidasResult,
+    faturasPagasCurrentMonthResult,
     pagamentosResult,
     pagamentosPrevResult,
     despesasResult,
@@ -83,18 +85,32 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     // Total students
     supabase.from("alunos").select("id, status_matricula"),
     
-    // All invoices for current month
+    // All invoices for current month (for stats display)
     supabase
       .from("faturas")
       .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
       .eq("mes_referencia", currentMonth)
       .eq("ano_referencia", currentYear),
     
+    // ALL open invoices (Aberta status) - for "Valor a Receber"
+    supabase
+      .from("faturas")
+      .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
+      .in("status", ["Aberta", "Vencida"]),
+    
     // All overdue invoices with aging
     supabase
       .from("faturas")
       .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
       .eq("status", "Vencida"),
+    
+    // Paid invoices for current month (for revenue calculation)
+    supabase
+      .from("faturas")
+      .select("id, valor, valor_total")
+      .eq("status", "Paga")
+      .eq("mes_referencia", currentMonth)
+      .eq("ano_referencia", currentYear),
     
     // Payments for current month
     supabase
@@ -159,8 +175,10 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
 
   const responsaveis = responsaveisResult.data || [];
   const alunos = alunosResult.data || [];
-  const faturas = faturasResult.data || [];
+  const faturasCurrentMonth = faturasCurrentMonthResult.data || [];
+  const faturasAllOpen = faturasAllOpenResult.data || [];
   const faturasVencidasAll = faturasVencidasResult.data || [];
+  const faturasPagasCurrentMonth = faturasPagasCurrentMonthResult.data || [];
   const pagamentos = pagamentosResult.data || [];
   const pagamentosPrev = pagamentosPrevResult.data || [];
   const despesas = despesasResult.data || [];
@@ -179,22 +197,27 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const totalAlunos = alunos.length;
   const alunosAtivos = alunos.filter(a => a.status_matricula === "ativo").length;
   
-  // Faturas stats
-  const totalFaturas = faturas.length;
-  const faturasAbertas = faturas.filter(f => f.status === "Aberta").length;
-  const faturasPagas = faturas.filter(f => f.status === "Paga").length;
-  const faturasVencidas = faturas.filter(f => f.status === "Vencida").length;
+  // Faturas stats (current month)
+  const totalFaturas = faturasCurrentMonth.length;
+  const faturasAbertas = faturasCurrentMonth.filter(f => f.status === "Aberta").length;
+  const faturasPagas = faturasCurrentMonth.filter(f => f.status === "Paga").length;
+  const faturasVencidas = faturasCurrentMonth.filter(f => f.status === "Vencida").length;
   
-  // Valor a receber e vencido
-  const valorAReceber = faturas
-    .filter(f => f.status === "Aberta" || f.status === "Vencida")
+  // Valor a receber = ALL open/overdue invoices (not just current month)
+  const valorAReceber = faturasAllOpen
     .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
   
   const valorVencido = faturasVencidasAll
     .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
   
-  // Financeiro
-  const totalReceitas = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0);
+  // Financeiro - Receitas = faturas PAGAS do mês atual + pagamentos registrados
+  const receitasFaturasPagas = faturasPagasCurrentMonth.reduce(
+    (sum, f) => sum + Number((f as any).valor_total || f.valor), 0
+  );
+  const receitasPagamentos = pagamentos.reduce((sum, p) => sum + Number(p.valor), 0);
+  // Use the higher value to avoid double-counting, prioritize paid invoices
+  const totalReceitas = Math.max(receitasFaturasPagas, receitasPagamentos);
+  
   const totalDespesas = despesas.reduce((sum, d) => sum + Number(d.valor), 0);
   const totalReceitasPrev = pagamentosPrev.reduce((sum, p) => sum + Number(p.valor), 0);
   const totalDespesasPrev = despesasPrev.reduce((sum, d) => sum + Number(d.valor), 0);
@@ -207,15 +230,15 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     ? ((totalDespesas - totalDespesasPrev) / totalDespesasPrev) * 100 
     : 0;
 
-  // Ticket médio
+  // Ticket médio (based on paid invoices count)
   const ticketMedio = faturasPagas > 0 ? totalReceitas / faturasPagas : 0;
 
-  // Taxa de arrecadação
-  const valorEsperado = faturas.reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
+  // Taxa de arrecadação - based on current month invoices
+  const valorEsperado = faturasCurrentMonth.reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
   const taxaArrecadacao = valorEsperado > 0 ? (totalReceitas / valorEsperado) * 100 : 0;
 
-  // Calculate inadimplência rate
-  const totalFaturasMes = faturas.length;
+  // Calculate inadimplência rate based on current month
+  const totalFaturasMes = faturasCurrentMonth.length;
   const inadimplencia = totalFaturasMes > 0 
     ? Math.round((faturasVencidas / totalFaturasMes) * 100) 
     : 0;
