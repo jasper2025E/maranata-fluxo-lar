@@ -38,6 +38,7 @@ import {
   Percent,
   CreditCard,
   Trash2,
+  CheckCircle2,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -960,113 +961,85 @@ export function BulkActionsBar({
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Edit Dialog */}
+      {/* Edit Dialog - Shopify Style */}
       <AlertDialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <AlertDialogContent className="max-w-lg">
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Pencil className="h-5 w-5" />
-              Editar {editableCount} fatura(s)
+        <AlertDialogContent className="max-w-xl rounded-2xl">
+          <AlertDialogHeader className="pb-4 border-b">
+            <AlertDialogTitle className="flex items-center gap-3 text-xl">
+              <div className="flex items-center justify-center h-10 w-10 rounded-xl bg-primary/10 text-primary">
+                <Pencil className="h-5 w-5" />
+              </div>
+              Editar {editableCount} fatura{editableCount !== 1 && "s"}
             </AlertDialogTitle>
-            <AlertDialogDescription>
-              Selecione o que deseja alterar nas faturas selecionadas.
+            <AlertDialogDescription className="text-muted-foreground mt-1">
+              Selecione o tipo de alteração que deseja aplicar nas faturas selecionadas.
             </AlertDialogDescription>
           </AlertDialogHeader>
           
-          <div className="space-y-4">
-            {/* Edit Mode Selector */}
+          <div className="space-y-6 py-4">
+            {/* Edit Mode Selector - Shopify Tab Style */}
             <div className="grid grid-cols-3 gap-2">
-              <Button
-                variant={editData.editMode === "vencimento" ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
-                onClick={() => setEditData({ ...editData, editMode: "vencimento" })}
-              >
-                <Calendar className="h-4 w-4" />
-                Vencimento
-              </Button>
-              <Button
-                variant={editData.editMode === "emissao" ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
-                onClick={() => setEditData({ ...editData, editMode: "emissao" })}
-              >
-                <FileText className="h-4 w-4" />
-                Emissão
-              </Button>
-              <Button
-                variant={editData.editMode === "referencia" ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
-                onClick={() => setEditData({ ...editData, editMode: "referencia" })}
-              >
-                <Calendar className="h-4 w-4" />
-                Mês/Ano Ref.
-              </Button>
-              <Button
-                variant={editData.editMode === "valor" ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
-                onClick={() => setEditData({ ...editData, editMode: "valor" })}
-              >
-                <DollarSign className="h-4 w-4" />
-                Valor
-              </Button>
-              <Button
-                variant={editData.editMode === "desconto" ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
-                onClick={() => setEditData({ ...editData, editMode: "desconto" })}
-              >
-                <Percent className="h-4 w-4" />
-                Desconto
-              </Button>
-              <Button
-                variant={editData.editMode === "pagamento" ? "default" : "outline"}
-                size="sm"
-                className="gap-2"
-                onClick={() => setEditData({ ...editData, editMode: "pagamento" })}
-              >
-                <CreditCard className="h-4 w-4" />
-                Pagamento
-              </Button>
+              {[
+                { mode: "vencimento", icon: Calendar, label: "Vencimento" },
+                { mode: "emissao", icon: FileText, label: "Emissão" },
+                { mode: "referencia", icon: Calendar, label: "Período" },
+                { mode: "valor", icon: DollarSign, label: "Valor" },
+                { mode: "desconto", icon: Percent, label: "Desconto" },
+                { mode: "pagamento", icon: CreditCard, label: "Pagamento" },
+              ].map(({ mode, icon: Icon, label }) => (
+                <Button
+                  key={mode}
+                  variant={editData.editMode === mode ? "default" : "outline"}
+                  size="sm"
+                  className={`gap-2 h-11 rounded-xl transition-all duration-200 ${
+                    editData.editMode === mode 
+                      ? "shadow-md" 
+                      : "hover:bg-muted hover:border-primary/30"
+                  }`}
+                  onClick={() => setEditData({ ...editData, editMode: mode as typeof editData.editMode })}
+                >
+                  <Icon className="h-4 w-4" />
+                  <span className="font-medium">{label}</span>
+                </Button>
+              ))}
             </div>
 
-            {/* Vencimento Mode */}
+            {/* Vencimento Mode - Enhanced */}
             {editData.editMode === "vencimento" && (
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label htmlFor="novaData" className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4" />
-                    Nova Data de Vencimento
+              <div className="space-y-5 p-4 bg-muted/30 rounded-xl border animate-in fade-in duration-200">
+                <div className="space-y-3">
+                  <Label htmlFor="novaData" className="flex items-center gap-2 text-sm font-semibold">
+                    <Calendar className="h-4 w-4 text-primary" />
+                    Data Específica
                   </Label>
                   <Input
                     id="novaData"
                     type="date"
                     value={editData.novaDataVencimento}
                     onChange={(e) => setEditData({ ...editData, novaDataVencimento: e.target.value, novoDiaVencimento: "" })}
+                    className="h-11 rounded-xl"
                   />
                   <p className="text-xs text-muted-foreground">
                     Aplica a mesma data para todas as faturas selecionadas
                   </p>
                 </div>
 
-                <div className="relative">
+                <div className="relative py-2">
                   <div className="absolute inset-0 flex items-center">
-                    <span className="w-full border-t" />
+                    <span className="w-full border-t border-border" />
                   </div>
-                  <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground">ou</span>
+                  <div className="relative flex justify-center">
+                    <span className="bg-muted/30 px-3 text-xs font-medium text-muted-foreground uppercase tracking-wide">ou</span>
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="novoDia">Dia Fixo de Vencimento</Label>
+                <div className="space-y-3">
+                  <Label htmlFor="novoDia" className="text-sm font-semibold">Dia Fixo no Mês</Label>
                   <Select 
                     value={editData.novoDiaVencimento} 
                     onValueChange={(v) => setEditData({ ...editData, novoDiaVencimento: v, novaDataVencimento: "" })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl">
                       <SelectValue placeholder="Selecione o dia" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1078,21 +1051,22 @@ export function BulkActionsBar({
                     </SelectContent>
                   </Select>
                   <p className="text-xs text-muted-foreground">
-                    Ajusta o dia mantendo o mês/ano de referência de cada fatura
+                    Mantém o mês/ano de referência de cada fatura
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Emissão Mode */}
+            {/* Emissão Mode - Enhanced */}
             {editData.editMode === "emissao" && (
-              <div className="space-y-2 pt-2">
-                <Label htmlFor="novaEmissao">Nova Data de Emissão</Label>
+              <div className="space-y-3 p-4 bg-muted/30 rounded-xl border animate-in fade-in duration-200">
+                <Label htmlFor="novaEmissao" className="text-sm font-semibold">Nova Data de Emissão</Label>
                 <Input
                   id="novaEmissao"
                   type="date"
                   value={editData.novaDataEmissao}
                   onChange={(e) => setEditData({ ...editData, novaDataEmissao: e.target.value })}
+                  className="h-11 rounded-xl"
                 />
                 <p className="text-xs text-muted-foreground">
                   Altera a data de emissão de todas as faturas selecionadas
@@ -1100,16 +1074,16 @@ export function BulkActionsBar({
               </div>
             )}
 
-            {/* Referência Mode */}
+            {/* Referência Mode - Enhanced */}
             {editData.editMode === "referencia" && (
-              <div className="grid grid-cols-2 gap-4 pt-2">
-                <div className="space-y-2">
-                  <Label>Mês de Referência</Label>
+              <div className="grid grid-cols-2 gap-4 p-4 bg-muted/30 rounded-xl border animate-in fade-in duration-200">
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Mês</Label>
                   <Select 
                     value={editData.novoMesReferencia} 
                     onValueChange={(v) => setEditData({ ...editData, novoMesReferencia: v })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1120,13 +1094,13 @@ export function BulkActionsBar({
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-2">
-                  <Label>Ano de Referência</Label>
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Ano</Label>
                   <Select 
                     value={editData.novoAnoReferencia} 
                     onValueChange={(v) => setEditData({ ...editData, novoAnoReferencia: v })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl">
                       <SelectValue placeholder="Selecione" />
                     </SelectTrigger>
                     <SelectContent>
@@ -1139,33 +1113,37 @@ export function BulkActionsBar({
               </div>
             )}
 
-            {/* Valor Mode */}
+            {/* Valor Mode - Enhanced */}
             {editData.editMode === "valor" && (
-              <div className="space-y-2 pt-2">
-                <Label htmlFor="novoValor">Novo Valor (R$)</Label>
-                <Input
-                  id="novoValor"
-                  type="number"
-                  step="0.01"
-                  placeholder="0,00"
-                  value={editData.novoValor}
-                  onChange={(e) => setEditData({ ...editData, novoValor: e.target.value })}
-                />
+              <div className="space-y-3 p-4 bg-muted/30 rounded-xl border animate-in fade-in duration-200">
+                <Label htmlFor="novoValor" className="text-sm font-semibold">Novo Valor</Label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">R$</span>
+                  <Input
+                    id="novoValor"
+                    type="number"
+                    step="0.01"
+                    placeholder="0,00"
+                    value={editData.novoValor}
+                    onChange={(e) => setEditData({ ...editData, novoValor: e.target.value })}
+                    className="h-11 rounded-xl pl-10 text-lg font-semibold"
+                  />
+                </div>
                 <p className="text-xs text-muted-foreground">
-                  Altera o valor de todas as faturas selecionadas para o mesmo valor
+                  Aplica o mesmo valor em todas as faturas selecionadas
                 </p>
               </div>
             )}
 
-            {/* Desconto Mode */}
+            {/* Desconto Mode - Enhanced */}
             {editData.editMode === "desconto" && (
-              <div className="space-y-4 pt-2">
-                <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-4 p-4 bg-muted/30 rounded-xl border animate-in fade-in duration-200">
+                <div className="grid grid-cols-2 gap-3">
                   <Select 
                     value={editData.descontoTipo} 
                     onValueChange={(v: typeof editData.descontoTipo) => setEditData({ ...editData, descontoTipo: v })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -1180,7 +1158,7 @@ export function BulkActionsBar({
                     <Button
                       variant={!editData.descontoIsPercentual ? "default" : "outline"}
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 h-11 rounded-xl font-semibold"
                       type="button"
                       onClick={() => setEditData({ ...editData, descontoIsPercentual: false })}
                     >
@@ -1189,7 +1167,7 @@ export function BulkActionsBar({
                     <Button
                       variant={editData.descontoIsPercentual ? "default" : "outline"}
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 h-11 rounded-xl font-semibold"
                       type="button"
                       onClick={() => setEditData({ ...editData, descontoIsPercentual: true })}
                     >
@@ -1202,6 +1180,7 @@ export function BulkActionsBar({
                   placeholder="Descrição do desconto"
                   value={editData.descontoDescricao}
                   onChange={(e) => setEditData({ ...editData, descontoDescricao: e.target.value })}
+                  className="h-11 rounded-xl"
                 />
                 
                 <Input
@@ -1213,61 +1192,68 @@ export function BulkActionsBar({
                     ...editData,
                     [editData.descontoIsPercentual ? "descontoPercentual" : "descontoValor"]: e.target.value,
                   })}
+                  className="h-11 rounded-xl text-lg font-semibold"
                 />
                 
                 <p className="text-xs text-muted-foreground">
-                  O desconto será aplicado em todas as faturas selecionadas. 
                   {editData.descontoIsPercentual 
-                    ? " O percentual será calculado sobre o valor de cada fatura." 
-                    : " O mesmo valor fixo será aplicado em cada fatura."}
+                    ? "Percentual aplicado sobre o valor de cada fatura" 
+                    : "Valor fixo aplicado em cada fatura"}
                 </p>
               </div>
             )}
 
-            {/* Pagamento Mode */}
+            {/* Pagamento Mode - Enhanced */}
             {editData.editMode === "pagamento" && (
-              <div className="space-y-4 pt-2">
-                <div className="space-y-2">
-                  <Label>Método de Pagamento</Label>
+              <div className="space-y-4 p-4 bg-success/5 rounded-xl border border-success/20 animate-in fade-in duration-200">
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 text-success" />
+                    Método de Pagamento
+                  </Label>
                   <Select 
                     value={editData.pagamentoMetodo} 
                     onValueChange={(v) => setEditData({ ...editData, pagamentoMetodo: v })}
                   >
-                    <SelectTrigger>
+                    <SelectTrigger className="h-11 rounded-xl">
                       <SelectValue placeholder="Selecione o método" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Dinheiro">Dinheiro</SelectItem>
-                      <SelectItem value="PIX">PIX</SelectItem>
-                      <SelectItem value="Cartão Crédito">Cartão Crédito</SelectItem>
-                      <SelectItem value="Cartão Débito">Cartão Débito</SelectItem>
-                      <SelectItem value="Boleto">Boleto</SelectItem>
-                      <SelectItem value="Transferência">Transferência</SelectItem>
+                      <SelectItem value="Dinheiro">💵 Dinheiro</SelectItem>
+                      <SelectItem value="PIX">⚡ PIX</SelectItem>
+                      <SelectItem value="Cartão Crédito">💳 Cartão Crédito</SelectItem>
+                      <SelectItem value="Cartão Débito">💳 Cartão Débito</SelectItem>
+                      <SelectItem value="Boleto">📄 Boleto</SelectItem>
+                      <SelectItem value="Transferência">🏦 Transferência</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 
-                <div className="space-y-2">
-                  <Label>Referência/Comprovante (opcional)</Label>
+                <div className="space-y-3">
+                  <Label className="text-sm font-semibold">Referência (opcional)</Label>
                   <Input
                     placeholder="Ex: Número do comprovante"
                     value={editData.pagamentoReferencia}
                     onChange={(e) => setEditData({ ...editData, pagamentoReferencia: e.target.value })}
+                    className="h-11 rounded-xl"
                   />
                 </div>
                 
-                <p className="text-xs text-muted-foreground">
-                  Será registrado o pagamento total de cada fatura selecionada ({editableCount} fatura{editableCount !== 1 && "s"}).
-                  O status será alterado para "Paga".
-                </p>
+                <div className="flex items-center gap-2 p-3 bg-success/10 rounded-lg">
+                  <CheckCircle2 className="h-4 w-4 text-success shrink-0" />
+                  <p className="text-sm text-success font-medium">
+                    {editableCount} fatura{editableCount !== 1 && "s"} será{editableCount !== 1 && "ão"} marcada{editableCount !== 1 && "s"} como paga{editableCount !== 1 && "s"}
+                  </p>
+                </div>
               </div>
             )}
           </div>
 
-          <AlertDialogFooter>
+          <AlertDialogFooter className="pt-4 border-t">
             <AlertDialogCancel 
               disabled={isProcessing}
               onClick={resetEditData}
+              className="h-11 rounded-xl"
             >
               Cancelar
             </AlertDialogCancel>
@@ -1281,6 +1267,7 @@ export function BulkActionsBar({
                 (editData.editMode === "desconto" && (!editData.descontoDescricao || (!editData.descontoValor && !editData.descontoPercentual))) ||
                 (editData.editMode === "pagamento" && !editData.pagamentoMetodo)
               )}
+              className="h-11 rounded-xl font-semibold shadow-md"
             >
               {isProcessing ? (
                 <>
