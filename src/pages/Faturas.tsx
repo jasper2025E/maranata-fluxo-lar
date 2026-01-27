@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Plus, Printer, ChevronRight, FileText, Users, Download } from "lucide-react";
+import { Plus, Printer, ChevronRight, FileText, Users, Download, RefreshCw } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -50,6 +50,7 @@ const Faturas = () => {
 
   // Selection State
   const [selectedFaturasIds, setSelectedFaturasIds] = useState<Set<string>>(new Set());
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Dialog State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -268,36 +269,70 @@ const Faturas = () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
   };
 
-  const handleSyncAsaas = async (fatura: Fatura) => {
-    const toastId = toast.loading("Sincronizando com ASAAS...");
+  // Sincronização em lote com ASAAS
+  const handleBulkSyncAsaas = async () => {
+    // Determinar quais faturas sincronizar
+    const faturasParaSincronizar = selectedFaturasIds.size > 0
+      ? filteredFaturas.filter(f => selectedFaturasIds.has(f.id))
+      : filteredFaturas;
     
-    try {
-      // Se já tem asaas_payment_id, só buscar dados atualizados
-      if (fatura.asaas_payment_id) {
-        const result = await syncFaturaAsaasData(fatura.id);
-        
-        if (result.success) {
-          toast.success("Fatura sincronizada com sucesso!", { id: toastId });
-          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
-        } else {
-          toast.error(result.error || "Erro ao sincronizar", { id: toastId });
-        }
-      } else {
-        // Criar cobrança no ASAAS e aguardar dados completos
-        const result = await createAsaasPaymentWithFullSync(fatura.id, 5, (step) => {
-          toast.loading(step, { id: toastId });
-        });
-        
-        if (result.success) {
-          toast.success("Cobrança criada e sincronizada com ASAAS!", { id: toastId });
-          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
-        } else {
-          toast.error(result.error || "Erro ao criar cobrança no ASAAS", { id: toastId });
-        }
-      }
-    } catch (error: any) {
-      toast.error(error.message || "Erro inesperado ao sincronizar", { id: toastId });
+    // Filtrar apenas faturas pendentes (não pagas/canceladas)
+    const faturasPendentes = faturasParaSincronizar.filter(
+      f => f.status !== 'Paga' && f.status !== 'Cancelada'
+    );
+    
+    if (faturasPendentes.length === 0) {
+      toast.info("Nenhuma fatura pendente para sincronizar");
+      return;
     }
+    
+    setIsSyncing(true);
+    const toastId = toast.loading(`Sincronizando ${faturasPendentes.length} faturas com ASAAS...`);
+    
+    let successCount = 0;
+    let errorCount = 0;
+    
+    for (let i = 0; i < faturasPendentes.length; i++) {
+      const fatura = faturasPendentes[i];
+      toast.loading(`Sincronizando ${i + 1}/${faturasPendentes.length}...`, { id: toastId });
+      
+      try {
+        if (fatura.asaas_payment_id) {
+          // Já tem cobrança, só atualizar dados
+          const result = await syncFaturaAsaasData(fatura.id);
+          if (result.success) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        } else {
+          // Criar cobrança no ASAAS
+          const result = await createAsaasPaymentWithFullSync(fatura.id, 3);
+          if (result.success) {
+            successCount++;
+          } else {
+            errorCount++;
+          }
+        }
+      } catch {
+        errorCount++;
+      }
+      
+      // Pequeno delay entre requests para não sobrecarregar API
+      if (i < faturasPendentes.length - 1) {
+        await new Promise(r => setTimeout(r, 300));
+      }
+    }
+    
+    setIsSyncing(false);
+    
+    if (errorCount === 0) {
+      toast.success(`${successCount} faturas sincronizadas com sucesso!`, { id: toastId });
+    } else {
+      toast.warning(`${successCount} sincronizadas, ${errorCount} com erro`, { id: toastId });
+    }
+    
+    queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
   };
 
   return (
@@ -352,6 +387,16 @@ const Faturas = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleBulkSyncAsaas}
+              disabled={isSyncing}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar ASAAS'}
+            </Button>
             <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-2">
               <Plus className="h-4 w-4" />
               {t("invoices.newInvoice")}
@@ -405,7 +450,6 @@ const Faturas = () => {
           onAsaasPayment={handleAsaasPayment}
           onDownloadReceipt={handleDownloadReceipt}
           onDownloadBoleto={handleDownloadBoleto}
-          onSyncAsaas={handleSyncAsaas}
           selectedFaturas={selectedFaturasIds}
           onSelectionChange={setSelectedFaturasIds}
         />
