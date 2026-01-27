@@ -36,6 +36,7 @@ import {
   DollarSign,
   FileText,
   Percent,
+  CreditCard,
 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
@@ -68,7 +69,7 @@ export function BulkActionsBar({
   
   // Edit dialog state - matching individual edit fields
   const [editData, setEditData] = useState({
-    editMode: "vencimento" as "vencimento" | "emissao" | "referencia" | "valor" | "desconto",
+    editMode: "vencimento" as "vencimento" | "emissao" | "referencia" | "valor" | "desconto" | "pagamento",
     novaDataVencimento: "",
     novoDiaVencimento: "",
     novaDataEmissao: "",
@@ -81,6 +82,9 @@ export function BulkActionsBar({
     descontoValor: "",
     descontoPercentual: "",
     descontoIsPercentual: false,
+    // Payment fields
+    pagamentoMetodo: "",
+    pagamentoReferencia: "",
   });
   
   const { createPayment } = useAsaas();
@@ -474,6 +478,10 @@ export function BulkActionsBar({
           case "desconto":
             // Desconto é tratado separadamente pois insere em outra tabela
             break;
+
+          case "pagamento":
+            // Pagamento é tratado separadamente pois insere em outra tabela
+            break;
         }
         
         // Handle desconto separately - inserts into fatura_descontos table
@@ -529,7 +537,40 @@ export function BulkActionsBar({
               }
             }
           }
-        } else if (Object.keys(updateData).length > 1) {
+        } 
+        // Handle pagamento separately - inserts into pagamentos table
+        else if (editData.editMode === "pagamento") {
+          const valorPagar = fatura.valor_total || fatura.valor || 0;
+          
+          if (valorPagar > 0) {
+            // Insert payment
+            const { error: pagamentoError } = await supabase
+              .from("pagamentos")
+              .insert({
+                fatura_id: fatura.id,
+                valor: valorPagar,
+                metodo: editData.pagamentoMetodo,
+                referencia: editData.pagamentoReferencia || null,
+                data_pagamento: new Date().toISOString(),
+                tipo: "total",
+              });
+
+            if (!pagamentoError) {
+              // Update fatura status to Paga
+              await supabase
+                .from("faturas")
+                .update({
+                  status: "Paga",
+                  saldo_restante: 0,
+                  updated_at: new Date().toISOString(),
+                })
+                .eq("id", fatura.id);
+
+              success++;
+            }
+          }
+        } 
+        else if (Object.keys(updateData).length > 1) {
           const { error } = await supabase
             .from("faturas")
             .update(updateData)
@@ -581,6 +622,8 @@ export function BulkActionsBar({
       descontoValor: "",
       descontoPercentual: "",
       descontoIsPercentual: false,
+      pagamentoMetodo: "",
+      pagamentoReferencia: "",
     });
   };
 
@@ -803,11 +846,20 @@ export function BulkActionsBar({
               <Button
                 variant={editData.editMode === "desconto" ? "default" : "outline"}
                 size="sm"
-                className="gap-2 col-span-2"
+                className="gap-2"
                 onClick={() => setEditData({ ...editData, editMode: "desconto" })}
               >
                 <Percent className="h-4 w-4" />
-                Aplicar Desconto
+                Desconto
+              </Button>
+              <Button
+                variant={editData.editMode === "pagamento" ? "default" : "outline"}
+                size="sm"
+                className="gap-2"
+                onClick={() => setEditData({ ...editData, editMode: "pagamento" })}
+              >
+                <CreditCard className="h-4 w-4" />
+                Pagamento
               </Button>
             </div>
 
@@ -1002,6 +1054,45 @@ export function BulkActionsBar({
                 </p>
               </div>
             )}
+
+            {/* Pagamento Mode */}
+            {editData.editMode === "pagamento" && (
+              <div className="space-y-4 pt-2">
+                <div className="space-y-2">
+                  <Label>Método de Pagamento</Label>
+                  <Select 
+                    value={editData.pagamentoMetodo} 
+                    onValueChange={(v) => setEditData({ ...editData, pagamentoMetodo: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecione o método" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                      <SelectItem value="PIX">PIX</SelectItem>
+                      <SelectItem value="Cartão Crédito">Cartão Crédito</SelectItem>
+                      <SelectItem value="Cartão Débito">Cartão Débito</SelectItem>
+                      <SelectItem value="Boleto">Boleto</SelectItem>
+                      <SelectItem value="Transferência">Transferência</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label>Referência/Comprovante (opcional)</Label>
+                  <Input
+                    placeholder="Ex: Número do comprovante"
+                    value={editData.pagamentoReferencia}
+                    onChange={(e) => setEditData({ ...editData, pagamentoReferencia: e.target.value })}
+                  />
+                </div>
+                
+                <p className="text-xs text-muted-foreground">
+                  Será registrado o pagamento total de cada fatura selecionada ({editableCount} fatura{editableCount !== 1 && "s"}).
+                  O status será alterado para "Paga".
+                </p>
+              </div>
+            )}
           </div>
 
           <AlertDialogFooter>
@@ -1018,7 +1109,8 @@ export function BulkActionsBar({
                 (editData.editMode === "emissao" && !editData.novaDataEmissao) ||
                 (editData.editMode === "referencia" && !editData.novoMesReferencia && !editData.novoAnoReferencia) ||
                 (editData.editMode === "valor" && !editData.novoValor) ||
-                (editData.editMode === "desconto" && (!editData.descontoDescricao || (!editData.descontoValor && !editData.descontoPercentual)))
+                (editData.editMode === "desconto" && (!editData.descontoDescricao || (!editData.descontoValor && !editData.descontoPercentual))) ||
+                (editData.editMode === "pagamento" && !editData.pagamentoMetodo)
               )}
             >
               {isProcessing ? (
