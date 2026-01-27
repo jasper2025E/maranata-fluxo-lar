@@ -1,11 +1,11 @@
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { LanguageSelector } from "./LanguageSelector";
 import { GracePeriodBanner } from "./GracePeriodBanner";
 import { GlobalSearch } from "./GlobalSearch";
-import { Bell, Clock, Info, AlertTriangle, CheckCircle2, Check, CalendarDays } from "lucide-react";
+import { Bell, Clock, Info, AlertTriangle, CheckCircle2, Check, CalendarDays, BookOpen } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { format, formatDistanceToNow } from "date-fns";
 import { ptBR, enUS, es, fr, de } from "date-fns/locale";
@@ -26,6 +26,8 @@ import { useTranslation } from "react-i18next";
 import { useProfileData } from "@/hooks/useProfileData";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { getRandomVerse } from "@/lib/biblicalVerses";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -37,8 +39,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const { t, i18n } = useTranslation();
   const { notifications, unreadCount, markAsRead, markAllAsRead, loading: loadingNotifications } = useNotifications();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-
-  // Use cached profile data to prevent flickering
+  
+  // Daily biblical verse - persisted for the session
+  const dailyVerse = useMemo(() => getRandomVerse(), []);
   const { data: profileData } = useProfileData(user?.id);
   const avatarUrl = profileData?.avatar_url;
   const profileName = profileData?.nome;
@@ -120,7 +123,25 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <GlobalSearch />
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
+              {/* Biblical Verse - between search and notifications */}
+              <TooltipProvider delayDuration={200}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-primary/5 border border-primary/10 max-w-[320px] cursor-default">
+                      <BookOpen className="h-4 w-4 text-primary shrink-0" strokeWidth={1.75} />
+                      <p className="text-xs text-muted-foreground truncate italic">
+                        "{dailyVerse.text.length > 50 ? dailyVerse.text.slice(0, 50) + '...' : dailyVerse.text}"
+                      </p>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="max-w-sm p-4 text-center">
+                    <p className="text-sm italic mb-2">"{dailyVerse.text}"</p>
+                    <p className="text-xs font-semibold text-primary">{dailyVerse.reference}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
               {/* Language Selector - disabled for single-language system */}
               <LanguageSelector />
 
