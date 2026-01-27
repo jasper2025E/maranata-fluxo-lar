@@ -160,8 +160,9 @@ export function useFaturas() {
       if (error) throw error;
       return data as Fatura[];
     },
-    staleTime: 1000 * 30,
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60, // 1 minuto para evitar re-renders desnecessários
+    refetchOnWindowFocus: false, // Desabilita para evitar flicker
+    refetchOnMount: 'always', // Garante dados frescos ao montar
   });
 }
 
