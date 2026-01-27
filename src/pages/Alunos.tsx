@@ -186,59 +186,13 @@ const Alunos = () => {
       if (error) throw error;
       return newAluno;
     },
-    onSuccess: (newAluno, variables) => {
+    onSuccess: () => {
+      // Apenas salva o aluno - NÃO gera faturas automaticamente
+      // O usuário deve criar faturas manualmente em Faturas → Nova Fatura
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
-      queryClient.invalidateQueries({ queryKey: ["faturas"] });
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
       toast.success(t("students.createSuccess"));
       resetForm();
-
-      void (async () => {
-        try {
-          if (!newAluno) return;
-          const curso = cursos.find((c) => c.id === variables.curso_id);
-          if (!curso) return;
-
-          // Usa os parâmetros de faturamento configurados pelo usuário
-          const dataInicio = new Date(variables.data_inicio_cobranca);
-          dataInicio.setDate(variables.dia_vencimento);
-
-          await supabase.rpc("gerar_faturas_aluno", {
-            p_aluno_id: (newAluno as any).id,
-            p_curso_id: variables.curso_id,
-            p_valor: curso.mensalidade,
-            p_data_inicio: dataInicio.toISOString().split("T")[0],
-            p_quantidade_meses: variables.quantidade_parcelas,
-          });
-
-          const responsavelId = variables.responsavel_id || null;
-          if (!responsavelId) return;
-
-          const { data: faturasGeradas } = await supabase
-            .from("faturas")
-            .select("id")
-            .eq("aluno_id", (newAluno as any).id)
-            .eq("status", "Aberta")
-            .is("asaas_payment_id", null)
-            .order("data_vencimento", { ascending: true })
-            .limit(3);
-
-          for (const fatura of faturasGeradas || []) {
-            const invoke = supabase.functions.invoke("asaas-create-payment", {
-              body: { faturaId: fatura.id, billingType: "UNDEFINED" },
-            });
-
-            await Promise.race([
-              invoke,
-              new Promise((_, reject) =>
-                setTimeout(() => reject(new Error("timeout_asaas")), 12_000)
-              ),
-            ]).catch(() => {});
-          }
-        } catch (err) {
-          console.warn("Falha ao gerar faturas/cobranças em background:", err);
-        }
-      })();
     },
     onError: (error) => {
       console.error(error);
@@ -409,13 +363,14 @@ const Alunos = () => {
       return;
     }
 
+    // Apenas vincula à turma - NÃO gera faturas automaticamente
     await enturmarMutation.mutateAsync({
       alunoId: enturmandoAluno.id,
       turmaId: selectedTurmaId,
       cursoId: enturmandoAluno.curso_id,
       valorMensalidade: curso.mensalidade,
       responsavelId: (enturmandoAluno as any).responsavel_id,
-      gerarFaturas: !enturmandoAluno.turma_id,
+      gerarFaturas: false, // Faturas devem ser criadas manualmente
     });
 
     setIsEnturmarOpen(false);

@@ -256,36 +256,42 @@ serve(async (req) => {
       throw new Error(paymentResult.errors?.[0]?.description || "Erro ao criar cobrança no Asaas");
     }
 
-    // Buscar QR Code PIX
+    // Buscar QR Code PIX - SEMPRE tenta buscar para garantir dados completos
     let pixQrCode = null;
     let pixPayload = null;
     
-    if (billingType === "UNDEFINED" || billingType === "PIX") {
-      const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentResult.id}/pixQrCode`, {
-        headers: { "access_token": ASAAS_API_KEY },
-      });
-      
-      if (pixResponse.ok) {
-        const pixData = await pixResponse.json();
-        pixQrCode = pixData.encodedImage;
-        pixPayload = pixData.payload;
-      }
+    console.log("Buscando QR Code PIX para pagamento:", paymentResult.id);
+    const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentResult.id}/pixQrCode`, {
+      headers: { "access_token": ASAAS_API_KEY },
+    });
+    
+    if (pixResponse.ok) {
+      const pixData = await pixResponse.json();
+      pixQrCode = pixData.encodedImage;
+      pixPayload = pixData.payload;
+      console.log("PIX QR Code obtido com sucesso:", !!pixQrCode);
+    } else {
+      const pixErrorText = await pixResponse.text();
+      console.warn("Falha ao obter PIX QR Code:", pixResponse.status, pixErrorText);
     }
 
-    // Buscar linha digitável do boleto
+    // Buscar linha digitável do boleto - SEMPRE tenta buscar para garantir dados completos
     let boletoUrl = null;
     let boletoBarcode = null;
     
-    if (billingType === "UNDEFINED" || billingType === "BOLETO") {
-      const boletoResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentResult.id}/identificationField`, {
-        headers: { "access_token": ASAAS_API_KEY },
-      });
-      
-      if (boletoResponse.ok) {
-        const boletoData = await boletoResponse.json();
-        boletoBarcode = boletoData.identificationField;
-        boletoUrl = paymentResult.bankSlipUrl;
-      }
+    console.log("Buscando código de barras do boleto para pagamento:", paymentResult.id);
+    const boletoResponse = await fetch(`${ASAAS_API_URL}/payments/${paymentResult.id}/identificationField`, {
+      headers: { "access_token": ASAAS_API_KEY },
+    });
+    
+    if (boletoResponse.ok) {
+      const boletoData = await boletoResponse.json();
+      boletoBarcode = boletoData.identificationField;
+      boletoUrl = paymentResult.bankSlipUrl;
+      console.log("Boleto barcode obtido com sucesso:", !!boletoBarcode);
+    } else {
+      const boletoErrorText = await boletoResponse.text();
+      console.warn("Falha ao obter barcode do boleto:", boletoResponse.status, boletoErrorText);
     }
 
     // Atualizar fatura com dados do Asaas e gateway_config_id

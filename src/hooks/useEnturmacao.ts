@@ -22,7 +22,7 @@ export function useEnturmar() {
       cursoId, 
       valorMensalidade, 
       responsavelId,
-      gerarFaturas = true 
+      gerarFaturas = false // Padrão: NÃO gerar faturas automaticamente na enturmação
     }: EnturmarParams) => {
       // 1. Atualiza o aluno com a turma
       const { error: updateError } = await supabase
