@@ -19,6 +19,7 @@ import {
   ChevronRight,
   BookOpen,
 } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
 import DashboardLayout from "@/components/DashboardLayout";
 import { LoadingState } from "@/components/LoadingState";
 import { EmptyState } from "@/components/EmptyState";
@@ -36,6 +37,7 @@ const Dashboard = () => {
   const { t } = useTranslation();
   const { data: stats, isLoading, error } = useDashboardStats();
   const [verse] = useState<BibleVerse>(() => getRandomVerse());
+  const [calendarDate, setCalendarDate] = useState<Date | undefined>(new Date());
 
   if (isLoading) {
     return (
@@ -72,62 +74,86 @@ const Dashboard = () => {
           <span className="font-medium text-foreground">{t("dashboard.title")}</span>
         </nav>
 
-        {/* Verse Banner */}
-        <motion.div
-          initial={{ opacity: 0, y: 20, scale: 0.95 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          transition={{
-            duration: 0.4,
-            ease: [0.25, 0.46, 0.45, 0.94],
-          }}
-          whileHover={{
-            y: -4,
-            scale: 1.01,
-            transition: { duration: 0.2, ease: "easeOut" },
-          }}
-          className="group relative overflow-hidden bg-card/80 backdrop-blur-sm rounded-2xl p-5 border border-border/40 shadow-sm hover:shadow-xl transition-all duration-300 ease-out"
-        >
-          {/* Gradient Background */}
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-60" />
-          
-          {/* Accent Line */}
-          <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/60 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-
-          {/* Subtle Pattern */}
-          <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
-            style={{
-              backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
-              backgroundSize: '24px 24px'
+        {/* Verse Banner + Calendar Row */}
+        <div className="grid gap-5 lg:grid-cols-[1fr_auto]">
+          {/* Verse Banner */}
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              duration: 0.4,
+              ease: [0.25, 0.46, 0.45, 0.94],
             }}
-          />
-          
-          <div className="relative flex items-center gap-4">
-            {/* Icon */}
-            <motion.div 
-              whileHover={{ scale: 1.1, rotate: 8 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              className="flex-shrink-0 w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-inner transition-all duration-300"
-            >
-              <BookOpen className="h-5 w-5 text-primary" strokeWidth={1.75} />
-            </motion.div>
+            whileHover={{
+              y: -4,
+              scale: 1.01,
+              transition: { duration: 0.2, ease: "easeOut" },
+            }}
+            className="group relative overflow-hidden bg-card/80 backdrop-blur-sm rounded-2xl p-6 border border-border/40 shadow-sm hover:shadow-xl transition-all duration-300 ease-out"
+          >
+            {/* Gradient Background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-60" />
             
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <p className="text-foreground leading-relaxed text-[15px] font-normal">
-                <span className="text-primary/60 text-lg font-serif">"</span>
-                {verse.text}
-                <span className="text-primary/60 text-lg font-serif">"</span>
-              </p>
-              <p className="text-xs text-muted-foreground/80 mt-2 font-semibold uppercase tracking-wider">
-                {verse.reference}
-              </p>
-            </div>
-          </div>
+            {/* Accent Line */}
+            <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-primary/60 to-accent/20 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
-          {/* Bottom Glow Effect */}
-          <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full blur-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-40 transition-opacity duration-500" />
-        </motion.div>
+            {/* Subtle Pattern */}
+            <div className="absolute inset-0 opacity-[0.015] dark:opacity-[0.03]"
+              style={{
+                backgroundImage: `radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0)`,
+                backgroundSize: '24px 24px'
+              }}
+            />
+            
+            <div className="relative flex items-start gap-5">
+              {/* Icon */}
+              <motion.div 
+                whileHover={{ scale: 1.1, rotate: 8 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                className="flex-shrink-0 w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center shadow-inner transition-all duration-300"
+              >
+                <BookOpen className="h-6 w-6 text-primary" strokeWidth={1.75} />
+              </motion.div>
+              
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                <p className="text-foreground leading-relaxed text-lg font-normal">
+                  <span className="text-primary/60 text-2xl font-serif">"</span>
+                  {verse.text}
+                  <span className="text-primary/60 text-2xl font-serif">"</span>
+                </p>
+                <p className="text-sm text-muted-foreground/80 mt-3 font-semibold uppercase tracking-wider">
+                  {verse.reference}
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom Glow Effect */}
+            <div className="absolute -bottom-4 -right-4 w-24 h-24 rounded-full blur-2xl bg-gradient-to-br from-primary/10 via-primary/5 to-transparent opacity-0 group-hover:opacity-40 transition-opacity duration-500" />
+          </motion.div>
+
+          {/* Compact Calendar */}
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            transition={{
+              duration: 0.4,
+              delay: 0.1,
+              ease: [0.25, 0.46, 0.45, 0.94],
+            }}
+            className="hidden lg:block"
+          >
+            <div className="bg-card/80 backdrop-blur-sm rounded-2xl border border-border/40 shadow-sm overflow-hidden">
+              <Calendar
+                mode="single"
+                selected={calendarDate}
+                onSelect={setCalendarDate}
+                className="p-2"
+              />
+            </div>
+          </motion.div>
+        </div>
 
 
         {/* Main KPIs Grid */}
