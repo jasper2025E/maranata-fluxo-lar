@@ -102,7 +102,7 @@ const ptBR = {
       main: "Principal",
       finance: "Financeiro",
       operations: "Faturamento",
-      analysis: "Análise",
+      analysis: "Financeiro",
       system: "Configurações",
       profile: "Perfil",
       config: {
