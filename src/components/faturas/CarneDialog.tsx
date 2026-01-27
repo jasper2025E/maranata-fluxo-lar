@@ -194,6 +194,35 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
         return;
       }
 
+      // Recriar cobranças inválidas (billingType UNDEFINED) e garantir dados completos
+      const faturasToRecreate = faturasParaImprimir.filter(
+        f => f.status !== "Paga" && !!f.asaas_payment_id && f.asaas_billing_type === "UNDEFINED"
+      );
+
+      if (faturasToRecreate.length > 0) {
+        setProgressMessage(`Recriando boletos inválidos...`);
+
+        for (let i = 0; i < faturasToRecreate.length; i++) {
+          const fatura = faturasToRecreate[i];
+          setProgressMessage(`Recriando ${i + 1}/${faturasToRecreate.length}`);
+          setProgressValue(((i + 1) / faturasToRecreate.length) * 35);
+
+          try {
+            await supabase.functions.invoke("asaas-cancel-payment", {
+              body: { faturaId: fatura.id, motivo: "Recriação automática (billingType inválido)" },
+            });
+          } catch (err) {
+            console.warn(`Falha ao cancelar cobrança antiga para fatura ${fatura.id}:`, err);
+          }
+
+          try {
+            await createPayment(fatura.id, "BOLETO");
+          } catch (error) {
+            console.warn(`Falha ao recriar cobrança para fatura ${fatura.id}:`, error);
+          }
+        }
+      }
+
       // Gerar cobranças Asaas para faturas que ainda não têm dados completos
       const faturasAbertas = faturasParaImprimir.filter(
         f => f.status !== "Paga" && (!f.asaas_pix_qrcode || !f.asaas_boleto_barcode)
@@ -208,7 +237,7 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
           setProgressValue(((i + 1) / faturasAbertas.length) * 50);
 
           try {
-            await createPayment(fatura.id, "UNDEFINED");
+            await createPayment(fatura.id, "BOLETO");
           } catch (error) {
             console.warn(`Falha ao gerar cobrança para fatura ${fatura.id}:`, error);
           }

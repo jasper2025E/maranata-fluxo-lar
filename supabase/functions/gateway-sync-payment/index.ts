@@ -73,7 +73,7 @@ Deno.serve(async (req) => {
     }
 
     // Parse request
-    const { faturaId: reqFaturaId, action = "sync", billingType = "UNDEFINED" }: SyncRequest = await req.json();
+    const { faturaId: reqFaturaId, action = "sync", billingType = "BOLETO" }: SyncRequest = await req.json();
     faturaId = reqFaturaId;
 
     if (!faturaId) {

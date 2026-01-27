@@ -181,7 +181,7 @@ export function useGatewaySync() {
    */
   const createPayment = async (
     faturaId: string,
-    billingType: string = "UNDEFINED"
+    billingType: string = "BOLETO"
   ): Promise<GatewaySyncResult> => {
     try {
       const { data, error } = await supabase.functions.invoke("gateway-sync-payment", {

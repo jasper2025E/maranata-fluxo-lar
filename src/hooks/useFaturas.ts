@@ -423,7 +423,7 @@ export function useCreateFatura() {
           try {
             console.log(`Criando cobrança ASAAS - Tentativa ${attempt}/${maxRetries}...`);
             const { data: asaasResult, error: asaasError } = await supabase.functions.invoke("asaas-create-payment", {
-              body: { faturaId: fatura.id, billingType: "UNDEFINED" },
+              body: { faturaId: fatura.id, billingType: "BOLETO" },
             });
             
             if (asaasError) {

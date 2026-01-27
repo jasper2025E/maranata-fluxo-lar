@@ -42,7 +42,7 @@ export const AsaasPaymentDialog = ({ open, onOpenChange, fatura, onSuccess }: As
       }
     } else {
       // Criar nova cobrança
-      const result = await createPayment(fatura.id, "UNDEFINED");
+      const result = await createPayment(fatura.id, "BOLETO");
       if (result.success) {
         setPaymentData(result);
         onSuccess?.();
