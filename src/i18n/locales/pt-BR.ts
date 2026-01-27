@@ -331,6 +331,7 @@ const ptBR = {
       active: "Ativo",
       inactive: "Inativo",
       students: "aluno(s)",
+      studentsLinked: "aluno(s) vinculado(s)",
     },
 
     // Courses
