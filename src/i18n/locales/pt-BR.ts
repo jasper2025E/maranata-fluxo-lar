@@ -153,6 +153,7 @@ const ptBR = {
       title: "Dashboard",
       subtitle: "Visão geral do fluxo financeiro e indicadores da escola",
       welcome: "Bem-vindo",
+      welcomeMessage: "Confira o resumo financeiro e indicadores da sua escola.",
       totalStudents: "Total de Alunos",
       activeStudents: "Alunos Ativos",
       monthlyRevenue: "Receita Mensal",
