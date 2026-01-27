@@ -55,12 +55,12 @@ export function FaturaKPIs() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
         {[...Array(7)].map((_, i) => (
-          <Card key={i} className="border">
-            <CardContent className="p-4">
-              <Skeleton className="h-3 w-16 mb-2" />
-              <Skeleton className="h-6 w-20" />
+          <Card key={i} className="border rounded-2xl">
+            <CardContent className="p-5">
+              <Skeleton className="h-3 w-16 mb-3" />
+              <Skeleton className="h-7 w-24" />
             </CardContent>
           </Card>
         ))}
@@ -71,7 +71,7 @@ export function FaturaKPIs() {
   if (!kpis) return null;
 
   return (
-    <div className="grid auto-rows-fr grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+    <div className="grid auto-rows-fr grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-4">
       <FinancialKPICard
         title={t("invoices.monthlyBilling")}
         value={formatCurrency(kpis.faturamentoMensal)}
@@ -123,7 +123,6 @@ export function FaturaKPIs() {
         variant="warning"
         size="sm"
       />
-      
     </div>
   );
 }

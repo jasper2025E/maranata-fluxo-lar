@@ -151,64 +151,68 @@ function FaturaRow({
   const saldoRestante = fatura.saldo_restante || valorFinal;
 
   return (
-    <TableRow className="hover:bg-muted/30 transition-colors">
+    <TableRow className={cn(
+      "transition-all duration-150 group",
+      isSelected ? "bg-primary/5" : "hover:bg-muted/40"
+    )}>
       {onToggleSelect && (
-        <TableCell className="pl-4 w-10">
+        <TableCell className="pl-5 w-12">
           <Checkbox
             checked={isSelected}
             onCheckedChange={() => onToggleSelect(fatura.id)}
+            className="rounded-md"
           />
         </TableCell>
       )}
-      <TableCell className={cn("font-mono text-xs text-muted-foreground", !onToggleSelect && "pl-4")}>
+      <TableCell className={cn("font-mono text-xs text-muted-foreground", !onToggleSelect && "pl-5")}>
         {fatura.codigo_sequencial || fatura.id.slice(0, 8)}
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-semibold text-primary">
+          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-bold text-primary shadow-sm">
             {fatura.alunos?.nome_completo?.charAt(0).toUpperCase() || '?'}
           </div>
           <div>
-            <p className="font-medium text-sm">{fatura.alunos?.nome_completo || 'N/A'}</p>
+            <p className="font-semibold text-sm text-foreground">{fatura.alunos?.nome_completo || 'N/A'}</p>
             <p className="text-xs text-muted-foreground">{fatura.responsaveis?.nome || fatura.cursos?.nome}</p>
           </div>
         </div>
       </TableCell>
-      <TableCell className="text-sm text-muted-foreground">
+      <TableCell className="text-sm font-medium text-muted-foreground">
         {meses[fatura.mes_referencia - 1]?.slice(0, 3)}/{fatura.ano_referencia}
       </TableCell>
       <TableCell>
         <div className="flex flex-col">
-          <span className="font-semibold text-sm">{formatCurrency(valorFinal)}</span>
+          <span className="font-bold text-sm text-foreground">{formatCurrency(valorFinal)}</span>
           {temAlteracao && (
             <span className="text-xs text-muted-foreground line-through">{formatCurrency(valorOriginal)}</span>
           )}
           {saldoRestante > 0 && saldoRestante < valorFinal && (
-            <span className="text-xs text-warning">Saldo: {formatCurrency(saldoRestante)}</span>
+            <span className="text-xs text-warning font-medium">Saldo: {formatCurrency(saldoRestante)}</span>
           )}
         </div>
       </TableCell>
       <TableCell className="text-sm">
         <div className="flex flex-col">
-          <span className="text-muted-foreground">{format(new Date(fatura.data_vencimento), "dd/MM/yy")}</span>
+          <span className="text-foreground font-medium">{format(new Date(fatura.data_vencimento), "dd/MM/yy")}</span>
           {fatura.dias_atraso && fatura.dias_atraso > 0 && fatura.status === "Vencida" && (
-            <span className="text-xs text-destructive">{fatura.dias_atraso}d atraso</span>
+            <span className="text-xs text-destructive font-semibold">{fatura.dias_atraso}d atraso</span>
           )}
         </div>
       </TableCell>
       <TableCell>
-        <div className="flex items-center gap-1">
-          <Badge variant="outline" className={cn("font-medium gap-1 px-2 py-0.5 text-xs", statusConfig.className)}>
-            <StatusIcon className="h-3 w-3" />
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <Badge variant="outline" className={cn("font-semibold gap-1.5 px-2.5 py-1 text-xs rounded-lg", statusConfig.className)}>
+            <StatusIcon className="h-3.5 w-3.5" />
             {statusConfig.label}
           </Badge>
           {fatura.asaas_payment_id && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 bg-success/10 text-success border-success/20">
+            <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-success/10 text-success border-success/20 rounded-md font-semibold">
               Asaas
             </Badge>
           )}
           {fatura.versao && fatura.versao > 1 && (
-            <span className="text-[10px] text-muted-foreground">v{fatura.versao}</span>
+            <span className="text-[10px] text-muted-foreground font-medium">v{fatura.versao}</span>
           )}
         </div>
       </TableCell>
@@ -385,11 +389,13 @@ export function FaturaTable({
 
   if (faturas.length === 0) {
     return (
-      <Card className="border">
-        <CardContent className="flex flex-col items-center justify-center py-16">
-          <FileText className="h-12 w-12 text-muted-foreground mb-4" />
-          <h3 className="font-semibold mb-1">Nenhuma fatura encontrada</h3>
-          <p className="text-sm text-muted-foreground">Ajuste os filtros ou crie uma nova fatura</p>
+      <Card className="border rounded-2xl shadow-sm">
+        <CardContent className="flex flex-col items-center justify-center py-20">
+          <div className="h-16 w-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-5">
+            <FileText className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h3 className="font-bold text-lg mb-2">Nenhuma fatura encontrada</h3>
+          <p className="text-sm text-muted-foreground max-w-[280px] text-center">Ajuste os filtros ou crie uma nova fatura para começar</p>
         </CardContent>
       </Card>
     );
@@ -402,15 +408,15 @@ export function FaturaTable({
     onToggleSelect: onSelectionChange ? handleToggleSelect : undefined,
   };
 
-  // List view
+  // List view - Shopify Style
   if (viewMode === "list") {
     return (
-      <Card className="border overflow-hidden">
+      <Card className="border rounded-2xl shadow-sm overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow className="bg-muted/30">
+            <TableRow className="bg-muted/40 border-b">
               {onSelectionChange && (
-                <TableHead className="pl-4 w-10">
+                <TableHead className="pl-5 w-12">
                   <Checkbox
                     checked={isAllVisibleSelected}
                     ref={(ref) => {
@@ -419,16 +425,17 @@ export function FaturaTable({
                       }
                     }}
                     onCheckedChange={handleSelectAll}
+                    className="rounded-md"
                   />
                 </TableHead>
               )}
-              <TableHead className={cn("w-[120px]", !onSelectionChange && "pl-4")}>Código</TableHead>
-              <TableHead>Aluno / Responsável</TableHead>
-              <TableHead>Ref.</TableHead>
-              <TableHead>Valor</TableHead>
-              <TableHead>Vencimento</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right pr-4">Ações</TableHead>
+              <TableHead className={cn("w-[130px] text-xs font-semibold uppercase tracking-wide text-muted-foreground", !onSelectionChange && "pl-5")}>Código</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Aluno / Responsável</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ref.</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Valor</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Vencimento</TableHead>
+              <TableHead className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Status</TableHead>
+              <TableHead className="text-right pr-5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -442,9 +449,9 @@ export function FaturaTable({
             ))}
           </TableBody>
         </Table>
-        <CardContent className="border-t py-3 text-center text-sm text-muted-foreground">
+        <CardContent className="border-t bg-muted/20 py-3 text-center text-sm text-muted-foreground">
           {selectedFaturas && selectedFaturas.size > 0 
-            ? `${selectedFaturas.size} de ${faturas.length} fatura(s) selecionada(s)`
+            ? <span className="font-medium text-foreground">{selectedFaturas.size} de {faturas.length} fatura(s) selecionada(s)</span>
             : `${faturas.length} fatura(s)`
           }
         </CardContent>
