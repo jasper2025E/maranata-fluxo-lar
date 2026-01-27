@@ -46,8 +46,21 @@ serve(async (req) => {
 
     tenantId = fatura.tenant_id || fatura.alunos?.tenant_id || null;
 
-    if (fatura.status === "Paga" || fatura.status === "Cancelada") {
-      throw new Error(`Fatura já está ${fatura.status.toLowerCase()}`);
+    // Regra de negócio: não criar cobrança para fatura paga/cancelada.
+    // Importante: responder 200 com success=false para o frontend não tratar como erro de rede (evita blank screen).
+    const status = String(fatura.status || "").trim();
+    if (status === "Paga" || status === "Cancelada") {
+      return new Response(
+        JSON.stringify({
+          success: false,
+          error: `Fatura já está ${status.toLowerCase()}`,
+          code: "INVOICE_STATUS_BLOCKED",
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        }
+      );
     }
 
     // Obter credenciais do gateway (tenant-specific ou fallback global)
@@ -384,7 +397,8 @@ serve(async (req) => {
       success: false, 
       error: message 
     }), {
-      status: 400,
+      // Retornar 200 evita que o client trate como FunctionsHttpError (melhora UX e evita blank screens).
+      status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
   }

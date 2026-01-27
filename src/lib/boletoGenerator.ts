@@ -1,6 +1,7 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { Fatura, getValorFinal, formatCurrency, meses } from "@/hooks/useFaturas";
+import { generateITF25BarcodeDataUrl } from "@/lib/itf25Barcode";
 
 interface EscolaInfo {
   nome: string;
@@ -42,6 +43,15 @@ function drawDashedLine(doc: jsPDF, x1: number, y1: number, x2: number, y2: numb
   doc.setLineDashPattern([2, 2], 0);
   doc.line(x1, y1, x2, y2);
   doc.setLineDashPattern([], 0);
+}
+
+async function getImageDimensions(dataUrl: string): Promise<{ w: number; h: number }> {
+  return await new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth || img.width, h: img.naturalHeight || img.height });
+    img.onerror = () => reject(new Error("Falha ao carregar imagem"));
+    img.src = dataUrl;
+  });
 }
 
 function drawCell(
@@ -242,21 +252,49 @@ export async function generateBoletoPDF(
   y += 3;
   const barcodeHeight = 14;
   const barcodeWidth = contentWidth - 50;
-  
-  // Draw simulated barcode
-  const bars = [3,1,2,1,1,2,3,1,2,1,1,3,2,1,1,2,1,3,2,1,1,2,3,1,2,1,1,2,1,3,2,1,1,2,1,3,2,1,1,2,3,1,2,1,1,2,1,3,2,1,1,2,3,1,2,1,1,2,1,3,2,1,3,1,2,1,1,2,3,1];
-  let totalBarWidth = 0;
-  bars.forEach(w => totalBarWidth += w + 1);
-  const barScale = barcodeWidth / totalBarWidth;
-  
-  let barcodeX = margin;
-  bars.forEach((width, i) => {
-    if (i % 2 === 0) {
-      doc.setFillColor(...COLORS.dark);
-      doc.rect(barcodeX, y, width * barScale, barcodeHeight, "F");
+
+  // Código de barras REAL (ITF-25) - escaneável em apps bancários
+  const barcodeSource =
+    (fatura as any).asaas_boleto_bar_code ||
+    boletoBarcode ||
+    fatura.asaas_boleto_barcode;
+
+  const barcodeImage = barcodeSource ? await generateITF25BarcodeDataUrl(barcodeSource) : null;
+
+  if (barcodeImage) {
+    try {
+      // Mantém proporção para evitar distorção (distorção = leitura inválida)
+      const maxW = barcodeWidth;
+      const targetH = barcodeHeight;
+
+      const { w, h } = await getImageDimensions(barcodeImage);
+      const ratio = w > 0 && h > 0 ? w / h : 8;
+      let widthMm = targetH * ratio;
+      let heightMm = targetH;
+      if (widthMm > maxW) {
+        widthMm = maxW;
+        heightMm = widthMm / ratio;
+      }
+
+      const x = margin + (barcodeWidth - widthMm) / 2;
+      const yImg = y;
+
+      // Quiet zone melhora leitura
+      doc.setFillColor(...COLORS.white);
+      doc.rect(x - 1, yImg - 1, widthMm + 2, heightMm + 2, "F");
+
+      // Evita compressão que pode borrar as barras
+      doc.addImage(barcodeImage, "PNG", x, yImg, widthMm, heightMm, undefined, "NONE");
+    } catch {
+      doc.setFontSize(8);
+      doc.setTextColor(...COLORS.muted);
+      doc.text("Código de barras indisponível", margin, y + 9);
     }
-    barcodeX += (width + 1) * barScale;
-  });
+  } else {
+    doc.setFontSize(8);
+    doc.setTextColor(...COLORS.muted);
+    doc.text("Código de barras indisponível", margin, y + 9);
+  }
   
   y += barcodeHeight + 8;
 
