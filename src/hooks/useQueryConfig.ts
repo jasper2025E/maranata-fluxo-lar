@@ -1,19 +1,21 @@
 import { UseQueryOptions } from "@tanstack/react-query";
 
-// Default query configuration for optimal performance
+// Default query configuration - cache curto para dados dinâmicos
 export const defaultQueryConfig: Partial<UseQueryOptions> = {
-  staleTime: 1000 * 60 * 5, // 5 minutes
-  gcTime: 1000 * 60 * 30, // 30 minutes (formerly cacheTime)
+  staleTime: 1000 * 30, // 30 segundos - dados frescos por pouco tempo
+  gcTime: 1000 * 60 * 10, // 10 minutos de cache
   retry: 2,
   refetchOnWindowFocus: false,
+  refetchOnMount: true, // Sempre verifica ao montar
 };
 
 // Short cache for frequently changing data
 export const shortCacheConfig: Partial<UseQueryOptions> = {
-  staleTime: 1000 * 30, // 30 seconds
-  gcTime: 1000 * 60 * 5, // 5 minutes
+  staleTime: 1000 * 10, // 10 segundos
+  gcTime: 1000 * 60 * 5, // 5 minutos
   retry: 2,
-  refetchOnWindowFocus: true,
+  refetchOnWindowFocus: false,
+  refetchOnMount: true,
 };
 
 // Query keys factory for type-safe and consistent keys

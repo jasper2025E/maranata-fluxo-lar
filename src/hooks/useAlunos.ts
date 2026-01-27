@@ -120,7 +120,7 @@ export function useCreateAluno() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
       toast.success("Aluno cadastrado com sucesso!");
     },
     onError: (error: Error) => {
@@ -145,8 +145,8 @@ export function useUpdateAluno() {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.detail(variables.id), refetchType: 'all' });
       toast.success("Aluno atualizado com sucesso!");
     },
     onError: (error: Error) => {
@@ -222,9 +222,9 @@ export function useDeleteAluno() {
       return { faturasAbertas: faturasAbertas?.length || 0 };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
-      queryClient.invalidateQueries({ queryKey: ['faturas'] });
-      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['faturas'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'], refetchType: 'all' });
       
       if (result.faturasAbertas > 0) {
         toast.success(`Aluno desativado e ${result.faturasAbertas} fatura(s) excluída(s) permanentemente!`);
@@ -257,7 +257,7 @@ export function useToggleAlunoStatus() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
       toast.success("Status do aluno atualizado!");
     },
     onError: (error: Error) => {

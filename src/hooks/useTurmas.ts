@@ -65,7 +65,7 @@ export function useCreateTurma() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["turmas"] });
+      queryClient.invalidateQueries({ queryKey: ["turmas"], refetchType: 'all' });
       toast.success("Turma cadastrada com sucesso!");
     },
     onError: (error: Error) => {
@@ -90,7 +90,7 @@ export function useUpdateTurma() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["turmas"] });
+      queryClient.invalidateQueries({ queryKey: ["turmas"], refetchType: 'all' });
       toast.success("Turma atualizada com sucesso!");
     },
     onError: (error: Error) => {
@@ -112,7 +112,7 @@ export function useDeleteTurma() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["turmas"] });
+      queryClient.invalidateQueries({ queryKey: ["turmas"], refetchType: 'all' });
       toast.success("Turma removida com sucesso!");
     },
     onError: (error: Error) => {

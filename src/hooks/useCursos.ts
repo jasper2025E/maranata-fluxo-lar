@@ -107,7 +107,7 @@ export function useCreateCurso() {
     },
     onSuccess: () => {
       // Invalidar todas as queries de cursos para garantir consistência
-      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all, refetchType: 'all' });
       toast.success("Curso cadastrado com sucesso!");
     },
     onError: (error: Error) => {
@@ -133,8 +133,8 @@ export function useUpdateCurso() {
     },
     onSuccess: (data, variables) => {
       // Invalidar todas as queries de cursos para garantir consistência
-      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.detail(variables.id), refetchType: 'all' });
       toast.success("Curso atualizado com sucesso!");
     },
     onError: (error: Error) => {
@@ -157,7 +157,7 @@ export function useDeleteCurso() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all, refetchType: 'all' });
       toast.success("Curso desativado com sucesso!");
     },
     onError: (error: Error) => {
@@ -182,7 +182,7 @@ export function useToggleCursoAtivo() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.cursos.all, refetchType: 'all' });
       toast.success("Status do curso atualizado!");
     },
     onError: (error: Error) => {

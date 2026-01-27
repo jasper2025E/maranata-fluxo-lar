@@ -46,7 +46,7 @@ export function useUpdateEscola() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.escola.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.escola.all, refetchType: 'all' });
       toast.success("Dados da escola atualizados!");
     },
     onError: (error: Error) => {
@@ -70,7 +70,7 @@ export function useCreateEscola() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.escola.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.escola.all, refetchType: 'all' });
       toast.success("Escola cadastrada com sucesso!");
     },
     onError: (error: Error) => {
