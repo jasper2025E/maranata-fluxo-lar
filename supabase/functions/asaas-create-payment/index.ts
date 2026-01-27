@@ -22,7 +22,7 @@ serve(async (req) => {
   let gatewayConfigId: string | null = null;
 
   try {
-    const { faturaId, billingType = "UNDEFINED" } = await req.json();
+    const { faturaId, billingType = "BOLETO" } = await req.json();
 
     if (!faturaId) {
       throw new Error("faturaId é obrigatório");
