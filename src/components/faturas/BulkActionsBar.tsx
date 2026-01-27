@@ -194,27 +194,27 @@ export function BulkActionsBar({
     let processed = 0;
 
     try {
-      // Primeiro, criar cobranças Asaas para faturas que não têm
-      const faturasWithoutAsaas = pendingFaturas.filter(
+      // Primeiro, criar cobranças no gateway para faturas que não têm
+      const faturasWithoutPayment = pendingFaturas.filter(
         f => !f.asaas_payment_id && (f.status === "Aberta" || f.status === "Vencida")
       );
 
-      if (faturasWithoutAsaas.length > 0) {
-        setProgressMessage(`Gerando cobranças Asaas (0/${faturasWithoutAsaas.length})...`);
+      if (faturasWithoutPayment.length > 0) {
+        setProgressMessage(`Gerando cobranças (0/${faturasWithoutPayment.length})...`);
         
-        for (const fatura of faturasWithoutAsaas) {
+        for (const fatura of faturasWithoutPayment) {
           try {
             await createPayment(fatura.id, "UNDEFINED");
           } catch (err) {
             console.warn(`Erro ao criar cobrança para fatura ${fatura.id}:`, err);
           }
           processed++;
-          setProgressMessage(`Gerando cobranças Asaas (${processed}/${faturasWithoutAsaas.length})...`);
-          setProgressValue((processed / (faturasWithoutAsaas.length + 1)) * 50);
+          setProgressMessage(`Gerando cobranças (${processed}/${faturasWithoutPayment.length})...`);
+          setProgressValue((processed / (faturasWithoutPayment.length + 1)) * 50);
         }
       }
 
-      // Buscar faturas atualizadas com dados do Asaas
+      // Buscar faturas atualizadas com dados do gateway
       setProgressMessage("Buscando dados atualizados...");
       const { data: updatedFaturas } = await supabase
         .from("faturas")
@@ -257,13 +257,13 @@ export function BulkActionsBar({
     }
   };
 
-  const handleGenerateAsaas = async () => {
-    const faturasWithoutAsaas = selectedFaturas.filter(
+  const handleGeneratePayments = async () => {
+    const faturasWithoutPayment = selectedFaturas.filter(
       f => !f.asaas_payment_id && (f.status === "Aberta" || f.status === "Vencida")
     );
 
-    if (faturasWithoutAsaas.length === 0) {
-      toast.info("Todas as faturas selecionadas já têm cobrança Asaas");
+    if (faturasWithoutPayment.length === 0) {
+      toast.info("Todas as faturas selecionadas já têm cobrança gerada");
       return;
     }
 
@@ -273,8 +273,8 @@ export function BulkActionsBar({
     let success = 0;
 
     try {
-      for (const fatura of faturasWithoutAsaas) {
-        setProgressMessage(`Gerando cobrança ${processed + 1} de ${faturasWithoutAsaas.length}...`);
+      for (const fatura of faturasWithoutPayment) {
+        setProgressMessage(`Gerando cobrança ${processed + 1} de ${faturasWithoutPayment.length}...`);
         
         try {
           await createPayment(fatura.id, "UNDEFINED");
@@ -284,10 +284,10 @@ export function BulkActionsBar({
         }
         
         processed++;
-        setProgressValue((processed / faturasWithoutAsaas.length) * 100);
+        setProgressValue((processed / faturasWithoutPayment.length) * 100);
       }
 
-      toast.success(`${success} cobrança(s) Asaas gerada(s)!`);
+      toast.success(`${success} cobrança(s) gerada(s)!`);
       onActionComplete();
     } catch (error) {
       toast.error("Erro ao gerar cobranças");
@@ -572,14 +572,14 @@ export function BulkActionsBar({
 
               success++;
 
-              // Sync with Asaas
+              // Sync with gateway
               if (fatura.asaas_payment_id) {
                 try {
-                  await supabase.functions.invoke("asaas-update-payment", {
-                    body: { faturaId: fatura.id },
+                  await supabase.functions.invoke("gateway-sync-payment", {
+                    body: { faturaId: fatura.id, action: "sync" },
                   });
                 } catch (err) {
-                  console.warn("Erro ao atualizar Asaas:", err);
+                  console.warn("Erro ao atualizar gateway:", err);
                 }
               }
             }
@@ -626,14 +626,14 @@ export function BulkActionsBar({
           if (!error) {
             success++;
             
-            // Se tem cobrança Asaas, atualizar
+            // Se tem cobrança, atualizar no gateway
             if (fatura.asaas_payment_id && (editData.editMode === "vencimento" || editData.editMode === "valor")) {
               try {
-                await supabase.functions.invoke("asaas-update-payment", {
-                  body: { faturaId: fatura.id },
+                await supabase.functions.invoke("gateway-sync-payment", {
+                  body: { faturaId: fatura.id, action: "sync" },
                 });
               } catch (err) {
-                console.warn("Erro ao atualizar Asaas:", err);
+                console.warn("Erro ao atualizar gateway:", err);
               }
             }
           }
@@ -744,7 +744,7 @@ export function BulkActionsBar({
                   Cobranças
                 </DropdownMenuLabel>
                 <DropdownMenuItem 
-                  onClick={handleGenerateAsaas} 
+                  onClick={handleGeneratePayments} 
                   disabled={pendingCount === 0}
                   className="gap-2 cursor-pointer text-success"
                 >
@@ -858,7 +858,7 @@ export function BulkActionsBar({
               </p>
               <p>
                 As {selectedCount} fatura(s) selecionadas serão excluídas permanentemente do sistema 
-                e do gateway de pagamento (ASAAS).
+                e do gateway de pagamento.
               </p>
               <p>
                 Todos os dados relacionados (itens, descontos, pagamentos, histórico) serão removidos.
