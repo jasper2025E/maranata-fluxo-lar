@@ -222,11 +222,6 @@ function FaturaRow({
             <DropdownMenuItem onClick={() => onViewHistory(fatura)}>
               <History className="h-4 w-4 mr-2" />Histórico
             </DropdownMenuItem>
-            {onDownloadPDF && (
-              <DropdownMenuItem onClick={() => onDownloadPDF(fatura)}>
-                <Download className="h-4 w-4 mr-2" />Baixar PDF
-              </DropdownMenuItem>
-            )}
             {onDownloadBoleto && fatura.asaas_payment_id && (
               (() => {
                 // Validação: linha digitável (47 dígitos) e código de barras (44 dígitos)
