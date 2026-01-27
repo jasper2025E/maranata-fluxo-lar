@@ -83,29 +83,32 @@ export function FaturaFilters({
   };
 
   return (
-    <Card className="border">
-      <CardContent className="p-4 space-y-4">
-        {/* Search & View Toggle */}
+    <Card className="border rounded-2xl shadow-sm overflow-hidden">
+      <CardContent className="p-5 space-y-4">
+        {/* Search & View Toggle - Shopify Style */}
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Buscar por aluno, responsável ou código..."
               value={searchTerm}
               onChange={(e) => onSearchChange(e.target.value)}
-              className="pl-9"
+              className="h-11 pl-11 rounded-xl border-border/60 focus:border-primary/50 transition-colors"
             />
           </div>
           <div className="flex gap-2">
             <Button
               variant={showFilters ? "default" : "outline"}
-              size="icon"
               onClick={() => setShowFilters(!showFilters)}
-              className="relative"
+              className={cn(
+                "h-11 px-4 rounded-xl gap-2 transition-all",
+                showFilters && "shadow-md"
+              )}
             >
               <Filter className="h-4 w-4" />
+              <span className="hidden sm:inline font-medium">Filtros</span>
               {activeFilters.length > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-[10px] text-primary-foreground rounded-full flex items-center justify-center">
+                <span className="h-5 w-5 bg-primary-foreground/20 text-[11px] font-bold rounded-full flex items-center justify-center">
                   {activeFilters.length}
                 </span>
               )}
@@ -115,7 +118,7 @@ export function FaturaFilters({
                 type="single" 
                 value={viewMode} 
                 onValueChange={(value) => value && onViewModeChange(value as ViewMode)}
-                className="bg-muted/50 p-1 rounded-lg"
+                className="bg-muted/50 p-1.5 rounded-xl border border-border/40"
               >
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -123,8 +126,8 @@ export function FaturaFilters({
                       value="list" 
                       aria-label="Lista"
                       className={cn(
-                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md transition-all",
-                        "hover:bg-background/50"
+                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-md rounded-lg transition-all",
+                        "hover:bg-background/60"
                       )}
                     >
                       <List className="h-4 w-4" />
@@ -138,8 +141,8 @@ export function FaturaFilters({
                       value="status" 
                       aria-label="Por Status"
                       className={cn(
-                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md transition-all",
-                        "hover:bg-background/50"
+                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-md rounded-lg transition-all",
+                        "hover:bg-background/60"
                       )}
                     >
                       <Layers className="h-4 w-4" />
@@ -153,8 +156,8 @@ export function FaturaFilters({
                       value="aluno" 
                       aria-label="Por Aluno"
                       className={cn(
-                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md transition-all",
-                        "hover:bg-background/50"
+                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-md rounded-lg transition-all",
+                        "hover:bg-background/60"
                       )}
                     >
                       <Users className="h-4 w-4" />
@@ -168,8 +171,8 @@ export function FaturaFilters({
                       value="mes" 
                       aria-label="Por Mês"
                       className={cn(
-                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-sm rounded-md transition-all",
-                        "hover:bg-background/50"
+                        "h-8 w-8 data-[state=on]:bg-background data-[state=on]:shadow-md rounded-lg transition-all",
+                        "hover:bg-background/60"
                       )}
                     >
                       <CalendarIcon className="h-4 w-4" />
@@ -182,29 +185,29 @@ export function FaturaFilters({
           </div>
         </div>
 
-        {/* Active Filters */}
+        {/* Active Filters - Shopify Style Pills */}
         {activeFilters.length > 0 && (
-          <div className="flex flex-wrap gap-2 items-center">
-            <span className="text-xs text-muted-foreground">Filtros ativos:</span>
+          <div className="flex flex-wrap gap-2 items-center pt-2">
+            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Filtros:</span>
             {activeFilters.map((filter, i) => (
-              <Badge key={i} variant="secondary" className="text-xs">
+              <Badge key={i} variant="secondary" className="text-xs rounded-lg px-3 py-1 bg-primary/10 text-primary border-0">
                 {filter}
               </Badge>
             ))}
-            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-6 px-2 text-xs">
+            <Button variant="ghost" size="sm" onClick={clearFilters} className="h-7 px-3 text-xs rounded-lg text-muted-foreground hover:text-destructive">
               <X className="h-3 w-3 mr-1" />
-              Limpar
+              Limpar tudo
             </Button>
           </div>
         )}
 
-        {/* Filter Panel */}
+        {/* Filter Panel - Shopify Style */}
         {showFilters && (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t">
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Status</label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-border/50 animate-in fade-in slide-in-from-top-2 duration-200">
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-foreground">Status</label>
               <Select value={statusFilter} onValueChange={onStatusChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todas">Todas</SelectItem>
                   <SelectItem value="aberta">Abertas</SelectItem>
@@ -215,10 +218,10 @@ export function FaturaFilters({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Aluno</label>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-foreground">Aluno</label>
               <Select value={alunoFilter} onValueChange={onAlunoChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
                   {alunos.map(a => (
@@ -228,10 +231,10 @@ export function FaturaFilters({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Curso</label>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-foreground">Curso</label>
               <Select value={cursoFilter} onValueChange={onCursoChange}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-10 rounded-xl"><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="todos">Todos</SelectItem>
                   {cursos.map(c => (
@@ -241,12 +244,12 @@ export function FaturaFilters({
               </Select>
             </div>
 
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Período</label>
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-foreground">Período</label>
               <Popover>
                 <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-start text-left font-normal">
-                    <CalendarIcon className="h-4 w-4 mr-2" />
+                  <Button variant="outline" className="w-full h-10 justify-start text-left font-normal rounded-xl">
+                    <CalendarIcon className="h-4 w-4 mr-2 text-muted-foreground" />
                     {periodoFilter.start ? (
                       periodoFilter.end ? (
                         `${format(periodoFilter.start, "dd/MM")} - ${format(periodoFilter.end, "dd/MM")}`
@@ -258,7 +261,7 @@ export function FaturaFilters({
                     )}
                   </Button>
                 </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
+                <PopoverContent className="w-auto p-0 rounded-xl" align="start">
                   <Calendar
                     mode="range"
                     selected={{

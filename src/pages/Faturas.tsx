@@ -437,32 +437,37 @@ const Faturas = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
 
-        {/* Header */}
+        {/* Header - Shopify Style */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            
-            
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10">
+              <FileText className="h-6 w-6 text-primary" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold tracking-tight">Faturas</h1>
+              <p className="text-sm text-muted-foreground">Gerencie as cobranças dos seus alunos</p>
+            </div>
           </div>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <Button 
               variant="outline" 
-              size="sm" 
               onClick={handleBulkSyncAsaas}
               disabled={isSyncing}
-              className={`group gap-2 transition-all duration-300 hover:scale-[1.02] hover:shadow-md ${
+              className={`h-11 px-5 rounded-xl gap-2 transition-all duration-200 font-medium ${
                 isSyncing 
                   ? 'bg-primary/5 border-primary/30' 
-                  : 'hover:bg-primary/5 hover:border-primary/50'
+                  : 'hover:bg-primary/5 hover:border-primary/50 hover:shadow-md'
               }`}
             >
-              <RefreshCw className={`h-4 w-4 transition-transform duration-300 ${isSyncing ? 'animate-spin' : 'group-hover:rotate-90'}`} />
-              <span className="font-medium">
-                {isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar'}
-              </span>
+              <RefreshCw className={`h-4 w-4 transition-transform duration-300 ${isSyncing ? 'animate-spin' : ''}`} />
+              {isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar'}
             </Button>
-            <Button size="sm" onClick={() => setIsCreateOpen(true)} className="gap-2">
+            <Button 
+              onClick={() => setIsCreateOpen(true)} 
+              className="h-11 px-5 rounded-xl gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
+            >
               <Plus className="h-4 w-4" />
               {t("invoices.newInvoice")}
             </Button>
