@@ -1,6 +1,8 @@
 import jsPDF from "jspdf";
 import { format } from "date-fns";
 import { Fatura, formatCurrency, meses } from "@/hooks/useFaturas";
+// @ts-ignore - bwip-js types
+import bwipjs from "bwip-js";
 
 interface EscolaInfo {
   nome: string;
@@ -17,7 +19,6 @@ const GRAY_700: [number, number, number] = [55, 65, 81];
 const GRAY_500: [number, number, number] = [107, 114, 128];
 const GRAY_400: [number, number, number] = [156, 163, 175];
 const GRAY_200: [number, number, number] = [229, 231, 235];
-const GRAY_100: [number, number, number] = [243, 244, 246];
 const WHITE: [number, number, number] = [255, 255, 255];
 
 // A4 dimensions
@@ -25,33 +26,78 @@ const A4_WIDTH = 210;
 const COMPACT_HEIGHT = 99;
 const MARGIN = 6;
 
+// Cache de códigos de barras gerados
+const barcodeCache = new Map<string, string>();
+
 /**
- * Desenha barras de código estilizadas (simulação visual)
+ * Gera código de barras ITF-25 real usando bwip-js
+ * Retorna base64 da imagem PNG
  */
-function drawBarcode(doc: jsPDF, x: number, y: number, width: number, height: number): void {
-  doc.setFillColor(...DARK);
-  const barWidths = [2, 1, 1.5, 1, 2, 1, 1.5, 1, 2, 1, 1, 1.5, 2, 1, 1, 1.5, 1, 2, 1, 1.5, 1, 1, 2, 1, 1.5, 1, 2, 1, 1, 1.5, 2, 1, 1.5, 1, 2, 1, 1, 1.5, 1, 2];
-  let currentX = x;
-  
-  for (let i = 0; i < barWidths.length && currentX < x + width; i++) {
-    if (i % 2 === 0) {
-      const barWidth = barWidths[i] * 0.8;
-      doc.rect(currentX, y, barWidth, height, 'F');
+async function generateITF25Barcode(code: string): Promise<string | null> {
+  try {
+    // Remove espaços e caracteres não numéricos
+    const cleanCode = code.replace(/\D/g, '');
+    
+    // Verifica cache
+    if (barcodeCache.has(cleanCode)) {
+      return barcodeCache.get(cleanCode)!;
     }
-    currentX += barWidths[i] * 0.8;
+    
+    // ITF requer número par de dígitos
+    const paddedCode = cleanCode.length % 2 === 0 ? cleanCode : '0' + cleanCode;
+    
+    // Gera o código de barras como canvas
+    const canvas = document.createElement('canvas');
+    
+    bwipjs.toCanvas(canvas, {
+      bcid: 'interleaved2of5', // Tipo ITF-25 (boleto brasileiro)
+      text: paddedCode,
+      scale: 3,
+      height: 10,
+      includetext: false,
+      backgroundcolor: 'ffffff',
+    });
+    
+    const dataUrl = canvas.toDataURL('image/png');
+    barcodeCache.set(cleanCode, dataUrl);
+    
+    return dataUrl;
+  } catch (error) {
+    console.warn('Erro ao gerar código de barras ITF-25:', error);
+    return null;
   }
+}
+
+/**
+ * Formata a linha digitável no padrão brasileiro
+ * Formato: XXXXX.XXXXX XXXXX.XXXXXX XXXXX.XXXXXX X XXXXXXXXXXXXXX
+ */
+function formatLinhaDigitavel(code: string): string {
+  const clean = code.replace(/\D/g, '');
+  
+  if (clean.length === 47) {
+    // Formato padrão de boleto com 47 dígitos
+    return `${clean.slice(0,5)}.${clean.slice(5,10)} ${clean.slice(10,15)}.${clean.slice(15,21)} ${clean.slice(21,26)}.${clean.slice(26,32)} ${clean.slice(32,33)} ${clean.slice(33,47)}`;
+  } else if (clean.length === 44) {
+    // Código de barras com 44 dígitos (sem dígitos verificadores)
+    return `${clean.slice(0,5)}.${clean.slice(5,10)} ${clean.slice(10,15)}.${clean.slice(15,20)} ${clean.slice(20,25)}.${clean.slice(25,30)} ${clean.slice(30,31)} ${clean.slice(31,44)}`;
+  }
+  
+  // Fallback: agrupa em blocos de 5
+  return clean.replace(/(.{5})/g, '$1 ').trim();
 }
 
 /**
  * Draw professional bank-style carnê
  */
-function drawCompactCarne(
+async function drawCompactCarne(
   doc: jsPDF,
   fatura: Fatura,
   escola: EscolaInfo,
   responsavel: { nome: string; cpf?: string | null } | null,
-  yOffset: number
-): void {
+  yOffset: number,
+  barcodeImage: string | null
+): Promise<void> {
   const contentWidth = A4_WIDTH - (MARGIN * 2);
   const startX = MARGIN;
   let y = yOffset + 4;
@@ -220,10 +266,16 @@ function drawCompactCarne(
   doc.line(startX, barcodeAreaY - 2, startX + contentWidth, barcodeAreaY - 2);
   
   if (fatura.asaas_boleto_barcode) {
-    // Código de barras visual
-    drawBarcode(doc, startX + 3, barcodeAreaY, contentWidth * 0.7, 8);
+    // Código de barras REAL (ITF-25)
+    if (barcodeImage) {
+      try {
+        doc.addImage(barcodeImage, 'PNG', startX + 3, barcodeAreaY, contentWidth * 0.75, 8);
+      } catch (error) {
+        console.warn('Erro ao inserir código de barras:', error);
+      }
+    }
     
-    // Linha digitável
+    // Linha digitável formatada corretamente
     doc.setFontSize(5);
     doc.setTextColor(...GRAY_500);
     doc.setFont("helvetica", "normal");
@@ -232,9 +284,8 @@ function drawCompactCarne(
     doc.setFontSize(7);
     doc.setTextColor(...DARK);
     doc.setFont("courier", "bold");
-    const barcode = fatura.asaas_boleto_barcode.replace(/\s/g, '');
-    // Formatar em grupos
-    const formatted = barcode.replace(/(.{5})/g, '$1 ').trim();
+    // Usa formatação correta para linha digitável
+    const formatted = formatLinhaDigitavel(fatura.asaas_boleto_barcode);
     doc.text(formatted, startX + 3, barcodeAreaY + 17);
   } else {
     doc.setFontSize(6);
@@ -292,7 +343,14 @@ export async function generateCarneCompacto(
     }
     
     const yOffset = positionOnPage * COMPACT_HEIGHT;
-    drawCompactCarne(doc, faturasOrdenadas[i], escola, responsavel || null, yOffset);
+    
+    // Gera código de barras real para cada fatura
+    let barcodeImage: string | null = null;
+    if (faturasOrdenadas[i].asaas_boleto_barcode) {
+      barcodeImage = await generateITF25Barcode(faturasOrdenadas[i].asaas_boleto_barcode);
+    }
+    
+    await drawCompactCarne(doc, faturasOrdenadas[i], escola, responsavel || null, yOffset, barcodeImage);
     
     positionOnPage++;
     if (positionOnPage >= 3) {
