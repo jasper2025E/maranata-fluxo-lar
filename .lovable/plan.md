@@ -1,156 +1,155 @@
 
-# Plano: Sistema de Sincronização Dinâmica com Gateway Padrão
+# Plano: Correções no Sistema de Boleto/Carnê e Reorganização do Botão de Impressão
 
-## Resumo da Mudança
-Atualizar o sistema de faturamento para que o botão "Sincronizar" use **automaticamente** o gateway que estiver configurado como padrão no sistema (Asaas, Mercado Pago, Stripe, etc.), em vez de estar fixo ao Asaas.
-
-## O Que Funciona Hoje (Não Será Alterado)
-- Configurações de gateway já existentes
-- Chaves API já cadastradas
-- Toda a lógica de criptografia de secrets
-- A integração Asaas já funcionando
-- O fluxo de criação de faturas
+## Resumo dos Problemas Identificados
+1. **QR Code PIX e linha digitável não funcionando** no boleto gerado
+2. **Botão "Imprimir Carnê" no lugar errado** (no topo, deveria estar nas ações em lote)
+3. **Layout de 1 por folha A4** - precisa ser **3 por folha A4** em todos os casos
 
 ---
 
 ## Mudanças Propostas
 
-### 1. Frontend - Botão Genérico "Sincronizar"
+### 1. Corrigir Geração de QR Code PIX e Linha Digitável
 
-**Arquivo:** `src/pages/Faturas.tsx`
+**Arquivos afetados:**
+- `src/lib/boletoGenerator.ts`
+- `src/lib/carneCompactoGenerator.ts`
+- `src/lib/carneGenerator.ts`
 
-- Renomear o botão de "Sincronizar ASAAS" → "Sincronizar"
-- Manter a lógica atual, mas usar uma edge function genérica
+**Problema:**
+- O campo `asaas_pix_qrcode` contém uma imagem base64 (encodedImage da API Asaas)
+- O campo `asaas_boleto_barcode` contém a linha digitável (identificationField)
+- Esses campos estão sendo usados corretamente, mas a verificação de dados está falhando ou os dados não estão sincronizados
 
-```text
-Antes:  <Button>Sincronizar ASAAS</Button>
-Depois: <Button>Sincronizar</Button>
-```
-
-### 2. Novo Hook - `useGatewaySync`
-
-**Novo arquivo:** `src/hooks/useGatewaySync.ts`
-
-Hook que abstrai a sincronização com qualquer gateway:
-
-- Detectar automaticamente qual gateway está configurado como padrão
-- Chamar a edge function apropriada baseada no tipo de gateway
-- Retornar feedback consistente independente do gateway
-
-```text
-Funcionalidades:
-├── getDefaultGateway() → Retorna info do gateway padrão do tenant
-├── syncFatura(faturaId) → Sincroniza com o gateway padrão
-├── syncMultipleFaturas(faturaIds[]) → Sincronização em lote
-└── isGatewayConfigured → Boolean indicando se há gateway ativo
-```
-
-### 3. Edge Function - `gateway-sync-payment`
-
-**Novo arquivo:** `supabase/functions/gateway-sync-payment/index.ts`
-
-Edge function genérica que:
-
-1. Busca o gateway padrão do tenant via `getDefaultTenantGateway()`
-2. Roteia para a lógica apropriada baseada no `gateway_type`
-3. Retorna dados padronizados (PIX, boleto, link de pagamento)
-
-```text
-Fluxo:
-┌─────────────────────┐
-│ Frontend solicita   │
-│ sincronização       │
-└──────────┬──────────┘
-           ▼
-┌─────────────────────┐
-│ gateway-sync-payment│
-│ Edge Function       │
-└──────────┬──────────┘
-           ▼
-┌─────────────────────┐
-│ Detecta gateway     │
-│ padrão do tenant    │
-└──────────┬──────────┘
-           ▼
-     ┌─────┴─────┐
-     │           │
-     ▼           ▼
-┌─────────┐ ┌─────────┐
-│ Asaas   │ │ Outros  │
-│ (atual) │ │ (futuro)│
-└─────────┘ └─────────┘
-```
-
-### 4. Atualizar Hook Existente - `useFaturaAsaasSync.ts`
-
-**Arquivo:** `src/hooks/useFaturaAsaasSync.ts`
-
-Refatorar para usar a nova edge function genérica:
-
-- Manter as funções atuais para retrocompatibilidade
-- Adicionar novas funções que usam o gateway dinâmico
+**Solução:**
+- Garantir que o gerador de boleto leia corretamente os campos `asaas_pix_qrcode` e `asaas_boleto_barcode` da fatura
+- Adicionar validação antes de gerar: se faltar PIX ou boleto, forçar sincronização com o gateway
+- Atualizar a lógica de renderização do QR Code para tratar o formato base64 corretamente
 
 ---
 
-## Segurança (Garantias)
+### 2. Mover "Imprimir Carnê" para Ações em Lote
 
-- **Nenhuma chave API será alterada ou removida**
-- **Nenhuma configuração de gateway existente será modificada**
-- **O fluxo atual com Asaas continua funcionando exatamente igual**
-- A mudança é apenas na camada de roteamento/abstração
+**Arquivo afetado:**
+- `src/pages/Faturas.tsx`
+- `src/components/faturas/BulkActionsBar.tsx`
+
+**Mudanças:**
+- **Remover** o dropdown "Imprimir Carnê" do header da página Faturas (linhas 414-453)
+- **Manter** a funcionalidade "Gerar Carnê" que já existe no `BulkActionsBar` (linha 737)
+- O botão só aparecerá quando houver faturas selecionadas (comportamento padrão das ações em lote)
+
+---
+
+### 3. Alterar Layout para 3 Carnês por Folha A4
+
+**Arquivo afetado:**
+- `src/lib/boletoGenerator.ts` (criar nova função para boleto compacto)
+- `src/lib/carneCompactoGenerator.ts` (já está com 3 por página - apenas validar)
+- `src/pages/Faturas.tsx` (usar gerador compacto para "Baixar Boleto")
+- `src/components/faturas/BulkActionsBar.tsx` (garantir uso do compacto)
+- `src/components/faturas/FaturaTable.tsx` (atualizar ação "Baixar Boleto")
+
+**Mudanças:**
+- Criar nova função `generateBoletoCompacto` que usa o mesmo layout do carnê (3 por A4)
+- Atualizar `handleDownloadBoleto` em `Faturas.tsx` para usar o layout compacto
+- Manter consistência visual: todos os documentos de cobrança terão 3 por página A4
+
+---
+
+### 4. Sincronizar Dados Antes de Gerar
+
+**Arquivos afetados:**
+- `src/pages/Faturas.tsx`
+- `src/components/faturas/BulkActionsBar.tsx`
+
+**Mudanças:**
+- Antes de gerar qualquer boleto/carnê, verificar se `asaas_pix_qrcode` e `asaas_boleto_barcode` existem
+- Se não existirem, chamar `syncFaturaAsaasData()` ou o novo `useGatewaySync().syncFatura()` antes de prosseguir
+- Mostrar feedback ao usuário: "Sincronizando dados de pagamento..."
+
+---
+
+## Arquivos a Serem Modificados
+
+| Arquivo | Ação | Descrição |
+|---------|------|-----------|
+| `src/pages/Faturas.tsx` | Modificar | Remover dropdown "Imprimir Carnê" do header; atualizar `handleDownloadBoleto` para usar layout compacto e sincronizar dados antes |
+| `src/lib/boletoGenerator.ts` | Modificar | Criar função `generateBoletoCompacto` para layout 3 por A4; corrigir renderização do QR Code PIX |
+| `src/lib/carneCompactoGenerator.ts` | Modificar | Garantir que PIX e linha digitável sejam renderizados corretamente |
+| `src/components/faturas/BulkActionsBar.tsx` | Modificar | Adicionar sincronização de dados antes de gerar carnê; garantir uso do gerador compacto |
+| `src/components/faturas/FaturaTable.tsx` | Verificar | Garantir que "Baixar Boleto" chame a função correta |
 
 ---
 
 ## Detalhes Técnicos
 
-### Estrutura do Gateway Padrão (já existe no banco)
+### Estrutura do Boleto Compacto (3 por A4)
 
-```sql
--- Tabela tenant_gateway_configs já tem:
--- is_default: boolean  -- Indica qual é o gateway padrão
--- is_active: boolean   -- Indica se está ativo
--- gateway_type: enum   -- asaas, mercado_pago, stripe, etc.
+```text
+┌─────────────────────────────────────────────────────────┐
+│  BOLETO 1 (altura: ~99mm)                               │
+│  ┌──────────────┬────────────────────────┬─────────────┐ │
+│  │ Recibo       │ Dados principais       │ Canhoto     │ │
+│  │ do Pagador   │ + QR Code PIX          │             │ │
+│  │              │ + Linha Digitável      │             │ │
+│  └──────────────┴────────────────────────┴─────────────┘ │
+├─────────────────────────────────────────────────────────┤
+│  BOLETO 2 (altura: ~99mm)                               │
+│  ... mesmo layout ...                                   │
+├─────────────────────────────────────────────────────────┤
+│  BOLETO 3 (altura: ~99mm)                               │
+│  ... mesmo layout ...                                   │
+└─────────────────────────────────────────────────────────┘
 ```
 
-### Resposta Padronizada da Edge Function
+### Fluxo de Sincronização Atualizado
 
-```json
-{
-  "success": true,
-  "gatewayType": "asaas",
-  "paymentId": "pay_xxx",
-  "pixQrCode": "base64...",
-  "boletoBarcode": "23793.38128...",
-  "paymentUrl": "https://..."
-}
+```text
+Usuário clica "Gerar Carnê" ou "Baixar Boleto"
+              │
+              ▼
+┌─────────────────────────────────┐
+│ Verificar dados completos:      │
+│ - asaas_pix_qrcode              │
+│ - asaas_boleto_barcode          │
+└───────────────┬─────────────────┘
+                │
+        ┌───────┴───────┐
+        │ Dados faltando?│
+        └───────┬───────┘
+                │
+         Sim ──►│◄── Não
+                │        │
+                ▼        │
+     ┌──────────────────┐│
+     │ Sincronizar com  ││
+     │ gateway-sync     ││
+     │ (com retry)      ││
+     └────────┬─────────┘│
+              │          │
+              ▼          ▼
+        ┌─────────────────────┐
+        │ Gerar PDF com dados │
+        │ completos           │
+        └─────────────────────┘
 ```
 
 ---
 
-## Arquivos a Serem Modificados/Criados
+## Validações de Segurança
 
-| Arquivo | Ação | Descrição |
-|---------|------|-----------|
-| `src/pages/Faturas.tsx` | Modificar | Remover "ASAAS" do texto do botão |
-| `src/hooks/useGatewaySync.ts` | Criar | Hook para detectar e usar gateway padrão |
-| `supabase/functions/gateway-sync-payment/index.ts` | Criar | Edge function genérica de sincronização |
-| `src/hooks/useFaturaAsaasSync.ts` | Modificar | Usar nova edge function |
-| `src/components/faturas/BulkActionsBar.tsx` | Modificar | Atualizar referências ao Asaas |
+- **Nenhuma chave API será alterada** - apenas lógica de apresentação
+- **Dados existentes preservados** - apenas melhoria na renderização
+- **Retrocompatibilidade** - faturas sem dados Asaas continuam funcionando (mostram placeholder)
 
 ---
 
 ## Resultado Esperado
 
-1. O botão "Sincronizar" funcionará com **qualquer gateway** configurado como padrão
-2. Se o Asaas for o padrão → continua sincronizando com Asaas (comportamento atual)
-3. Se outro gateway for configurado como padrão no futuro → funcionará automaticamente
-4. Interface mais limpa sem mencionar gateway específico
-
----
-
-## Benefícios
-
-- **Flexibilidade**: Trocar de gateway sem alterar código
-- **Manutenibilidade**: Lógica centralizada em uma edge function
-- **Experiência do usuário**: Interface genérica que se adapta
-- **Compatibilidade**: 100% retrocompatível com a configuração atual
+1. **QR Code PIX funcional** - escaneável em apps bancários
+2. **Linha digitável correta** - copiável para pagamento
+3. **Layout otimizado** - 3 boletos/carnês por folha A4 (economia de papel)
+4. **UX simplificada** - "Imprimir Carnê" disponível apenas em ações em lote
+5. **Sincronização automática** - dados sempre atualizados antes de gerar documentos
