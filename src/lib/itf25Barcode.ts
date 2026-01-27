@@ -28,11 +28,15 @@ export async function generateITF25BarcodeDataUrl(code: string): Promise<string 
     const padded = barcode;
 
     const canvas = document.createElement("canvas");
+    // Evita suavização (pode “borrar” barras finas quando o PDF redimensiona a imagem)
+    const ctx = canvas.getContext("2d");
+    if (ctx) ctx.imageSmoothingEnabled = false;
     bwipjs.toCanvas(canvas, {
       bcid: "interleaved2of5",
       text: padded,
-      scale: 6,
-      height: 14,
+      // Mais densidade = melhor leitura em apps bancários
+      scale: 8,
+      height: 18,
       includetext: false,
       backgroundcolor: "ffffff",
     });

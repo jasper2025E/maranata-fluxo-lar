@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
+import { waitForAsaasBoletoReady } from "@/lib/asaasBoleto";
 import { Fatura, formatCurrency, meses } from "@/hooks/useFaturas";
 import { useAsaas } from "@/hooks/useAsaas";
 import { toast } from "sonner";
@@ -226,7 +227,9 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
 
       // Gerar cobranças Asaas para faturas que ainda não têm dados completos
       const faturasAbertas = faturasParaImprimir.filter(
-        f => f.status !== "Paga" && (!f.asaas_pix_qrcode || !f.asaas_boleto_barcode)
+        f =>
+          f.status !== "Paga" &&
+          (!f.asaas_pix_qrcode || !f.asaas_boleto_barcode || !f.asaas_boleto_bar_code)
       );
 
       if (faturasAbertas.length > 0) {
@@ -266,19 +269,23 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
       setProgressValue(65);
       
       const faturasIncompletas = (faturasAtualizadas || []).filter(
-        f => f.asaas_payment_id && (!f.asaas_pix_qrcode || !f.asaas_boleto_barcode)
+        f =>
+          f.asaas_payment_id &&
+          (!f.asaas_pix_qrcode || !f.asaas_boleto_barcode || !f.asaas_boleto_bar_code)
       );
 
       if (faturasIncompletas.length > 0) {
-        console.log(`Buscando dados Asaas para ${faturasIncompletas.length} faturas incompletas`);
-        
-        for (const fatura of faturasIncompletas) {
-          try {
-            await supabase.functions.invoke("asaas-get-payment", {
-              body: { faturaId: fatura.id }
-            });
-          } catch (err) {
-            console.warn(`Falha ao atualizar dados Asaas para fatura ${fatura.id}:`, err);
+        for (let i = 0; i < faturasIncompletas.length; i++) {
+          const fatura = faturasIncompletas[i];
+          setProgressValue(65 + ((i + 1) / faturasIncompletas.length) * 10);
+
+          const result = await waitForAsaasBoletoReady(fatura.id, {
+            onProgress: (p) => setProgressMessage(p.message),
+          });
+
+          if (!result.success) {
+            throw new Error(result.error || "Não foi possível sincronizar o boleto (código de barras/linha digitável)."
+            );
           }
         }
         

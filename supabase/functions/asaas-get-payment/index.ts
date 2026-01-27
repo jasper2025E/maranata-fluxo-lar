@@ -60,7 +60,8 @@ serve(async (req) => {
     let needsUpdate = false;
     
     // Buscar PIX QR Code se não existir
-    if (!pixQrCode && payment.billingType !== "CREDIT_CARD" && payment.status !== "RECEIVED" && payment.status !== "CONFIRMED") {
+    // Importante: pode ficar disponível tanto antes quanto depois da confirmação.
+    if (!pixQrCode && payment.billingType !== "CREDIT_CARD") {
       console.log("Buscando QR Code PIX para pagamento:", fatura.asaas_payment_id);
       const pixResponse = await fetch(`${ASAAS_API_URL}/payments/${fatura.asaas_payment_id}/pixQrCode`, {
         headers: { "access_token": ASAAS_API_KEY },
@@ -78,7 +79,9 @@ serve(async (req) => {
     }
 
     // Buscar código de barras do boleto se não existir
-    if ((!boletoBarcode || !boletoBarCode) && payment.billingType !== "CREDIT_CARD" && payment.status !== "RECEIVED" && payment.status !== "CONFIRMED") {
+    // Importante: o Asaas pode liberar `identificationField`/`barCode` apenas após registro bancário.
+    // Portanto, não bloquear por status aqui — sempre tentar quando estiver ausente.
+    if ((!boletoBarcode || !boletoBarCode) && payment.billingType !== "CREDIT_CARD") {
       console.log("Buscando código de barras do boleto para pagamento:", fatura.asaas_payment_id);
       const boletoResponse = await fetch(`${ASAAS_API_URL}/payments/${fatura.asaas_payment_id}/identificationField`, {
         headers: { "access_token": ASAAS_API_KEY },
