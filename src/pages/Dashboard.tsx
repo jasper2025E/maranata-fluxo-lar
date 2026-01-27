@@ -80,8 +80,19 @@ const Dashboard = () => {
           className="group relative rounded-2xl bg-gradient-to-r from-primary via-primary/90 to-accent p-[1px] shadow-lg shadow-primary/20"
         >
           <div className="relative overflow-hidden rounded-[15px] bg-background px-6 py-5">
-            {/* Subtle glow */}
-            <div className="absolute inset-0 bg-gradient-to-r from-primary/[0.03] to-accent/[0.03]" />
+            {/* Animated glow */}
+            <motion.div 
+              className="absolute inset-0 bg-gradient-to-r from-primary/[0.05] via-accent/[0.03] to-primary/[0.05]"
+              animate={{ 
+                backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"] 
+              }}
+              transition={{ 
+                duration: 8, 
+                repeat: Infinity, 
+                ease: "linear" 
+              }}
+              style={{ backgroundSize: "200% 100%" }}
+            />
             
             <div className="relative flex items-center gap-5">
               {/* Icon with gradient background */}
