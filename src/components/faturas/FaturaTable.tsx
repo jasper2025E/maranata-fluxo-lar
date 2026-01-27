@@ -40,6 +40,7 @@ import {
   FileBarChart,
   RefreshCw,
   Trash2,
+  Percent,
 } from "lucide-react";
 import { format, isAfter, isBefore, addDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -65,6 +66,7 @@ interface FaturaTableProps {
   onDownloadBoleto?: (fatura: Fatura) => void;
   onDelete?: (fatura: Fatura) => void;
   onReopen?: (fatura: Fatura) => void;
+  onDiscount?: (fatura: Fatura) => void;
   selectedFaturas?: Set<string>;
   onSelectionChange?: (selected: Set<string>) => void;
 }
@@ -117,6 +119,7 @@ function FaturaRow({
   onDownloadBoleto,
   onDelete,
   onReopen,
+  onDiscount,
   isSelected,
   onToggleSelect,
 }: {
@@ -135,6 +138,7 @@ function FaturaRow({
   onDownloadBoleto?: (fatura: Fatura) => void;
   onDelete?: (fatura: Fatura) => void;
   onReopen?: (fatura: Fatura) => void;
+  onDiscount?: (fatura: Fatura) => void;
   isSelected?: boolean;
   onToggleSelect?: (faturaId: string) => void;
 }) {
@@ -260,6 +264,11 @@ function FaturaRow({
                 <DropdownMenuItem onClick={() => onParcelar(fatura)}>
                   <SplitSquareVertical className="h-4 w-4 mr-2" />Parcelar
                 </DropdownMenuItem>
+                {onDiscount && (
+                  <DropdownMenuItem onClick={() => onDiscount(fatura)}>
+                    <Percent className="h-4 w-4 mr-2" />Desconto
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => onCancel(fatura)} className="text-destructive">
                   <Ban className="h-4 w-4 mr-2" />Cancelar
@@ -319,6 +328,7 @@ export function FaturaTable({
   onDownloadBoleto,
   onDelete,
   onReopen,
+  onDiscount,
   selectedFaturas,
   onSelectionChange,
 }: FaturaTableProps) {
@@ -388,7 +398,7 @@ export function FaturaTable({
   const rowProps = { 
     onViewDetails, onEdit, onPayment, onPaymentLink, onParcelar, onCancel, 
     onSendReceipt, onViewHistory, onDownloadPDF, onAsaasPayment, onDownloadReceipt, onDownloadBoleto,
-    onDelete, onReopen,
+    onDelete, onReopen, onDiscount,
     onToggleSelect: onSelectionChange ? handleToggleSelect : undefined,
   };
 
