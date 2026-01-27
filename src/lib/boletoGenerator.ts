@@ -96,7 +96,8 @@ export async function generateBoletoPDF(
   fatura: Fatura,
   escola: EscolaInfo,
   pixQrCode?: string,
-  boletoBarcode?: string
+  boletoBarcode?: string,
+  boletoBarCode?: string
 ): Promise<void> {
   const doc = new jsPDF({
     orientation: "portrait",
@@ -256,8 +257,7 @@ export async function generateBoletoPDF(
   // Código de barras REAL (ITF-25) - escaneável em apps bancários
   const barcodeSource =
     (fatura as any).asaas_boleto_bar_code ||
-    boletoBarcode ||
-    fatura.asaas_boleto_barcode;
+    boletoBarCode;
 
   const barcodeImage = barcodeSource ? await generateITF25BarcodeDataUrl(barcodeSource) : null;
 
@@ -442,6 +442,7 @@ export async function generateBoletoForFatura(
     fatura,
     escola,
     pixQrCodeImage,
-    fatura.asaas_boleto_barcode || undefined
+    fatura.asaas_boleto_barcode || undefined,
+    (fatura as any).asaas_boleto_bar_code || undefined
   );
 }

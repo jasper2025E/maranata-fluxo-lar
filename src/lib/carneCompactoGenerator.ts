@@ -238,13 +238,13 @@ async function drawCompactCarne(
   doc.setLineWidth(0.3);
   doc.line(startX, barcodeAreaY - 2, startX + contentWidth, barcodeAreaY - 2);
   
-  if (fatura.asaas_boleto_barcode) {
+  if (fatura.asaas_boleto_barcode || fatura.asaas_boleto_bar_code) {
     // Código de barras REAL (ITF-25)
     if (barcodeImage) {
       try {
         // Evita distorção (distorção = leitura inválida em apps bancários)
         const maxW = contentWidth * 0.88;
-        const targetH = 12; // mm (altura típica para leitura)
+        const targetH = 14; // mm (mais alto = leitura mais fácil)
 
         const { w, h } = await getImageDimensions(barcodeImage);
         const ratio = w > 0 && h > 0 ? w / h : 8;

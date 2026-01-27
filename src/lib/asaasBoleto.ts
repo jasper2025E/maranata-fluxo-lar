@@ -19,8 +19,11 @@ function digits(value: unknown): string {
 export function isAsaasBoletoReady(fields: {
   boletoBarcode?: string | null;
   boletoBarCode?: string | null;
+  status?: string | null;
 }): boolean {
-  return digits(fields.boletoBarcode).length === 47 && digits(fields.boletoBarCode).length === 44;
+  const status = String(fields.status ?? "").toUpperCase();
+  const statusOk = status === "CONFIRMED" || status === "RECEIVED";
+  return statusOk && digits(fields.boletoBarcode).length === 47 && digits(fields.boletoBarCode).length === 44;
 }
 
 export async function waitForAsaasBoletoReady(
@@ -73,7 +76,14 @@ export async function waitForAsaasBoletoReady(
 
     lastData = data;
 
-    if (data?.success && isAsaasBoletoReady({ boletoBarcode: data?.boletoBarcode, boletoBarCode: data?.boletoBarCode })) {
+    if (
+      data?.success &&
+      isAsaasBoletoReady({
+        boletoBarcode: data?.boletoBarcode,
+        boletoBarCode: data?.boletoBarCode,
+        status: data?.payment?.status,
+      })
+    ) {
       return {
         success: true,
         boletoBarcode: data?.boletoBarcode,

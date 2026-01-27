@@ -52,6 +52,7 @@ import {
 import { syncFaturaAsaasData, createAsaasPaymentWithFullSync } from "@/hooks/useFaturaAsaasSync";
 import { generateFaturaPDF, generateReciboPDF } from "@/lib/pdfGenerator";
 import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
+import { waitForAsaasBoletoReady } from "@/lib/asaasBoleto";
 import { toast } from "sonner";
 
 type ViewMode = "list" | "status" | "aluno" | "mes";
@@ -281,9 +282,28 @@ const Faturas = () => {
       return;
     }
     try {
+      // Garantir dados oficiais (linha digitável 47 + barCode 44) antes de gerar
+      if (fatura.asaas_payment_id) {
+        toast.info("Sincronizando dados do boleto...");
+        const ready = await waitForAsaasBoletoReady(fatura.id);
+        if (!ready.success) {
+          toast.error(ready.error || "Boleto ainda não está pronto para impressão.");
+          return;
+        }
+      }
+
+      // Buscar apenas os campos de pagamento atualizados e mesclar com o objeto atual
+      const { data: paymentFields } = await supabase
+        .from("faturas")
+        .select("asaas_pix_qrcode, asaas_pix_payload, asaas_boleto_barcode, asaas_boleto_bar_code")
+        .eq("id", fatura.id)
+        .maybeSingle();
+
+      const faturaForPrint = (paymentFields ? ({ ...fatura, ...paymentFields } as Fatura) : fatura);
+
       // Usar o gerador compacto (3 por A4)
       await generateCarneCompacto(
-        [fatura],
+        [faturaForPrint],
         {
           nome: escola.nome,
           cnpj: escola.cnpj,

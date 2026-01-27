@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { generateFaturaPDF, generateReciboPDF } from "@/lib/pdfGenerator";
 import { generateCarneCompacto } from "@/lib/carneCompactoGenerator";
+import { waitForAsaasBoletoReady } from "@/lib/asaasBoleto";
 import { toast } from "sonner";
 import {
   Fatura,
@@ -785,6 +786,22 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
     }
     setIsGeneratingCarne(true);
     try {
+      if (fatura.asaas_payment_id) {
+        const ready = await waitForAsaasBoletoReady(fatura.id);
+        if (!ready.success) {
+          toast.error(ready.error || "Boleto ainda não está pronto para impressão.");
+          return;
+        }
+      }
+
+      const { data: paymentFields } = await supabase
+        .from("faturas")
+        .select("asaas_pix_qrcode, asaas_pix_payload, asaas_boleto_barcode, asaas_boleto_bar_code")
+        .eq("id", fatura.id)
+        .maybeSingle();
+
+      const faturaForPrint = (paymentFields ? ({ ...fatura, ...paymentFields } as Fatura) : fatura);
+
       // Buscar CPF do responsável
       let responsavelData = null;
       if (fatura.responsavel_id) {
@@ -798,7 +815,7 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
       
       // Usar gerador compacto (3 por A4)
       await generateCarneCompacto(
-        [fatura],
+        [faturaForPrint],
         {
           nome: escola.nome,
           cnpj: escola.cnpj,
@@ -840,6 +857,22 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
     }
     setIsGeneratingBoleto(true);
     try {
+      if (fatura.asaas_payment_id) {
+        const ready = await waitForAsaasBoletoReady(fatura.id);
+        if (!ready.success) {
+          toast.error(ready.error || "Boleto ainda não está pronto para impressão.");
+          return;
+        }
+      }
+
+      const { data: paymentFields } = await supabase
+        .from("faturas")
+        .select("asaas_pix_qrcode, asaas_pix_payload, asaas_boleto_barcode, asaas_boleto_bar_code")
+        .eq("id", fatura.id)
+        .maybeSingle();
+
+      const faturaForPrint = (paymentFields ? ({ ...fatura, ...paymentFields } as Fatura) : fatura);
+
       // Buscar CPF do responsável
       let responsavelData = null;
       if (fatura.responsavel_id) {
@@ -853,7 +886,7 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
       
       // Usar gerador compacto (3 por A4)
       await generateCarneCompacto(
-        [fatura],
+        [faturaForPrint],
         {
           nome: escola.nome,
           cnpj: escola.cnpj,
