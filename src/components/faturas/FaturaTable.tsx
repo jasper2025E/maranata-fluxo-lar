@@ -219,9 +219,14 @@ function FaturaRow({
                 <Download className="h-4 w-4 mr-2" />Baixar PDF
               </DropdownMenuItem>
             )}
-            {onDownloadBoleto && fatura.asaas_payment_id && (
+            {onDownloadBoleto && fatura.asaas_payment_id && fatura.asaas_pix_qrcode && fatura.asaas_boleto_barcode && (
               <DropdownMenuItem onClick={() => onDownloadBoleto(fatura)}>
                 <FileBarChart className="h-4 w-4 mr-2" />Baixar Boleto
+              </DropdownMenuItem>
+            )}
+            {onDownloadBoleto && fatura.asaas_payment_id && (!fatura.asaas_pix_qrcode || !fatura.asaas_boleto_barcode) && (
+              <DropdownMenuItem disabled className="text-muted-foreground">
+                <FileBarChart className="h-4 w-4 mr-2" />Sincronizando dados...
               </DropdownMenuItem>
             )}
             {!fatura.bloqueada && fatura.status !== 'Paga' && (

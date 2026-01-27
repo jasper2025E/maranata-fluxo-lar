@@ -183,9 +183,20 @@ export function CarneDialog({ open, onOpenChange }: CarneDialogProps) {
       const faturasParaImprimir = faturas?.filter(f => selectedFaturas.has(f.id)) || [];
       const responsavel = responsaveis?.find(r => r.id === selectedResponsavel);
 
-      // Gerar cobranças Asaas para faturas que ainda não têm
-      const faturasAbertas = faturasParaImprimir.filter(
+      // Verificar faturas abertas sem dados ASAAS e bloquear
+      const faturasSemAsaas = faturasParaImprimir.filter(
         f => f.status !== "Paga" && !f.asaas_payment_id
+      );
+
+      if (faturasSemAsaas.length > 0) {
+        toast.error(`${faturasSemAsaas.length} fatura(s) não têm cobrança ASAAS. Crie as faturas via "Nova Fatura" para sincronizar.`);
+        setIsGenerating(false);
+        return;
+      }
+
+      // Gerar cobranças Asaas para faturas que ainda não têm dados completos
+      const faturasAbertas = faturasParaImprimir.filter(
+        f => f.status !== "Paga" && (!f.asaas_pix_qrcode || !f.asaas_boleto_barcode)
       );
 
       if (faturasAbertas.length > 0) {

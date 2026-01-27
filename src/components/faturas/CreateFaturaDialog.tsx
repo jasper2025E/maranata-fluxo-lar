@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Progress } from "@/components/ui/progress";
 import {
   Plus,
   FileText,
@@ -20,10 +21,18 @@ import {
   AlertTriangle,
   User,
   CheckCircle2,
+  XCircle,
 } from "lucide-react";
 import { format, addDays, setDate } from "date-fns";
-import { useCreateFatura, formatCurrency, meses, FaturaItem } from "@/hooks/useFaturas";
+import { formatCurrency, meses, FaturaItem, queryKeys } from "@/hooks/useFaturas";
+import { 
+  createFaturaWithAsaasSync, 
+  createMultipleFaturasWithAsaasSync,
+  SyncProgress,
+  FaturaCreateData,
+} from "@/hooks/useFaturaAsaasSync";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface Aluno {
   id: string;
@@ -45,10 +54,13 @@ interface CreateFaturaDialogProps {
 }
 
 export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: CreateFaturaDialogProps) {
-  const createMutation = useCreateFatura();
+  const queryClient = useQueryClient();
   
   const [mode, setMode] = useState<"simples" | "detalhada">("simples");
   const [tipo, setTipo] = useState<"avulsa" | "recorrente">("avulsa");
+  const [isCreating, setIsCreating] = useState(false);
+  const [syncProgress, setSyncProgress] = useState<SyncProgress | null>(null);
+  
   const [data, setData] = useState({
     aluno_id: "",
     curso_id: "",
@@ -57,7 +69,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
     mes_referencia: new Date().getMonth() + 1,
     ano_referencia: new Date().getFullYear(),
     meses_recorrencia: 12,
-    dia_vencimento: 10, // Dia fixo de vencimento para faturas recorrentes
+    dia_vencimento: 10,
   });
   
   const [itens, setItens] = useState<FaturaItem[]>([]);
@@ -85,20 +97,24 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
   });
 
   // Validar CPF do responsável
-  const responsavelStatus = useMemo(() => {
+  const responsavelStatus = useMemo((): { type: "success" | "warning" | "error" | "loading"; message: string } | null => {
     if (!selectedAluno) return null;
-    if (!selectedAluno.responsavel_id) return { type: "error" as const, message: "Aluno sem responsável vinculado. A cobrança não será criada no Asaas." };
-    if (!responsavel) return { type: "loading" as const, message: "Carregando dados do responsável..." };
+    if (!selectedAluno.responsavel_id) return { type: "error", message: "Aluno sem responsável vinculado. A fatura NÃO será criada." };
+    if (!responsavel) return { type: "loading", message: "Carregando dados do responsável..." };
     
     const cpf = responsavel.cpf?.replace(/\D/g, '') || '';
-    if (!cpf) return { type: "warning" as const, message: `Responsável "${responsavel.nome}" não tem CPF cadastrado. A cobrança será criada, mas pode haver problemas.` };
-    if (cpf.length !== 11 && cpf.length !== 14) return { type: "warning" as const, message: `CPF/CNPJ do responsável "${responsavel.nome}" parece inválido (${cpf.length} dígitos).` };
+    if (!cpf) return { type: "error", message: `Responsável "${responsavel.nome}" não tem CPF cadastrado. Cadastre o CPF antes de criar faturas.` };
+    if (cpf.length !== 11 && cpf.length !== 14) return { type: "error", message: `CPF/CNPJ do responsável "${responsavel.nome}" é inválido (${cpf.length} dígitos).` };
     
     return { 
-      type: "success" as const, 
-      message: `Responsável: ${responsavel.nome}${responsavel.asaas_customer_id ? ' (já cadastrado no Asaas)' : ''}` 
+      type: "success", 
+      message: `Responsável: ${responsavel.nome}${responsavel.asaas_customer_id ? ' ✓ ASAAS' : ''}` 
     };
   }, [selectedAluno, responsavel]);
+
+  const canCreate = useMemo(() => {
+    return responsavelStatus?.type === "success" && data.aluno_id && data.curso_id;
+  }, [responsavelStatus, data.aluno_id, data.curso_id]);
 
   const handleCursoSelect = (cursoId: string) => {
     const curso = cursos.find(c => c.id === cursoId);
@@ -134,22 +150,29 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
     : data.valor;
 
   const handleCreate = async () => {
-    // Permite valor 0 para casos de irmãos/bolsas integrais
-    if (!data.aluno_id || !data.curso_id || valorTotal < 0) {
-      return;
-    }
+    if (!canCreate || valorTotal < 0) return;
 
     const aluno = alunos.find(a => a.id === data.aluno_id);
     const responsavelId = aluno?.responsavel_id ?? undefined;
     
+    if (!responsavelId) {
+      toast.error("Aluno sem responsável vinculado");
+      return;
+    }
+
+    setIsCreating(true);
+    setSyncProgress(null);
+
     try {
       if (tipo === "recorrente") {
-        // Para faturas recorrentes, criar múltiplas com dia fixo de vencimento
+        // Criar múltiplas faturas com sync ASAAS obrigatório
+        const dataList: FaturaCreateData[] = [];
+        
         for (let i = 0; i < data.meses_recorrencia; i++) {
           const baseDate = new Date(data.ano_referencia, data.mes_referencia - 1 + i, 1);
           const vencimento = setDate(baseDate, data.dia_vencimento);
           
-          await createMutation.mutateAsync({
+          dataList.push({
             aluno_id: data.aluno_id,
             curso_id: data.curso_id,
             responsavel_id: responsavelId,
@@ -157,11 +180,24 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
             data_vencimento: format(vencimento, "yyyy-MM-dd"),
             mes_referencia: vencimento.getMonth() + 1,
             ano_referencia: vencimento.getFullYear(),
-            itens: mode === "detalhada" ? itens : undefined,
           });
         }
+
+        const result = await createMultipleFaturasWithAsaasSync(dataList, setSyncProgress);
+        
+        if (result.failedAt) {
+          toast.error(`Erro na fatura ${result.failedAt}: ${result.error}`);
+          if (result.successCount > 0) {
+            toast.info(`${result.successCount} faturas foram criadas com sucesso antes do erro.`);
+          }
+        } else {
+          toast.success(`${result.successCount} faturas criadas e sincronizadas com ASAAS!`);
+          onOpenChange(false);
+          resetForm();
+        }
       } else {
-        await createMutation.mutateAsync({
+        // Criar fatura avulsa com sync ASAAS obrigatório
+        const result = await createFaturaWithAsaasSync({
           aluno_id: data.aluno_id,
           curso_id: data.curso_id,
           responsavel_id: responsavelId,
@@ -169,20 +205,33 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
           data_vencimento: data.data_vencimento,
           mes_referencia: data.mes_referencia,
           ano_referencia: data.ano_referencia,
-          itens: mode === "detalhada" ? itens : undefined,
-        });
+        }, setSyncProgress);
+
+        if (result.success) {
+          toast.success("Fatura criada e sincronizada com ASAAS!");
+          onOpenChange(false);
+          resetForm();
+        } else {
+          toast.error(result.error || "Erro ao criar fatura");
+        }
       }
       
-      onOpenChange(false);
-      resetForm();
-    } catch (error) {
-      // Erro já tratado pelo mutation
+      // Invalidar queries
+      queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      
+    } catch (error: any) {
+      toast.error(error.message || "Erro inesperado");
+    } finally {
+      setIsCreating(false);
+      setSyncProgress(null);
     }
   };
 
   const resetForm = () => {
     setMode("simples");
     setTipo("avulsa");
+    setSyncProgress(null);
     setData({
       aluno_id: "",
       curso_id: "",
@@ -196,24 +245,50 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
     setItens([]);
   };
 
-  // Gera lista de dias para o select
   const diasDoMes = Array.from({ length: 28 }, (_, i) => i + 1);
 
+  const getProgressIcon = () => {
+    if (!syncProgress) return null;
+    if (syncProgress.step === 'done') return <CheckCircle2 className="h-4 w-4 text-success" />;
+    if (syncProgress.step === 'error') return <XCircle className="h-4 w-4 text-destructive" />;
+    return <Loader2 className="h-4 w-4 animate-spin" />;
+  };
+
   return (
-    <Dialog open={open} onOpenChange={(o) => { onOpenChange(o); if (!o) resetForm(); }}>
+    <Dialog open={open} onOpenChange={(o) => { if (!isCreating) { onOpenChange(o); if (!o) resetForm(); } }}>
       <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5 text-primary" />
             Nova Fatura
           </DialogTitle>
-          <DialogDescription>Crie faturas avulsas ou recorrentes com itens detalhados</DialogDescription>
+          <DialogDescription>
+            Faturas são criadas e sincronizadas com ASAAS automaticamente
+          </DialogDescription>
         </DialogHeader>
+
+        {/* Progress Indicator */}
+        {isCreating && syncProgress && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex items-center gap-2">
+                {getProgressIcon()}
+                <span className="text-sm font-medium">{syncProgress.message}</span>
+              </div>
+              <Progress value={syncProgress.progress} className="h-2" />
+              {syncProgress.totalCount && syncProgress.totalCount > 1 && (
+                <p className="text-xs text-muted-foreground text-center">
+                  {syncProgress.currentIndex} de {syncProgress.totalCount}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs value={mode} onValueChange={(v) => setMode(v as "simples" | "detalhada")} className="w-full">
           <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="simples">Fatura Simples</TabsTrigger>
-            <TabsTrigger value="detalhada">Com Itens</TabsTrigger>
+            <TabsTrigger value="simples" disabled={isCreating}>Fatura Simples</TabsTrigger>
+            <TabsTrigger value="detalhada" disabled={isCreating}>Com Itens</TabsTrigger>
           </TabsList>
 
           <div className="space-y-4 mt-4">
@@ -224,6 +299,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                 variant={tipo === "avulsa" ? "default" : "outline"}
                 className="flex-1"
                 onClick={() => setTipo("avulsa")}
+                disabled={isCreating}
               >
                 <FileText className="h-4 w-4 mr-2" />
                 Avulsa
@@ -233,6 +309,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                 variant={tipo === "recorrente" ? "default" : "outline"}
                 className="flex-1"
                 onClick={() => setTipo("recorrente")}
+                disabled={isCreating}
               >
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Recorrente
@@ -243,7 +320,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Aluno *</Label>
-                <Select value={data.aluno_id} onValueChange={(v) => setData({ ...data, aluno_id: v })}>
+                <Select value={data.aluno_id} onValueChange={(v) => setData({ ...data, aluno_id: v })} disabled={isCreating}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {alunos.map(a => <SelectItem key={a.id} value={a.id}>{a.nome_completo}</SelectItem>)}
@@ -252,7 +329,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
               </div>
               <div className="space-y-2">
                 <Label>Curso *</Label>
-                <Select value={data.curso_id} onValueChange={handleCursoSelect}>
+                <Select value={data.curso_id} onValueChange={handleCursoSelect} disabled={isCreating}>
                   <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                   <SelectContent>
                     {cursos.map(c => <SelectItem key={c.id} value={c.id}>{c.nome}</SelectItem>)}
@@ -261,21 +338,21 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
               </div>
             </div>
 
-            {/* Status do Responsável */}
+            {/* Status do Responsável - OBRIGATÓRIO */}
             {data.aluno_id && responsavelStatus && (
               <Alert 
                 variant={responsavelStatus.type === "error" ? "destructive" : "default"}
                 className={
-                  responsavelStatus.type === "success" ? "border-primary/50 bg-primary/10" :
+                  responsavelStatus.type === "success" ? "border-success/50 bg-success/10" :
                   responsavelStatus.type === "warning" ? "border-warning/50 bg-warning/10" : ""
                 }
               >
                 {responsavelStatus.type === "success" ? (
-                  <CheckCircle2 className="h-4 w-4 text-primary" />
+                  <CheckCircle2 className="h-4 w-4 text-success" />
                 ) : responsavelStatus.type === "warning" ? (
                   <AlertTriangle className="h-4 w-4 text-warning" />
                 ) : responsavelStatus.type === "error" ? (
-                  <AlertTriangle className="h-4 w-4" />
+                  <XCircle className="h-4 w-4" />
                 ) : (
                   <User className="h-4 w-4" />
                 )}
@@ -289,7 +366,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Mês de Início</Label>
-                <Select value={String(data.mes_referencia)} onValueChange={(v) => setData({ ...data, mes_referencia: parseInt(v) })}>
+                <Select value={String(data.mes_referencia)} onValueChange={(v) => setData({ ...data, mes_referencia: parseInt(v) })} disabled={isCreating}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {meses.map((m, i) => <SelectItem key={i} value={String(i + 1)}>{m}</SelectItem>)}
@@ -298,7 +375,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
               </div>
               <div className="space-y-2">
                 <Label>Ano de Início</Label>
-                <Select value={String(data.ano_referencia)} onValueChange={(v) => setData({ ...data, ano_referencia: parseInt(v) })}>
+                <Select value={String(data.ano_referencia)} onValueChange={(v) => setData({ ...data, ano_referencia: parseInt(v) })} disabled={isCreating}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {[2024, 2025, 2026, 2027].map(y => <SelectItem key={y} value={String(y)}>{y}</SelectItem>)}
@@ -318,6 +395,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                   type="date"
                   value={data.data_vencimento}
                   onChange={(e) => setData({ ...data, data_vencimento: e.target.value })}
+                  disabled={isCreating}
                 />
               </div>
             ) : (
@@ -333,6 +411,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                       <Select 
                         value={String(data.dia_vencimento)} 
                         onValueChange={(v) => setData({ ...data, dia_vencimento: parseInt(v) })}
+                        disabled={isCreating}
                       >
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
@@ -349,7 +428,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                     </div>
                     <div className="space-y-2">
                       <Label>Quantidade de Meses</Label>
-                      <Select value={String(data.meses_recorrencia)} onValueChange={(v) => setData({ ...data, meses_recorrencia: parseInt(v) })}>
+                      <Select value={String(data.meses_recorrencia)} onValueChange={(v) => setData({ ...data, meses_recorrencia: parseInt(v) })} disabled={isCreating}>
                         <SelectTrigger><SelectValue /></SelectTrigger>
                         <SelectContent>
                           {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 24].map(n => (
@@ -371,6 +450,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                   step="0.01"
                   value={data.valor || ""}
                   onChange={(e) => setData({ ...data, valor: parseFloat(e.target.value) || 0 })}
+                  disabled={isCreating}
                 />
               </div>
             </TabsContent>
@@ -385,6 +465,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                         placeholder="Descrição do item"
                         value={newItem.descricao}
                         onChange={(e) => setNewItem({ ...newItem, descricao: e.target.value })}
+                        disabled={isCreating}
                       />
                     </div>
                     <div className="col-span-2">
@@ -393,6 +474,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                         placeholder="Qtd"
                         value={newItem.quantidade}
                         onChange={(e) => setNewItem({ ...newItem, quantidade: parseInt(e.target.value) || 1 })}
+                        disabled={isCreating}
                       />
                     </div>
                     <div className="col-span-3">
@@ -402,10 +484,11 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                         placeholder="Valor unit."
                         value={newItem.valor_unitario || ""}
                         onChange={(e) => setNewItem({ ...newItem, valor_unitario: parseFloat(e.target.value) || 0 })}
+                        disabled={isCreating}
                       />
                     </div>
                     <div className="col-span-2">
-                      <Button onClick={addItem} className="w-full">
+                      <Button onClick={addItem} className="w-full" disabled={isCreating}>
                         <Plus className="h-4 w-4" />
                       </Button>
                     </div>
@@ -438,6 +521,7 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                             size="icon"
                             className="h-7 w-7 text-destructive"
                             onClick={() => removeItem(index)}
+                            disabled={isCreating}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -469,6 +553,9 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
                     <p className="text-xs text-muted-foreground">
                       Vencimento: dia {data.dia_vencimento} de cada mês, iniciando em {meses[data.mes_referencia - 1]}/{data.ano_referencia}
                     </p>
+                    <p className="text-xs text-primary font-medium mt-2">
+                      ⚡ Todas serão sincronizadas com ASAAS automaticamente
+                    </p>
                   </div>
                 )}
               </CardContent>
@@ -477,15 +564,18 @@ export function CreateFaturaDialog({ open, onOpenChange, alunos, cursos }: Creat
         </Tabs>
 
         <DialogFooter className="mt-6">
-          <Button variant="outline" onClick={() => { onOpenChange(false); resetForm(); }}>
+          <Button variant="outline" onClick={() => { onOpenChange(false); resetForm(); }} disabled={isCreating}>
             Cancelar
           </Button>
           <Button
             onClick={handleCreate}
-            disabled={createMutation.isPending || !data.aluno_id || !data.curso_id || valorTotal < 0}
+            disabled={isCreating || !canCreate || valorTotal < 0}
           >
-            {createMutation.isPending && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
-            Criar {tipo === "recorrente" ? `${data.meses_recorrencia} Faturas` : "Fatura"}
+            {isCreating && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            {isCreating 
+              ? (syncProgress?.message?.slice(0, 25) || "Processando...") 
+              : `Criar ${tipo === "recorrente" ? `${data.meses_recorrencia} Faturas` : "Fatura"}`
+            }
           </Button>
         </DialogFooter>
       </DialogContent>

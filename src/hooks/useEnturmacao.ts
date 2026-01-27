@@ -22,9 +22,11 @@ export function useEnturmar() {
       cursoId, 
       valorMensalidade, 
       responsavelId,
-      gerarFaturas = false // Padrão: NÃO gerar faturas automaticamente na enturmação
+      gerarFaturas = false // SEMPRE false - faturas devem ser criadas manualmente via CreateFaturaDialog
     }: EnturmarParams) => {
-      // 1. Atualiza o aluno com a turma
+      // Apenas atualiza o aluno com a turma
+      // Geração de faturas é feita MANUALMENTE via Faturas → Nova Fatura
+      // Isso garante sincronização 100% com ASAAS
       const { error: updateError } = await supabase
         .from("alunos")
         .update({ turma_id: turmaId })
@@ -32,50 +34,14 @@ export function useEnturmar() {
 
       if (updateError) throw updateError;
 
-      // 2. Gera faturas automaticamente se solicitado
+      // NOTA: Faturas NÃO são mais geradas automaticamente na enturmação
+      // O fluxo correto é:
+      // 1. Enturmar o aluno
+      // 2. Ir em Faturas → Nova Fatura → Recorrente
+      // 3. Isso garante que CADA fatura passe pelo fluxo ASAAS obrigatório
+      
       if (gerarFaturas) {
-        const { error: faturaError } = await supabase.rpc("gerar_faturas_aluno", {
-          p_aluno_id: alunoId,
-          p_curso_id: cursoId,
-          p_valor: valorMensalidade,
-          p_data_inicio: new Date().toISOString().split("T")[0],
-        });
-
-        if (faturaError) throw faturaError;
-
-        // 3. Se tiver responsável, vincula as faturas ao responsável
-        if (responsavelId) {
-          const { error: vinculoError } = await supabase
-            .from("faturas")
-            .update({ responsavel_id: responsavelId })
-            .eq("aluno_id", alunoId)
-            .is("responsavel_id", null);
-
-          if (vinculoError) throw vinculoError;
-        }
-
-        // 4. Criar cobranças Asaas apenas para as próximas 3 faturas (evita sobrecarga)
-        const { data: faturasGeradas } = await supabase
-          .from("faturas")
-          .select("id")
-          .eq("aluno_id", alunoId)
-          .eq("status", "Aberta")
-          .is("asaas_payment_id", null)
-          .order("data_vencimento", { ascending: true })
-          .limit(3);
-
-        if (faturasGeradas && faturasGeradas.length > 0) {
-          for (const fatura of faturasGeradas) {
-            try {
-              await supabase.functions.invoke("asaas-create-payment", {
-                body: { faturaId: fatura.id, billingType: "UNDEFINED" },
-              });
-              await new Promise(r => setTimeout(r, 800));
-            } catch (err) {
-              console.warn(`Aviso: Cobrança Asaas pendente para fatura ${fatura.id}`);
-            }
-          }
-        }
+        console.warn("DEPRECADO: gerarFaturas=true foi ignorado. Use CreateFaturaDialog para criar faturas com sync ASAAS.");
       }
 
       return { success: true };
@@ -84,7 +50,7 @@ export function useEnturmar() {
       queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
-      toast.success("Aluno enturmado com sucesso! Cobranças serão geradas em breve.");
+      toast.success("Aluno enturmado com sucesso! Crie as faturas em Faturas → Nova Fatura → Recorrente.");
     },
     onError: (error: Error) => {
       toast.error(`Erro na enturmação: ${error.message}`);
