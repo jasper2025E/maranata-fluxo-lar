@@ -811,14 +811,7 @@ export function BulkActionsBar({
                   <QrCode className="h-4 w-4" />
                   Gerar PIX/Boleto
                 </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={handleBulkGenerateStripeLinks}
-                  disabled={pendingCount === 0}
-                  className="gap-2 cursor-pointer"
-                >
-                  <Link className="h-4 w-4" />
-                  Gerar Links Stripe
-                </DropdownMenuItem>
+
 
                 {paidCount > 0 && (
                   <>
