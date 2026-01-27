@@ -794,9 +794,12 @@ export function BulkActionsBar({
                 <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
                   Documentos
                 </DropdownMenuLabel>
-                <DropdownMenuItem onClick={handleGenerateCarne} className="gap-2 cursor-pointer">
-                  <Printer className="h-4 w-4" />
-                  Gerar Carnê
+                <DropdownMenuItem 
+                  onClick={handleGenerateCarne} 
+                  className="gap-2 cursor-pointer group transition-colors hover:bg-primary/10"
+                >
+                  <Printer className="h-4 w-4 transition-transform group-hover:scale-110" />
+                  <span className="font-medium">Imprimir Carnê</span>
                 </DropdownMenuItem>
                 
                 <DropdownMenuSeparator />
