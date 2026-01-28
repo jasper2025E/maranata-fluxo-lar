@@ -363,8 +363,15 @@ const Auth = () => {
         </div>
       </main>
 
-      <footer className="relative z-10 py-4 flex-shrink-0 text-center text-white/70 text-sm">
-        © {new Date().getFullYear()} {schoolName}
+      <footer className="relative z-10 py-6 flex-shrink-0">
+        <div className="flex flex-col items-center gap-2">
+          <p className="text-white/60 text-sm">
+            © {new Date().getFullYear()} {schoolName}
+          </p>
+          <p className="text-white/40 text-xs">
+            Sistema de Gestão Escolar
+          </p>
+        </div>
       </footer>
     </div>
   );
