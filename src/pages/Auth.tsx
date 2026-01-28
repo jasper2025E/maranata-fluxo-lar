@@ -185,7 +185,7 @@ const Auth = () => {
     const imgSize = size === "large" ? "h-16 w-16" : "h-8 w-8";
     
     return (
-      <div className="flex items-center gap-3">
+      <div className="flex flex-col items-center gap-3 text-center">
         {schoolLogo ? (
           <img 
             src={schoolLogo} 
