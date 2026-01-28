@@ -6,9 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff, ShieldCheck, ArrowLeft, GraduationCap } from "lucide-react";
+import { Loader2, Eye, EyeOff, ShieldCheck, ArrowLeft, GraduationCap, Headphones, MessageCircle, Instagram, Mail } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { GradientBackground } from "@/components/landing/GradientBackground";
 import { useQuery } from "@tanstack/react-query";
 const loginSchema = z.object({
@@ -318,19 +319,43 @@ const Auth = () => {
               reforcomaranata.com.br
             </p>
           </div>
-          <div className="gap-4 text-sm flex-row flex items-end justify-end">
-            <a href="https://wa.me/5598981384957" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white transition-colors">
-              WhatsApp
-            </a>
-            <span className="text-white/30">•</span>
-            <a href="https://www.instagram.com/mendysvictor/" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white transition-colors">
-              Instagram
-            </a>
-            <span className="text-white/30">•</span>
-            <a href="mailto:victordbvtey@outlookk.com" className="text-white/60 hover:text-white transition-colors">
-              Suporte Técnico
-            </a>
-          </div>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
+                <Headphones className="h-4 w-4" />
+                Suporte Técnico
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2 bg-white/10 backdrop-blur-xl border-white/20" align="end">
+              <div className="flex flex-col gap-1">
+                <a 
+                  href="https://wa.me/5598981384957" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                >
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </a>
+                <a 
+                  href="https://www.instagram.com/mendysvictor/" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                >
+                  <Instagram className="h-4 w-4" />
+                  Instagram
+                </a>
+                <a 
+                  href="mailto:victordbvtey@outlookk.com" 
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                >
+                  <Mail className="h-4 w-4" />
+                  E-mail
+                </a>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </footer>
     </div>;
