@@ -328,7 +328,7 @@ const Auth = () => {
             </a>
             <span className="text-white/30">•</span>
             <a href="mailto:victordbvtey@outlookk.com" className="text-white/60 hover:text-white transition-colors">
-              E-mail
+              Suporte Técnico
             </a>
           </div>
         </div>
