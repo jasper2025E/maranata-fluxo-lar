@@ -335,7 +335,7 @@ const Auth = () => {
                   {errors.password && <p className="text-xs text-red-300">{errors.password}</p>}
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center">
                   <div className="flex items-center space-x-2">
                     <Checkbox 
                       id="remember" 
@@ -347,13 +347,6 @@ const Auth = () => {
                       Lembrar
                     </Label>
                   </div>
-                  <button 
-                    type="button" 
-                    className="text-sm text-white/80 hover:text-white hover:underline" 
-                    onClick={() => toast.info("Funcionalidade em desenvolvimento")}
-                  >
-                    Esqueceu a senha?
-                  </button>
                 </div>
 
                 <Button type="submit" disabled={loading} className="w-full h-12 font-medium text-base rounded-lg bg-slate-800 hover:bg-slate-700 text-white mt-2">
