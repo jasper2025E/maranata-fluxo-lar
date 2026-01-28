@@ -318,7 +318,7 @@ const Auth = () => {
               reforcomaranata.com.br
             </p>
           </div>
-          <div className="flex items-center gap-4 text-sm">
+          <div className="gap-4 text-sm flex-row flex items-end justify-end">
             <a href="https://wa.me/5598981384957" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white transition-colors">
               WhatsApp
             </a>
