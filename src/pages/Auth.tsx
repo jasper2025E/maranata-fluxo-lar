@@ -45,7 +45,7 @@ const Auth = () => {
         .select("nome, logo_url")
         .order("created_at", { ascending: true })
         .limit(1)
-        .single();
+        .maybeSingle();
       
       if (error) {
         console.error("Error fetching escola branding:", error);
