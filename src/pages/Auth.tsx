@@ -291,10 +291,6 @@ const Auth = () => {
                 <LogoDisplay size="large" />
               </div>
 
-              <h1 className="text-white mb-6 text-center font-mono font-light text-lg mx-px">
-                Entrar no Sistema
-              </h1>
-
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
                   <Label htmlFor="email" className="text-white/90 text-sm font-medium">
