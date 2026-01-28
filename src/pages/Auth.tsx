@@ -375,7 +375,7 @@ const Auth = () => {
           </div>
           <div className="flex items-center gap-4 text-sm">
             <a 
-              href="https://wa.me/5500000000000" 
+              href="https://wa.me/5598981384957" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-white/60 hover:text-white transition-colors"
@@ -384,7 +384,7 @@ const Auth = () => {
             </a>
             <span className="text-white/30">•</span>
             <a 
-              href="https://instagram.com/escolamaranata" 
+              href="https://www.instagram.com/mendysvictor/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-white/60 hover:text-white transition-colors"
@@ -393,7 +393,7 @@ const Auth = () => {
             </a>
             <span className="text-white/30">•</span>
             <a 
-              href="mailto:contato@escolamaranata.com.br" 
+              href="mailto:victordbvtey@outlookk.com" 
               className="text-white/60 hover:text-white transition-colors"
             >
               E-mail
