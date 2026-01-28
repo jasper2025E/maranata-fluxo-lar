@@ -11,15 +11,16 @@ import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
 import { GradientBackground } from "@/components/landing/GradientBackground";
 import { useQuery } from "@tanstack/react-query";
-
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres")
 });
-
 const Auth = () => {
   const navigate = useNavigate();
-  const { user, loading: authLoading } = useAuth();
+  const {
+    user,
+    loading: authLoading
+  } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -37,35 +38,36 @@ const Auth = () => {
   const [mfaVerifying, setMfaVerifying] = useState(false);
 
   // Fetch school branding
-  const { data: escola } = useQuery({
+  const {
+    data: escola
+  } = useQuery({
     queryKey: ["escola-branding"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("escola")
-        .select("nome, logo_url")
-        .order("created_at", { ascending: true })
-        .limit(1)
-        .maybeSingle();
-      
+      const {
+        data,
+        error
+      } = await supabase.from("escola").select("nome, logo_url").order("created_at", {
+        ascending: true
+      }).limit(1).maybeSingle();
       if (error) {
         console.error("Error fetching escola branding:", error);
         return null;
       }
       return data;
     },
-    staleTime: 1000 * 60 * 10,
+    staleTime: 1000 * 60 * 10
   });
-
   const schoolName = escola?.nome || "Escola Maranata";
   const schoolLogo = escola?.logo_url;
 
   // Redirect if already authenticated
   useEffect(() => {
     if (user && !authLoading) {
-      navigate("/dashboard", { replace: true });
+      navigate("/dashboard", {
+        replace: true
+      });
     }
   }, [user, authLoading, navigate]);
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -132,7 +134,6 @@ const Auth = () => {
       setLoading(false);
     }
   };
-
   const handleMFAVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (mfaCode.length !== 6) {
@@ -169,7 +170,6 @@ const Auth = () => {
       setMfaVerifying(false);
     }
   };
-
   const handleBackToLogin = async () => {
     await supabase.auth.signOut();
     setMfaRequired(false);
@@ -179,40 +179,29 @@ const Auth = () => {
   };
 
   // Logo component
-  const LogoDisplay = ({ size = "large" }: { size?: "small" | "large" }) => {
+  const LogoDisplay = ({
+    size = "large"
+  }: {
+    size?: "small" | "large";
+  }) => {
     const iconSize = size === "large" ? "h-14 w-14" : "h-7 w-7";
     const textSize = size === "large" ? "text-3xl" : "text-xl";
     const imgSize = size === "large" ? "h-16 w-16" : "h-8 w-8";
-    
-    return (
-      <div className="flex flex-col items-center gap-3 text-center">
-        {schoolLogo ? (
-          <img 
-            src={schoolLogo} 
-            alt={schoolName} 
-            className={`${imgSize} object-contain rounded-lg`}
-          />
-        ) : (
-          <GraduationCap className={`${iconSize} text-white`} />
-        )}
+    return <div className="flex flex-col items-center gap-3 text-center">
+        {schoolLogo ? <img src={schoolLogo} alt={schoolName} className={`${imgSize} object-contain rounded-lg`} /> : <GraduationCap className={`${iconSize} text-white`} />}
         <span className={`${textSize} font-bold text-white`}>{schoolName}</span>
-      </div>
-    );
+      </div>;
   };
-
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+    return <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
         <GradientBackground />
         <Loader2 className="h-8 w-8 animate-spin text-white relative z-10" />
-      </div>
-    );
+      </div>;
   }
 
   // MFA Verification Screen
   if (mfaRequired) {
-    return (
-      <div className="min-h-screen flex flex-col relative overflow-x-hidden">
+    return <div className="min-h-screen flex flex-col relative overflow-x-hidden">
         <div className="fixed inset-0 z-0">
           <GradientBackground />
         </div>
@@ -239,25 +228,13 @@ const Auth = () => {
                 </p>
 
                 <form onSubmit={handleMFAVerify} className="space-y-6">
-                  <Input 
-                    value={mfaCode} 
-                    onChange={e => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} 
-                    placeholder="000000" 
-                    className="text-center text-3xl tracking-[0.5em] font-mono h-14 border-border" 
-                    maxLength={6} 
-                    autoFocus 
-                    autoComplete="one-time-code" 
-                    inputMode="numeric" 
-                    disabled={mfaVerifying} 
-                  />
+                  <Input value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" className="text-center text-3xl tracking-[0.5em] font-mono h-14 border-border" maxLength={6} autoFocus autoComplete="one-time-code" inputMode="numeric" disabled={mfaVerifying} />
 
                   <Button type="submit" disabled={mfaVerifying || mfaCode.length !== 6} className="w-full h-11 font-medium">
-                    {mfaVerifying ? (
-                      <>
+                    {mfaVerifying ? <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                         Verificando...
-                      </>
-                    ) : "Verificar"}
+                      </> : "Verificar"}
                   </Button>
 
                   <Button type="button" variant="ghost" className="w-full text-muted-foreground" onClick={handleBackToLogin} disabled={mfaVerifying}>
@@ -273,12 +250,9 @@ const Auth = () => {
         <footer className="relative z-10 py-4 flex-shrink-0 text-center text-white/70 text-sm">
           © {new Date().getFullYear()} {schoolName}
         </footer>
-      </div>
-    );
+      </div>;
   }
-
-  return (
-    <div className="min-h-screen flex flex-col relative overflow-x-hidden">
+  return <div className="min-h-screen flex flex-col relative overflow-x-hidden">
       <div className="fixed inset-0 z-0">
         <GradientBackground />
       </div>
@@ -296,16 +270,7 @@ const Auth = () => {
                   <Label htmlFor="email" className="text-white/90 text-sm font-medium">
                     E-mail
                   </Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    value={email} 
-                    onChange={e => setEmail(e.target.value)} 
-                    placeholder="seuemail@exemplo.com" 
-                    className={`h-12 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.email ? "border-red-400" : ""}`} 
-                    disabled={loading} 
-                    autoComplete="email" 
-                  />
+                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seuemail@exemplo.com" className={`h-12 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
                   {errors.email && <p className="text-xs text-red-300">{errors.email}</p>}
                 </div>
 
@@ -314,21 +279,8 @@ const Auth = () => {
                     Senha
                   </Label>
                   <div className="relative">
-                    <Input 
-                      id="password" 
-                      type={showPassword ? "text" : "password"} 
-                      value={password} 
-                      onChange={e => setPassword(e.target.value)} 
-                      placeholder="••••••••" 
-                      className={`h-12 pr-10 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.password ? "border-red-400" : ""}`} 
-                      disabled={loading} 
-                      autoComplete="current-password" 
-                    />
-                    <button 
-                      type="button" 
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white" 
-                      onClick={() => setShowPassword(!showPassword)}
-                    >
+                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className={`h-12 pr-10 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
+                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
@@ -337,12 +289,7 @@ const Auth = () => {
 
                 <div className="flex items-center">
                   <div className="flex items-center space-x-2">
-                    <Checkbox 
-                      id="remember" 
-                      checked={rememberMe} 
-                      onCheckedChange={checked => setRememberMe(checked as boolean)} 
-                      className="border-white/40 data-[state=checked]:bg-white data-[state=checked]:text-primary" 
-                    />
+                    <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked as boolean)} className="border-white/40 data-[state=checked]:bg-white data-[state=checked]:text-primary" />
                     <Label htmlFor="remember" className="text-sm text-white/80 font-normal cursor-pointer">
                       Lembrar
                     </Label>
@@ -350,12 +297,10 @@ const Auth = () => {
                 </div>
 
                 <Button type="submit" disabled={loading} className="w-full h-12 font-medium text-base rounded-lg bg-slate-800 hover:bg-slate-700 text-white mt-2">
-                  {loading ? (
-                    <>
+                  {loading ? <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Entrando...
-                    </>
-                  ) : "Entrar"}
+                    </> : "Entrar"}
                 </Button>
               </form>
             </div>
@@ -370,39 +315,24 @@ const Auth = () => {
               © {new Date().getFullYear()} {schoolName}
             </p>
             <p className="text-white/40 text-xs">
-              Sistema de Gestão Escolar
+              ​reforcomaranata.com.br   
             </p>
           </div>
           <div className="flex items-center gap-4 text-sm">
-            <a 
-              href="https://wa.me/5598981384957" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-white/60 hover:text-white transition-colors"
-            >
+            <a href="https://wa.me/5598981384957" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white transition-colors">
               WhatsApp
             </a>
             <span className="text-white/30">•</span>
-            <a 
-              href="https://www.instagram.com/mendysvictor/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-white/60 hover:text-white transition-colors"
-            >
+            <a href="https://www.instagram.com/mendysvictor/" target="_blank" rel="noopener noreferrer" className="text-white/60 hover:text-white transition-colors">
               Instagram
             </a>
             <span className="text-white/30">•</span>
-            <a 
-              href="mailto:victordbvtey@outlookk.com" 
-              className="text-white/60 hover:text-white transition-colors"
-            >
+            <a href="mailto:victordbvtey@outlookk.com" className="text-white/60 hover:text-white transition-colors">
               E-mail
             </a>
           </div>
         </div>
       </footer>
-    </div>
-  );
+    </div>;
 };
-
 export default Auth;
