@@ -309,13 +309,13 @@ const Auth = () => {
       </main>
 
       <footer className="relative z-10 py-6 px-6 flex-shrink-0">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="text-center sm:text-left">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="text-left">
             <p className="text-white/60 text-sm">
               © {new Date().getFullYear()} {schoolName}
             </p>
             <p className="text-white/40 text-xs">
-              ​reforcomaranata.com.br   
+              reforcomaranata.com.br
             </p>
           </div>
           <div className="flex items-center gap-4 text-sm">
