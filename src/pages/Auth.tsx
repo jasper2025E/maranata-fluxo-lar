@@ -363,14 +363,42 @@ const Auth = () => {
         </div>
       </main>
 
-      <footer className="relative z-10 py-6 flex-shrink-0">
-        <div className="flex flex-col items-center gap-2">
-          <p className="text-white/60 text-sm">
-            © {new Date().getFullYear()} {schoolName}
-          </p>
-          <p className="text-white/40 text-xs">
-            Sistema de Gestão Escolar
-          </p>
+      <footer className="relative z-10 py-6 px-6 flex-shrink-0">
+        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="text-center sm:text-left">
+            <p className="text-white/60 text-sm">
+              © {new Date().getFullYear()} {schoolName}
+            </p>
+            <p className="text-white/40 text-xs">
+              Sistema de Gestão Escolar
+            </p>
+          </div>
+          <div className="flex items-center gap-4 text-sm">
+            <a 
+              href="https://wa.me/5500000000000" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-white/60 hover:text-white transition-colors"
+            >
+              WhatsApp
+            </a>
+            <span className="text-white/30">•</span>
+            <a 
+              href="https://instagram.com/escolamaranata" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-white/60 hover:text-white transition-colors"
+            >
+              Instagram
+            </a>
+            <span className="text-white/30">•</span>
+            <a 
+              href="mailto:contato@escolamaranata.com.br" 
+              className="text-white/60 hover:text-white transition-colors"
+            >
+              E-mail
+            </a>
+          </div>
         </div>
       </footer>
     </div>
