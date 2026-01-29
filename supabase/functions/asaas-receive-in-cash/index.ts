@@ -175,14 +175,19 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Atualizar status da fatura localmente
-    await supabase
+    // Atualizar status da fatura localmente - IMPORTANTE: atualizar tanto asaas_status quanto status principal
+    const updateResult = await supabase
       .from("faturas")
       .update({
+        status: "Paga",
         asaas_status: asaasData.status || "RECEIVED_IN_CASH",
         updated_at: new Date().toISOString(),
       })
       .eq("id", faturaId);
+    
+    if (updateResult.error) {
+      console.error("[asaas-receive-in-cash] Erro ao atualizar fatura local:", updateResult.error);
+    }
 
     // Log sucesso
     await logGatewayTransaction(supabase, {
