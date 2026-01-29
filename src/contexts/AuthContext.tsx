@@ -11,6 +11,7 @@ interface AuthContextType {
   session: Session | null;
   role: AppRole | null;
   loading: boolean;
+  roleLoading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
   hasRole: (requiredRole: AppRole) => boolean;
@@ -23,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const [roleLoading, setRoleLoading] = useState(false);
   
   // Prevent duplicate role fetches
   const lastFetchedUserId = useRef<string | null>(null);
@@ -35,7 +37,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
     
     isFetching.current = true;
-    setLoading(true);
+    setRoleLoading(true);
     
     try {
       // Roles em ordem de prioridade (mais privilegiado primeiro)
@@ -69,56 +71,63 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       lastFetchedUserId.current = null;
     } finally {
       isFetching.current = false;
-      setLoading(false);
+      setRoleLoading(false);
     }
   }, []);
 
   useEffect(() => {
     let mounted = true;
-    
-    // Get initial session first
-    supabase.auth.getSession().then(({ data: { session } }) => {
+
+    // Listener primeiro (evita race condition entre getSession e eventos)
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
-      
+
+      const previousUserId = lastFetchedUserId.current;
+      const newUserId = session?.user?.id;
+
+      if (previousUserId && newUserId && previousUserId !== newUserId) {
+        clearQueryCache();
+      }
+
       setSession(session);
       setUser(session?.user ?? null);
-      
+
       if (session?.user) {
-        fetchUserRole(session.user.id);
+        // Não bloquear a UI inteira durante refresh de token
+        if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED" || event === "USER_UPDATED") {
+          fetchUserRole(session.user.id);
+        }
       } else {
+        if (previousUserId) {
+          clearQueryCache();
+        }
+        setRole(null);
+        lastFetchedUserId.current = null;
+        setRoleLoading(false);
         setLoading(false);
       }
     });
 
-    // Set up auth state listener for changes only
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+    // Get initial session depois do listener
+    setLoading(true);
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
         if (!mounted) return;
-        
-        const previousUserId = lastFetchedUserId.current;
-        const newUserId = session?.user?.id;
-        
-        if (previousUserId && newUserId && previousUserId !== newUserId) {
-          clearQueryCache();
-        }
-        
+
         setSession(session);
         setUser(session?.user ?? null);
-        
+
         if (session?.user) {
-          if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
-            fetchUserRole(session.user.id);
-          }
-        } else {
-          if (previousUserId) {
-            clearQueryCache();
-          }
-          setRole(null);
-          lastFetchedUserId.current = null;
-          setLoading(false);
+          fetchUserRole(session.user.id);
         }
-      }
-    );
+      })
+      .finally(() => {
+        if (!mounted) return;
+        setLoading(false);
+      });
 
     return () => {
       mounted = false;
@@ -150,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
     setSession(null);
     setRole(null);
+    setRoleLoading(false);
   };
 
   const hasRole = (requiredRole: AppRole): boolean => {
@@ -167,6 +177,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         session,
         role,
         loading,
+          roleLoading,
         signIn,
         signOut,
         hasRole,
