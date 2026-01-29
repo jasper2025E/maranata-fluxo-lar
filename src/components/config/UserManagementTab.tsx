@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   Dialog,
   DialogContent,
@@ -60,6 +61,7 @@ interface SystemUser {
   role: AppRole;
   created_at: string;
   email_confirmed: boolean;
+  avatar_url: string | null;
 }
 
 // System owner protection - this account cannot be deleted or have role changed
@@ -113,7 +115,7 @@ export function UserManagementTab() {
     try {
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, email, nome, created_at");
+        .select("id, email, nome, created_at, avatar_url");
 
       if (profilesError) throw profilesError;
 
@@ -132,6 +134,7 @@ export function UserManagementTab() {
           role: userRole?.role || ("staff" as AppRole),
           created_at: profile.created_at || "",
           email_confirmed: true,
+          avatar_url: profile.avatar_url || null,
         };
       });
 
@@ -404,11 +407,14 @@ export function UserManagementTab() {
             filteredUsers.map((user) => (
               <div key={user.id} className="flex items-center justify-between px-4 py-3 hover:bg-muted/50 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="h-9 w-9 rounded-full bg-muted flex items-center justify-center shrink-0">
-                    <span className="text-sm font-medium text-foreground">
+                  <Avatar className="h-9 w-9 shrink-0">
+                    {user.avatar_url && (
+                      <AvatarImage src={user.avatar_url} alt={user.nome} />
+                    )}
+                    <AvatarFallback className="text-sm font-medium">
                       {user.nome.charAt(0).toUpperCase()}
-                    </span>
-                  </div>
+                    </AvatarFallback>
+                  </Avatar>
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{user.nome}</p>
                     <p className="text-xs text-muted-foreground truncate">{user.email}</p>
