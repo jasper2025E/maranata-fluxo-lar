@@ -48,6 +48,12 @@ import { Fatura, getValorFinal, formatCurrency, meses } from "@/hooks/useFaturas
 
 type ViewMode = "list" | "status" | "aluno" | "mes";
 
+type FaturaWithDerivedMeta = Fatura & {
+  _derived_total?: number;
+  _derived_open?: number;
+  _derived_count?: number;
+};
+
 interface FaturaTableProps {
   faturas: Fatura[];
   isLoading: boolean;
@@ -124,7 +130,7 @@ function FaturaRow({
   isSelected,
   onToggleSelect,
 }: {
-  fatura: Fatura;
+  fatura: FaturaWithDerivedMeta;
   onViewDetails: (fatura: Fatura) => void;
   onEdit: (fatura: Fatura) => void;
   onPayment: (fatura: Fatura) => void;
@@ -143,13 +149,23 @@ function FaturaRow({
   isSelected?: boolean;
   onToggleSelect?: (faturaId: string) => void;
 }) {
-  const statusConfig = getStatusConfig(fatura.status, fatura.data_vencimento);
-  const StatusIcon = statusConfig.icon;
   const valorFinal = getValorFinal(fatura);
   const valorOriginal = fatura.valor_original || fatura.valor;
   const temAlteracao = valorFinal !== valorOriginal;
   const isPendente = fatura.status === "Aberta" || fatura.status === "Vencida";
-  const saldoRestante = fatura.saldo_restante || valorFinal;
+  const saldoRestante = fatura.saldo_restante ?? valorFinal;
+
+  // Quando há pagamento parcial, o saldo restante fica em uma fatura derivada.
+  // Para refletir isso na listagem (inclusive faturas antigas), detectamos derivadas.
+  const derivedOpen = fatura._derived_open ?? 0;
+  const derivedTotal = fatura._derived_total ?? 0;
+  const hasDerivedOpen = derivedOpen > 0;
+  const displayStatus = hasDerivedOpen ? "Parcial" : fatura.status;
+  const devendo = hasDerivedOpen ? (derivedOpen || derivedTotal) : 0;
+  const pagoParcial = hasDerivedOpen ? Math.max(0, valorFinal - (derivedTotal || derivedOpen)) : 0;
+
+  const statusConfig = getStatusConfig(displayStatus, fatura.data_vencimento);
+  const StatusIcon = statusConfig.icon;
 
   return (
     <TableRow className={cn(
@@ -198,16 +214,17 @@ function FaturaRow({
       </TableCell>
       <TableCell>
         <div className="flex flex-col">
-          {/* Mostra saldo devedor como valor principal se fatura estiver aberta/vencida com saldo */}
-          {isPendente && saldoRestante > 0 && saldoRestante < valorFinal ? (
+          {/* Pagamento parcial: mostrar devendo/pago diretamente na linha */}
+          {hasDerivedOpen ? (
+            <>
+              <span className="font-bold text-sm text-warning">{formatCurrency(devendo)}</span>
+              <span className="text-xs text-muted-foreground">Pago: <span className="text-success font-semibold">{formatCurrency(pagoParcial)}</span></span>
+              <span className="text-[10px] text-muted-foreground">Saldo em cobrança derivada</span>
+            </>
+          ) : isPendente && saldoRestante > 0 && saldoRestante < valorFinal ? (
             <>
               <span className="font-bold text-sm text-warning">{formatCurrency(saldoRestante)}</span>
               <span className="text-xs text-muted-foreground line-through">{formatCurrency(valorFinal)}</span>
-            </>
-          ) : fatura.status?.toLowerCase() === "parcial" ? (
-            <>
-              <span className="font-bold text-sm text-success">{formatCurrency(valorFinal)}</span>
-              <span className="text-xs text-muted-foreground">Pago parcialmente</span>
             </>
           ) : (
             <>
@@ -370,6 +387,32 @@ export function FaturaTable({
 }: FaturaTableProps) {
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
 
+  // Meta de faturas derivadas para refletir saldo devedor na listagem
+  const derivedAgg = new Map<string, { total: number; open: number; count: number }>();
+  faturas.forEach((f) => {
+    if (!f.fatura_origem_id) return;
+    const origemId = f.fatura_origem_id;
+    const valor = getValorFinal(f);
+    const current = derivedAgg.get(origemId) || { total: 0, open: 0, count: 0 };
+    current.total += valor;
+    if (f.status !== "Paga" && f.status !== "Cancelada") {
+      current.open += valor;
+    }
+    current.count += 1;
+    derivedAgg.set(origemId, current);
+  });
+
+  const faturasView: FaturaWithDerivedMeta[] = faturas.map((f) => {
+    const agg = derivedAgg.get(f.id);
+    if (!agg) return f as FaturaWithDerivedMeta;
+    return {
+      ...(f as FaturaWithDerivedMeta),
+      _derived_total: agg.total,
+      _derived_open: agg.open,
+      _derived_count: agg.count,
+    };
+  });
+
   const toggleGroup = (key: string) => {
     const newExpanded = new Set(expandedGroups);
     if (newExpanded.has(key)) {
@@ -410,16 +453,16 @@ export function FaturaTable({
     }
   };
 
-  const visibleIds = new Set(faturas.map(f => f.id));
-  const visibleSelectedCount = faturas.filter(f => selectedFaturas?.has(f.id)).length;
-  const isAllVisibleSelected = visibleSelectedCount === faturas.length && faturas.length > 0;
+  const visibleIds = new Set(faturasView.map(f => f.id));
+  const visibleSelectedCount = faturasView.filter(f => selectedFaturas?.has(f.id)).length;
+  const isAllVisibleSelected = visibleSelectedCount === faturasView.length && faturasView.length > 0;
   const isSomeVisibleSelected = visibleSelectedCount > 0 && !isAllVisibleSelected;
 
   if (isLoading) {
     return <Card><TableSkeleton /></Card>;
   }
 
-  if (faturas.length === 0) {
+  if (faturasView.length === 0) {
     return (
       <Card className="border rounded-2xl shadow-sm">
         <CardContent className="flex flex-col items-center justify-center py-20">
@@ -471,7 +514,7 @@ export function FaturaTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {faturas.map(fatura => (
+            {faturasView.map(fatura => (
               <FaturaRow 
                 key={fatura.id} 
                 fatura={fatura} 
@@ -483,8 +526,8 @@ export function FaturaTable({
         </Table>
         <CardContent className="border-t bg-muted/20 py-3 text-center text-sm text-muted-foreground">
           {selectedFaturas && selectedFaturas.size > 0 
-            ? <span className="font-medium text-foreground">{selectedFaturas.size} de {faturas.length} fatura(s) selecionada(s)</span>
-            : `${faturas.length} fatura(s)`
+            ? <span className="font-medium text-foreground">{selectedFaturas.size} de {faturasView.length} fatura(s) selecionada(s)</span>
+            : `${faturasView.length} fatura(s)`
           }
         </CardContent>
       </Card>
@@ -496,7 +539,7 @@ export function FaturaTable({
 
   if (viewMode === "status") {
     const byStatus: Record<string, Fatura[]> = { Vencida: [], Aberta: [], Paga: [], Cancelada: [] };
-    faturas.forEach(f => {
+    faturasView.forEach(f => {
       if (!byStatus[f.status]) byStatus[f.status] = [];
       byStatus[f.status].push(f);
     });
@@ -510,7 +553,7 @@ export function FaturaTable({
       }));
   } else if (viewMode === "aluno") {
     const byAluno: Record<string, { nome: string; faturas: Fatura[] }> = {};
-    faturas.forEach(f => {
+    faturasView.forEach(f => {
       const key = f.aluno_id;
       if (!byAluno[key]) {
         byAluno[key] = { nome: f.alunos?.nome_completo || "Sem aluno", faturas: [] };
@@ -526,7 +569,7 @@ export function FaturaTable({
     }));
   } else if (viewMode === "mes") {
     const byMes: Record<string, Fatura[]> = {};
-    faturas.forEach(f => {
+    faturasView.forEach(f => {
       const key = `${f.ano_referencia}-${String(f.mes_referencia).padStart(2, "0")}`;
       if (!byMes[key]) byMes[key] = [];
       byMes[key].push(f);
