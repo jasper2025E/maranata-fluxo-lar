@@ -25,6 +25,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useEscola } from "@/hooks/useEscola";
 import { useTranslation } from "react-i18next";
+import { SidebarColorPicker } from "@/components/sidebar/SidebarColorPicker";
 import {
   Sidebar,
   SidebarContent,
@@ -585,7 +586,13 @@ export function AppSidebar() {
           </div>
         )}
         
-        <SidebarMenu>
+        <SidebarMenu className="space-y-1">
+          {/* Color Picker */}
+          <SidebarMenuItem>
+            <SidebarColorPicker isCollapsed={isCollapsed} />
+          </SidebarMenuItem>
+
+          {/* Logout */}
           <SidebarMenuItem>
             {isCollapsed ? (
               <Tooltip>
