@@ -1,140 +1,118 @@
 
-# Plano: Suporte a Pagamento Parcial com Sincronização Asaas
+# Plano: Bloquear Pagamentos em Faturas Parciais e Redirecionar para Derivada
 
-## Problema Identificado
+## Objetivo
+Quando uma fatura tem status "Parcial" (já recebeu pagamento e gerou uma fatura derivada), bloquear novos pagamentos nela e mostrar claramente:
+- Quanto foi pago
+- Link direto para a fatura derivada (onde está o saldo restante)
 
-Quando você registra um **pagamento parcial** no sistema:
+## Problema Atual
+Atualmente, faturas com status "Parcial" ainda exibem o botão "Registrar Pagamento" na aba Pagamentos, mesmo que o saldo já tenha sido transferido para uma fatura derivada. Isso pode confundir o usuário e causar duplicidade.
 
-1. O saldo restante é calculado corretamente no banco local
-2. **Mas** o sistema marca a fatura como "Paga" no Asaas
-3. **E** não cria uma nova cobrança para o valor restante
-4. Resultado: O cliente fica devendo, mas não há boleto/PIX para cobrar o resto
+## Solução
 
-## Causa Raiz
+### 1. Modificar `PagamentosTab` em `FaturaDetails.tsx`
 
-O Asaas não suporta "pagamentos parciais" nativos em uma mesma cobrança. Uma cobrança no Asaas é de valor fixo - ou está paga por inteiro ou não está.
+Adicionar verificação para faturas com status "Parcial":
+- Se a fatura tem status "Parcial" E possui fatura derivada com saldo aberto
+- Esconder formulário de pagamento
+- Mostrar card informativo com:
+  - Resumo do que foi pago na fatura original
+  - Mensagem clara: "O saldo restante foi transferido para a fatura derivada"
+  - Link/botão para abrir a fatura derivada diretamente
 
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  Fluxo Atual (quebrado)                                     │
-├─────────────────────────────────────────────────────────────┤
-│  1. Usuário seleciona "Pagamento Parcial" no sistema        │
-│  2. Informa R$ 100 (de uma fatura de R$ 200)                │
-│  3. Sistema salva pagamento + atualiza saldo_restante       │
-│  4. Chama asaas-receive-in-cash                             │
-│  5. Asaas marca cobrança como PAGA (valor total: R$ 200)    │
-│  6. Não existe cobrança para os R$ 100 restantes            │
-│  ❌ Cliente não recebe boleto/PIX do saldo                   │
-└─────────────────────────────────────────────────────────────┘
+### 2. Ajustar a lógica de `isEditable` no FaturaDetails
+
+- Faturas com status "Parcial" devem ser tratadas como "fechadas para novos pagamentos"
+- Manter histórico de pagamentos visível (apenas leitura)
+
+### 3. Melhorar Card de Resumo
+
+No card de resumo do `PagamentosTab`:
+- Mostrar claramente: "Pago nesta fatura" vs "Transferido para derivada"
+
+## Detalhes Técnicos
+
+### Arquivo: `src/components/faturas/FaturaDetails.tsx`
+
+**Mudanças no `PagamentosTab`:**
+
+```typescript
+// Adicionar prop para receber relacionadas
+function PagamentosTab({ 
+  faturaId, 
+  valorTotal, 
+  faturaStatus,        // NOVO
+  relacionadas,        // NOVO - { origem, derivadas }
+  onDownloadRecibo 
+}: { ... }) {
+  
+  // Verificar se é fatura parcial com derivada
+  const isParcialComDerivada = faturaStatus?.toLowerCase() === 'parcial' && 
+    relacionadas?.derivadas && relacionadas.derivadas.length > 0;
+  
+  // Se é parcial com derivada, mostrar card informativo ao invés de form
+  if (isParcialComDerivada) {
+    return (
+      <div className="space-y-4">
+        {/* Card de resumo existente */}
+        
+        {/* NOVO: Card informativo */}
+        <Card className="border-warning bg-warning/10">
+          <CardContent className="p-4">
+            <AlertTriangle className="h-5 w-5 text-warning mb-2" />
+            <p className="font-medium">Pagamento parcial registrado</p>
+            <p className="text-sm text-muted-foreground">
+              O saldo restante foi transferido para uma nova fatura.
+            </p>
+            
+            {/* Link para derivada */}
+            <Button variant="outline" className="mt-3 gap-2">
+              <ArrowRight className="h-4 w-4" />
+              Ver fatura {derivada.codigo_sequencial}
+            </Button>
+          </CardContent>
+        </Card>
+        
+        {/* Lista de pagamentos (somente leitura) */}
+      </div>
+    );
+  }
+}
 ```
 
-## Solução Proposta
+**Mudanças na chamada do `PagamentosTab`:**
 
-Implementar fluxo de "Fatura Derivada" (ou fatura filha):
-
-```text
-┌─────────────────────────────────────────────────────────────┐
-│  Fluxo Corrigido                                            │
-├─────────────────────────────────────────────────────────────┤
-│  1. Usuário seleciona "Pagamento Parcial"                   │
-│  2. Informa R$ 100 (de uma fatura de R$ 200)                │
-│  3. Sistema:                                                │
-│     a) Registra pagamento de R$ 100                         │
-│     b) Marca fatura original como "Paga"                    │
-│     c) CANCELA cobrança original no Asaas                   │
-│     d) Cria NOVA fatura de R$ 100 (valor restante)          │
-│     e) Vincula nova fatura à original (fatura_origem_id)    │
-│     f) Cria NOVA cobrança no Asaas para R$ 100              │
-│  4. Cliente recebe novo boleto/PIX pelo saldo               │
-│  ✅ Saldo fica rastreável e cobrável                         │
-└─────────────────────────────────────────────────────────────┘
+```typescript
+<TabsContent value="pagamentos" className="mt-4">
+  <PagamentosTab 
+    faturaId={fatura.id} 
+    valorTotal={valorFinal} 
+    faturaStatus={fatura.status}      // NOVO
+    relacionadas={relacionadas}        // NOVO
+    onDownloadRecibo={handleDownloadRecibo} 
+  />
+</TabsContent>
 ```
 
-## Alterações Necessárias
+## Fluxo do Usuário
 
-### 1. Migração de Banco de Dados
-Adicionar coluna para rastrear faturas derivadas de pagamentos parciais:
+1. Usuário abre fatura com status "Parcial"
+2. Na aba "Pagamentos":
+   - Vê o histórico de pagamentos feitos
+   - Vê card informativo: "Saldo transferido para FAT-2026-000013"
+   - Clica no botão para ir direto à fatura derivada
+3. Na fatura derivada:
+   - Pode registrar o pagamento do saldo restante normalmente
 
-```sql
--- Coluna para vincular fatura derivada à original
-ALTER TABLE faturas ADD COLUMN IF NOT EXISTS fatura_origem_id UUID REFERENCES faturas(id);
-ALTER TABLE faturas ADD COLUMN IF NOT EXISTS tipo_origem TEXT DEFAULT NULL;
--- Valores possíveis: 'pagamento_parcial', 'renegociacao', etc.
-```
+## Resumo das Alterações
 
-### 2. Nova Edge Function: `asaas-create-remainder-payment`
-Função específica para criar cobrança do valor restante:
-- Recebe: `faturaOrigemId`, `valorRestante`, `dataVencimento`
-- Cria nova fatura no banco com `fatura_origem_id` preenchido
-- Cria cobrança no Asaas
-- Retorna dados da nova fatura
-
-### 3. Atualizar Hook `useRegistrarPagamento`
-Quando `tipo === 'parcial'`:
-- Após salvar pagamento, calcular saldo restante
-- Chamar nova função para criar fatura derivada
-- Cancelar cobrança original no Asaas (ou deixar como está se preferir manter histórico)
-- Atualizar UI para mostrar que nova cobrança foi criada
-
-### 4. Atualizar UI `FaturaDetails.tsx`
-- Mostrar indicador visual quando fatura tem `fatura_origem_id`
-- Exibir link para fatura original
-- Adicionar seção "Faturas Derivadas" quando houver
-
-### 5. Atualizar Edge Function `asaas-receive-in-cash`
-- Aceitar parâmetro `isPartial: boolean`
-- Se parcial: NÃO marcar como "Paga" - deixar a lógica no hook
-- Registrar apenas o valor informado no Asaas (se suportado)
-
-### 6. Atualizar Webhook `asaas-webhook`
-- Verificar se valor pago corresponde ao valor total da fatura
-- Se menor: manter status "Aberta" ou criar fatura derivada automaticamente
-
-## Arquivos a Modificar/Criar
-
-| Arquivo | Ação | Descrição |
-|---------|------|-----------|
-| Nova migração SQL | Criar | Adicionar `fatura_origem_id` e `tipo_origem` |
-| `supabase/functions/asaas-create-remainder-payment/index.ts` | Criar | Função para criar fatura + cobrança do saldo |
-| `src/hooks/useFaturas.ts` | Modificar | Atualizar `useRegistrarPagamento` para criar fatura derivada |
-| `src/components/faturas/FaturaDetails.tsx` | Modificar | Mostrar vínculo com fatura origem/derivadas |
-| `supabase/functions/asaas-receive-in-cash/index.ts` | Modificar | Suportar flag `isPartial` |
-| `supabase/functions/asaas-webhook/index.ts` | Modificar | Detectar pagamento parcial automático |
-| `supabase/config.toml` | Modificar | Adicionar configuração da nova função |
-
-## Fluxo Técnico Detalhado
-
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  useRegistrarPagamento({ tipo: 'parcial', valor: 100 })     │
-├──────────────────────────────────────────────────────────────┤
-│  1. INSERT pagamentos (R$ 100)                               │
-│  2. SELECT fatura (valor_total = R$ 200)                     │
-│  3. saldoRestante = 200 - 100 = R$ 100                       │
-│  4. UPDATE faturas SET status = 'Paga' WHERE id = original   │
-│  5. IF saldoRestante > 0:                                    │
-│     a) invoke('asaas-cancel-payment', { faturaId })          │
-│     b) INSERT faturas (nova, R$ 100, fatura_origem_id)       │
-│     c) invoke('asaas-create-payment', { faturaId: nova })    │
-│  6. Notificar usuário: "Pagamento registrado. Nova cobrança  │
-│     de R$ 100 criada para o saldo restante."                 │
-└──────────────────────────────────────────────────────────────┘
-```
-
-## Considerações de UX
-
-1. **Feedback claro**: Quando pagamento parcial é registrado, exibir toast explicando que nova cobrança foi criada
-2. **Visualização**: Na lista de faturas, mostrar badge "Derivada" ou ícone indicando origem
-3. **Histórico**: Manter rastreabilidade completa (qual pagamento gerou qual fatura)
-4. **Impressão de Carnê**: Permitir incluir faturas derivadas nos carnês
+| Arquivo | Mudança |
+|---------|---------|
+| `src/components/faturas/FaturaDetails.tsx` | Modificar `PagamentosTab` para detectar status "Parcial" e bloquear novos pagamentos, mostrando link para derivada |
 
 ## Resultado Esperado
 
-Após implementação:
-- ✅ Pagamento parcial registrado corretamente
-- ✅ Fatura original marcada como paga (pelo valor recebido)
-- ✅ Nova fatura criada para o saldo restante
-- ✅ Nova cobrança no Asaas com boleto/PIX
-- ✅ Cliente recebe automaticamente link para pagar o saldo
-- ✅ Dashboard atualizado em tempo real
-- ✅ Histórico completo e rastreável
+- Fatura original (status "Parcial"): mostra histórico + link para derivada
+- Fatura derivada (status "Aberta"): permite registrar pagamento do saldo
+- Zero confusão para o usuário sobre onde pagar
