@@ -84,12 +84,14 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   };
 
   const roleColors: Record<string, string> = {
+    platform_admin: "bg-primary",
     admin: "bg-primary",
     staff: "bg-info",
     financeiro: "bg-success",
     secretaria: "bg-warning",
   };
   const roleLabels: Record<string, string> = {
+    platform_admin: t("roles.admin"),
     admin: t("roles.admin"),
     staff: t("roles.staff"),
     financeiro: t("roles.financeiro"),
