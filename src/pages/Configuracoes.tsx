@@ -131,13 +131,13 @@ const Configuracoes = () => {
           />
         );
       case "cobranca":
-        return role === "admin" ? <ConfiguracoesCobranca /> : null;
+        return role === "admin" || role === "platform_admin" ? <ConfiguracoesCobranca /> : null;
       case "usuarios":
-        return role === "admin" ? <UserManagementTab /> : null;
+        return role === "admin" || role === "platform_admin" ? <UserManagementTab /> : null;
       case "gateways":
-        return role === "admin" ? <GatewayConfigTab /> : null;
+        return role === "admin" || role === "platform_admin" ? <GatewayConfigTab /> : null;
       case "sistema":
-        return role === "admin" ? <SystemTab role={role} /> : null;
+        return role === "admin" || role === "platform_admin" ? <SystemTab role={role} /> : null;
       default:
         return null;
     }
