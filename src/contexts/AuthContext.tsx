@@ -99,7 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const newUserId = session?.user?.id;
         
         if (previousUserId && newUserId && previousUserId !== newUserId) {
-          console.log("[Auth] Usuário mudou, limpando cache de dados");
           clearQueryCache();
         }
         
