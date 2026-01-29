@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
-import { Plus, Printer, ChevronRight, FileText, Users, Download, RefreshCw } from "lucide-react";
+import { Plus, Printer, ChevronRight, FileText, Users, Download, RefreshCw, UsersRound } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,6 +36,7 @@ import {
   FaturaDetails, 
   FaturaFilters, 
   CreateFaturaDialog,
+  CreateFaturaConsolidadaDialog,
   CarneDialog,
   AsaasPaymentDialog,
   SendReceiptDialog,
@@ -74,6 +75,7 @@ const Faturas = () => {
 
   // Dialog State
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [isCreateConsolidadaOpen, setIsCreateConsolidadaOpen] = useState(false);
   const [isCarneOpen, setIsCarneOpen] = useState(false);
   const [isDetailsOpen, setIsDetailsOpen] = useState(false);
   const [isAsaasOpen, setIsAsaasOpen] = useState(false);
@@ -465,6 +467,14 @@ const Faturas = () => {
               {isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar'}
             </Button>
             <Button 
+              variant="outline"
+              onClick={() => setIsCreateConsolidadaOpen(true)} 
+              className="h-11 px-5 rounded-xl gap-2 font-medium hover:bg-primary/5 hover:border-primary/50"
+            >
+              <UsersRound className="h-4 w-4" />
+              Consolidada
+            </Button>
+            <Button 
               onClick={() => setIsCreateOpen(true)} 
               className="h-11 px-5 rounded-xl gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
             >
@@ -630,6 +640,12 @@ const Faturas = () => {
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
+
+        {/* Fatura Consolidada Dialog */}
+        <CreateFaturaConsolidadaDialog
+          open={isCreateConsolidadaOpen}
+          onOpenChange={setIsCreateConsolidadaOpen}
+        />
       </div>
     </DashboardLayout>
   );

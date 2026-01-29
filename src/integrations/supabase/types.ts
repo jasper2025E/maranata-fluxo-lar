@@ -844,6 +844,77 @@ export type Database = {
           },
         ]
       }
+      fatura_alunos: {
+        Row: {
+          aluno_id: string
+          created_at: string | null
+          curso_id: string
+          desconto_percentual: number | null
+          desconto_valor: number | null
+          descricao: string | null
+          fatura_id: string
+          id: string
+          tenant_id: string | null
+          valor_final: number
+          valor_unitario: number
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string | null
+          curso_id: string
+          desconto_percentual?: number | null
+          desconto_valor?: number | null
+          descricao?: string | null
+          fatura_id: string
+          id?: string
+          tenant_id?: string | null
+          valor_final?: number
+          valor_unitario?: number
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string | null
+          curso_id?: string
+          desconto_percentual?: number | null
+          desconto_valor?: number | null
+          descricao?: string | null
+          fatura_id?: string
+          id?: string
+          tenant_id?: string | null
+          valor_final?: number
+          valor_unitario?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fatura_alunos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatura_alunos_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatura_alunos_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fatura_alunos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fatura_descontos: {
         Row: {
           condicao: string | null
@@ -1096,6 +1167,7 @@ export type Database = {
           cancelada_em: string | null
           cancelada_por: string | null
           codigo_sequencial: string | null
+          consolidada: boolean | null
           created_at: string | null
           created_by: string | null
           curso_id: string
@@ -1149,6 +1221,7 @@ export type Database = {
           cancelada_em?: string | null
           cancelada_por?: string | null
           codigo_sequencial?: string | null
+          consolidada?: boolean | null
           created_at?: string | null
           created_by?: string | null
           curso_id: string
@@ -1202,6 +1275,7 @@ export type Database = {
           cancelada_em?: string | null
           cancelada_por?: string | null
           codigo_sequencial?: string | null
+          consolidada?: boolean | null
           created_at?: string | null
           created_by?: string | null
           curso_id?: string
