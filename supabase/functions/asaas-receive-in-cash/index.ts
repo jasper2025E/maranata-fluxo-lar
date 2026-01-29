@@ -97,13 +97,39 @@ Deno.serve(async (req) => {
     // Obter credenciais do Asaas
     const { apiKey, apiUrl, configId } = await getAsaasCredentials(supabase, profile.tenant_id);
 
+    // Obter data atual no fuso horário do Brasil (Asaas opera em BRT)
+    // Isso evita rejeição por "data futura" quando há diferença de fuso
+    const getBrazilDate = (): string => {
+      const now = new Date();
+      // Converter para horário de Brasília (UTC-3)
+      const brazilOffset = -3 * 60; // -3 horas em minutos
+      const utcTime = now.getTime() + (now.getTimezoneOffset() * 60000);
+      const brazilTime = new Date(utcTime + (brazilOffset * 60000));
+      
+      const year = brazilTime.getFullYear();
+      const month = String(brazilTime.getMonth() + 1).padStart(2, '0');
+      const day = String(brazilTime.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    };
+
+    // Validar e ajustar paymentDate para evitar rejeição por "data futura"
+    let safePaymentDate = paymentDate;
+    if (paymentDate) {
+      const brazilToday = getBrazilDate();
+      // Se a data enviada for posterior à data atual no Brasil, usar data do Brasil
+      if (paymentDate > brazilToday) {
+        console.log(`[asaas-receive-in-cash] Data ${paymentDate} é futura no Brasil (${brazilToday}). Ajustando...`);
+        safePaymentDate = brazilToday;
+      }
+    }
+
     // Chamar API do Asaas para confirmar recebimento em dinheiro
     const asaasPayload: Record<string, unknown> = {
       notifyCustomer,
     };
 
-    if (paymentDate) {
-      asaasPayload.paymentDate = paymentDate;
+    if (safePaymentDate) {
+      asaasPayload.paymentDate = safePaymentDate;
     }
 
     if (value) {
