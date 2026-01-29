@@ -85,8 +85,10 @@ export default function EscolaPublica() {
             id: websiteData.id,
             tenant_id: websiteData.tenant_id,
             is_published: true,
-            seo_title: websiteData.seo_title || null,
-            seo_description: websiteData.seo_description || null,
+            // SEO data is no longer exposed in public view for security
+            // Use tenant name as fallback for SEO
+            seo_title: websiteData.school_name || null,
+            seo_description: null,
             custom_css: null,
           });
 
