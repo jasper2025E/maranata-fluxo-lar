@@ -7,6 +7,7 @@ import { PortalHeader, PortalFooter, BuscaCpf, FaturaCard, ResponsavelInfo } fro
 import { usePortalResponsavel } from "@/hooks/usePortalResponsavel";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { firstRow } from "@/lib/tenantRpc";
 
 interface TenantData {
   id: string;
@@ -15,6 +16,7 @@ interface TenantData {
   logo_url: string | null;
   primary_color: string | null;
   secondary_color: string | null;
+  blocked_at?: string | null;
   telefone: string | null;
   email: string | null;
   endereco: string | null;
@@ -41,13 +43,13 @@ export default function PortalResponsavel() {
         const { data: tenantData, error: tenantErr } = await supabase
           .rpc("get_tenant_by_slug", { p_slug: slug });
 
-        if (tenantErr || !tenantData || tenantData.length === 0) {
+        const tenantInfo = firstRow<any>(tenantData);
+
+        if (tenantErr || !tenantInfo) {
           setTenantError("Escola não encontrada");
           setIsLoadingTenant(false);
           return;
         }
-
-        const tenantInfo = tenantData[0];
 
         if (tenantInfo.blocked_at) {
           setTenantError("Esta escola não está disponível no momento");

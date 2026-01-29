@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
+import { firstRow } from "@/lib/tenantRpc";
 
 interface TenantData {
   id: string;
@@ -19,6 +20,7 @@ interface TenantData {
   logo_url: string | null;
   primary_color: string | null;
   secondary_color: string | null;
+  blocked_at?: string | null;
   telefone: string | null;
   email: string | null;
   endereco: string | null;
@@ -97,13 +99,13 @@ export default function MatriculaOnline() {
         const { data: tenantData, error: tenantErr } = await supabase
           .rpc("get_tenant_by_slug", { p_slug: slug });
 
-        if (tenantErr || !tenantData || tenantData.length === 0) {
+        const tenantInfo = firstRow<any>(tenantData);
+
+        if (tenantErr || !tenantInfo) {
           setTenantError("Escola não encontrada");
           setIsLoadingTenant(false);
           return;
         }
-
-        const tenantInfo = tenantData[0];
 
         if (tenantInfo.blocked_at) {
           setTenantError("Esta escola não está disponível no momento");

@@ -9,6 +9,7 @@ import { PortalLinkBlock } from "@/components/portal/PortalLinkBlock";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { WebsiteBlock } from "@/hooks/useWebsiteBuilder";
+import { firstRow } from "@/lib/tenantRpc";
 
 interface TenantData {
   id: string;
@@ -56,13 +57,13 @@ export default function EscolaPublica() {
         const { data: tenantData, error: tenantError } = await supabase
           .rpc("get_tenant_by_slug", { p_slug: slug });
 
-        if (tenantError || !tenantData || tenantData.length === 0) {
+        const tenantInfo = firstRow<TenantData>(tenantData);
+
+        if (tenantError || !tenantInfo) {
           setError("Escola não encontrada");
           setIsLoading(false);
           return;
         }
-
-        const tenantInfo = tenantData[0] as TenantData;
 
         // Check if blocked
         if (tenantInfo.blocked_at) {
