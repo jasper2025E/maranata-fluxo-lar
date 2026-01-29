@@ -1,76 +1,43 @@
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
 import { 
   Globe, 
-  Eye, 
-  EyeOff, 
-  Settings, 
-  Palette, 
-  Layout, 
-  FileText, 
   ExternalLink,
   Copy,
   Check,
   Sparkles,
-  Image,
-  Quote,
-  Monitor,
-  Layers,
-  ArrowLeft,
-  Link2,
-  BarChart3
+  Eye,
+  Users,
+  FileSearch,
+  UserPlus,
+  Phone,
+  Mail,
+  MapPin,
+  Palette,
+  Link2
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/PageLayout";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useSchoolWebsite, useCreateSchoolWebsite, useToggleSchoolWebsite } from "@/hooks/useSchoolWebsite";
-import { useEscola } from "@/hooks/useEscola";
-import { WebsiteEditorGeneral } from "@/components/website/WebsiteEditorGeneral";
-import { WebsiteEditorContent } from "@/components/website/WebsiteEditorContent";
-import { WebsiteEditorStyle } from "@/components/website/WebsiteEditorStyle";
-import { WebsiteEditorSEO } from "@/components/website/WebsiteEditorSEO";
-import { WebsiteEditorGallery } from "@/components/website/WebsiteEditorGallery";
-import { WebsiteEditorTestimonials } from "@/components/website/WebsiteEditorTestimonials";
-import { WebsitePreview } from "@/components/website/WebsitePreview";
-import { WebsiteThemeSelector } from "@/components/website/WebsiteThemeSelector";
-import { WebsiteThemeImportExport } from "@/components/website/WebsiteThemeImportExport";
-import { WebsitePagesManager } from "@/components/website/WebsitePagesManager";
-import { WebsiteBlockEditor } from "@/components/website/WebsiteBlockEditor";
-import { WebsiteDomainManager } from "@/components/website/WebsiteDomainManager";
-import { WebsiteAnalyticsCard } from "@/components/website/WebsiteAnalyticsCard";
-import { WebsitePage } from "@/hooks/useWebsiteBuilder";
+import { useTenantInfo } from "@/hooks/useTenantInfo";
 import { toast } from "sonner";
 
 export default function SiteEscolar() {
-  const { t } = useTranslation();
-  const { data: website, isLoading } = useSchoolWebsite();
-  const { data: escola } = useEscola();
-  const createWebsite = useCreateSchoolWebsite();
-  const toggleWebsite = useToggleSchoolWebsite();
+  const { data: tenant, isLoading, error } = useTenantInfo();
   const [copied, setCopied] = useState(false);
-  const [editingPage, setEditingPage] = useState<WebsitePage | null>(null);
 
   const baseUrl = window.location.origin;
-  const publicUrl = website?.slug ? `${baseUrl}/escola/${website.slug}` : null;
+  const publicUrl = tenant?.slug ? `${baseUrl}/escola/${tenant.slug}` : null;
+  const portalUrl = tenant?.slug ? `${baseUrl}/escola/${tenant.slug}/portal` : null;
+  const matriculaUrl = tenant?.slug ? `${baseUrl}/escola/${tenant.slug}/matricula` : null;
 
-  const handleCopyUrl = () => {
-    if (publicUrl) {
-      navigator.clipboard.writeText(publicUrl);
-      setCopied(true);
-      toast.success("URL copiada!");
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const handleTogglePublish = () => {
-    if (website) {
-      toggleWebsite.mutate(!website.enabled);
-    }
+  const handleCopyUrl = (url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    toast.success("URL copiada!");
+    setTimeout(() => setCopied(false), 2000);
   };
 
   if (isLoading) {
@@ -78,8 +45,8 @@ export default function SiteEscolar() {
       <DashboardLayout>
         <div className="container max-w-6xl mx-auto px-4 py-8">
           <PageHeader
-            title={t("siteEscolar.title", "Site Escolar")}
-            description={t("siteEscolar.description", "Gerencie a landing page pública da sua escola")}
+            title="Site Escolar"
+            description="Portal público da escola para pais e responsáveis"
           />
           <div className="space-y-6 mt-6">
             <Skeleton className="h-32 w-full" />
@@ -90,72 +57,25 @@ export default function SiteEscolar() {
     );
   }
 
-  // Se não existe configuração, mostrar tela de criação
-  if (!website) {
+  if (error || !tenant) {
     return (
       <DashboardLayout>
         <div className="container max-w-6xl mx-auto px-4 py-8">
           <PageHeader
-            title={t("siteEscolar.title", "Site Escolar")}
-            description={t("siteEscolar.description", "Gerencie a landing page pública da sua escola")}
+            title="Site Escolar"
+            description="Portal público da escola para pais e responsáveis"
           />
-          <div className="mt-6">
-            <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-              <div className="p-6 rounded-full bg-primary/10 mb-6">
-                <Globe className="h-12 w-12 text-primary" />
+          <Card className="mt-6">
+            <CardContent className="pt-6 text-center">
+              <div className="p-6 rounded-full bg-destructive/10 mx-auto w-fit mb-4">
+                <Globe className="h-8 w-8 text-destructive" />
               </div>
-              <h2 className="text-2xl font-bold mb-2">Crie o Site da Sua Escola</h2>
-              <p className="text-muted-foreground mb-6 max-w-md">
-                Configure uma landing page profissional com formulário de pré-matrícula 
-                para atrair novos alunos.
+              <h3 className="font-semibold mb-2">Erro ao carregar dados</h3>
+              <p className="text-muted-foreground">
+                Não foi possível carregar as informações da escola.
               </p>
-              <Button 
-                size="lg" 
-                onClick={() => createWebsite.mutate()}
-                disabled={createWebsite.isPending}
-              >
-                <Sparkles className="mr-2 h-5 w-5" />
-                {createWebsite.isPending ? "Criando..." : "Criar Site Escolar"}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </DashboardLayout>
-    );
-  }
-
-  // Se está editando uma página específica, mostrar editor de blocos
-  if (editingPage) {
-    return (
-      <DashboardLayout>
-        <div className="container max-w-4xl mx-auto px-4 py-8">
-          <div className="mb-6">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setEditingPage(null)}
-              className="mb-4"
-            >
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Voltar para páginas
-            </Button>
-            <div className="flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-bold">{editingPage.title}</h1>
-                <p className="text-muted-foreground">
-                  Edite os blocos desta página
-                </p>
-              </div>
-              <Badge variant={editingPage.is_published ? "default" : "secondary"}>
-                {editingPage.is_published ? "Publicada" : "Rascunho"}
-              </Badge>
-            </div>
-          </div>
-          
-          <WebsiteBlockEditor 
-            pageId={editingPage.id} 
-            primaryColor={website.primary_color}
-          />
+            </CardContent>
+          </Card>
         </div>
       </DashboardLayout>
     );
@@ -165,173 +85,257 @@ export default function SiteEscolar() {
     <DashboardLayout>
       <div className="container max-w-6xl mx-auto px-4 py-8">
         <PageHeader
-          title={t("siteEscolar.title", "Site Escolar")}
-          description={t("siteEscolar.description", "Gerencie a landing page pública da sua escola")}
+          title="Site Escolar"
+          description="Portal público da escola para pais e responsáveis"
         />
-        <div className="space-y-6">
+
+        <div className="space-y-6 mt-6">
           {/* Status Card */}
-          <Card>
+          <Card className="border-primary/20 bg-gradient-to-r from-primary/5 to-secondary/5">
             <CardContent className="pt-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                  <div className={`p-3 rounded-xl ${website.enabled ? 'bg-success/10' : 'bg-muted'}`}>
-                    {website.enabled ? (
-                      <Eye className="h-6 w-6 text-success" />
-                    ) : (
-                      <EyeOff className="h-6 w-6 text-muted-foreground" />
-                    )}
+                  <div className="p-3 rounded-xl bg-primary/10">
+                    <Globe className="h-8 w-8 text-primary" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">
-                        {escola?.nome || "Escola Maranata"}
-                      </h3>
-                      <Badge variant={website.enabled ? "default" : "secondary"}>
-                        {website.enabled ? "Publicado" : "Rascunho"}
+                      <h3 className="text-xl font-bold">{tenant.nome}</h3>
+                      <Badge className="bg-success/20 text-success border-0">
+                        <Eye className="h-3 w-3 mr-1" />
+                        Online
                       </Badge>
                     </div>
-                    {publicUrl && (
-                      <div className="flex items-center gap-2 mt-1">
-                        <code className="text-sm text-muted-foreground bg-muted px-2 py-0.5 rounded">
-                          {publicUrl}
-                        </code>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          className="h-6 w-6"
-                          onClick={handleCopyUrl}
-                        >
-                          {copied ? (
-                            <Check className="h-3 w-3 text-success" />
-                          ) : (
-                            <Copy className="h-3 w-3" />
-                          )}
-                        </Button>
-                      </div>
-                    )}
+                    <p className="text-muted-foreground text-sm mt-1">
+                      Seu site público está ativo e pronto para receber visitantes
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  {website.enabled && publicUrl && (
-                    <Button variant="outline" size="sm" asChild>
-                      <a href={publicUrl} target="_blank" rel="noopener noreferrer">
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Visualizar
-                      </a>
-                    </Button>
-                  )}
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm text-muted-foreground">
-                      {website.enabled ? "Online" : "Offline"}
-                    </span>
-                    <Switch
-                      checked={website.enabled}
-                      onCheckedChange={handleTogglePublish}
-                      disabled={toggleWebsite.isPending}
-                    />
-                  </div>
-                </div>
+                {publicUrl && (
+                  <Button asChild>
+                    <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="mr-2 h-4 w-4" />
+                      Abrir Site
+                    </a>
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Editor Tabs */}
-          <Tabs defaultValue="pages" className="space-y-6">
-            <TabsList className="grid w-full grid-cols-5 lg:grid-cols-11">
-              <TabsTrigger value="pages" className="gap-2">
-                <Layers className="h-4 w-4" />
-                <span className="hidden sm:inline">Páginas</span>
-              </TabsTrigger>
-              <TabsTrigger value="themes" className="gap-2">
-                <Sparkles className="h-4 w-4" />
-                <span className="hidden sm:inline">Temas</span>
-              </TabsTrigger>
-              <TabsTrigger value="general" className="gap-2">
-                <Settings className="h-4 w-4" />
-                <span className="hidden sm:inline">Geral</span>
-              </TabsTrigger>
-              <TabsTrigger value="content" className="gap-2">
-                <Layout className="h-4 w-4" />
-                <span className="hidden sm:inline">Conteúdo</span>
-              </TabsTrigger>
-              <TabsTrigger value="gallery" className="gap-2">
-                <Image className="h-4 w-4" />
-                <span className="hidden sm:inline">Galeria</span>
-              </TabsTrigger>
-              <TabsTrigger value="testimonials" className="gap-2">
-                <Quote className="h-4 w-4" />
-                <span className="hidden sm:inline">Depoimentos</span>
-              </TabsTrigger>
-              <TabsTrigger value="style" className="gap-2">
-                <Palette className="h-4 w-4" />
-                <span className="hidden sm:inline">Estilo</span>
-              </TabsTrigger>
-              <TabsTrigger value="seo" className="gap-2">
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">SEO</span>
-              </TabsTrigger>
-              <TabsTrigger value="domain" className="gap-2">
-                <Link2 className="h-4 w-4" />
-                <span className="hidden sm:inline">Domínio</span>
-              </TabsTrigger>
-              <TabsTrigger value="analytics" className="gap-2">
-                <BarChart3 className="h-4 w-4" />
-                <span className="hidden sm:inline">Métricas</span>
-              </TabsTrigger>
-              <TabsTrigger value="preview" className="gap-2">
-                <Monitor className="h-4 w-4" />
-                <span className="hidden sm:inline">Preview</span>
-              </TabsTrigger>
-            </TabsList>
+          {/* Links Grid */}
+          <div className="grid gap-4 md:grid-cols-3">
+            {/* Landing Page */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-primary/10">
+                    <Globe className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Landing Page</CardTitle>
+                    <CardDescription className="text-xs">Página principal do site</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Apresentação institucional da escola com informações, diferenciais e contato.
+                </p>
+                {publicUrl && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleCopyUrl(publicUrl)}>
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                    <Button size="sm" className="flex-1" asChild>
+                      <a href={publicUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        Abrir
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            <TabsContent value="pages">
-              <WebsitePagesManager 
-                config={website} 
-                onEditPage={(page) => setEditingPage(page)}
-              />
-            </TabsContent>
+            {/* Portal do Responsável */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-blue-500/10">
+                    <FileSearch className="h-5 w-5 text-blue-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Portal do Responsável</CardTitle>
+                    <CardDescription className="text-xs">Consulta por CPF</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Área onde pais consultam boletos e faturas usando apenas o CPF, sem precisar de login.
+                </p>
+                {portalUrl && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleCopyUrl(portalUrl)}>
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                    <Button size="sm" className="flex-1" asChild>
+                      <a href={portalUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        Abrir
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-            <TabsContent value="themes" className="space-y-6">
-              <WebsiteThemeSelector config={website} />
-              <WebsiteThemeImportExport config={website} />
-            </TabsContent>
+            {/* Matrícula Online */}
+            <Card className="hover:shadow-lg transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-green-500/10">
+                    <UserPlus className="h-5 w-5 text-green-500" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-base">Matrícula Online</CardTitle>
+                    <CardDescription className="text-xs">Cadastro de novos alunos</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Formulário para pais interessados fazerem pré-matrícula de novos alunos.
+                </p>
+                {matriculaUrl && (
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleCopyUrl(matriculaUrl)}>
+                      {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                    <Button size="sm" className="flex-1" asChild>
+                      <a href={matriculaUrl} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-4 w-4 mr-1" />
+                        Abrir
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
 
-            <TabsContent value="general">
-              <WebsiteEditorGeneral config={website} />
-            </TabsContent>
+          {/* Info Cards */}
+          <div className="grid gap-4 md:grid-cols-2">
+            {/* Branding Preview */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Palette className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base">Identidade Visual</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4">
+                  {tenant.logo_url ? (
+                    <img 
+                      src={tenant.logo_url} 
+                      alt={tenant.nome} 
+                      className="h-16 w-16 object-contain rounded-lg border"
+                    />
+                  ) : (
+                    <div className="h-16 w-16 rounded-lg bg-muted flex items-center justify-center">
+                      <Globe className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-semibold">{tenant.nome}</p>
+                    <div className="flex gap-2 mt-2">
+                      <div 
+                        className="w-8 h-8 rounded-lg border shadow-sm"
+                        style={{ backgroundColor: tenant.primary_color || "#7C3AED" }}
+                        title="Cor primária"
+                      />
+                      <div 
+                        className="w-8 h-8 rounded-lg border shadow-sm"
+                        style={{ backgroundColor: tenant.secondary_color || "#EC4899" }}
+                        title="Cor secundária"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  As cores e logo são configuradas em <strong>Escola → Dados</strong>
+                </p>
+              </CardContent>
+            </Card>
 
-            <TabsContent value="content">
-              <WebsiteEditorContent config={website} />
-            </TabsContent>
+            {/* Contact Info */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-base">Informações de Contato</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {tenant.telefone && (
+                  <div className="flex items-center gap-3">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{tenant.telefone}</span>
+                  </div>
+                )}
+                {tenant.email && (
+                  <div className="flex items-center gap-3">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{tenant.email}</span>
+                  </div>
+                )}
+                {tenant.endereco && (
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm">{tenant.endereco}</span>
+                  </div>
+                )}
+                {!tenant.telefone && !tenant.email && !tenant.endereco && (
+                  <p className="text-sm text-muted-foreground">
+                    Nenhuma informação de contato cadastrada.
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground pt-2 border-t">
+                  Essas informações aparecem no rodapé do site público.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
 
-            <TabsContent value="gallery">
-              <WebsiteEditorGallery config={website} />
-            </TabsContent>
-
-            <TabsContent value="testimonials">
-              <WebsiteEditorTestimonials config={website} />
-            </TabsContent>
-
-            <TabsContent value="style">
-              <WebsiteEditorStyle config={website} />
-            </TabsContent>
-
-            <TabsContent value="seo">
-              <WebsiteEditorSEO config={website} />
-            </TabsContent>
-
-            <TabsContent value="domain">
-              <WebsiteDomainManager config={website} />
-            </TabsContent>
-
-            <TabsContent value="analytics">
-              <WebsiteAnalyticsCard tenantId={website.tenant_id} />
-            </TabsContent>
-
-            <TabsContent value="preview">
-              <WebsitePreview config={website} slug={website.slug || ""} />
-            </TabsContent>
-          </Tabs>
+          {/* Features */}
+          <Card className="bg-muted/30">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-5 w-5 text-primary" />
+                <CardTitle className="text-base">Funcionalidades do Portal</CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {[
+                  { icon: Globe, title: "Landing Page", desc: "Apresentação institucional automática" },
+                  { icon: FileSearch, title: "Consulta CPF", desc: "Pais acessam boletos sem login" },
+                  { icon: UserPlus, title: "Pré-Matrícula", desc: "Captação de novos alunos" },
+                  { icon: Link2, title: "PIX & Boleto", desc: "Código PIX e PDF do boleto" },
+                ].map((feature, i) => (
+                  <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-background">
+                    <feature.icon className="h-5 w-5 text-primary mt-0.5" />
+                    <div>
+                      <p className="font-medium text-sm">{feature.title}</p>
+                      <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </DashboardLayout>
