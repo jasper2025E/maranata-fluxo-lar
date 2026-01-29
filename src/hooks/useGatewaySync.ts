@@ -127,7 +127,8 @@ export function useGatewaySync() {
   };
 
   /**
-   * Sincroniza múltiplas faturas em lote
+   * Sincroniza múltiplas faturas em lote - OTIMIZADO
+   * Usa batch processing com paralelização controlada
    */
   const syncMultipleFaturas = async (
     faturaIds: string[],
@@ -138,29 +139,37 @@ export function useGatewaySync() {
     let successCount = 0;
     let failedCount = 0;
 
-    for (let i = 0; i < faturaIds.length; i++) {
-      const faturaId = faturaIds[i];
+    // Processar em batches de 3 para não sobrecarregar API mas manter velocidade
+    const batchSize = 3;
+    
+    for (let i = 0; i < faturaIds.length; i += batchSize) {
+      const batch = faturaIds.slice(i, i + batchSize);
       
       onProgress?.({
         step: 'syncing',
-        message: `Sincronizando fatura ${i + 1} de ${faturaIds.length}...`,
-        progress: ((i) / faturaIds.length) * 100,
+        message: `Sincronizando ${i + 1} a ${Math.min(i + batchSize, faturaIds.length)} de ${faturaIds.length}...`,
+        progress: (i / faturaIds.length) * 100,
         currentIndex: i + 1,
         totalCount: faturaIds.length,
       });
 
-      const result = await syncFatura(faturaId);
-      results.push(result);
+      // Processar batch em paralelo
+      const batchResults = await Promise.all(
+        batch.map(faturaId => syncFatura(faturaId))
+      );
 
-      if (result.success) {
-        successCount++;
-      } else {
-        failedCount++;
-      }
+      batchResults.forEach(result => {
+        results.push(result);
+        if (result.success) {
+          successCount++;
+        } else {
+          failedCount++;
+        }
+      });
 
-      // Pequeno delay entre requests para não sobrecarregar API
-      if (i < faturaIds.length - 1) {
-        await new Promise(r => setTimeout(r, 300));
+      // Delay curto entre batches (apenas se há mais)
+      if (i + batchSize < faturaIds.length) {
+        await new Promise(r => setTimeout(r, 100));
       }
     }
 

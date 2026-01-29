@@ -353,58 +353,76 @@ async function createAsaasPayment(
     })
     .eq("id", fatura.id);
 
-  // Buscar PIX e boleto (com retry)
+  // Buscar PIX e boleto em PARALELO com retry otimizado
   let pixQrCode: string | undefined;
   let boletoBarcode: string | undefined;
   let boletoBarCode: string | undefined;
 
-  for (let attempt = 0; attempt < 3; attempt++) {
-    await new Promise(r => setTimeout(r, 1000 * (attempt + 1)));
+  // Primeira tentativa imediata em paralelo (sem delay)
+  const fetchPaymentDetails = async (retryCount = 0): Promise<void> => {
+    const promises: Promise<void>[] = [];
 
     if (!pixQrCode) {
-      try {
-        const pixRes = await fetch(`${apiUrl}/payments/${payment.id}/pixQrCode`, {
+      promises.push(
+        fetch(`${apiUrl}/payments/${payment.id}/pixQrCode`, {
           headers: { access_token: apiKey },
-        });
-        if (pixRes.ok) {
-          const pixData = await pixRes.json();
-          pixQrCode = pixData.encodedImage;
-          await supabase
-            .from("faturas")
-            .update({ 
-              asaas_pix_qrcode: pixQrCode,
-              asaas_pix_payload: pixData.payload,
-            })
-            .eq("id", fatura.id);
-        }
-      } catch (e) {
-        console.warn(`PIX attempt ${attempt + 1} failed:`, e);
-      }
+        })
+          .then(async (res) => {
+            if (res.ok) {
+              const pixData = await res.json();
+              pixQrCode = pixData.encodedImage;
+              await supabase
+                .from("faturas")
+                .update({ 
+                  asaas_pix_qrcode: pixQrCode,
+                  asaas_pix_payload: pixData.payload,
+                })
+                .eq("id", fatura.id);
+            }
+          })
+          .catch((e) => console.warn(`PIX attempt ${retryCount + 1} failed:`, e))
+      );
     }
 
     if (!boletoBarcode) {
-      try {
-        const boletoRes = await fetch(`${apiUrl}/payments/${payment.id}/identificationField`, {
+      promises.push(
+        fetch(`${apiUrl}/payments/${payment.id}/identificationField`, {
           headers: { access_token: apiKey },
-        });
-        if (boletoRes.ok) {
-          const boletoData = await boletoRes.json();
-          boletoBarcode = boletoData.identificationField;
-          boletoBarCode = boletoData.barCode;
-          await supabase
-            .from("faturas")
-            .update({ 
-              asaas_boleto_barcode: boletoBarcode,
-              asaas_boleto_bar_code: boletoBarCode,
-            })
-            .eq("id", fatura.id);
-        }
-      } catch (e) {
-        console.warn(`Boleto attempt ${attempt + 1} failed:`, e);
-      }
+        })
+          .then(async (res) => {
+            if (res.ok) {
+              const boletoData = await res.json();
+              boletoBarcode = boletoData.identificationField;
+              boletoBarCode = boletoData.barCode;
+              await supabase
+                .from("faturas")
+                .update({ 
+                  asaas_boleto_barcode: boletoBarcode,
+                  asaas_boleto_bar_code: boletoBarCode,
+                })
+                .eq("id", fatura.id);
+            }
+          })
+          .catch((e) => console.warn(`Boleto attempt ${retryCount + 1} failed:`, e))
+      );
     }
 
-    if (pixQrCode && boletoBarcode && boletoBarCode) break;
+    await Promise.all(promises);
+  };
+
+  // Tentativa 1: imediata
+  await fetchPaymentDetails(0);
+  
+  // Tentativa 2: apenas se necessário, com delay curto
+  if (!pixQrCode || !boletoBarcode) {
+    await new Promise(r => setTimeout(r, 500));
+    await fetchPaymentDetails(1);
+  }
+  
+  // Tentativa 3: apenas se ainda necessário
+  if (!pixQrCode || !boletoBarcode) {
+    await new Promise(r => setTimeout(r, 1000));
+    await fetchPaymentDetails(2);
   }
 
   return {

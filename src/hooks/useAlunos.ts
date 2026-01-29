@@ -120,8 +120,7 @@ export function useCreateAluno() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
       toast.success("Aluno cadastrado com sucesso!");
     },
     onError: (error: Error) => {
@@ -146,9 +145,7 @@ export function useUpdateAluno() {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.detail(variables.id), refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
       toast.success("Aluno atualizado com sucesso!");
     },
     onError: (error: Error) => {
@@ -224,12 +221,11 @@ export function useDeleteAluno() {
       return { faturasAbertas: faturasAbertas?.length || 0 };
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['faturas'], refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
+      queryClient.invalidateQueries({ queryKey: ['faturas'] });
       
       if (result.faturasAbertas > 0) {
-        toast.success(`Aluno desativado e ${result.faturasAbertas} fatura(s) excluída(s) permanentemente!`);
+        toast.success(`Aluno desativado e ${result.faturasAbertas} fatura(s) excluída(s)!`);
       } else {
         toast.success("Aluno desativado com sucesso!");
       }
@@ -259,7 +255,7 @@ export function useToggleAlunoStatus() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.alunos.all });
       toast.success("Status do aluno atualizado!");
     },
     onError: (error: Error) => {

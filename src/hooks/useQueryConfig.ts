@@ -1,21 +1,30 @@
 import { UseQueryOptions } from "@tanstack/react-query";
 
-// Default query configuration - cache curto para dados dinâmicos
+// Default query configuration - cache otimizado para performance
 export const defaultQueryConfig: Partial<UseQueryOptions> = {
-  staleTime: 1000 * 30, // 30 segundos - dados frescos por pouco tempo
-  gcTime: 1000 * 60 * 10, // 10 minutos de cache
-  retry: 2,
+  staleTime: 1000 * 60 * 2, // 2 minutos - dados frescos por mais tempo
+  gcTime: 1000 * 60 * 15, // 15 minutos de cache
+  retry: 1,
   refetchOnWindowFocus: false,
-  refetchOnMount: true, // Sempre verifica ao montar
+  refetchOnMount: false, // Usa cache se disponível
 };
 
-// Short cache for frequently changing data
+// Short cache for frequently changing data (dashboard, KPIs)
 export const shortCacheConfig: Partial<UseQueryOptions> = {
-  staleTime: 1000 * 10, // 10 segundos
+  staleTime: 1000 * 30, // 30 segundos
   gcTime: 1000 * 60 * 5, // 5 minutos
-  retry: 2,
+  retry: 1,
   refetchOnWindowFocus: false,
-  refetchOnMount: true,
+  refetchOnMount: false,
+};
+
+// Long cache for rarely changing data (cursos, turmas, escola)
+export const longCacheConfig: Partial<UseQueryOptions> = {
+  staleTime: 1000 * 60 * 5, // 5 minutos
+  gcTime: 1000 * 60 * 30, // 30 minutos
+  retry: 1,
+  refetchOnWindowFocus: false,
+  refetchOnMount: false,
 };
 
 // Query keys factory for type-safe and consistent keys

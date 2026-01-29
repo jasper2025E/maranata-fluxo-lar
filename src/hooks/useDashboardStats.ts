@@ -344,9 +344,10 @@ export function useDashboardStats() {
   return useQuery<DashboardStats>({
     queryKey: queryKeys.dashboard.stats(),
     queryFn: fetchDashboardStats,
-    staleTime: 1000 * 30,
-    gcTime: 1000 * 60 * 5,
-    retry: 2,
-    refetchOnWindowFocus: true,
+    staleTime: 1000 * 60, // 1 minuto - cache mais agressivo
+    gcTime: 1000 * 60 * 10, // 10 minutos
+    retry: 1,
+    refetchOnWindowFocus: false, // Evita refetch desnecessário
+    refetchOnMount: false, // Usa cache se disponível
   });
 }

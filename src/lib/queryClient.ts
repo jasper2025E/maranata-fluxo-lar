@@ -5,17 +5,18 @@ import { QueryClient } from "@tanstack/react-query";
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 30, // 30 segundos - dados ficam "frescos" por 30s
-      gcTime: 1000 * 60 * 10, // 10 minutos de cache
-      retry: 2,
+      staleTime: 1000 * 60 * 2, // 2 minutos - reduz refetches desnecessários
+      gcTime: 1000 * 60 * 15, // 15 minutos de cache
+      retry: 1, // Reduzido para 1 - falhas rápidas
+      retryDelay: 500, // Delay curto entre retries
       refetchOnWindowFocus: false,
-      refetchOnMount: true, // Sempre verifica ao montar componente
+      refetchOnMount: false, // Não refetch automático se dados estão frescos
+      refetchOnReconnect: false,
+      networkMode: 'offlineFirst', // Usa cache primeiro, depois rede
     },
     mutations: {
-      // Após mutation, força refetch imediato das queries invalidadas
-      onSettled: () => {
-        // Mutations individuais já fazem invalidação - isso é fallback
-      },
+      retry: 1,
+      retryDelay: 300,
     },
   },
 });

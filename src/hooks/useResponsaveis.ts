@@ -123,8 +123,7 @@ export function useCreateResponsavel() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all, refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all });
       toast.success("Responsável cadastrado com sucesso!");
     },
     onError: (error: Error) => {
@@ -174,9 +173,7 @@ export function useUpdateResponsavel() {
       return data;
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all, refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.detail(variables.id), refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all });
       toast.success("Responsável atualizado com sucesso!");
     },
     onError: (error: Error) => {
@@ -199,8 +196,7 @@ export function useDeleteResponsavel() {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all, refetchType: 'all' });
-      queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all });
       toast.success("Responsável desativado com sucesso!");
     },
     onError: (error: Error) => {
@@ -225,7 +221,7 @@ export function useToggleResponsavelAtivo() {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all, refetchType: 'all' });
+      queryClient.invalidateQueries({ queryKey: queryKeys.responsaveis.all });
       toast.success("Status do responsável atualizado!");
     },
     onError: (error: Error) => {
