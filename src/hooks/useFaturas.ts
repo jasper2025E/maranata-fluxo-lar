@@ -683,21 +683,21 @@ export function useRegistrarPagamento() {
           : new Date(hoje.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
         try {
-          // Cancelar cobrança original no Asaas (opcional - pode manter para histórico)
+          // Cancelar cobrança original no gateway (se existir)
           if (faturaInfo?.asaas_payment_id) {
             try {
               await supabase.functions.invoke("asaas-cancel-payment", {
                 body: { paymentId: faturaInfo.asaas_payment_id },
               });
-              console.log("[useRegistrarPagamento] Cobrança original cancelada no Asaas");
+              console.log("[useRegistrarPagamento] Cobrança original cancelada no gateway");
             } catch (cancelErr) {
               console.warn("Aviso: Não foi possível cancelar cobrança original:", cancelErr);
-              // Continua mesmo assim
+              // Continua mesmo assim - a fatura derivada será criada
             }
           }
 
-          // Criar fatura derivada com nova cobrança
-          const { data: result, error: remainderError } = await supabase.functions.invoke("asaas-create-remainder-payment", {
+          // Criar fatura derivada com nova cobrança (gateway-agnostic)
+          const { data: result, error: remainderError } = await supabase.functions.invoke("create-remainder-payment", {
             body: {
               faturaOrigemId: data.fatura_id,
               valorRestante: saldoRestante,
