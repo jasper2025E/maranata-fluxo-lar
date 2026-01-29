@@ -34,6 +34,9 @@ const SaudeFinanceira = lazy(() => import("./pages/SaudeFinanceira"));
 const Contabilidade = lazy(() => import("./pages/Contabilidade"));
 const SiteEscolar = lazy(() => import("./pages/SiteEscolar"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const EscolaPublica = lazy(() => import("./pages/EscolaPublica"));
+const PortalResponsavel = lazy(() => import("./pages/PortalResponsavel"));
+const MatriculaOnline = lazy(() => import("./pages/MatriculaOnline"));
 
 // Componente interno que usa hooks de proteção
 function AppContent() {
@@ -187,6 +190,11 @@ function AppContent() {
             {/* Público funcional */}
             <Route path="/pagamento/resultado" element={<PaymentResult />} />
             <Route path="/ponto/:token" element={<PontoEletronico />} />
+            
+            {/* Site público da escola */}
+            <Route path="/escola/:slug" element={<EscolaPublica />} />
+            <Route path="/escola/:slug/portal" element={<PortalResponsavel />} />
+            <Route path="/escola/:slug/matricula" element={<MatriculaOnline />} />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

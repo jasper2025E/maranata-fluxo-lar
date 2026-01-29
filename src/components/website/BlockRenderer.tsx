@@ -17,6 +17,7 @@ import {
   DividerBlock,
   PreMatriculaBlock,
 } from "./blocks";
+import { PortalLinkBlock } from "@/components/portal/PortalLinkBlock";
 
 interface BlockRendererProps {
   block: WebsiteBlock;
@@ -187,6 +188,15 @@ export function BlockRenderer({ block, colors, tenantId, onNavigate }: BlockRend
           settings={settings as Parameters<typeof PreMatriculaBlock>[0]["settings"]}
           colors={colors}
           tenantId={tenantId}
+        />
+      );
+      
+    case "portal_link":
+      return (
+        <PortalLinkBlock
+          content={content as Parameters<typeof PortalLinkBlock>[0]["content"]}
+          settings={settings as Parameters<typeof PortalLinkBlock>[0]["settings"]}
+          colors={colors}
         />
       );
       
