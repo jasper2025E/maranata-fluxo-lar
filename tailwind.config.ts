@@ -140,6 +140,11 @@ export default {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(100%)" },
         },
+        "bell-shake": {
+          "0%, 100%": { transform: "rotate(0deg)" },
+          "10%, 30%, 50%, 70%, 90%": { transform: "rotate(-8deg)" },
+          "20%, 40%, 60%, 80%": { transform: "rotate(8deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
@@ -151,6 +156,7 @@ export default {
         "scale-in": "scale-in 0.2s ease-out",
         "pulse-subtle": "pulse-subtle 2s ease-in-out infinite",
         "shimmer": "shimmer 3s ease-in-out infinite",
+        "bell-shake": "bell-shake 0.8s ease-in-out infinite",
       },
     },
   },
