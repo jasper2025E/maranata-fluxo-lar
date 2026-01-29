@@ -80,6 +80,7 @@ function getStatusConfig(status: string, dataVencimento: string) {
 
   const normalizedStatus = status?.toLowerCase() || '';
   if (normalizedStatus === "paga") return { label: "Paga", className: "bg-success/10 text-success border-success/20", icon: CheckCircle2 };
+  if (normalizedStatus === "parcial") return { label: "Parcial", className: "bg-warning/10 text-warning border-warning/20", icon: Clock };
   if (normalizedStatus === "vencida") return { label: "Vencida", className: "bg-destructive/10 text-destructive border-destructive/20", icon: AlertCircle };
   if (normalizedStatus === "cancelada") return { label: "Cancelada", className: "bg-muted text-muted-foreground border-border", icon: XCircle };
   if (normalizedStatus === "rascunho") return { label: "Rascunho", className: "bg-muted/50 text-muted-foreground border-border", icon: FileText };
@@ -197,12 +198,24 @@ function FaturaRow({
       </TableCell>
       <TableCell>
         <div className="flex flex-col">
-          <span className="font-bold text-sm text-foreground">{formatCurrency(valorFinal)}</span>
-          {temAlteracao && (
-            <span className="text-xs text-muted-foreground line-through">{formatCurrency(valorOriginal)}</span>
-          )}
-          {saldoRestante > 0 && saldoRestante < valorFinal && (
-            <span className="text-xs text-warning font-medium">Saldo: {formatCurrency(saldoRestante)}</span>
+          {/* Mostra saldo devedor como valor principal se fatura estiver aberta/vencida com saldo */}
+          {isPendente && saldoRestante > 0 && saldoRestante < valorFinal ? (
+            <>
+              <span className="font-bold text-sm text-warning">{formatCurrency(saldoRestante)}</span>
+              <span className="text-xs text-muted-foreground line-through">{formatCurrency(valorFinal)}</span>
+            </>
+          ) : fatura.status?.toLowerCase() === "parcial" ? (
+            <>
+              <span className="font-bold text-sm text-success">{formatCurrency(valorFinal)}</span>
+              <span className="text-xs text-muted-foreground">Pago parcialmente</span>
+            </>
+          ) : (
+            <>
+              <span className="font-bold text-sm text-foreground">{formatCurrency(valorFinal)}</span>
+              {temAlteracao && (
+                <span className="text-xs text-muted-foreground line-through">{formatCurrency(valorOriginal)}</span>
+              )}
+            </>
           )}
         </div>
       </TableCell>
