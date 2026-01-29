@@ -3750,6 +3750,32 @@ export type Database = {
       }
     }
     Views: {
+      escola_public_branding: {
+        Row: {
+          logo_url: string | null
+          nome: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          logo_url?: string | null
+          nome?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          logo_url?: string | null
+          nome?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "escola_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_website_config_public: {
         Row: {
           email: string | null
