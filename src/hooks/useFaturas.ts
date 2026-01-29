@@ -68,6 +68,7 @@ export interface Fatura {
   status: string;
   versao?: number;
   bloqueada?: boolean;
+  consolidada?: boolean;
   payment_url?: string | null;
   stripe_checkout_session_id?: string | null;
   desconto_valor?: number | null;

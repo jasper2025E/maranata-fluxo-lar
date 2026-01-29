@@ -169,11 +169,25 @@ function FaturaRow({
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-bold text-primary shadow-sm">
-            {fatura.alunos?.nome_completo?.charAt(0).toUpperCase() || '?'}
+          <div className="relative">
+            <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-bold text-primary shadow-sm">
+              {fatura.alunos?.nome_completo?.charAt(0).toUpperCase() || '?'}
+            </div>
+            {fatura.consolidada && (
+              <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[9px] font-bold text-primary-foreground flex items-center justify-center shadow-sm">
+                2+
+              </div>
+            )}
           </div>
           <div>
-            <p className="font-semibold text-sm text-foreground">{fatura.alunos?.nome_completo || 'N/A'}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="font-semibold text-sm text-foreground">{fatura.alunos?.nome_completo || 'N/A'}</p>
+              {fatura.consolidada && (
+                <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-primary/5 text-primary border-primary/20 font-semibold">
+                  Consolidada
+                </Badge>
+              )}
+            </div>
             <p className="text-xs text-muted-foreground">{fatura.responsaveis?.nome || fatura.cursos?.nome}</p>
           </div>
         </div>
