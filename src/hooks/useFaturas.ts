@@ -69,6 +69,7 @@ export interface Fatura {
   versao?: number;
   bloqueada?: boolean;
   consolidada?: boolean;
+  qtd_alunos?: number;
   payment_url?: string | null;
   stripe_checkout_session_id?: string | null;
   desconto_valor?: number | null;
@@ -159,13 +160,22 @@ export function useFaturas() {
           *,
           alunos(nome_completo, email_responsavel, responsavel_id),
           cursos(nome),
-          responsaveis(nome, email, telefone)
+          responsaveis(nome, email, telefone),
+          fatura_alunos(id)
         `)
         .order("data_vencimento", { ascending: false })
         .limit(500); // Limitar para performance
       
       if (error) throw error;
-      return data as Fatura[];
+      
+      // Calcular quantidade de alunos por fatura
+      const faturasComQtdAlunos = (data || []).map(f => ({
+        ...f,
+        qtd_alunos: f.fatura_alunos?.length || 1,
+        fatura_alunos: undefined, // Remove do objeto final para não poluir
+      }));
+      
+      return faturasComQtdAlunos as Fatura[];
     },
     staleTime: 1000 * 60 * 2, // 2 minutos - cache mais agressivo
     refetchOnWindowFocus: false,

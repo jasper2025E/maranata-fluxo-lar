@@ -173,18 +173,18 @@ function FaturaRow({
             <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center text-sm font-bold text-primary shadow-sm">
               {fatura.alunos?.nome_completo?.charAt(0).toUpperCase() || '?'}
             </div>
-            {fatura.consolidada && (
+            {(fatura.consolidada || (fatura.qtd_alunos && fatura.qtd_alunos > 1)) && (
               <div className="absolute -top-1 -right-1 h-4 w-4 rounded-full bg-primary text-[9px] font-bold text-primary-foreground flex items-center justify-center shadow-sm">
-                2+
+                {fatura.qtd_alunos || 2}
               </div>
             )}
           </div>
           <div>
             <div className="flex items-center gap-1.5">
               <p className="font-semibold text-sm text-foreground">{fatura.alunos?.nome_completo || 'N/A'}</p>
-              {fatura.consolidada && (
+              {(fatura.consolidada || (fatura.qtd_alunos && fatura.qtd_alunos > 1)) && (
                 <Badge variant="outline" className="text-[9px] px-1.5 py-0 h-4 bg-primary/5 text-primary border-primary/20 font-semibold">
-                  Consolidada
+                  {fatura.qtd_alunos || 2} alunos
                 </Badge>
               )}
             </div>
