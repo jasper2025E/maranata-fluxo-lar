@@ -1,118 +1,185 @@
 
-# Plano: Bloquear Pagamentos em Faturas Parciais e Redirecionar para Derivada
+# Plano: Modo Produção Profissional Completo
 
-## Objetivo
-Quando uma fatura tem status "Parcial" (já recebeu pagamento e gerou uma fatura derivada), bloquear novos pagamentos nela e mostrar claramente:
-- Quanto foi pago
-- Link direto para a fatura derivada (onde está o saldo restante)
+Transformação do sistema para ambiente de produção real com foco em 4 pilares: Visual/Estética, Segurança, Performance e Publicação.
 
-## Problema Atual
-Atualmente, faturas com status "Parcial" ainda exibem o botão "Registrar Pagamento" na aba Pagamentos, mesmo que o saldo já tenha sido transferido para uma fatura derivada. Isso pode confundir o usuário e causar duplicidade.
+---
 
-## Solução
+## 1. Visual/Estética — Polimento Final
 
-### 1. Modificar `PagamentosTab` em `FaturaDetails.tsx`
-
-Adicionar verificação para faturas com status "Parcial":
-- Se a fatura tem status "Parcial" E possui fatura derivada com saldo aberto
-- Esconder formulário de pagamento
-- Mostrar card informativo com:
-  - Resumo do que foi pago na fatura original
-  - Mensagem clara: "O saldo restante foi transferido para a fatura derivada"
-  - Link/botão para abrir a fatura derivada diretamente
-
-### 2. Ajustar a lógica de `isEditable` no FaturaDetails
-
-- Faturas com status "Parcial" devem ser tratadas como "fechadas para novos pagamentos"
-- Manter histórico de pagamentos visível (apenas leitura)
-
-### 3. Melhorar Card de Resumo
-
-No card de resumo do `PagamentosTab`:
-- Mostrar claramente: "Pago nesta fatura" vs "Transferido para derivada"
-
-## Detalhes Técnicos
-
-### Arquivo: `src/components/faturas/FaturaDetails.tsx`
-
-**Mudanças no `PagamentosTab`:**
-
-```typescript
-// Adicionar prop para receber relacionadas
-function PagamentosTab({ 
-  faturaId, 
-  valorTotal, 
-  faturaStatus,        // NOVO
-  relacionadas,        // NOVO - { origem, derivadas }
-  onDownloadRecibo 
-}: { ... }) {
+### 1.1 Meta Tags e SEO
+- **index.html**: Atualizar meta tags para remover referências ao Lovable
+  - Remover `og:image` e `twitter:image` apontando para lovable.dev
+  - Substituir por imagem própria da escola (ou gerar uma)
+  - Remover `twitter:site` "@Lovable"
   
-  // Verificar se é fatura parcial com derivada
-  const isParcialComDerivada = faturaStatus?.toLowerCase() === 'parcial' && 
-    relacionadas?.derivadas && relacionadas.derivadas.length > 0;
+### 1.2 Página 404 Aprimorada
+- Transformar a página 404 simples em uma versão profissional com:
+  - Gradiente de fundo consistente com o login
+  - Animação suave de entrada
+  - Ilustração ou ícone maior
+  - Botão estilizado para voltar
+
+### 1.3 Landing Page Removida
+- A rota "/" já redireciona para /auth (correto para ambiente privado)
+- Remover arquivo `src/pages/Index.tsx` (não utilizado) ou mantê-lo como fallback simples
+
+### 1.4 Loading States Consistentes
+- Verificar que todos os estados de loading usam os mesmos skeletons/spinners
+- Garantir feedback visual em todas as ações
+
+---
+
+## 2. Segurança — Proteção de Produção
+
+### 2.1 Habilitar Proteção de Senhas Vazadas
+- Ativar "Leaked Password Protection" no Auth
   
-  // Se é parcial com derivada, mostrar card informativo ao invés de form
-  if (isParcialComDerivada) {
-    return (
-      <div className="space-y-4">
-        {/* Card de resumo existente */}
-        
-        {/* NOVO: Card informativo */}
-        <Card className="border-warning bg-warning/10">
-          <CardContent className="p-4">
-            <AlertTriangle className="h-5 w-5 text-warning mb-2" />
-            <p className="font-medium">Pagamento parcial registrado</p>
-            <p className="text-sm text-muted-foreground">
-              O saldo restante foi transferido para uma nova fatura.
-            </p>
-            
-            {/* Link para derivada */}
-            <Button variant="outline" className="mt-3 gap-2">
-              <ArrowRight className="h-4 w-4" />
-              Ver fatura {derivada.codigo_sequencial}
+### 2.2 Revisar Políticas RLS Permissivas
+O linter detectou 4 políticas com `USING (true)` para INSERT/UPDATE/DELETE:
+- Investigar quais tabelas estão com essas políticas
+- Corrigir para usar verificação de autenticação adequada
+
+### 2.3 Console Logs de Produção
+- Remover `console.warn` e `console.error` desnecessários
+- Manter apenas logs de monitoramento real (ou removê-los completamente)
+
+### 2.4 Proteção de Conteúdo
+- O sistema já usa `useContentProtection` para bloquear cópia
+- Verificar se está ativo em produção
+
+---
+
+## 3. Performance — Otimização Final
+
+### 3.1 Lazy Loading de Páginas
+- Implementar `React.lazy()` para carregar páginas sob demanda
+- Adicionar `Suspense` com fallback de loading
+- Reduz bundle inicial significativamente
+
+### 3.2 Otimização de Imagens
+- Verificar que `StableImage` está sendo usado consistentemente
+- Adicionar `loading="lazy"` em imagens não críticas
+
+### 3.3 Cache de Dados Otimizado
+- O sistema já usa `staleTime: 2 minutos` (adequado)
+- Verificar prefetch de dados críticos
+
+### 3.4 Bundle Splitting
+- Verificar configuração do Vite para code splitting automático
+
+---
+
+## 4. Publicação — Deploy Final
+
+### 4.1 Verificação Pré-Deploy
+- Testar fluxo completo de login → dashboard → operações
+- Validar integração Asaas em produção
+- Confirmar webhooks funcionando
+
+### 4.2 Publicação via Lovable
+- Deploy será feito pela plataforma Lovable
+- URL de produção: maranata-fluxo-lar.lovable.app
+
+---
+
+## Detalhes Técnicos de Implementação
+
+### Arquivo: `index.html`
+Remover referências ao Lovable nas meta tags:
+```html
+<!-- ANTES -->
+<meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+<meta name="twitter:site" content="@Lovable" />
+
+<!-- DEPOIS -->
+<meta property="og:image" content="/escola-logo.png" />
+<!-- Remover twitter:site completamente -->
+```
+
+### Arquivo: `src/pages/NotFound.tsx`
+Transformar em página 404 profissional:
+```tsx
+import { Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import { Home, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { GradientBackground } from "@/components/landing/GradientBackground";
+
+const NotFound = () => {
+  return (
+    <div className="min-h-screen flex items-center justify-center relative">
+      <GradientBackground />
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="relative z-10 text-center p-8"
+      >
+        <div className="bg-white/10 backdrop-blur-lg rounded-2xl p-10 border border-white/20">
+          <AlertTriangle className="h-16 w-16 text-white/80 mx-auto mb-4" />
+          <h1 className="text-6xl font-bold text-white mb-2">404</h1>
+          <p className="text-xl text-white/80 mb-6">Página não encontrada</p>
+          <Link to="/dashboard">
+            <Button className="gap-2">
+              <Home className="h-4 w-4" />
+              Voltar ao Dashboard
             </Button>
-          </CardContent>
-        </Card>
-        
-        {/* Lista de pagamentos (somente leitura) */}
-      </div>
-    );
-  }
-}
+          </Link>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
 ```
 
-**Mudanças na chamada do `PagamentosTab`:**
+### Arquivo: `src/App.tsx`
+Implementar lazy loading das páginas:
+```tsx
+import { lazy, Suspense } from "react";
+import { Loader2 } from "lucide-react";
 
-```typescript
-<TabsContent value="pagamentos" className="mt-4">
-  <PagamentosTab 
-    faturaId={fatura.id} 
-    valorTotal={valorFinal} 
-    faturaStatus={fatura.status}      // NOVO
-    relacionadas={relacionadas}        // NOVO
-    onDownloadRecibo={handleDownloadRecibo} 
-  />
-</TabsContent>
+// Lazy load páginas
+const Dashboard = lazy(() => import("./pages/Dashboard"));
+const Faturas = lazy(() => import("./pages/Faturas"));
+const Alunos = lazy(() => import("./pages/Alunos"));
+// ... outras páginas
+
+// Componente de loading
+const PageLoader = () => (
+  <div className="min-h-screen flex items-center justify-center">
+    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+  </div>
+);
+
+// No Routes, envolver com Suspense:
+<Suspense fallback={<PageLoader />}>
+  <Dashboard />
+</Suspense>
 ```
 
-## Fluxo do Usuário
+### Migração SQL: Corrigir Políticas RLS
+```sql
+-- Investigar e corrigir políticas permissivas
+-- Exemplo de correção:
+-- ALTER POLICY "policy_name" ON table_name
+-- USING (auth.uid() IS NOT NULL);
+```
 
-1. Usuário abre fatura com status "Parcial"
-2. Na aba "Pagamentos":
-   - Vê o histórico de pagamentos feitos
-   - Vê card informativo: "Saldo transferido para FAT-2026-000013"
-   - Clica no botão para ir direto à fatura derivada
-3. Na fatura derivada:
-   - Pode registrar o pagamento do saldo restante normalmente
+---
 
 ## Resumo das Alterações
 
 | Arquivo | Mudança |
 |---------|---------|
-| `src/components/faturas/FaturaDetails.tsx` | Modificar `PagamentosTab` para detectar status "Parcial" e bloquear novos pagamentos, mostrando link para derivada |
+| `index.html` | Remover meta tags do Lovable, usar assets próprios |
+| `src/pages/NotFound.tsx` | Design profissional com gradiente e animação |
+| `src/App.tsx` | Lazy loading de páginas para performance |
+| Políticas RLS | Corrigir 4 políticas permissivas |
+| Auth Config | Habilitar proteção de senhas vazadas |
 
 ## Resultado Esperado
 
-- Fatura original (status "Parcial"): mostra histórico + link para derivada
-- Fatura derivada (status "Aberta"): permite registrar pagamento do saldo
-- Zero confusão para o usuário sobre onde pagar
+- Interface 100% profissional sem menções a ferramentas de desenvolvimento
+- Segurança reforçada com RLS e proteção de senhas
+- Carregamento inicial ~40% mais rápido com lazy loading
+- Sistema pronto para uso real pela Escola Maranata
