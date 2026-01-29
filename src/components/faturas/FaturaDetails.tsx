@@ -1077,7 +1077,11 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
                     <span className="text-sm text-muted-foreground">Valor Total</span>
                   </div>
                   <p className="text-2xl font-bold">{formatCurrency(valorFinal)}</p>
-                  {fatura.saldo_restante !== undefined && fatura.saldo_restante !== valorFinal && (
+                  {/* Só mostrar saldo quando há pagamento parcial (saldo > 0 e < valorFinal) */}
+                  {fatura.saldo_restante !== undefined && 
+                   fatura.saldo_restante !== null && 
+                   fatura.saldo_restante > 0 && 
+                   fatura.saldo_restante < valorFinal && (
                     <p className="text-sm text-warning">Saldo: {formatCurrency(fatura.saldo_restante)}</p>
                   )}
                 </div>
