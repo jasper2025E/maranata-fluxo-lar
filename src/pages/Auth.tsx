@@ -311,10 +311,11 @@ const Auth = () => {
 
       <footer className="relative z-10 py-6 px-6 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="text-left">
+          <div className="flex items-center gap-2 text-left">
             <p className="text-white/60 text-sm">
               © {new Date().getFullYear()} {schoolName}
             </p>
+            <span className="text-white/30">•</span>
             <p className="text-white/40 text-xs">
               reforcomaranata.com.br
             </p>
