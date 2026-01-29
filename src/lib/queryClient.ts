@@ -37,7 +37,6 @@ export function forceRefetch(queryKey: readonly unknown[]) {
  */
 export function clearQueryCache() {
   queryClient.clear();
-  console.log("[QueryClient] Cache limpo após mudança de usuário");
 }
 
 /**
@@ -63,6 +62,4 @@ export function invalidateTenantQueries() {
   tenantRelatedKeys.forEach((key) => {
     queryClient.invalidateQueries({ queryKey: [key] });
   });
-
-  console.log("[QueryClient] Queries de tenant invalidadas");
 }
