@@ -632,14 +632,15 @@ export function useRegistrarPagamento() {
       if (paymentError) throw paymentError;
 
       // Atualizar fatura original
-      // Se for parcial com saldo > 0: marca como Paga mas cria fatura derivada
-      // Se for total: marca como Paga
+      // - Pagamento TOTAL: fatura fica Paga
+      // - Pagamento PARCIAL: fatura fica Parcial (e o saldo restante será cobrado na fatura derivada)
+      const faturaUpdate = isParcial && saldoRestante > 0
+        ? { status: "Parcial", saldo_restante: 0 }
+        : { status: "Paga", saldo_restante: 0 };
+
       const { error: faturaError } = await supabase
         .from("faturas")
-        .update({ 
-          status: "Paga",
-          saldo_restante: 0, // Fatura original quitada
-        })
+        .update(faturaUpdate)
         .eq("id", data.fatura_id);
 
       if (faturaError) throw faturaError;
