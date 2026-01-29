@@ -48,7 +48,8 @@ export type BlockType =
   | "stats"
   | "banner"
   | "divider"
-  | "prematricula";
+  | "prematricula"
+  | "portal_link";
 
 export interface BlockDefinition {
   type: BlockType;
@@ -326,6 +327,21 @@ export const blockLibrary: BlockDefinition[] = [
     },
     defaultSettings: {
       fields: ["nome_aluno", "nome_responsavel", "email", "telefone"],
+    },
+  },
+  {
+    type: "portal_link",
+    name: "Área do Responsável",
+    description: "Link para consulta de boletos por CPF",
+    icon: "FileSearch",
+    category: "forms",
+    defaultContent: {
+      title: "Área do Responsável",
+      subtitle: "Consulte suas faturas e boletos de forma rápida usando apenas seu CPF",
+      button_text: "Consultar Boletos",
+    },
+    defaultSettings: {
+      style: "gradient",
     },
   },
 ];

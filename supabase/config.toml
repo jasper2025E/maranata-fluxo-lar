@@ -59,3 +59,9 @@ verify_jwt = true
 
 [functions.create-remainder-payment]
 verify_jwt = true
+
+[functions.portal-consulta-cpf]
+verify_jwt = false
+
+[functions.register-prematricula]
+verify_jwt = false
