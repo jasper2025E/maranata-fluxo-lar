@@ -348,7 +348,16 @@ function DescontosTab({ faturaId, valorBase, isEditable }: { faturaId: string; v
   );
 }
 
-function PagamentosTab({ faturaId, valorTotal, onDownloadRecibo }: { faturaId: string; valorTotal: number; onDownloadRecibo?: (pagamento: Pagamento) => void }) {
+interface PagamentosTabProps {
+  faturaId: string;
+  valorTotal: number;
+  faturaStatus?: string;
+  relacionadas?: { origem: Fatura | null; derivadas: Fatura[] } | null;
+  onDownloadRecibo?: (pagamento: Pagamento) => void;
+  onOpenDerivada?: (faturaId: string) => void;
+}
+
+function PagamentosTab({ faturaId, valorTotal, faturaStatus, relacionadas, onDownloadRecibo, onOpenDerivada }: PagamentosTabProps) {
   const { data: pagamentos, isLoading } = useFaturaPagamentos(faturaId);
   const registrarPagamento = useRegistrarPagamento();
   const estornar = useEstornarPagamento();
@@ -388,6 +397,15 @@ function PagamentosTab({ faturaId, valorTotal, onDownloadRecibo }: { faturaId: s
     .reduce((sum, p) => sum + Number(p.valor), 0);
   const saldo = valorTotal - totalPago + totalEstornado;
 
+  // Verificar se é fatura parcial com derivada (bloquear novos pagamentos)
+  const isParcialComDerivada = faturaStatus?.toLowerCase() === 'parcial' && 
+    relacionadas?.derivadas && relacionadas.derivadas.length > 0;
+  
+  // Encontrar a derivada principal (mais recente com saldo aberto)
+  const derivadaPrincipal = relacionadas?.derivadas?.find(d => 
+    d.status?.toLowerCase() === 'aberta' || d.status?.toLowerCase() === 'vencida'
+  ) || relacionadas?.derivadas?.[0];
+
   if (isLoading) {
     return <Skeleton className="h-40 w-full" />;
   }
@@ -402,20 +420,50 @@ function PagamentosTab({ faturaId, valorTotal, onDownloadRecibo }: { faturaId: s
             <p className="font-bold">{formatCurrency(valorTotal)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Total Pago</p>
+            <p className="text-xs text-muted-foreground">Pago nesta Fatura</p>
             <p className="font-bold text-success">{formatCurrency(totalPago - totalEstornado)}</p>
           </div>
           <div>
-            <p className="text-xs text-muted-foreground">Saldo Restante</p>
-            <p className={cn("font-bold", saldo > 0 ? "text-warning" : "text-success")}>
+            <p className="text-xs text-muted-foreground">
+              {isParcialComDerivada ? 'Transferido p/ Derivada' : 'Saldo Restante'}
+            </p>
+            <p className={cn("font-bold", isParcialComDerivada ? "text-primary" : (saldo > 0 ? "text-warning" : "text-success"))}>
               {formatCurrency(Math.max(0, saldo))}
             </p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Formulário de pagamento */}
-      {saldo > 0 && (
+      {/* Card informativo para faturas parciais com derivada */}
+      {isParcialComDerivada && derivadaPrincipal && (
+        <Card className="border-warning/50 bg-warning/10">
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-warning mt-0.5 flex-shrink-0" />
+              <div className="flex-1 space-y-2">
+                <div>
+                  <p className="font-medium text-foreground">Pagamento parcial registrado</p>
+                  <p className="text-sm text-muted-foreground">
+                    O saldo restante de {formatCurrency(derivadaPrincipal.valor)} foi transferido para uma nova fatura.
+                  </p>
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  className="gap-2 mt-2"
+                  onClick={() => onOpenDerivada?.(derivadaPrincipal.id)}
+                >
+                  <ArrowRight className="h-4 w-4" />
+                  Ver fatura {derivadaPrincipal.codigo_sequencial}
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Formulário de pagamento - apenas se não for parcial com derivada */}
+      {!isParcialComDerivada && saldo > 0 && (
         showForm ? (
           <Card className="border-dashed">
             <CardContent className="p-4 space-y-3">
@@ -483,7 +531,7 @@ function PagamentosTab({ faturaId, valorTotal, onDownloadRecibo }: { faturaId: s
         )
       )}
 
-      {/* Lista de pagamentos */}
+      {/* Lista de pagamentos (histórico) */}
       {pagamentos && pagamentos.length > 0 ? (
         <div className="space-y-2">
           {pagamentos.map((p) => (
@@ -1123,7 +1171,19 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
             </TabsContent>
 
             <TabsContent value="pagamentos" className="mt-4">
-              <PagamentosTab faturaId={fatura.id} valorTotal={valorFinal} onDownloadRecibo={handleDownloadRecibo} />
+              <PagamentosTab 
+                faturaId={fatura.id} 
+                valorTotal={valorFinal} 
+                faturaStatus={fatura.status}
+                relacionadas={relacionadas}
+                onDownloadRecibo={handleDownloadRecibo}
+                onOpenDerivada={(derivadaId) => {
+                  // Fechar dialog atual e abrir a fatura derivada
+                  // Por enquanto, apenas alertar o usuário (pode ser melhorado para abrir a derivada diretamente)
+                  onOpenChange(false);
+                  toast.info("Navegue para a fatura derivada na listagem.");
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="editar" className="mt-4">
