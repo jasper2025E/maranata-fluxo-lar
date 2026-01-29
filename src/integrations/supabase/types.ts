@@ -3037,6 +3037,13 @@ export type Database = {
             referencedRelation: "school_website_config_public"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "school_website_pages_website_id_fkey"
+            columns: ["website_id"]
+            isOneToOne: false
+            referencedRelation: "school_website_public_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       security_access_logs: {
@@ -3749,14 +3756,127 @@ export type Database = {
           endereco: string | null
           id: string | null
           logo_url: string | null
-          og_image_url: string | null
           primary_color: string | null
           school_name: string | null
           secondary_color: string | null
-          seo_description: string | null
-          seo_title: string | null
           telefone: string | null
           tenant_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_website_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      school_website_public_safe: {
+        Row: {
+          about_description: string | null
+          about_features: Json | null
+          about_title: string | null
+          accent_color: string | null
+          contact_subtitle: string | null
+          contact_title: string | null
+          created_at: string | null
+          differentials: Json | null
+          enabled: boolean | null
+          font_family: string | null
+          footer_text: string | null
+          gallery_images: Json | null
+          hero_background_url: string | null
+          hero_badge_text: string | null
+          hero_cta_primary: string | null
+          hero_cta_secondary: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string | null
+          map_embed_url: string | null
+          prematricula_enabled: boolean | null
+          prematricula_subtitle: string | null
+          prematricula_title: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          show_map: boolean | null
+          show_powered_by: boolean | null
+          slug: string | null
+          social_links: Json | null
+          steps: Json | null
+          tenant_id: string | null
+          testimonials: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          about_description?: string | null
+          about_features?: Json | null
+          about_title?: string | null
+          accent_color?: string | null
+          contact_subtitle?: string | null
+          contact_title?: string | null
+          created_at?: string | null
+          differentials?: Json | null
+          enabled?: boolean | null
+          font_family?: string | null
+          footer_text?: string | null
+          gallery_images?: Json | null
+          hero_background_url?: string | null
+          hero_badge_text?: string | null
+          hero_cta_primary?: string | null
+          hero_cta_secondary?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string | null
+          map_embed_url?: string | null
+          prematricula_enabled?: boolean | null
+          prematricula_subtitle?: string | null
+          prematricula_title?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          show_map?: boolean | null
+          show_powered_by?: boolean | null
+          slug?: string | null
+          social_links?: Json | null
+          steps?: Json | null
+          tenant_id?: string | null
+          testimonials?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          about_description?: string | null
+          about_features?: Json | null
+          about_title?: string | null
+          accent_color?: string | null
+          contact_subtitle?: string | null
+          contact_title?: string | null
+          created_at?: string | null
+          differentials?: Json | null
+          enabled?: boolean | null
+          font_family?: string | null
+          footer_text?: string | null
+          gallery_images?: Json | null
+          hero_background_url?: string | null
+          hero_badge_text?: string | null
+          hero_cta_primary?: string | null
+          hero_cta_secondary?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string | null
+          map_embed_url?: string | null
+          prematricula_enabled?: boolean | null
+          prematricula_subtitle?: string | null
+          prematricula_title?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          show_map?: boolean | null
+          show_powered_by?: boolean | null
+          slug?: string | null
+          social_links?: Json | null
+          steps?: Json | null
+          tenant_id?: string | null
+          testimonials?: Json | null
+          updated_at?: string | null
         }
         Relationships: [
           {
