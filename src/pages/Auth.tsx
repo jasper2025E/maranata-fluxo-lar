@@ -185,12 +185,15 @@ const Auth = () => {
   }: {
     size?: "small" | "large";
   }) => {
-    const iconSize = size === "large" ? "h-14 w-14" : "h-7 w-7";
+    const iconSize = size === "large" ? "h-20 w-20" : "h-7 w-7";
     const textSize = size === "large" ? "text-3xl" : "text-xl";
-    const imgSize = size === "large" ? "h-16 w-16" : "h-8 w-8";
-    return <div className="flex flex-col items-center gap-3 text-center">
-        {schoolLogo ? <img src={schoolLogo} alt={schoolName} className={`${imgSize} object-contain rounded-lg`} /> : <GraduationCap className={`${iconSize} text-white`} />}
-        <span className={`${textSize} font-bold text-white`}>{schoolName}</span>
+    const imgSize = size === "large" ? "h-24 w-24" : "h-8 w-8";
+    const containerSize = size === "large" ? "p-4" : "p-2";
+    return <div className="flex flex-col items-center gap-4 text-center">
+        <div className={`${containerSize} rounded-2xl bg-white/10 backdrop-blur-sm border border-white/20 shadow-[0_0_40px_rgba(255,255,255,0.15)]`}>
+          {schoolLogo ? <img src={schoolLogo} alt={schoolName} className={`${imgSize} object-contain rounded-xl`} /> : <GraduationCap className={`${iconSize} text-white drop-shadow-lg`} />}
+        </div>
+        <span className={`${textSize} font-bold text-white drop-shadow-md`}>{schoolName}</span>
       </div>;
   };
   if (authLoading) {
