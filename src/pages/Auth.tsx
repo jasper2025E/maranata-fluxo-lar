@@ -44,12 +44,11 @@ const Auth = () => {
   } = useQuery({
     queryKey: ["escola-branding"],
     queryFn: async () => {
+      // Use the secure public branding view instead of direct table access
       const {
         data,
         error
-      } = await supabase.from("escola").select("nome, logo_url").order("created_at", {
-        ascending: true
-      }).limit(1).maybeSingle();
+      } = await supabase.from("escola_public_branding").select("nome, logo_url").limit(1).maybeSingle();
       if (error) {
         console.error("Error fetching escola branding:", error);
         return null;
