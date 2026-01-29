@@ -12,7 +12,7 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { user, loading, hasRole } = useAuth();
+  const { user, loading, roleLoading, hasRole } = useAuth();
   const location = useLocation();
 
   // Show loading while auth is loading
@@ -31,8 +31,22 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
     return <Navigate to="/auth" replace state={{ from: location }} />;
   }
 
-  if (requiredRole && !hasRole(requiredRole)) {
-    return <Navigate to="/dashboard" replace />;
+  if (requiredRole) {
+    // Evita "loop"/flicker enquanto a role ainda está sendo carregada
+    if (roleLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-background">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm text-muted-foreground">Carregando permissões...</p>
+          </div>
+        </div>
+      );
+    }
+
+    if (!hasRole(requiredRole)) {
+      return <Navigate to="/dashboard" replace />;
+    }
   }
 
   return <>{children}</>;
