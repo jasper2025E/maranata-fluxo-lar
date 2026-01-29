@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,6 +17,7 @@ const loginSchema = z.object({
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres")
 });
 const Auth = () => {
+  const location = useLocation();
   const {
     user,
     loading: authLoading
@@ -198,7 +199,9 @@ const Auth = () => {
 
   // Redirecionamento direto se já autenticado (sem useEffect)
   if (user) {
-    return <Navigate to="/dashboard" replace />;
+    const from = (location.state as any)?.from;
+    const to = from?.pathname ? `${from.pathname}${from.search || ""}${from.hash || ""}` : "/dashboard";
+    return <Navigate to={to} replace />;
   }
 
   // MFA Verification Screen
