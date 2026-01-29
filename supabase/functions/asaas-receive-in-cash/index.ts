@@ -14,6 +14,7 @@ interface ReceiveInCashRequest {
   paymentDate?: string;
   value?: number;
   notifyCustomer?: boolean;
+  isPartial?: boolean; // Se true, NÃO marca fatura como Paga (tratado pelo frontend)
 }
 
 Deno.serve(async (req) => {
@@ -62,7 +63,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { faturaId, paymentDate, value, notifyCustomer = false }: ReceiveInCashRequest = await req.json();
+    const { faturaId, paymentDate, value, notifyCustomer = false, isPartial = false }: ReceiveInCashRequest = await req.json();
 
     if (!faturaId) {
       return new Response(
@@ -175,19 +176,29 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Atualizar status da fatura localmente - IMPORTANTE: atualizar tanto asaas_status quanto status principal
+    // Atualizar status da fatura localmente
+    // Se isPartial = true, NÃO marca como Paga (será tratado pelo frontend com fatura derivada)
+    const updatePayload: Record<string, unknown> = {
+      asaas_status: asaasData.status || "RECEIVED_IN_CASH",
+      updated_at: new Date().toISOString(),
+    };
+    
+    // Só marca como Paga se NÃO for pagamento parcial
+    if (!isPartial) {
+      updatePayload.status = "Paga";
+      updatePayload.saldo_restante = 0;
+    }
+    
     const updateResult = await supabase
       .from("faturas")
-      .update({
-        status: "Paga",
-        asaas_status: asaasData.status || "RECEIVED_IN_CASH",
-        updated_at: new Date().toISOString(),
-      })
+      .update(updatePayload)
       .eq("id", faturaId);
     
     if (updateResult.error) {
       console.error("[asaas-receive-in-cash] Erro ao atualizar fatura local:", updateResult.error);
     }
+    
+    console.log(`[asaas-receive-in-cash] isPartial=${isPartial}, status atualizado:`, isPartial ? 'mantido' : 'Paga');
 
     // Log sucesso
     await logGatewayTransaction(supabase, {

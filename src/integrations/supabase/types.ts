@@ -1177,6 +1177,7 @@ export type Database = {
           desconto_percentual: number | null
           desconto_valor: number | null
           dias_atraso: number | null
+          fatura_origem_id: string | null
           gateway_config_id: string | null
           id: string
           juros: number | null
@@ -1192,6 +1193,7 @@ export type Database = {
           stripe_checkout_session_id: string | null
           stripe_payment_intent_id: string | null
           tenant_id: string | null
+          tipo_origem: string | null
           updated_at: string | null
           updated_by: string | null
           valor: number
@@ -1231,6 +1233,7 @@ export type Database = {
           desconto_percentual?: number | null
           desconto_valor?: number | null
           dias_atraso?: number | null
+          fatura_origem_id?: string | null
           gateway_config_id?: string | null
           id?: string
           juros?: number | null
@@ -1246,6 +1249,7 @@ export type Database = {
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
           tenant_id?: string | null
+          tipo_origem?: string | null
           updated_at?: string | null
           updated_by?: string | null
           valor: number
@@ -1285,6 +1289,7 @@ export type Database = {
           desconto_percentual?: number | null
           desconto_valor?: number | null
           dias_atraso?: number | null
+          fatura_origem_id?: string | null
           gateway_config_id?: string | null
           id?: string
           juros?: number | null
@@ -1300,6 +1305,7 @@ export type Database = {
           stripe_checkout_session_id?: string | null
           stripe_payment_intent_id?: string | null
           tenant_id?: string | null
+          tipo_origem?: string | null
           updated_at?: string | null
           updated_by?: string | null
           valor?: number
@@ -1325,6 +1331,13 @@ export type Database = {
             columns: ["curso_id"]
             isOneToOne: false
             referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faturas_fatura_origem_id_fkey"
+            columns: ["fatura_origem_id"]
+            isOneToOne: false
+            referencedRelation: "faturas"
             referencedColumns: ["id"]
           },
           {

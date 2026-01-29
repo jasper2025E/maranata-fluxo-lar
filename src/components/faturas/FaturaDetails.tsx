@@ -33,6 +33,9 @@ import {
   Printer,
   Save,
   Pencil,
+  Link2,
+  ArrowRight,
+  GitBranch,
 } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -717,6 +720,40 @@ function EdicaoTab({ fatura, isEditable }: { fatura: Fatura; isEditable: boolean
   );
 }
 
+// Hook para buscar faturas relacionadas (origem e derivadas)
+function useFaturasRelacionadas(faturaId: string | null, faturaOrigemId: string | null | undefined) {
+  return useQuery({
+    queryKey: ['faturas', 'relacionadas', faturaId],
+    queryFn: async () => {
+      if (!faturaId) return { origem: null, derivadas: [] };
+      
+      const result: { origem: Fatura | null; derivadas: Fatura[] } = { origem: null, derivadas: [] };
+      
+      // Buscar fatura de origem (se existir)
+      if (faturaOrigemId) {
+        const { data: origem } = await supabase
+          .from("faturas")
+          .select("id, codigo_sequencial, valor, status, data_vencimento")
+          .eq("id", faturaOrigemId)
+          .maybeSingle();
+        result.origem = origem as Fatura | null;
+      }
+      
+      // Buscar faturas derivadas desta fatura
+      const { data: derivadas } = await supabase
+        .from("faturas")
+        .select("id, codigo_sequencial, valor, status, data_vencimento, tipo_origem")
+        .eq("fatura_origem_id", faturaId)
+        .order("created_at", { ascending: false });
+      
+      result.derivadas = (derivadas || []) as Fatura[];
+      
+      return result;
+    },
+    enabled: !!faturaId,
+  });
+}
+
 export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: FaturaDetailsProps) {
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [isGeneratingCarne, setIsGeneratingCarne] = useState(false);
@@ -745,6 +782,12 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
 
   // Usar fatura atualizada ou a prop original como fallback
   const fatura = faturaAtualizada || faturaProp;
+  
+  // Buscar faturas relacionadas
+  const { data: relacionadas } = useFaturasRelacionadas(
+    fatura?.id || null, 
+    fatura?.fatura_origem_id
+  );
   
   const { data: escola } = useQuery({
     queryKey: ['escola-pdf'],
@@ -1008,6 +1051,58 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
               </div>
             </CardContent>
           </Card>
+
+          {/* Faturas Relacionadas (Origem / Derivadas) */}
+          {(fatura.fatura_origem_id || (relacionadas?.derivadas && relacionadas.derivadas.length > 0)) && (
+            <Card className="mb-4 border-dashed border-primary/30 bg-primary/5">
+              <CardContent className="p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <GitBranch className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">Faturas Relacionadas</span>
+                </div>
+                
+                {/* Fatura de Origem */}
+                {fatura.fatura_origem_id && relacionadas?.origem && (
+                  <div className="flex items-center gap-2 p-2 bg-background rounded-md mb-2">
+                    <ArrowRight className="h-4 w-4 text-muted-foreground rotate-180" />
+                    <div className="flex-1">
+                      <p className="text-xs text-muted-foreground">Originada de</p>
+                      <p className="font-medium text-sm">{relacionadas.origem.codigo_sequencial}</p>
+                    </div>
+                    <Badge variant="outline" className="text-xs">{relacionadas.origem.status}</Badge>
+                    <span className="text-sm font-medium">{formatCurrency(relacionadas.origem.valor)}</span>
+                  </div>
+                )}
+                
+                {/* Badge indicando tipo */}
+                {fatura.tipo_origem && (
+                  <Badge variant="secondary" className="mb-2 text-xs">
+                    {fatura.tipo_origem === 'pagamento_parcial' ? '💰 Saldo de Pagamento Parcial' : fatura.tipo_origem}
+                  </Badge>
+                )}
+                
+                {/* Faturas Derivadas */}
+                {relacionadas?.derivadas && relacionadas.derivadas.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs text-muted-foreground">Faturas derivadas desta:</p>
+                    {relacionadas.derivadas.map((d) => (
+                      <div key={d.id} className="flex items-center gap-2 p-2 bg-background rounded-md">
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{d.codigo_sequencial}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {d.tipo_origem === 'pagamento_parcial' ? 'Saldo restante' : d.tipo_origem}
+                          </p>
+                        </div>
+                        <Badge variant="outline" className="text-xs">{d.status}</Badge>
+                        <span className="text-sm font-medium">{formatCurrency(d.valor)}</span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Tabs */}
           <Tabs defaultValue="itens" className="w-full">
