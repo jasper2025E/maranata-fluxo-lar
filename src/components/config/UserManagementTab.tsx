@@ -68,7 +68,7 @@ const SYSTEM_OWNER_EMAIL = "victordbvtey@outlook.com";
 const isSystemOwner = (email: string) => email === SYSTEM_OWNER_EMAIL;
 
 const roleLabels: Record<AppRole, string> = {
-  platform_admin: "Gestor",
+  platform_admin: "Administrador",
   admin: "Administrador",
   staff: "Colaborador",
   financeiro: "Financeiro",
