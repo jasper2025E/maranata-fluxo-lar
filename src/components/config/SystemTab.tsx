@@ -16,6 +16,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { BackupExport } from "./BackupExport";
+import { SystemCapacityCard } from "./SystemCapacityCard";
 
 interface SystemTabProps {
   role: string | null;
@@ -61,6 +62,9 @@ export function SystemTab({ role }: SystemTabProps) {
           Status, backup e configurações avançadas
         </p>
       </div>
+
+      {/* Capacidade do Sistema */}
+      <SystemCapacityCard />
 
       {/* Status do Sistema */}
       <div className="bg-card border border-border rounded-lg">
