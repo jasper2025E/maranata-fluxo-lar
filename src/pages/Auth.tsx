@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,7 +17,6 @@ const loginSchema = z.object({
   password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres")
 });
 const Auth = () => {
-  const navigate = useNavigate();
   const {
     user,
     loading: authLoading
@@ -60,15 +59,6 @@ const Auth = () => {
   });
   const schoolName = escola?.nome || "Escola Maranata";
   const schoolLogo = escola?.logo_url;
-
-  // Redirect if already authenticated
-  useEffect(() => {
-    if (user && !authLoading) {
-      navigate("/dashboard", {
-        replace: true
-      });
-    }
-  }, [user, authLoading, navigate]);
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
@@ -196,11 +186,19 @@ const Auth = () => {
         <span className={`${textSize} font-bold text-white drop-shadow-md`}>{schoolName}</span>
       </div>;
   };
+  // Mostrar loading enquanto verifica sessão
   if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+    return (
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
         <GradientBackground />
         <Loader2 className="h-8 w-8 animate-spin text-white relative z-10" />
-      </div>;
+      </div>
+    );
+  }
+
+  // Redirecionamento direto se já autenticado (sem useEffect)
+  if (user) {
+    return <Navigate to="/dashboard" replace />;
   }
 
   // MFA Verification Screen
