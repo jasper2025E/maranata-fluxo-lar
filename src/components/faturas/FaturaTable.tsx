@@ -220,6 +220,11 @@ function FaturaRow({
             <StatusIcon className="h-3.5 w-3.5" />
             {statusConfig.label}
           </Badge>
+          {fatura.fatura_origem_id && (
+            <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-accent text-accent-foreground border-border rounded-md font-semibold">
+              Derivada
+            </Badge>
+          )}
           {fatura.asaas_payment_id && (
             <Badge variant="secondary" className="text-[10px] px-2 py-0.5 bg-success/10 text-success border-success/20 rounded-md font-semibold">
               Asaas

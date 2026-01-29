@@ -100,6 +100,9 @@ export interface Fatura {
   asaas_status?: string | null;
   asaas_due_date?: string | null;
   asaas_billing_type?: string | null;
+  // Campos para rastrear faturas derivadas (pagamento parcial)
+  fatura_origem_id?: string | null;
+  tipo_origem?: string | null; // 'pagamento_parcial' | 'renegociacao' | etc.
   alunos?: { nome_completo: string; email_responsavel: string; responsavel_id?: string | null };
   cursos?: { nome: string };
   responsaveis?: { nome: string; email: string | null; telefone: string } | null;
@@ -580,6 +583,13 @@ export function useCancelarFatura() {
   });
 }
 
+export interface RegistrarPagamentoResult {
+  success: boolean;
+  novaFaturaId?: string;
+  novaFaturaCodigoSequencial?: string;
+  message?: string;
+}
+
 export function useRegistrarPagamento() {
   const queryClient = useQueryClient();
 
@@ -594,14 +604,19 @@ export function useRegistrarPagamento() {
       desconto_aplicado?: number;
       juros_aplicado?: number;
       multa_aplicada?: number;
-    }) => {
-      // Buscar info da fatura antes (para sync com gateway)
+    }): Promise<RegistrarPagamentoResult> => {
+      // Buscar info completa da fatura antes (para sync com gateway e criar derivada)
       const { data: faturaInfo } = await supabase
         .from("faturas")
-        .select("asaas_payment_id, valor_total, valor")
+        .select("asaas_payment_id, valor_total, valor, saldo_restante, data_vencimento")
         .eq("id", data.fatura_id)
         .maybeSingle();
 
+      const valorTotal = faturaInfo?.saldo_restante || faturaInfo?.valor_total || faturaInfo?.valor || 0;
+      const isParcial = data.tipo === 'parcial' && data.valor < valorTotal;
+      const saldoRestante = isParcial ? valorTotal - data.valor : 0;
+
+      // Registrar pagamento
       const { error: paymentError } = await supabase.from("pagamentos").insert({
         fatura_id: data.fatura_id,
         valor: data.valor,
@@ -616,38 +631,22 @@ export function useRegistrarPagamento() {
 
       if (paymentError) throw paymentError;
 
-      // Se for pagamento total, atualizar status
-      if (data.tipo !== 'parcial') {
-        const { error: faturaError } = await supabase
-          .from("faturas")
-          .update({ 
-            status: "Paga",
-            saldo_restante: 0,
-          })
-          .eq("id", data.fatura_id);
+      // Atualizar fatura original
+      // Se for parcial com saldo > 0: marca como Paga mas cria fatura derivada
+      // Se for total: marca como Paga
+      const { error: faturaError } = await supabase
+        .from("faturas")
+        .update({ 
+          status: "Paga",
+          saldo_restante: 0, // Fatura original quitada
+        })
+        .eq("id", data.fatura_id);
 
-        if (faturaError) throw faturaError;
-      } else {
-        // Atualizar saldo restante
-        const { data: fatura } = await supabase
-          .from("faturas")
-          .select("saldo_restante, valor_total")
-          .eq("id", data.fatura_id)
-          .maybeSingle();
-
-        if (fatura) {
-          const novoSaldo = (fatura.saldo_restante || fatura.valor_total || 0) - data.valor;
-          await supabase
-            .from("faturas")
-            .update({ 
-              saldo_restante: Math.max(0, novoSaldo),
-              status: novoSaldo <= 0 ? 'Paga' : undefined,
-            })
-            .eq("id", data.fatura_id);
-        }
-      }
+      if (faturaError) throw faturaError;
 
       // SYNC COM GATEWAY: Confirmar recebimento no Asaas
+      // Para pagamento parcial, passamos isPartial=true para NÃO marcar como Paga no Asaas
+      // (cancelaremos a cobrança original depois)
       if (faturaInfo?.asaas_payment_id) {
         try {
           const { error: syncError } = await supabase.functions.invoke("asaas-receive-in-cash", {
@@ -656,26 +655,97 @@ export function useRegistrarPagamento() {
               paymentDate: new Date().toISOString().split('T')[0],
               value: data.valor,
               notifyCustomer: false,
+              isPartial: isParcial, // NÃO marca como paga se for parcial
             },
           });
 
           if (syncError) {
             console.warn("Aviso: Não foi possível sincronizar com gateway:", syncError);
-            toast.warning("Pagamento registrado. Sincronização com gateway pode estar pendente.");
+            // Continua - não bloqueia fluxo
           }
         } catch (syncErr) {
           console.warn("Erro ao sincronizar com gateway:", syncErr);
-          // Não bloqueia - pagamento já foi salvo localmente
         }
       }
+
+      // Se for pagamento PARCIAL com saldo restante > 0, criar fatura derivada
+      if (isParcial && saldoRestante > 0) {
+        console.log(`[useRegistrarPagamento] Pagamento parcial. Criando fatura derivada de R$ ${saldoRestante}`);
+        
+        // Calcular nova data de vencimento (mesma do original ou +15 dias se já venceu)
+        const hoje = new Date();
+        const vencimentoOriginal = faturaInfo?.data_vencimento 
+          ? new Date(faturaInfo.data_vencimento) 
+          : hoje;
+        
+        const novaDataVencimento = vencimentoOriginal > hoje 
+          ? faturaInfo!.data_vencimento
+          : new Date(hoje.getTime() + 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+        try {
+          // Cancelar cobrança original no Asaas (opcional - pode manter para histórico)
+          if (faturaInfo?.asaas_payment_id) {
+            try {
+              await supabase.functions.invoke("asaas-cancel-payment", {
+                body: { paymentId: faturaInfo.asaas_payment_id },
+              });
+              console.log("[useRegistrarPagamento] Cobrança original cancelada no Asaas");
+            } catch (cancelErr) {
+              console.warn("Aviso: Não foi possível cancelar cobrança original:", cancelErr);
+              // Continua mesmo assim
+            }
+          }
+
+          // Criar fatura derivada com nova cobrança
+          const { data: result, error: remainderError } = await supabase.functions.invoke("asaas-create-remainder-payment", {
+            body: {
+              faturaOrigemId: data.fatura_id,
+              valorRestante: saldoRestante,
+              dataVencimento: novaDataVencimento,
+            },
+          });
+
+          if (remainderError) {
+            console.error("Erro ao criar fatura derivada:", remainderError);
+            toast.warning(`Pagamento registrado. Erro ao criar cobrança do saldo: ${remainderError.message}`);
+            return { success: true, message: "Pagamento registrado. Crie manualmente a cobrança do saldo restante." };
+          }
+
+          if (result?.success) {
+            toast.success(
+              `Pagamento registrado! Nova cobrança de R$ ${saldoRestante.toFixed(2)} criada (${result.codigoSequencial || 'pendente'})`,
+              { duration: 5000 }
+            );
+            return {
+              success: true,
+              novaFaturaId: result.novaFaturaId,
+              novaFaturaCodigoSequencial: result.codigoSequencial,
+              message: `Fatura derivada criada: ${result.codigoSequencial}`,
+            };
+          } else {
+            toast.warning("Pagamento registrado. Verifique a criação da cobrança do saldo.");
+            return { success: true, message: result?.message || "Verifique a fatura derivada." };
+          }
+        } catch (derivadaErr) {
+          console.error("Erro ao criar fatura derivada:", derivadaErr);
+          toast.warning("Pagamento registrado. Erro ao criar cobrança do saldo restante.");
+          return { success: true, message: "Crie manualmente a cobrança do saldo restante." };
+        }
+      }
+
+      return { success: true };
     },
-    onSuccess: (_, variables) => {
+    onSuccess: (result, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.list(), refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.pagamentos(variables.fatura_id), refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.detail(variables.fatura_id), refetchType: 'all' });
       queryClient.invalidateQueries({ queryKey: ['dashboard'], refetchType: 'all' });
-      toast.success("Pagamento registrado!");
+      
+      // Toast já exibido no mutationFn para pagamento parcial
+      if (!result?.novaFaturaId && !result?.message) {
+        toast.success("Pagamento registrado!");
+      }
     },
     onError: (error: Error) => {
       toast.error(`Erro ao registrar pagamento: ${error.message}`);
