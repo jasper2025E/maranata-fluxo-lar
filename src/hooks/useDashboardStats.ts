@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { queryKeys } from "./useQueryConfig";
 
@@ -341,13 +342,58 @@ function processMonthlyData(
 }
 
 export function useDashboardStats() {
+  const queryClient = useQueryClient();
+
+  // Subscribe to realtime updates for automatic dashboard refresh
+  useEffect(() => {
+    const channel = supabase
+      .channel("dashboard-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pagamentos" },
+        () => {
+          console.log("Pagamento atualizado - refresh dashboard");
+          queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats() });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "faturas" },
+        () => {
+          console.log("Fatura atualizada - refresh dashboard");
+          queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats() });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "despesas" },
+        () => {
+          console.log("Despesa atualizada - refresh dashboard");
+          queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats() });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "alunos" },
+        () => {
+          console.log("Aluno atualizado - refresh dashboard");
+          queryClient.invalidateQueries({ queryKey: queryKeys.dashboard.stats() });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery<DashboardStats>({
     queryKey: queryKeys.dashboard.stats(),
     queryFn: fetchDashboardStats,
-    staleTime: 1000 * 60, // 1 minuto - cache mais agressivo
+    staleTime: 1000 * 30, // 30 segundos - mais responsivo
     gcTime: 1000 * 60 * 10, // 10 minutos
     retry: 1,
-    refetchOnWindowFocus: false, // Evita refetch desnecessário
-    refetchOnMount: false, // Usa cache se disponível
+    refetchOnWindowFocus: false,
+    refetchOnMount: true, // Garante dados frescos ao montar
   });
 }
