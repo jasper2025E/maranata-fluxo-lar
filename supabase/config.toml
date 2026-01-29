@@ -50,3 +50,9 @@ verify_jwt = false
 
 [functions.gateway-sync-payment]
 verify_jwt = false
+
+[functions.asaas-receive-in-cash]
+verify_jwt = true
+
+[functions.asaas-undo-receive-in-cash]
+verify_jwt = true

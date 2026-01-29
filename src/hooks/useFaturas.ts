@@ -595,6 +595,13 @@ export function useRegistrarPagamento() {
       juros_aplicado?: number;
       multa_aplicada?: number;
     }) => {
+      // Buscar info da fatura antes (para sync com gateway)
+      const { data: faturaInfo } = await supabase
+        .from("faturas")
+        .select("asaas_payment_id, valor_total, valor")
+        .eq("id", data.fatura_id)
+        .maybeSingle();
+
       const { error: paymentError } = await supabase.from("pagamentos").insert({
         fatura_id: data.fatura_id,
         valor: data.valor,
@@ -639,6 +646,28 @@ export function useRegistrarPagamento() {
             .eq("id", data.fatura_id);
         }
       }
+
+      // SYNC COM GATEWAY: Confirmar recebimento no Asaas
+      if (faturaInfo?.asaas_payment_id) {
+        try {
+          const { error: syncError } = await supabase.functions.invoke("asaas-receive-in-cash", {
+            body: { 
+              faturaId: data.fatura_id,
+              paymentDate: new Date().toISOString().split('T')[0],
+              value: data.valor,
+              notifyCustomer: false,
+            },
+          });
+
+          if (syncError) {
+            console.warn("Aviso: Não foi possível sincronizar com gateway:", syncError);
+            toast.warning("Pagamento registrado. Sincronização com gateway pode estar pendente.");
+          }
+        } catch (syncErr) {
+          console.warn("Erro ao sincronizar com gateway:", syncErr);
+          // Não bloqueia - pagamento já foi salvo localmente
+        }
+      }
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
@@ -659,6 +688,13 @@ export function useEstornarPagamento() {
 
   return useMutation({
     mutationFn: async (data: { pagamento_id: string; fatura_id: string; valor: number; motivo: string }) => {
+      // Buscar info da fatura antes (para sync com gateway)
+      const { data: faturaInfo } = await supabase
+        .from("faturas")
+        .select("asaas_payment_id, asaas_status")
+        .eq("id", data.fatura_id)
+        .maybeSingle();
+
       // Criar registro de estorno
       const { error: estornoError } = await supabase.from("pagamentos").insert({
         fatura_id: data.fatura_id,
@@ -686,6 +722,24 @@ export function useEstornarPagamento() {
             status: 'Aberta',
           })
           .eq("id", data.fatura_id);
+      }
+
+      // SYNC COM GATEWAY: Desfazer confirmação de recebimento no Asaas
+      // Só tenta desfazer se foi recebido em dinheiro (RECEIVED_IN_CASH)
+      if (faturaInfo?.asaas_payment_id) {
+        try {
+          const { error: syncError } = await supabase.functions.invoke("asaas-undo-receive-in-cash", {
+            body: { faturaId: data.fatura_id },
+          });
+
+          if (syncError) {
+            console.warn("Aviso: Não foi possível reverter no gateway:", syncError);
+            toast.warning("Estorno registrado. Sincronização com gateway pode estar pendente.");
+          }
+        } catch (syncErr) {
+          console.warn("Erro ao sincronizar estorno com gateway:", syncErr);
+          // Não bloqueia - estorno já foi salvo localmente
+        }
       }
     },
     onSuccess: (_, variables) => {
@@ -934,10 +988,10 @@ export function useReabrirFatura() {
       novoStatus: 'Aberta' | 'Vencida';
       deletarPagamentos?: boolean;
     }) => {
-      // Buscar fatura para saber o valor original
+      // Buscar fatura para saber o valor original E se tem gateway
       const { data: fatura, error: fetchError } = await supabase
         .from("faturas")
-        .select("valor_total, valor, valor_original")
+        .select("valor_total, valor, valor_original, asaas_payment_id, asaas_status")
         .eq("id", id)
         .single();
 
@@ -960,6 +1014,23 @@ export function useReabrirFatura() {
       // Opcionalmente deletar pagamentos registrados
       if (deletarPagamentos) {
         await supabase.from("pagamentos").delete().eq("fatura_id", id);
+      }
+
+      // SYNC COM GATEWAY: Desfazer confirmação de recebimento no Asaas
+      if (fatura?.asaas_payment_id) {
+        try {
+          const { error: syncError } = await supabase.functions.invoke("asaas-undo-receive-in-cash", {
+            body: { faturaId: id },
+          });
+
+          if (syncError) {
+            console.warn("Aviso: Não foi possível reverter no gateway:", syncError);
+            toast.warning("Fatura reaberta. Sincronização com gateway pode estar pendente.");
+          }
+        } catch (syncErr) {
+          console.warn("Erro ao sincronizar reabertura com gateway:", syncErr);
+          // Não bloqueia - fatura já foi reaberta localmente
+        }
       }
 
       return { id, novoStatus };
