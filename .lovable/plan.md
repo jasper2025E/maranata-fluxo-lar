@@ -1,134 +1,140 @@
 
-# Correção: Flash da Tela de Login ao Atualizar Página
+# Plano: Suporte a Pagamento Parcial com Sincronização Asaas
 
 ## Problema Identificado
 
-Quando você atualiza qualquer página do sistema (F5), ocorre um "flash" visual onde:
-1. A tela de login aparece brevemente
-2. O spinner de carregamento gira
-3. Depois a página correta é renderizada
+Quando você registra um **pagamento parcial** no sistema:
 
-Isso acontece porque há uma **condição de corrida** no fluxo de autenticação:
-- O `AuthContext` inicia com `loading: true` e `user: null`
-- Enquanto verifica a sessão com `getSession()`, o componente `ProtectedRoute` vê `user: null` e redireciona para `/auth`
-- A página `Auth.tsx` renderiza brevemente antes que o `AuthContext` atualize o estado
+1. O saldo restante é calculado corretamente no banco local
+2. **Mas** o sistema marca a fatura como "Paga" no Asaas
+3. **E** não cria uma nova cobrança para o valor restante
+4. Resultado: O cliente fica devendo, mas não há boleto/PIX para cobrar o resto
 
 ## Causa Raiz
 
+O Asaas não suporta "pagamentos parciais" nativos em uma mesma cobrança. Uma cobrança no Asaas é de valor fixo - ou está paga por inteiro ou não está.
+
 ```text
-┌──────────────────────────────────────────────────────────────┐
-│  Fluxo Atual (com flash)                                     │
-├──────────────────────────────────────────────────────────────┤
-│  1. Página /faturas carrega                                  │
-│  2. AuthContext: loading=true, user=null                     │
-│  3. ProtectedRoute vê loading=true → mostra spinner          │
-│  4. Enquanto isso, Auth.tsx também recebe loading=true       │
-│  5. getSession() retorna → user preenchido                   │
-│  6. Auth.tsx vê user → redireciona para /dashboard           │
-│  7. Flash visual acontece                                    │
-└──────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────┐
+│  Fluxo Atual (quebrado)                                     │
+├─────────────────────────────────────────────────────────────┤
+│  1. Usuário seleciona "Pagamento Parcial" no sistema        │
+│  2. Informa R$ 100 (de uma fatura de R$ 200)                │
+│  3. Sistema salva pagamento + atualiza saldo_restante       │
+│  4. Chama asaas-receive-in-cash                             │
+│  5. Asaas marca cobrança como PAGA (valor total: R$ 200)    │
+│  6. Não existe cobrança para os R$ 100 restantes            │
+│  ❌ Cliente não recebe boleto/PIX do saldo                   │
+└─────────────────────────────────────────────────────────────┘
 ```
-
-O problema principal está em **duas áreas**:
-
-1. **`ProtectedRoute`** - Mostra spinner corretamente, mas a transição é visível
-
-2. **`Auth.tsx`** - Mostra o formulário de login ANTES de verificar se o usuário já está autenticado, causando o "flash"
 
 ## Solução Proposta
 
-### Mudança 1: Auth.tsx - Mostrar Spinner Durante Loading
+Implementar fluxo de "Fatura Derivada" (ou fatura filha):
 
-Atualmente, o `Auth.tsx` só mostra spinner quando `authLoading` é true, mas renderiza o formulário antes de saber se há sessão. A correção garante que durante `authLoading`, apenas o spinner apareça (sem o formulário visível por trás).
-
-**Antes:**
-```typescript
-if (authLoading) {
-  return <div>...<Loader2 />...</div>;
-}
-// Se já tem user, redireciona via useEffect - mas formulário pode piscar
+```text
+┌─────────────────────────────────────────────────────────────┐
+│  Fluxo Corrigido                                            │
+├─────────────────────────────────────────────────────────────┤
+│  1. Usuário seleciona "Pagamento Parcial"                   │
+│  2. Informa R$ 100 (de uma fatura de R$ 200)                │
+│  3. Sistema:                                                │
+│     a) Registra pagamento de R$ 100                         │
+│     b) Marca fatura original como "Paga"                    │
+│     c) CANCELA cobrança original no Asaas                   │
+│     d) Cria NOVA fatura de R$ 100 (valor restante)          │
+│     e) Vincula nova fatura à original (fatura_origem_id)    │
+│     f) Cria NOVA cobrança no Asaas para R$ 100              │
+│  4. Cliente recebe novo boleto/PIX pelo saldo               │
+│  ✅ Saldo fica rastreável e cobrável                         │
+└─────────────────────────────────────────────────────────────┘
 ```
 
-**Depois:**
-```typescript
-// Retornar null enquanto carrega (ProtectedRoute já lida com spinner)
-if (authLoading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      <GradientBackground />
-      <Loader2 className="h-8 w-8 animate-spin text-white relative z-10" />
-    </div>
-  );
-}
+## Alterações Necessárias
 
-// Redirecionar IMEDIATAMENTE se user existe (sem useEffect)
-if (user) {
-  return <Navigate to="/dashboard" replace />;
-}
+### 1. Migração de Banco de Dados
+Adicionar coluna para rastrear faturas derivadas de pagamentos parciais:
+
+```sql
+-- Coluna para vincular fatura derivada à original
+ALTER TABLE faturas ADD COLUMN IF NOT EXISTS fatura_origem_id UUID REFERENCES faturas(id);
+ALTER TABLE faturas ADD COLUMN IF NOT EXISTS tipo_origem TEXT DEFAULT NULL;
+-- Valores possíveis: 'pagamento_parcial', 'renegociacao', etc.
 ```
 
-### Mudança 2: AuthContext - Garantir Loading Inicial Correto
+### 2. Nova Edge Function: `asaas-create-remainder-payment`
+Função específica para criar cobrança do valor restante:
+- Recebe: `faturaOrigemId`, `valorRestante`, `dataVencimento`
+- Cria nova fatura no banco com `fatura_origem_id` preenchido
+- Cria cobrança no Asaas
+- Retorna dados da nova fatura
 
-O `AuthContext` já está correto, mas vamos garantir que o `fetchUserRole` não cause re-renders desnecessários durante a recuperação inicial da sessão.
+### 3. Atualizar Hook `useRegistrarPagamento`
+Quando `tipo === 'parcial'`:
+- Após salvar pagamento, calcular saldo restante
+- Chamar nova função para criar fatura derivada
+- Cancelar cobrança original no Asaas (ou deixar como está se preferir manter histórico)
+- Atualizar UI para mostrar que nova cobrança foi criada
 
-### Mudança 3: ProtectedRoute - Manter Comportamento Consistente
+### 4. Atualizar UI `FaturaDetails.tsx`
+- Mostrar indicador visual quando fatura tem `fatura_origem_id`
+- Exibir link para fatura original
+- Adicionar seção "Faturas Derivadas" quando houver
 
-O `ProtectedRoute` já está correto - mostra loading durante autenticação. Não precisa de mudanças.
+### 5. Atualizar Edge Function `asaas-receive-in-cash`
+- Aceitar parâmetro `isPartial: boolean`
+- Se parcial: NÃO marcar como "Paga" - deixar a lógica no hook
+- Registrar apenas o valor informado no Asaas (se suportado)
 
----
+### 6. Atualizar Webhook `asaas-webhook`
+- Verificar se valor pago corresponde ao valor total da fatura
+- Se menor: manter status "Aberta" ou criar fatura derivada automaticamente
 
-## Arquivos a Modificar
+## Arquivos a Modificar/Criar
 
-| Arquivo | Mudança |
-|---------|---------|
-| `src/pages/Auth.tsx` | Usar `<Navigate>` em vez de `useEffect` para redirecionamento, garantindo que o formulário nunca apareça quando há sessão válida |
+| Arquivo | Ação | Descrição |
+|---------|------|-----------|
+| Nova migração SQL | Criar | Adicionar `fatura_origem_id` e `tipo_origem` |
+| `supabase/functions/asaas-create-remainder-payment/index.ts` | Criar | Função para criar fatura + cobrança do saldo |
+| `src/hooks/useFaturas.ts` | Modificar | Atualizar `useRegistrarPagamento` para criar fatura derivada |
+| `src/components/faturas/FaturaDetails.tsx` | Modificar | Mostrar vínculo com fatura origem/derivadas |
+| `supabase/functions/asaas-receive-in-cash/index.ts` | Modificar | Suportar flag `isPartial` |
+| `supabase/functions/asaas-webhook/index.ts` | Modificar | Detectar pagamento parcial automático |
+| `supabase/config.toml` | Modificar | Adicionar configuração da nova função |
 
-## Detalhes Técnicos
-
-### Código Atualizado - Auth.tsx
-
-```typescript
-// Linha 199-204: Substituir useEffect por Navigate direto
-if (authLoading) {
-  return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      <GradientBackground />
-      <Loader2 className="h-8 w-8 animate-spin text-white relative z-10" />
-    </div>
-  );
-}
-
-// NOVO: Redirecionamento direto sem useEffect
-if (user) {
-  return <Navigate to="/dashboard" replace />;
-}
-```
-
-### Remover useEffect de Redirecionamento
-
-O `useEffect` atual (linhas 65-71) será removido porque:
-- Causa um ciclo de render extra
-- Permite que o formulário "pisque" antes do redirect
-- Com `<Navigate>` direto, o redirect é síncrono
-
-## Resultado Esperado
+## Fluxo Técnico Detalhado
 
 ```text
 ┌──────────────────────────────────────────────────────────────┐
-│  Fluxo Corrigido (sem flash)                                 │
+│  useRegistrarPagamento({ tipo: 'parcial', valor: 100 })     │
 ├──────────────────────────────────────────────────────────────┤
-│  1. Página /faturas carrega                                  │
-│  2. AuthContext: loading=true                                │
-│  3. ProtectedRoute mostra spinner centralizado               │
-│  4. getSession() retorna → user preenchido, loading=false    │
-│  5. ProtectedRoute renderiza <Faturas /> normalmente         │
-│  6. Nenhum flash para /auth                                  │
+│  1. INSERT pagamentos (R$ 100)                               │
+│  2. SELECT fatura (valor_total = R$ 200)                     │
+│  3. saldoRestante = 200 - 100 = R$ 100                       │
+│  4. UPDATE faturas SET status = 'Paga' WHERE id = original   │
+│  5. IF saldoRestante > 0:                                    │
+│     a) invoke('asaas-cancel-payment', { faturaId })          │
+│     b) INSERT faturas (nova, R$ 100, fatura_origem_id)       │
+│     c) invoke('asaas-create-payment', { faturaId: nova })    │
+│  6. Notificar usuário: "Pagamento registrado. Nova cobrança  │
+│     de R$ 100 criada para o saldo restante."                 │
 └──────────────────────────────────────────────────────────────┘
 ```
 
-## Benefícios
+## Considerações de UX
 
-- **Zero flash** para tela de login ao atualizar páginas protegidas
-- **Experiência profissional** - apenas spinner durante verificação
-- **Sessão preservada** - usuário permanece na mesma página
-- **Código mais limpo** - menos useEffect, mais lógica declarativa
+1. **Feedback claro**: Quando pagamento parcial é registrado, exibir toast explicando que nova cobrança foi criada
+2. **Visualização**: Na lista de faturas, mostrar badge "Derivada" ou ícone indicando origem
+3. **Histórico**: Manter rastreabilidade completa (qual pagamento gerou qual fatura)
+4. **Impressão de Carnê**: Permitir incluir faturas derivadas nos carnês
+
+## Resultado Esperado
+
+Após implementação:
+- ✅ Pagamento parcial registrado corretamente
+- ✅ Fatura original marcada como paga (pelo valor recebido)
+- ✅ Nova fatura criada para o saldo restante
+- ✅ Nova cobrança no Asaas com boleto/PIX
+- ✅ Cliente recebe automaticamente link para pagar o saldo
+- ✅ Dashboard atualizado em tempo real
+- ✅ Histórico completo e rastreável
