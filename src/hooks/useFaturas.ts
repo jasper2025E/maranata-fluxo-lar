@@ -157,6 +157,7 @@ export function useFaturas() {
 
       // Status é calculado via trigger/cron - realtime cuida da atualização
       
+      // Buscar faturas ordenadas por vencimento ascendente para priorizar vencidas
       const { data, error } = await supabase
         .from("faturas")
         .select(`
@@ -166,19 +167,37 @@ export function useFaturas() {
           responsaveis(nome, email, telefone),
           fatura_alunos(id)
         `)
-        .order("data_vencimento", { ascending: false })
-        .limit(500); // Limitar para performance
+        .order("data_vencimento", { ascending: true })
+        .limit(1000); // Aumentar limite para garantir que faturas vencidas apareçam
       
       if (error) throw error;
       
-      // Calcular quantidade de alunos por fatura
-      const faturasComQtdAlunos = (data || []).map(f => ({
-        ...f,
-        qtd_alunos: f.fatura_alunos?.length || 1,
-        fatura_alunos: undefined, // Remove do objeto final para não poluir
-      }));
+      // Calcular quantidade de alunos por fatura e ordenar: Vencida > Aberta > outras
+      const statusPriority: Record<string, number> = { Vencida: 1, Aberta: 2, Parcial: 3, Paga: 4, Cancelada: 5 };
       
-      return faturasComQtdAlunos as Fatura[];
+      const faturasOrdenadas = (data || [])
+        .map(f => ({
+          ...f,
+          qtd_alunos: f.fatura_alunos?.length || 1,
+          fatura_alunos: undefined,
+        }))
+        .sort((a, b) => {
+          // Primeiro por prioridade de status (Vencida primeiro)
+          const priorityA = statusPriority[a.status] || 99;
+          const priorityB = statusPriority[b.status] || 99;
+          if (priorityA !== priorityB) return priorityA - priorityB;
+          
+          // Depois por data de vencimento (mais próxima primeiro para pendentes, mais recente para pagas)
+          if (priorityA <= 3) {
+            // Faturas pendentes: vencimento mais próximo primeiro
+            return new Date(a.data_vencimento).getTime() - new Date(b.data_vencimento).getTime();
+          } else {
+            // Faturas pagas/canceladas: mais recente primeiro
+            return new Date(b.data_vencimento).getTime() - new Date(a.data_vencimento).getTime();
+          }
+        });
+      
+      return faturasOrdenadas as Fatura[];
     },
     staleTime: 1000 * 30, // 30 segundos - realtime cuida da invalidação
     refetchOnWindowFocus: false,
