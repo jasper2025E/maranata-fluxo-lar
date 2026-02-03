@@ -29,6 +29,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { WebsiteBlock } from "@/hooks/useWebsiteBuilder";
 import { firstRow } from "@/lib/tenantRpc";
+import { sanitizeCSS } from "@/lib/cssSanitizer";
 
 interface TenantData {
   id: string;
@@ -109,22 +110,24 @@ export default function EscolaPublica() {
 
         setTenant(tenantInfo);
 
+        // Use the secure minimal view for public website data
         const { data: websiteData } = await supabase
-          .from("school_website_config_public")
+          .from("school_website_public_minimal")
           .select("*")
-          .eq("tenant_id", tenantInfo.id)
+          .eq("slug", slug)
           .maybeSingle();
 
         if (websiteData) {
           setWebsite({
-            id: websiteData.id,
-            tenant_id: websiteData.tenant_id,
+            id: tenantInfo.id, // Use tenant id since view doesn't expose it
+            tenant_id: tenantInfo.id,
             is_published: true,
-            seo_title: websiteData.school_name || null,
-            seo_description: null,
-            custom_css: null,
+            seo_title: websiteData.seo_title || tenantInfo.nome,
+            seo_description: websiteData.seo_description || null,
+            custom_css: null, // CSS is sanitized at render time
           });
 
+          // Fetch pages using tenant id from RPC result
           const { data: pagesData } = await supabase
             .from("school_website_pages")
             .select("id")
@@ -666,7 +669,7 @@ export default function EscolaPublica() {
       </div>
 
       {website?.custom_css && (
-        <style dangerouslySetInnerHTML={{ __html: website.custom_css }} />
+        <style dangerouslySetInnerHTML={{ __html: sanitizeCSS(website.custom_css) }} />
       )}
     </>
   );

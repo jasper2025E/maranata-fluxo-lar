@@ -7,6 +7,46 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Rate limiting storage (in-memory, resets on cold start)
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW = 60 * 1000; // 1 minute
+const RATE_LIMIT_MAX_REQUESTS = 5; // 5 requests per minute per IP
+
+function getRateLimitKey(req: Request): string {
+  // Try to get real IP from headers (Cloudflare, etc.)
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  const realIp = req.headers.get("x-real-ip");
+  const cfConnectingIp = req.headers.get("cf-connecting-ip");
+  
+  return cfConnectingIp || realIp || forwardedFor?.split(",")[0]?.trim() || "unknown";
+}
+
+function checkRateLimit(key: string): { allowed: boolean; retryAfter?: number } {
+  const now = Date.now();
+  const record = rateLimitMap.get(key);
+  
+  // Clean up expired entries periodically
+  if (Math.random() < 0.1) {
+    for (const [k, v] of rateLimitMap.entries()) {
+      if (v.resetAt < now) rateLimitMap.delete(k);
+    }
+  }
+  
+  if (!record || record.resetAt < now) {
+    // First request or window expired
+    rateLimitMap.set(key, { count: 1, resetAt: now + RATE_LIMIT_WINDOW });
+    return { allowed: true };
+  }
+  
+  if (record.count >= RATE_LIMIT_MAX_REQUESTS) {
+    const retryAfter = Math.ceil((record.resetAt - now) / 1000);
+    return { allowed: false, retryAfter };
+  }
+  
+  record.count++;
+  return { allowed: true };
+}
+
 // Validation schemas
 const responsavelSchema = z.object({
   nome: z.string().min(2).max(200).trim(),
@@ -31,6 +71,28 @@ const requestSchema = z.object({
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
+  }
+
+  // Rate limiting check
+  const clientKey = getRateLimitKey(req);
+  const rateLimitResult = checkRateLimit(clientKey);
+  
+  if (!rateLimitResult.allowed) {
+    console.warn(`Rate limit exceeded for ${clientKey}`);
+    return new Response(
+      JSON.stringify({ 
+        error: "Muitas requisições. Tente novamente em alguns segundos.",
+        retryAfter: rateLimitResult.retryAfter 
+      }),
+      { 
+        status: 429, 
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          "Retry-After": String(rateLimitResult.retryAfter || 60)
+        } 
+      }
+    );
   }
 
   try {
