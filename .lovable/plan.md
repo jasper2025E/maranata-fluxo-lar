@@ -1,182 +1,206 @@
 
+# Plano: Sistema de Sincronização Automática Robusto e Seguro
 
-# Relatório de Verificação Completa - Erros e Bugs
+## Diagnóstico Completo - Status Atual
 
-## Resumo Executivo
+### O que JÁ está funcionando corretamente:
 
-Realizei uma análise profunda do sistema, incluindo:
-- Banco de dados e integridade de dados
-- Hooks e lógica de cache React Query
-- Componentes de UI e estados de loading
-- Edge Functions e triggers
-- Segurança (RLS e políticas)
-- Subscriptions Realtime
+| Componente | Status | Descrição |
+|------------|--------|-----------|
+| Cron Job | ✅ OK | `sync-asaas-payments-every-5min` executando a cada 5 minutos com sucesso |
+| Webhook Asaas | ✅ OK | Configurado e processando eventos com idempotência |
+| Realtime Provider | ✅ OK | Canal global unificado escutando 8 tabelas principais |
+| Triggers SQL | ✅ OK | `sync_fatura_status_from_asaas` + `init_saldo_restante` funcionando |
+| Integridade de Dados | ✅ OK | Zero faturas inconsistentes no momento |
+| Priorização Vencidas | ✅ OK | Cron processa faturas vencidas primeiro (100) antes das abertas (50) |
 
----
+### Gaps Identificados para Resolver:
 
-## Status dos Dados
-
-| Verificação | Resultado |
-|-------------|-----------|
-| Faturas sem aluno | 0 (OK) |
-| Pagamentos sem fatura | 0 (OK) |
-| Alunos sem curso | 0 (OK) |
-| Faturas pagas sem pagamento | 0 (OK) |
-| Faturas duplicadas ASAAS | 0 (OK) |
-| Responsáveis órfãos | 0 (OK) |
-| Total faturas abertas | 504 (R$ 92.468,00) |
-| Total pagamentos | 2 (R$ 460,00) |
-| saldo_restante correto | SIM |
-
-**Conclusão de Dados**: Integridade 100% OK.
+| Issue | Risco | Descrição |
+|-------|-------|-----------|
+| Faturas sem asaas_payment_id | Médio | Faturas locais não sincronizadas ficam invisíveis para o cron |
+| Webhook pode não chegar | Médio | Se Asaas falha em enviar webhook, depende 100% do cron |
+| Status local vs gateway | Baixo | Atualmente só sync verifica, mas não notifica usuário |
+| Outros gateways | Placeholder | Stripe/MercadoPago ainda não implementados |
 
 ---
 
-## Issues de Segurança Identificados
+## Melhorias a Implementar
 
-### 1. Security Definer View (ERRO)
-Existe uma view com SECURITY DEFINER que pode expor dados indevidamente.
+### 1. Proteção Contra Faturas "Órfãs" (Sem Gateway Sync)
 
-**Recomendação**: Revisar e remover SECURITY DEFINER se não for necessário.
+Criar verificação periódica para detectar faturas abertas SEM `asaas_payment_id` e alertar admin:
 
-### 2. Políticas RLS com "USING (true)" (4 AVISOS)
-Tabelas afetadas:
-- `platform_changelog` - SELECT com true
-- `security_access_logs` - INSERT com true
-- `api_request_logs` - INSERT com true  
-- `webhook_logs` - INSERT com true
-- `prematricula_leads` - INSERT com true
+```typescript
+// Nova função no sync-asaas-payments para detectar órfãs
+const { data: faturasOrfas } = await supabase
+  .from("faturas")
+  .select("id, aluno_id, data_vencimento, valor")
+  .is("asaas_payment_id", null)
+  .eq("status", "Aberta")
+  .lt("data_vencimento", new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0])
+  .limit(20);
 
-**Análise**: Estas são tabelas de logs e sistema. As políticas "true" em INSERT são intencionais para permitir que o sistema registre logs. Baixo risco, mas vale documentar.
-
-### 3. Proteção de Senhas Vazadas Desabilitada
-O Supabase Auth não está verificando senhas vazadas (haveibeenpwned).
-
-**Recomendação**: Habilitar nas configurações do Auth.
-
----
-
-## Bugs Potenciais no Frontend
-
-### 1. Channels Realtime Duplicados (MODERADO)
-O hook `useFaturas` e `useFaturaKPIs` criam channels separados que escutam as mesmas tabelas. Isso pode causar:
-- Múltiplas invalidações para o mesmo evento
-- Consumo extra de recursos
-
-**Recomendação**: Consolidar em um único channel global ou usar um provider.
-
-### 2. Uso de `.single()` em Mutations (BAIXO RISCO)
-Várias mutations usam `.single()` após INSERT. Se o INSERT falhar silenciosamente, pode gerar erro de "no rows".
-
-**Afetados**:
-- `useCreateCurso`
-- `useUpdateCurso`
-- `useCreateTurma`
-- `useUpdateTurma`
-- `useCreateResponsavel`
-- `useToggleResponsavelAtivo`
-- `useToggleCursoAtivo`
-
-**Mitigação atual**: Todos já têm try/catch com toast de erro.
-
-### 3. Configuration `refetchOnMount: false` Global (INFORMATIVO)
-A configuração global desabilita refetch ao montar componentes. Isso é intencional para performance, mas pode causar dados desatualizados se:
-- Usuário navega entre telas rapidamente
-- Cache expirou durante navegação
-
-**Mitigação atual**: Realtime subscription cuida da invalidação.
-
----
-
-## Triggers e Funções - OK
-
-| Trigger/Função | Status |
-|----------------|--------|
-| `init_saldo_restante` | Funcionando |
-| `sync_fatura_status_from_asaas` | Funcionando (inclui criação de pagamento) |
-| `sync_escola_to_tenant` | Funcionando |
-| `sync_tenant_to_escola` | Funcionando |
-
----
-
-## Edge Functions - Status
-
-Logs recentes mostram erros em `asaas-get-payment`:
-```
-Erro: Error: Erro ao buscar pagamento no Asaas
+if (faturasOrfas?.length) {
+  // Criar notificação de alerta
+  await supabase.from("notifications").insert({
+    title: "Faturas sem Cobrança",
+    message: `${faturasOrfas.length} faturas vencem em breve sem cobrança no gateway`,
+    type: "warning",
+    link: "/faturas"
+  });
+}
 ```
 
-**Causa provável**: Faturas consultadas não têm cobrança ASAAS criada.
+### 2. Melhorar Resiliência do Webhook
 
-**Impacto**: Baixo - a função já retorna erro apropriado e o frontend trata.
+Adicionar validação de duplicidade e retry no webhook handler:
+
+```typescript
+// Já existe idempotência por status, adicionar por timestamp
+const { data: recentWebhook } = await supabase
+  .from("webhook_logs")
+  .select("id")
+  .eq("source", "asaas")
+  .contains("payload", { payment: { id: payment.id } })
+  .eq("status", "processed")
+  .gte("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString())
+  .maybeSingle();
+
+if (recentWebhook) {
+  // Mesmo webhook já processado recentemente
+  return Response.json({ skipped: true, reason: "duplicate_event" });
+}
+```
+
+### 3. Sincronização Bidirecional Melhorada
+
+Atualizar o `gateway-sync-payment` para sempre sincronizar status do Asaas quando consultar:
+
+```typescript
+// Em getAsaasPaymentData - já existe, mas garantir que atualiza status local
+if (payment.status !== fatura.asaas_status) {
+  const statusMap = {
+    'RECEIVED': 'Paga', 'CONFIRMED': 'Paga', 
+    'OVERDUE': 'Vencida', 'PENDING': 'Aberta'
+  };
+  
+  await supabase.from("faturas").update({
+    asaas_status: payment.status,
+    status: statusMap[payment.status] || fatura.status,
+    updated_at: new Date().toISOString()
+  }).eq("id", fatura.id);
+}
+```
+
+### 4. Notificações Automáticas de Inconsistência
+
+Adicionar alerta quando sync detectar divergência:
+
+```typescript
+// Quando sync corrige uma fatura, notificar
+if (shouldUpdate && newLocalStatus !== localStatus) {
+  await supabase.from("notifications").insert({
+    tenant_id: fatura.tenant_id,
+    title: `Fatura ${fatura.id.slice(0,8)} Sincronizada`,
+    message: `Status atualizado: ${localStatus} → ${newLocalStatus}`,
+    type: "info",
+    link: "/faturas"
+  });
+}
+```
+
+### 5. Dashboard de Saúde da Integração (Opcional - Fase 2)
+
+Criar endpoint para verificar saúde da sincronização:
+- Última execução do cron
+- Faturas pendentes de sync
+- Webhooks recebidos nas últimas 24h
+- Erros recentes
 
 ---
 
-## Realtime - Configuração
+## Arquitetura Resultante
 
-Tabelas habilitadas para Realtime:
-- `faturas`
-- `pagamentos`
-- `notifications`
-
-**OK** - As tabelas principais estão configuradas.
-
----
-
-## Melhorias Recomendadas
-
-### Prioridade ALTA (Segurança)
-
-1. **Habilitar proteção de senhas vazadas**
-   - Configurar no Supabase Auth
-
-2. **Revisar Security Definer View**
-   - Identificar qual view e avaliar risco
-
-### Prioridade MÉDIA (Estabilidade)
-
-3. **Consolidar Realtime Subscriptions**
-   - Criar um provider global `RealtimeProvider` que gerencia todos os channels
-   - Evita duplicação e facilita debug
-
-4. **Adicionar error boundaries em componentes críticos**
-   - Dashboard, Faturas, Pagamentos já têm tratamento adequado
-
-### Prioridade BAIXA (Otimização)
-
-5. **Migrar `.single()` para `.maybeSingle()` em detalhes**
-   - Já foi feito nos hooks principais (useFatura, useCurso, useTurma)
-   - Mutations podem manter `.single()` pois esperam sempre 1 resultado
-
-6. **Adicionar logging estruturado**
-   - Substituir `console.log` por logger com níveis
+```text
+┌─────────────────────────────────────────────────────────────────────┐
+│                    CAMADA 1: WEBHOOK (Real-time)                    │
+│  Asaas → POST /asaas-webhook → Processa imediatamente              │
+│  ✅ Idempotente | ✅ Cria pagamento | ✅ Notifica usuário           │
+├─────────────────────────────────────────────────────────────────────┤
+│                    CAMADA 2: CRON (Failsafe cada 5min)              │
+│  pg_cron → sync-asaas-payments → Verifica divergências             │
+│  ✅ Prioriza vencidas | ✅ Corrige status | ✅ Registra pagamentos  │
+├─────────────────────────────────────────────────────────────────────┤
+│                    CAMADA 3: TRIGGER SQL (Garantia Final)           │
+│  trigger_sync_fatura_asaas_status → Quando asaas_status muda       │
+│  ✅ Atualiza status local | ✅ Cria pagamento se não existe        │
+├─────────────────────────────────────────────────────────────────────┤
+│                    CAMADA 4: REALTIME (Frontend)                    │
+│  RealtimeProvider → Escuta faturas/pagamentos/etc                   │
+│  ✅ Invalida cache | ✅ Atualiza UI automaticamente                 │
+└─────────────────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Conclusão
+## Arquivos a Modificar
 
-O sistema está em estado saudável para produção:
-
-| Categoria | Status |
-|-----------|--------|
-| Dados | OK |
-| Segurança | ATENÇÃO (3 itens) |
-| Frontend | OK |
-| Backend/Edge | OK |
-| Realtime | OK |
-| Cache | OK |
-
-**Recomendação**: Aprovar o sistema para produção, com acompanhamento dos 3 itens de segurança listados que são melhorias opcionais e não bloqueadoras.
+| Arquivo | Mudança |
+|---------|---------|
+| `supabase/functions/sync-asaas-payments/index.ts` | Adicionar detecção de faturas órfãs e notificações |
+| `supabase/functions/asaas-webhook/index.ts` | Melhorar proteção contra duplicatas |
+| `supabase/functions/gateway-sync-payment/index.ts` | Garantir sync bidirecional de status |
+| `src/contexts/RealtimeProvider.tsx` | Adicionar escuta de `gateway_transaction_logs` (opcional) |
 
 ---
 
-## Ações Sugeridas (Opcionais)
+## Garantias de Segurança (CRÍTICO)
 
-Se quiser que eu implemente melhorias, posso:
+| Regra | Implementação |
+|-------|---------------|
+| Sem deleção de dados | Apenas UPDATE, INSERT, SELECT |
+| Sem alteração de schema destrutiva | Nenhuma coluna removida |
+| Backward compatible | Todas funções mantêm assinatura atual |
+| Sem downtime | Edge functions deployam em segundos |
+| Dados de produção preservados | Zero risco de perda |
 
-1. **Habilitar proteção de senhas vazadas** - via configuração Auth
-2. **Criar RealtimeProvider consolidado** - otimização de subscriptions
-3. **Adicionar mais tabelas ao Realtime** - ex: `despesas`, `alunos` para atualizações globais
+---
 
-Nenhuma dessas ações é obrigatória - o sistema está funcionando corretamente.
+## Seção Técnica Detalhada
 
+### Fluxo de Sincronização Completo
+
+1. **Fatura criada** → Trigger `init_saldo_restante` define saldo
+2. **Cobrança criada no Asaas** → `asaas_payment_id` salvo na fatura
+3. **Pagamento realizado no Asaas** → Webhook recebe evento
+4. **Webhook processa** → Atualiza `asaas_status` → Trigger atualiza `status` local
+5. **Trigger cria pagamento** → Registro em `pagamentos` tabela
+6. **Realtime notifica frontend** → Cache invalidado → UI atualiza
+
+### Se Webhook Falhar
+
+1. **Cron executa a cada 5 minutos** → Consulta API Asaas diretamente
+2. **Detecta divergência** → Atualiza `asaas_status`
+3. **Trigger dispara** → Mesmo fluxo do webhook
+4. **Frontend atualiza** → Via Realtime subscription
+
+### Códigos de Status Mapeados
+
+| Asaas Status | Status Local | Ação |
+|--------------|--------------|------|
+| PENDING | Aberta | Nenhuma |
+| RECEIVED, CONFIRMED, RECEIVED_IN_CASH | Paga | Criar pagamento |
+| OVERDUE, DUNNING_REQUESTED | Vencida | Atualizar status |
+| REFUNDED, CHARGEBACK | Cancelada | Notificar admin |
+
+---
+
+## Resultado Esperado
+
+Após implementação:
+- Zero faturas "presas" ou desincronizadas
+- Atualizações refletidas em < 5 minutos (pior caso) ou < 1 segundo (webhook)
+- Dashboard sempre atualizado via Realtime
+- Notificações automáticas para situações anômalas
+- Sistema gateway-agnostic pronto para outros provedores
