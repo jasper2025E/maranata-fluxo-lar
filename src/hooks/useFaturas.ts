@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { queryClient as globalQueryClient } from "@/lib/queryClient";
 
 export interface FaturaItem {
   id?: string;
@@ -142,8 +144,39 @@ export const queryKeys = {
   },
 };
 
-// Hook para listar faturas - OTIMIZADO
+// Hook para listar faturas - OTIMIZADO com Realtime
 export function useFaturas() {
+  const queryClient = useQueryClient();
+
+  // Subscription realtime para atualização automática
+  useEffect(() => {
+    const channel = supabase
+      .channel("faturas-realtime-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "faturas" },
+        (payload) => {
+          console.log("[useFaturas] Realtime update faturas:", payload.eventType);
+          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pagamentos" },
+        (payload) => {
+          console.log("[useFaturas] Realtime update pagamentos:", payload.eventType);
+          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
+        }
+      )
+      .subscribe((status) => {
+        console.log("[useFaturas] Realtime subscription status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: queryKeys.faturas.list(),
     queryFn: async () => {
@@ -154,8 +187,7 @@ export function useFaturas() {
         return [];
       }
 
-      // REMOVIDO: await supabase.rpc("atualizar_status_faturas") 
-      // Status é calculado via trigger/cron ou no frontend para evitar latência
+      // Status é calculado via trigger/cron - realtime cuida da atualização
       
       const { data, error } = await supabase
         .from("faturas")
@@ -180,7 +212,7 @@ export function useFaturas() {
       
       return faturasComQtdAlunos as Fatura[];
     },
-    staleTime: 1000 * 60 * 2, // 2 minutos - cache mais agressivo
+    staleTime: 1000 * 30, // 30 segundos - realtime cuida da invalidação
     refetchOnWindowFocus: false,
     refetchOnMount: false, // Usa cache se disponível
   });
