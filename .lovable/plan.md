@@ -1,130 +1,71 @@
 
-# Plano de Correção: sync-asaas-payments
+# Plano de Correção: Campo saldo_restante
 
-## Diagnóstico
+## Problema Identificado
 
-O módulo de faturas não está refletindo pagamentos porque a Edge Function `sync-asaas-payments` está com um **bug crítico**:
+O campo `saldo_restante` nas faturas está com valor **0** para todas as 504 faturas abertas, quando deveria ter o `valor_total`. Isso causa:
 
-| Problema | Detalhe |
-|----------|---------|
-| Coluna inexistente | O código busca `api_key` diretamente da tabela `tenant_gateway_configs` |
-| Coluna inexistente | O código busca `sandbox_mode`, mas o campo correto é `environment` |
-| API key não encontrada | Por isso o log mostra "Tenant sem API key Asaas configurada" |
+- KPI "A Receber" mostrando R$ 0,00 ao invés de R$ 92.468,00
+- Cálculos financeiros incorretos
 
-**Logs comprovando o problema:**
-```
-WARNING [sync-asaas-payments] Tenant a1692822-1e09-4e24-84e1-53bbc22253f0 sem API key Asaas configurada
-```
+## Causa
 
-**Mas a API key EXISTE** - está na tabela `tenant_gateway_secrets` (criptografada).
+- O campo tem `DEFAULT 0` no banco
+- Ao criar faturas, o sistema NÃO inicializa `saldo_restante` com `valor_total`
+- O cálculo do KPI usa `saldo_restante` primeiro (quando não é NULL)
 
-## Solução
+## Solução (2 Partes)
 
-Corrigir o `sync-asaas-payments` para usar a função utilitária `getAsaasCredentials()` do `gateway-utils.ts` que já faz:
-1. Busca na tabela correta (`tenant_gateway_secrets`)
-2. Decriptografa o secret
-3. Determina URL da API baseado no `environment`
+### 1. Correção Imediata dos Dados Existentes
 
-## Mudanças Necessárias
+Atualizar todas as faturas abertas/emitidas para ter `saldo_restante = valor_total`:
 
-### Arquivo: `supabase/functions/sync-asaas-payments/index.ts`
-
-**Antes (código incorreto):**
-```typescript
-// Linhas 72-84 - Busca direta com colunas inexistentes
-const { data: gatewayConfig } = await supabase
-  .from("tenant_gateway_configs")
-  .select("id, api_key, sandbox_mode")  // ❌ Colunas não existem!
-  .eq("tenant_id", tenantId)
-  ...
-
-if (!gatewayConfig?.api_key) {  // ❌ Sempre undefined
-  console.warn(`Tenant ${tenantId} sem API key Asaas configurada`);
-  continue;
-}
+```sql
+UPDATE faturas
+SET saldo_restante = COALESCE(valor_total, valor)
+WHERE status IN ('Aberta', 'Vencida', 'Emitida')
+  AND (saldo_restante IS NULL OR saldo_restante = 0)
+  AND COALESCE(valor_total, valor) > 0;
 ```
 
-**Depois (código corrigido):**
-```typescript
-import { getAsaasCredentials } from "../_shared/gateway-utils.ts";
+### 2. Trigger para Futuras Faturas
 
-// Dentro do loop de tenants:
-const credentials = await getAsaasCredentials(supabase, tenantId);
+Criar trigger que inicializa `saldo_restante` automaticamente na criação:
 
-if (!credentials.apiKey) {
-  console.warn(`[sync-asaas-payments] Tenant ${tenantId} sem API key Asaas configurada`);
-  continue;
-}
+```sql
+CREATE OR REPLACE FUNCTION init_saldo_restante()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.saldo_restante IS NULL OR NEW.saldo_restante = 0 THEN
+    NEW.saldo_restante := COALESCE(NEW.valor_total, NEW.valor, 0);
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
 
-const ASAAS_API_URL = credentials.apiUrl;
+CREATE TRIGGER trigger_init_saldo_restante
+  BEFORE INSERT ON faturas
+  FOR EACH ROW
+  EXECUTE FUNCTION init_saldo_restante();
 ```
-
-## Sequência de Implementação
-
-```text
-┌──────────────────────────────────────────────────────────────┐
-│  1. Corrigir import e uso de getAsaasCredentials             │
-├──────────────────────────────────────────────────────────────┤
-│  - Adicionar import de getAsaasCredentials                   │
-│  - Substituir query direta por chamada da função utilitária  │
-│  - Usar credentials.apiKey e credentials.apiUrl              │
-└──────────────────────────────────────────────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────────┐
-│  2. Deploy automático da Edge Function                       │
-├──────────────────────────────────────────────────────────────┤
-│  - O Lovable faz deploy automático após salvar               │
-└──────────────────────────────────────────────────────────────┘
-                              ↓
-┌──────────────────────────────────────────────────────────────┐
-│  3. Testar sincronização manualmente                         │
-├──────────────────────────────────────────────────────────────┤
-│  - Invocar a Edge Function para validar                      │
-│  - Verificar se faturas inconsistentes são corrigidas        │
-└──────────────────────────────────────────────────────────────┘
-```
-
-## Detalhes Técnicos
-
-### Arquivo a Modificar
-
-| Arquivo | Ação |
-|---------|------|
-| `supabase/functions/sync-asaas-payments/index.ts` | Corrigir busca de credenciais |
-
-### Estrutura Real do Banco
-
-A tabela `tenant_gateway_configs` **não tem** `api_key`:
-
-| Coluna | Tipo |
-|--------|------|
-| id | uuid |
-| tenant_id | uuid |
-| gateway_type | enum |
-| environment | enum (sandbox/production) |
-| is_active | boolean |
-| is_default | boolean |
-| settings | jsonb |
-
-Os secrets ficam em `tenant_gateway_secrets`:
-
-| Coluna | Tipo |
-|--------|------|
-| gateway_config_id | uuid (FK) |
-| key_name | text (ex: "api_key") |
-| encrypted_value | text (AES-256-GCM) |
-
-### Garantias
-
-- Sem alteração de estrutura de banco
-- Sem exclusão de dados
-- Usa função utilitária já existente e testada
-- Mantém compatibilidade com fallback global (`ASAAS_API_KEY` env var)
 
 ## Resultado Esperado
 
 | Antes | Depois |
 |-------|--------|
-| `Tenant sem API key Asaas configurada` | Credentials encontradas e usadas |
-| 0 faturas sincronizadas | Faturas com status divergente corrigidas |
-| Dashboard desatualizado | Atualização automática via cron + realtime |
+| A Receber: R$ 0,00 | A Receber: R$ 92.468,00 |
+| saldo_restante = 0 | saldo_restante = valor_total |
+| KPIs incorretos | KPIs refletindo valores reais |
+
+## Arquivos Afetados
+
+| Arquivo | Ação |
+|---------|------|
+| Nova migração SQL | Correção de dados + Trigger |
+
+## Garantias de Segurança
+
+- Sem exclusão de dados
+- Apenas UPDATE de campo numérico
+- Trigger não afeta lógica existente
+- 100% reversível se necessário
