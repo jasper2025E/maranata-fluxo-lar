@@ -68,12 +68,30 @@ serve(async (req) => {
 
     const faturaId = payment.externalReference;
 
-    // Buscar fatura para obter tenant_id e gateway_config_id
+    // Buscar fatura para obter tenant_id, gateway_config_id E status atual (idempotência)
     const { data: fatura } = await supabase
       .from("faturas")
-      .select("id, valor, valor_total, tenant_id, gateway_config_id")
+      .select("id, valor, valor_total, tenant_id, gateway_config_id, status, asaas_status")
       .eq("id", faturaId)
       .single();
+
+    // Verificar idempotência - se já foi processado com mesmo status, ignorar
+    if (fatura && fatura.asaas_status === payment.status) {
+      console.log(`[asaas-webhook] Fatura ${faturaId}: Status ${payment.status} já processado (idempotente)`);
+      
+      await supabase.from("webhook_logs").insert({
+        source: "asaas",
+        event_type: eventType,
+        payload,
+        status: 'skipped',
+        processing_time_ms: Date.now() - startTime,
+        ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+      });
+      
+      return new Response(JSON.stringify({ received: true, skipped: true, reason: "already_processed" }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
 
     // Mapear status do Asaas para status interno
     const statusMap: Record<string, string> = {
@@ -93,6 +111,10 @@ serve(async (req) => {
     };
 
     const newStatus = statusMap[payment.status] || "Aberta";
+    const oldStatus = fatura?.status || "desconhecido";
+
+    // Log detalhado de transição de status
+    console.log(`[asaas-webhook] Fatura ${faturaId}: ${oldStatus} → ${newStatus} (asaas: ${fatura?.asaas_status} → ${payment.status})`);
 
     // Atualizar fatura
     const updateData: any = {

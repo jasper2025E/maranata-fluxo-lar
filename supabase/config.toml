@@ -65,3 +65,6 @@ verify_jwt = false
 
 [functions.register-prematricula]
 verify_jwt = false
+
+[functions.sync-asaas-payments]
+verify_jwt = false

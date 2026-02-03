@@ -3949,6 +3949,15 @@ export type Database = {
           unique_tenants_accessed: number
         }[]
       }
+      fix_asaas_status_inconsistencies: {
+        Args: never
+        Returns: {
+          asaas_status: string
+          fatura_id: string
+          new_status: string
+          old_status: string
+        }[]
+      }
       generate_ponto_token: {
         Args: { p_funcionario_id: string }
         Returns: string
