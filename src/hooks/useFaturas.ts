@@ -1,5 +1,4 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { queryClient as globalQueryClient } from "@/lib/queryClient";
@@ -144,45 +143,8 @@ export const queryKeys = {
   },
 };
 
-// Hook para listar faturas - OTIMIZADO com Realtime
+// Hook para listar faturas - OTIMIZADO (realtime gerenciado pelo RealtimeProvider)
 export function useFaturas() {
-  const queryClient = useQueryClient();
-
-  // Subscription realtime para atualização automática - UNIFICADA
-  useEffect(() => {
-    const channel = supabase
-      .channel("faturas-realtime-unified")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "faturas" },
-        (payload) => {
-          console.log("[useFaturas] Realtime update faturas:", payload.eventType);
-          // Invalidar TODOS os caches relacionados a faturas
-          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
-          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis(), refetchType: 'all' });
-          queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'], refetchType: 'all' });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "pagamentos" },
-        (payload) => {
-          console.log("[useFaturas] Realtime update pagamentos:", payload.eventType);
-          // Invalidar TODOS os caches relacionados quando pagamento muda
-          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
-          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis(), refetchType: 'all' });
-          queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'], refetchType: 'all' });
-        }
-      )
-      .subscribe((status) => {
-        console.log("[useFaturas] Realtime unified subscription status:", status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
   return useQuery({
     queryKey: queryKeys.faturas.list(),
     queryFn: async () => {
@@ -319,38 +281,8 @@ export function useFaturaPagamentos(faturaId: string | null) {
   });
 }
 
-// Hook para KPIs - COM REALTIME SUBSCRIPTION
+// Hook para KPIs - Realtime gerenciado pelo RealtimeProvider
 export function useFaturaKPIs() {
-  const queryClient = useQueryClient();
-
-  // Subscription realtime dedicada para KPIs - garante atualização instantânea
-  useEffect(() => {
-    const channel = supabase
-      .channel("faturas-kpis-realtime")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "faturas" },
-        (payload) => {
-          console.log("[useFaturaKPIs] Fatura changed - refresh KPIs:", payload.eventType);
-          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis(), refetchType: 'all' });
-        }
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "pagamentos" },
-        (payload) => {
-          console.log("[useFaturaKPIs] Pagamento changed - refresh KPIs:", payload.eventType);
-          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis(), refetchType: 'all' });
-        }
-      )
-      .subscribe((status) => {
-        console.log("[useFaturaKPIs] Realtime subscription status:", status);
-      });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
 
   return useQuery({
     queryKey: queryKeys.faturas.kpis(),
