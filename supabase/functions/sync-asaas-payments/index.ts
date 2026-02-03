@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { getSupabaseAdmin, logGatewayTransaction } from "../_shared/gateway-utils.ts";
+import { getSupabaseAdmin, logGatewayTransaction, getAsaasCredentials } from "../_shared/gateway-utils.ts";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -69,23 +69,21 @@ serve(async (req) => {
 
     // Processar cada tenant
     for (const [tenantId, tenantFaturas] of Object.entries(faturasByTenant)) {
-      // Buscar API key do tenant
-      const { data: gatewayConfig } = await supabase
-        .from("tenant_gateway_configs")
-        .select("id, api_key, sandbox_mode")
-        .eq("tenant_id", tenantId)
-        .eq("gateway_type", "asaas")
-        .eq("is_active", true)
-        .single();
+      // Buscar credenciais do tenant usando a função utilitária correta
+      let credentials: { apiKey: string; apiUrl: string; configId: string | null };
+      try {
+        credentials = await getAsaasCredentials(supabase, tenantId === 'default' ? null : tenantId);
+      } catch (credError) {
+        console.warn(`[sync-asaas-payments] Tenant ${tenantId} sem API key Asaas configurada:`, credError);
+        continue;
+      }
 
-      if (!gatewayConfig?.api_key) {
+      if (!credentials.apiKey) {
         console.warn(`[sync-asaas-payments] Tenant ${tenantId} sem API key Asaas configurada`);
         continue;
       }
 
-      const ASAAS_API_URL = gatewayConfig.sandbox_mode 
-        ? "https://sandbox.asaas.com/api/v3"
-        : "https://api.asaas.com/api/v3";
+      const ASAAS_API_URL = credentials.apiUrl;
 
       // Processar faturas do tenant
       for (const fatura of tenantFaturas) {
@@ -93,7 +91,7 @@ serve(async (req) => {
           // Consultar status no Asaas
           const response = await fetch(`${ASAAS_API_URL}/payments/${fatura.asaas_payment_id}`, {
             headers: {
-              'access_token': gatewayConfig.api_key,
+              'access_token': credentials.apiKey,
               'Content-Type': 'application/json',
             },
           });

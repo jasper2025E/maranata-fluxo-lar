@@ -106,7 +106,7 @@ export async function getTenantGatewayCredentials(
   switch (gatewayType) {
     case "asaas":
       apiUrl = isProduction 
-        ? "https://api.asaas.com/v3" 
+        ? "https://www.asaas.com/api/v3" 
         : "https://sandbox.asaas.com/api/v3";
       break;
     case "mercado_pago":
@@ -192,7 +192,7 @@ export async function getAsaasCredentials(
   return {
     apiKey: globalKey,
     apiUrl: isProduction 
-      ? "https://api.asaas.com/v3" 
+      ? "https://www.asaas.com/api/v3" 
       : "https://sandbox.asaas.com/api/v3",
     configId: null,
   };
