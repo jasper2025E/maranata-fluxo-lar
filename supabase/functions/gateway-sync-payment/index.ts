@@ -232,6 +232,31 @@ async function getAsaasPaymentData(
 
   const payment = await paymentRes.json();
 
+  // =============================================
+  // SYNC BIDIRECIONAL: Atualizar status local se divergente
+  // =============================================
+  const ASAAS_PAID_STATUSES = ['RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH', 'DUNNING_RECEIVED'];
+  const ASAAS_OVERDUE_STATUSES = ['OVERDUE', 'DUNNING_REQUESTED'];
+  const ASAAS_CANCELLED_STATUSES = ['REFUNDED', 'REFUND_REQUESTED', 'CHARGEBACK_REQUESTED', 'CHARGEBACK_DISPUTE', 'AWAITING_CHARGEBACK_REVERSAL'];
+
+  let statusChanged = false;
+  let newLocalStatus = fatura.status;
+  const oldLocalStatus = fatura.status;
+
+  if (payment.status !== fatura.asaas_status) {
+    // Mapear status
+    if (ASAAS_PAID_STATUSES.includes(payment.status) && fatura.status !== 'Paga') {
+      newLocalStatus = 'Paga';
+      statusChanged = true;
+    } else if (ASAAS_OVERDUE_STATUSES.includes(payment.status) && fatura.status !== 'Vencida') {
+      newLocalStatus = 'Vencida';
+      statusChanged = true;
+    } else if (ASAAS_CANCELLED_STATUSES.includes(payment.status) && fatura.status !== 'Cancelada') {
+      newLocalStatus = 'Cancelada';
+      statusChanged = true;
+    }
+  }
+
   // Buscar PIX QR Code
   let pixQrCode = fatura.asaas_pix_qrcode;
   if (!pixQrCode) {
@@ -284,16 +309,76 @@ async function getAsaasPaymentData(
     }
   }
 
-  // Atualizar status
+  // =============================================
+  // ATUALIZAR STATUS COM SYNC BIDIRECIONAL
+  // =============================================
+  const updateData: Record<string, unknown> = {
+    asaas_status: payment.status,
+    asaas_invoice_url: payment.invoiceUrl,
+    payment_url: payment.invoiceUrl,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (statusChanged) {
+    updateData.status = newLocalStatus;
+    if (newLocalStatus === 'Paga') {
+      updateData.saldo_restante = 0;
+    }
+    if (newLocalStatus === 'Cancelada') {
+      updateData.motivo_cancelamento = `Gateway sync: ${payment.status}`;
+    }
+    console.log(`[gateway-sync-payment] Sync bidirecional: ${oldLocalStatus} → ${newLocalStatus} (asaas: ${payment.status})`);
+  }
+
   await supabase
     .from("faturas")
-    .update({
-      asaas_status: payment.status,
-      asaas_invoice_url: payment.invoiceUrl,
-      payment_url: payment.invoiceUrl,
-      updated_at: new Date().toISOString(),
-    })
+    .update(updateData)
     .eq("id", fatura.id);
+
+  // =============================================
+  // NOTIFICAR USUÁRIO SE HOUVE CORREÇÃO
+  // =============================================
+  if (statusChanged && fatura.tenant_id) {
+    await supabase.from("notifications").insert({
+      tenant_id: fatura.tenant_id,
+      title: "Fatura Sincronizada",
+      message: `Status corrigido automaticamente: ${oldLocalStatus} → ${newLocalStatus}`,
+      type: "info",
+      link: "/faturas"
+    });
+
+    // Se pago, garantir que pagamento existe
+    if (ASAAS_PAID_STATUSES.includes(payment.status)) {
+      const { data: existingPayment } = await supabase
+        .from("pagamentos")
+        .select("id")
+        .eq("fatura_id", fatura.id)
+        .eq("gateway", "asaas")
+        .eq("gateway_id", payment.id)
+        .maybeSingle();
+
+      if (!existingPayment) {
+        const metodo = payment.billingType === "PIX" ? "PIX" 
+          : payment.billingType === "BOLETO" ? "Boleto"
+          : payment.billingType === "CREDIT_CARD" ? "Cartão"
+          : "Asaas";
+
+        await supabase.from("pagamentos").insert({
+          fatura_id: fatura.id,
+          valor: payment.value || fatura.valor,
+          metodo,
+          data_pagamento: payment.paymentDate || new Date().toISOString().split('T')[0],
+          gateway: "asaas",
+          gateway_id: payment.id,
+          gateway_status: payment.status,
+          gateway_config_id: fatura.gateway_config_id,
+          referencia: payment.invoiceNumber || payment.id,
+          tenant_id: fatura.tenant_id,
+        });
+        console.log(`[gateway-sync-payment] Pagamento registrado via sync para fatura ${fatura.id}`);
+      }
+    }
+  }
 
   return {
     success: true,
