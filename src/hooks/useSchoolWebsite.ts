@@ -111,11 +111,11 @@ export function useSchoolWebsiteBySlug(slug: string) {
   return useQuery({
     queryKey: ["school-website-public", slug],
     queryFn: async (): Promise<SchoolWebsiteConfig | null> => {
+      // Use secure public view that hides sensitive fields
       const { data, error } = await supabase
-        .from("school_website_config")
+        .from("school_website_public_safe")
         .select("*")
         .eq("slug", slug)
-        .eq("enabled", true)
         .maybeSingle();
 
       if (error) {

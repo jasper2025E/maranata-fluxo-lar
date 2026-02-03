@@ -3905,6 +3905,137 @@ export type Database = {
         }
         Relationships: []
       }
+      school_website_public_safe: {
+        Row: {
+          about_description: string | null
+          about_features: Json | null
+          about_title: string | null
+          accent_color: string | null
+          contact_subtitle: string | null
+          contact_title: string | null
+          differentials: Json | null
+          enabled: boolean | null
+          facebook_pixel_id: string | null
+          font_family: string | null
+          footer_text: string | null
+          gallery_images: Json | null
+          google_analytics_id: string | null
+          google_tag_manager_id: string | null
+          hero_background_url: string | null
+          hero_badge_text: string | null
+          hero_cta_primary: string | null
+          hero_cta_secondary: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          map_embed_url: string | null
+          og_image_url: string | null
+          prematricula_enabled: boolean | null
+          prematricula_fields: Json | null
+          prematricula_subtitle: string | null
+          prematricula_title: string | null
+          primary_color: string | null
+          secondary_color: string | null
+          seo_description: string | null
+          seo_keywords: string | null
+          seo_title: string | null
+          show_map: boolean | null
+          show_powered_by: boolean | null
+          slug: string | null
+          social_links: Json | null
+          steps: Json | null
+          tenant_id: string | null
+          testimonials: Json | null
+        }
+        Insert: {
+          about_description?: string | null
+          about_features?: Json | null
+          about_title?: string | null
+          accent_color?: string | null
+          contact_subtitle?: string | null
+          contact_title?: string | null
+          differentials?: Json | null
+          enabled?: boolean | null
+          facebook_pixel_id?: string | null
+          font_family?: string | null
+          footer_text?: string | null
+          gallery_images?: Json | null
+          google_analytics_id?: string | null
+          google_tag_manager_id?: string | null
+          hero_background_url?: string | null
+          hero_badge_text?: string | null
+          hero_cta_primary?: string | null
+          hero_cta_secondary?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          map_embed_url?: string | null
+          og_image_url?: string | null
+          prematricula_enabled?: boolean | null
+          prematricula_fields?: Json | null
+          prematricula_subtitle?: string | null
+          prematricula_title?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          seo_description?: string | null
+          seo_keywords?: string | null
+          seo_title?: string | null
+          show_map?: boolean | null
+          show_powered_by?: boolean | null
+          slug?: string | null
+          social_links?: Json | null
+          steps?: Json | null
+          tenant_id?: string | null
+          testimonials?: Json | null
+        }
+        Update: {
+          about_description?: string | null
+          about_features?: Json | null
+          about_title?: string | null
+          accent_color?: string | null
+          contact_subtitle?: string | null
+          contact_title?: string | null
+          differentials?: Json | null
+          enabled?: boolean | null
+          facebook_pixel_id?: string | null
+          font_family?: string | null
+          footer_text?: string | null
+          gallery_images?: Json | null
+          google_analytics_id?: string | null
+          google_tag_manager_id?: string | null
+          hero_background_url?: string | null
+          hero_badge_text?: string | null
+          hero_cta_primary?: string | null
+          hero_cta_secondary?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          map_embed_url?: string | null
+          og_image_url?: string | null
+          prematricula_enabled?: boolean | null
+          prematricula_fields?: Json | null
+          prematricula_subtitle?: string | null
+          prematricula_title?: string | null
+          primary_color?: string | null
+          secondary_color?: string | null
+          seo_description?: string | null
+          seo_keywords?: string | null
+          seo_title?: string | null
+          show_map?: boolean | null
+          show_powered_by?: boolean | null
+          slug?: string | null
+          social_links?: Json | null
+          steps?: Json | null
+          tenant_id?: string | null
+          testimonials?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_website_config_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       security_summary: {
         Row: {
           allowed_requests: number | null
@@ -3959,6 +4090,7 @@ export type Database = {
     }
     Functions: {
       atualizar_status_faturas: { Args: never; Returns: undefined }
+      can_view_security_summary: { Args: never; Returns: boolean }
       criar_notificacao: {
         Args: {
           p_link?: string
@@ -4065,6 +4197,49 @@ export type Database = {
           show_map: boolean
           social_links: Json
           whatsapp_formatted: string
+        }[]
+      }
+      get_public_website_safe: {
+        Args: { p_slug: string }
+        Returns: {
+          about_description: string
+          about_features: Json
+          about_title: string
+          accent_color: string
+          contact_subtitle: string
+          contact_title: string
+          differentials: Json
+          enabled: boolean
+          facebook_pixel_id: string
+          font_family: string
+          footer_text: string
+          gallery_images: Json
+          google_analytics_id: string
+          google_tag_manager_id: string
+          hero_background_url: string
+          hero_badge_text: string
+          hero_cta_primary: string
+          hero_cta_secondary: string
+          hero_subtitle: string
+          hero_title: string
+          map_embed_url: string
+          og_image_url: string
+          prematricula_enabled: boolean
+          prematricula_fields: Json
+          prematricula_subtitle: string
+          prematricula_title: string
+          primary_color: string
+          secondary_color: string
+          seo_description: string
+          seo_keywords: string
+          seo_title: string
+          show_map: boolean
+          show_powered_by: boolean
+          slug: string
+          social_links: Json
+          steps: Json
+          tenant_id: string
+          testimonials: Json
         }[]
       }
       get_school_user_role: { Args: { _user_id: string }; Returns: string }
