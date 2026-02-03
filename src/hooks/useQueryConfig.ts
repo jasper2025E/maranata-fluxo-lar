@@ -49,6 +49,7 @@ export const queryKeys = {
     list: () => [...queryKeys.faturas.all, "list"] as const,
     byMonth: (month: number, year: number) => [...queryKeys.faturas.all, "month", month, year] as const,
     detail: (id: string) => [...queryKeys.faturas.all, "detail", id] as const,
+    kpis: () => [...queryKeys.faturas.all, "kpis"] as const,
   },
   pagamentos: {
     all: ["pagamentos"] as const,
