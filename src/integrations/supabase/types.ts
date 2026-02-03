@@ -4354,6 +4354,7 @@ export type Database = {
         Args: { p_manager_id: string; p_permission: string }
         Returns: boolean
       }
+      mark_overdue_faturas: { Args: never; Returns: number }
       recalcular_fatura: { Args: { p_fatura_id: string }; Returns: undefined }
       registrar_ponto_externo: {
         Args: {

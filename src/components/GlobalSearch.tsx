@@ -89,23 +89,24 @@ export function GlobalSearch() {
         });
       }
 
-      // Search faturas by codigo
+      // Search faturas by codigo, status, or aluno name
       const { data: faturas, error: faturasError } = await supabase
         .from("faturas")
-        .select("id, codigo_sequencial, valor, alunos(nome_completo)")
-        .ilike("codigo_sequencial", `%${searchQuery}%`)
-        .limit(5);
+        .select("id, codigo_sequencial, valor, status, alunos(nome_completo)")
+        .or(`codigo_sequencial.ilike.%${searchQuery}%,status.ilike.%${searchQuery}%`)
+        .limit(10);
 
       console.log("Faturas search:", { data: faturas, error: faturasError });
 
       if (faturas) {
         faturas.forEach((fatura) => {
           const alunoData = fatura.alunos as unknown as { nome_completo: string };
+          const statusLabel = fatura.status || "Aberta";
           searchResults.push({
             id: fatura.id,
             type: "fatura",
             title: fatura.codigo_sequencial || `Fatura #${fatura.id.slice(0, 8)}`,
-            subtitle: `${alunoData?.nome_completo || "Aluno"} - R$ ${fatura.valor?.toFixed(2) || "0,00"}`,
+            subtitle: `${alunoData?.nome_completo || "Aluno"} - R$ ${fatura.valor?.toFixed(2) || "0,00"} (${statusLabel})`,
           });
         });
       }
