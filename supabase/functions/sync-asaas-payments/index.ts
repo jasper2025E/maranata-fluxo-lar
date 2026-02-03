@@ -95,7 +95,7 @@ serve(async (req) => {
       .lt("data_vencimento", new Date().toISOString().split('T')[0])
       .in("status", ["Aberta", "Vencida"])
       .order("data_vencimento", { ascending: true })
-      .limit(100);
+      .limit(300);
 
     if (fetchVencidasError) {
       console.error("[sync-asaas-payments] Erro ao buscar faturas vencidas:", fetchVencidasError);
@@ -109,7 +109,7 @@ serve(async (req) => {
       .gte("data_vencimento", new Date().toISOString().split('T')[0])
       .eq("status", "Aberta")
       .order("data_vencimento", { ascending: true })
-      .limit(50);
+      .limit(200);
 
     if (fetchAbertasError) {
       console.error("[sync-asaas-payments] Erro ao buscar faturas abertas:", fetchAbertasError);
