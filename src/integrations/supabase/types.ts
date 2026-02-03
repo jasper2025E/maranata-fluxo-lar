@@ -1742,6 +1742,57 @@ export type Database = {
           },
         ]
       }
+      immutable_security_logs: {
+        Row: {
+          action: string
+          created_at: string
+          event_type: string
+          id: string
+          ip_address: string | null
+          metadata: Json | null
+          new_value: Json | null
+          old_value: Json | null
+          resource_id: string | null
+          resource_type: string | null
+          severity: string
+          tenant_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          event_type: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_value?: Json | null
+          old_value?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          severity?: string
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          event_type?: string
+          id?: string
+          ip_address?: string | null
+          metadata?: Json | null
+          new_value?: Json | null
+          old_value?: Json | null
+          resource_id?: string | null
+          resource_type?: string | null
+          severity?: string
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       impostos_estimados: {
         Row: {
           aliquota: number
@@ -3743,6 +3794,21 @@ export type Database = {
         }
         Relationships: []
       }
+      platform_branding_public: {
+        Row: {
+          key: string | null
+          value: Json | null
+        }
+        Insert: {
+          key?: string | null
+          value?: Json | null
+        }
+        Update: {
+          key?: string | null
+          value?: Json | null
+        }
+        Relationships: []
+      }
       school_website_public_minimal: {
         Row: {
           about_description: string | null
@@ -3851,6 +3917,45 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_plans_public: {
+        Row: {
+          active: boolean | null
+          color: string | null
+          features: string[] | null
+          icon: string | null
+          id: string | null
+          limite_alunos: number | null
+          limite_usuarios: number | null
+          name: string | null
+          popular: boolean | null
+          price: number | null
+        }
+        Insert: {
+          active?: boolean | null
+          color?: string | null
+          features?: string[] | null
+          icon?: string | null
+          id?: string | null
+          limite_alunos?: number | null
+          limite_usuarios?: number | null
+          name?: string | null
+          popular?: boolean | null
+          price?: number | null
+        }
+        Update: {
+          active?: boolean | null
+          color?: string | null
+          features?: string[] | null
+          icon?: string | null
+          id?: string | null
+          limite_alunos?: number | null
+          limite_usuarios?: number | null
+          name?: string | null
+          popular?: boolean | null
+          price?: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       atualizar_status_faturas: { Args: never; Returns: undefined }
@@ -3923,8 +4028,59 @@ export type Database = {
           secondary_color: string
         }[]
       }
+      get_public_website_by_slug: {
+        Args: { p_slug: string }
+        Returns: {
+          about_description: string
+          about_features: Json
+          about_title: string
+          accent_color: string
+          differentials: Json
+          enabled: boolean
+          font_family: string
+          footer_text: string
+          gallery_images: Json
+          hero_background_url: string
+          hero_badge_text: string
+          hero_cta_primary: string
+          hero_cta_secondary: string
+          hero_subtitle: string
+          hero_title: string
+          prematricula_enabled: boolean
+          prematricula_subtitle: string
+          prematricula_title: string
+          primary_color: string
+          secondary_color: string
+          seo_description: string
+          seo_title: string
+          show_powered_by: boolean
+          slug: string
+          testimonials: Json
+        }[]
+      }
+      get_public_website_contact: {
+        Args: { p_slug: string }
+        Returns: {
+          map_url: string
+          show_map: boolean
+          social_links: Json
+          whatsapp_formatted: string
+        }[]
+      }
       get_school_user_role: { Args: { _user_id: string }; Returns: string }
       get_school_user_tenant_id: { Args: never; Returns: string }
+      get_security_summary: {
+        Args: never
+        Returns: {
+          allowed_requests: number
+          cross_tenant_attempts: number
+          denied_requests: number
+          suspicious_requests: number
+          total_requests: number
+          unique_tenants: number
+          unique_users: number
+        }[]
+      }
       get_tenant_by_domain: {
         Args: { p_domain: string }
         Returns: {
@@ -4005,6 +4161,19 @@ export type Database = {
       log_security_event: {
         Args: { p_details?: Json; p_event_type: string }
         Returns: undefined
+      }
+      log_security_event_v2: {
+        Args: {
+          p_action: string
+          p_event_type: string
+          p_metadata?: Json
+          p_new_value?: Json
+          p_old_value?: Json
+          p_resource_id?: string
+          p_resource_type?: string
+          p_severity?: string
+        }
+        Returns: string
       }
       manager_has_permission: {
         Args: { p_manager_id: string; p_permission: string }
