@@ -1,288 +1,224 @@
 
-# Portal Público da Escola - Site Institucional + Autoatendimento
+# Plano de Correção: Sincronização ASAAS em Tempo Real
 
-## Visão Geral
+## Diagnóstico Confirmado
 
-Transformar o módulo "Site Escolar" em um **portal público completo** que serve como:
-1. **Landing Page Institucional** - Vitrine profissional da escola
-2. **Portal de Autoatendimento** - Consulta de boletos por CPF sem login
-3. **Sistema de Matrícula Online** - Cadastro de novos alunos
+Após análise detalhada do sistema em produção, identifiquei:
 
-## Arquitetura Proposta
+| Métrica | Valor |
+|---------|-------|
+| Total de faturas | 506 |
+| Faturas com ASAAS | 506 |
+| **Faturas Inconsistentes** | **2** |
 
-```text
-┌─────────────────────────────────────────────────────────────────┐
-│                    ROTAS PÚBLICAS (sem login)                   │
-├─────────────────────────────────────────────────────────────────┤
-│  /escola/:slug              → Landing Page Institucional        │
-│  /escola/:slug/portal       → Portal do Responsável (CPF)       │
-│  /escola/:slug/matricula    → Formulário de Matrícula Online    │
-└─────────────────────────────────────────────────────────────────┘
+As 2 faturas inconsistentes têm `asaas_status: RECEIVED` (confirmado pago pelo ASAAS) mas `status: Aberta` (não refletido no sistema).
+
+### Causa Raiz
+1. **Webhook recebido mas atualização parcial**: O webhook está funcionando (logs mostram `status: processed`), mas a atualização do campo `status` local não está ocorrendo corretamente em todos os casos
+2. **Sem rede de segurança (Cron)**: Se o webhook falhar, não há mecanismo de recuperação
+3. **Frontend sem atualização automática**: A lista de faturas não escuta mudanças em tempo real
+
+---
+
+## Soluções (Sem Quebrar Nada)
+
+### 1. Correção Imediata das Faturas Inconsistentes
+Criar uma função SQL segura para sincronizar o status local com o `asaas_status`:
+
+```sql
+-- Função para corrigir faturas desincronizadas
+CREATE OR REPLACE FUNCTION public.fix_asaas_status_inconsistencies()
+RETURNS TABLE(fatura_id uuid, old_status text, new_status text)
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+  RETURN QUERY
+  UPDATE faturas
+  SET 
+    status = 'Paga',
+    saldo_restante = 0,
+    updated_at = now()
+  WHERE 
+    asaas_status IN ('RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH', 'DUNNING_RECEIVED')
+    AND status NOT IN ('Paga', 'Cancelada')
+  RETURNING id, 'Aberta/Vencida' as old_status, 'Paga' as new_status;
+END;
+$$;
 ```
 
-## Funcionalidades por Módulo
+### 2. Webhook Aprimorado com Idempotência
+Melhorar o webhook ASAAS para:
+- Verificar se o status já foi atualizado antes de processar
+- Registrar cada mudança de status com detalhes de log expandidos
+- Garantir que TODOS os campos sejam atualizados corretamente
 
-### 1. Landing Page Institucional (`/escola/:slug`)
+**Mudanças no `asaas-webhook/index.ts`:**
+```typescript
+// Antes de atualizar, verificar estado atual
+const { data: faturaAtual } = await supabase
+  .from("faturas")
+  .select("status, asaas_status")
+  .eq("id", faturaId)
+  .single();
 
-**Página pública renderizada dinamicamente** com os blocos configurados pelo admin:
+// Log detalhado para rastreamento
+console.log(`[asaas-webhook] Fatura ${faturaId}: ${faturaAtual?.status} → ${newStatus} (asaas: ${payment.status})`);
 
-| Seção | Descrição |
+// Só atualizar se realmente mudou
+if (faturaAtual?.status !== newStatus) {
+  // ... update logic
+}
+```
+
+### 3. Cron de Sincronização (Rede de Segurança)
+Criar uma Edge Function e agendar via pg_cron para rodar a cada 5 minutos:
+
+**Nova Edge Function: `sync-asaas-payments/index.ts`**
+- Busca todas as faturas com `asaas_payment_id` que NÃO estão Pagas/Canceladas
+- Para cada uma, consulta o status atual no ASAAS
+- Corrige inconsistências e registra em `gateway_transaction_logs`
+
+**Cron Job:**
+```sql
+SELECT cron.schedule(
+  'sync-asaas-payments-every-5min',
+  '*/5 * * * *',
+  $$
+  SELECT net.http_post(
+    url := 'https://sznckclviajjmmvsgrpp.supabase.co/functions/v1/sync-asaas-payments',
+    headers := '{"Content-Type": "application/json", "Authorization": "Bearer <anon_key>"}'::jsonb,
+    body := '{"source": "cron"}'::jsonb
+  ) AS request_id;
+  $$
+);
+```
+
+### 4. Realtime no Frontend (Lista de Faturas)
+Adicionar subscription ao `useFaturas` para atualização automática:
+
+```typescript
+useEffect(() => {
+  const channel = supabase
+    .channel("faturas-realtime")
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "faturas" },
+      () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+      }
+    )
+    .on(
+      "postgres_changes",
+      { event: "*", schema: "public", table: "pagamentos" },
+      () => {
+        queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+      }
+    )
+    .subscribe();
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [queryClient]);
+```
+
+### 5. Logs Aprimorados
+Expandir o webhook para registrar divergências:
+
+| Campo | Descrição |
 |-------|-----------|
-| **Hero** | Banner principal com CTAs para matrícula |
-| **Sobre** | História, missão, valores da escola |
-| **Diferenciais** | Cards com ícones destacando benefícios |
-| **Galeria** | Fotos da estrutura e eventos |
-| **Equipe** | Apresentação dos professores |
-| **Depoimentos** | Testimonials de pais e alunos |
-| **FAQ** | Perguntas frequentes |
-| **Estatísticas** | Números de alunos, anos de experiência, aprovação |
-| **Contato** | Telefone, WhatsApp, mapa, endereço |
-| **CTA Final** | Chamada para matrícula |
+| `payment_id` | ID do pagamento ASAAS |
+| `old_status` | Status anterior no banco local |
+| `new_status` | Novo status aplicado |
+| `asaas_status` | Status retornado pelo ASAAS |
+| `origin` | "Webhook" ou "Sync" |
+| `timestamp` | Data/hora da operação |
 
-**Navegação fixa** com links:
-- Início | Sobre | Estrutura | Depoimentos | Contato | **Área do Responsável** | **Matricule-se**
+---
 
-### 2. Portal do Responsável (`/escola/:slug/portal`)
-
-**Consulta de boletos por CPF** - sem necessidade de login:
+## Sequência de Implementação
 
 ```text
 ┌─────────────────────────────────────────────────────────────────┐
-│                  🔍 CONSULTA DE BOLETOS                         │
+│  FASE 1: Correção Imediata (sem risco)                         │
 ├─────────────────────────────────────────────────────────────────┤
-│                                                                 │
-│   Digite seu CPF para consultar suas faturas:                   │
-│   ┌─────────────────────────────────────────┐                   │
-│   │ 000.000.000-00                          │                   │
-│   └─────────────────────────────────────────┘                   │
-│                                                                 │
-│   [ Consultar Boletos ]                                         │
-│                                                                 │
+│  1. Criar função SQL fix_asaas_status_inconsistencies          │
+│  2. Executar para corrigir as 2 faturas pendentes              │
+│  3. Validar resultado                                          │
 └─────────────────────────────────────────────────────────────────┘
-                            ↓ (após busca)
+                              ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│  👤 Olá, Maria Silva!                                           │
-│  📧 maria@email.com  |  📱 (11) 99999-9999                      │
+│  FASE 2: Aprimorar Webhook (idempotência)                      │
 ├─────────────────────────────────────────────────────────────────┤
-│  Alunos Vinculados:                                             │
-│  • João Silva - Reforço Escolar (Fundamental II)                │
-│  • Ana Silva - Educação Infantil                                │
+│  1. Adicionar verificação de estado atual antes de update      │
+│  2. Logs detalhados de divergência                             │
+│  3. Deploy do webhook aprimorado                               │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  FASE 3: Criar Cron de Segurança                               │
 ├─────────────────────────────────────────────────────────────────┤
-│  📋 SUAS FATURAS                                                │
+│  1. Nova Edge Function: sync-asaas-payments                    │
+│  2. Agendar cron job (cada 5 minutos)                          │
+│  3. Testar sincronização automática                            │
+└─────────────────────────────────────────────────────────────────┘
+                              ↓
+┌─────────────────────────────────────────────────────────────────┐
+│  FASE 4: Realtime no Frontend                                  │
 ├─────────────────────────────────────────────────────────────────┤
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │ 🔴 VENCIDA  Jan/2025  R$ 180,00  Venc: 10/01/2025         │  │
-│  │ [ Ver Boleto ]  [ Copiar PIX ]  [ Abrir Link ]            │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │ 🟡 ABERTA   Fev/2025  R$ 180,00  Venc: 10/02/2025         │  │
-│  │ [ Ver Boleto ]  [ Copiar PIX ]  [ Abrir Link ]            │  │
-│  └───────────────────────────────────────────────────────────┘  │
-│  ┌───────────────────────────────────────────────────────────┐  │
-│  │ 🟢 PAGA     Dez/2024  R$ 180,00  Pago em: 08/12/2024      │  │
-│  │ [ Ver Comprovante ]                                       │  │
-│  └───────────────────────────────────────────────────────────┘  │
+│  1. Adicionar subscription em useFaturas                       │
+│  2. Garantir cache invalidation correto                        │
+│  3. Testar atualização automática na UI                        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
-**Funcionalidades do Portal:**
-- Busca por CPF (validado e formatado)
-- Exibe informações do responsável
-- Lista todos os alunos vinculados
-- Lista todas as faturas (abertas, vencidas, pagas)
-- Para cada fatura pendente:
-  - Botão "Copiar PIX" (copia o código copia-e-cola)
-  - Botão "Ver Boleto" (abre PDF ou link Asaas)
-  - Botão "Abrir Link" (abre página de pagamento Asaas)
-- Para faturas pagas:
-  - Botão "Ver Comprovante"
+---
 
-### 3. Matrícula Online (`/escola/:slug/matricula`)
-
-**Formulário completo multi-step:**
-
-```text
-PASSO 1/3 - Dados do Responsável
-┌─────────────────────────────────────────────────────────────────┐
-│  Nome Completo*     [ João Silva                              ] │
-│  CPF*               [ 000.000.000-00                          ] │
-│  E-mail*            [ joao@email.com                          ] │
-│  Telefone/WhatsApp* [ (11) 99999-9999                         ] │
-│  Endereço           [ Rua das Flores, 123                     ] │
-└─────────────────────────────────────────────────────────────────┘
-                        [ Próximo → ]
-
-PASSO 2/3 - Dados do Aluno
-┌─────────────────────────────────────────────────────────────────┐
-│  Nome do Aluno*     [ Maria Silva                             ] │
-│  Data Nascimento    [ 15/03/2015                              ] │
-│  Curso/Turma*       [ Reforço Escolar - Fund. II           ▼ ] │
-│  Observações        [ Alergia a amendoim                      ] │
-│                                                                 │
-│  [ + Adicionar outro aluno ]                                    │
-└─────────────────────────────────────────────────────────────────┘
-                    [ ← Voltar ]  [ Próximo → ]
-
-PASSO 3/3 - Confirmação
-┌─────────────────────────────────────────────────────────────────┐
-│  ✅ Responsável: João Silva (CPF: 000.000.000-00)               │
-│  ✅ Aluno: Maria Silva - Reforço Escolar (R$ 180/mês)           │
-│                                                                 │
-│  Mensalidade estimada: R$ 180,00                                │
-│                                                                 │
-│  [ ] Concordo com os termos de uso                              │
-└─────────────────────────────────────────────────────────────────┘
-                    [ ← Voltar ]  [ Enviar Matrícula ]
-```
-
-## Implementação Técnica
-
-### Arquivos a Criar
-
-| Arquivo | Descrição |
-|---------|-----------|
-| `src/pages/EscolaPublica.tsx` | Página pública da landing page |
-| `src/pages/PortalResponsavel.tsx` | Portal de consulta por CPF |
-| `src/pages/MatriculaOnline.tsx` | Formulário de matrícula multi-step |
-| `src/components/portal/PortalHeader.tsx` | Header público com navegação |
-| `src/components/portal/PortalFooter.tsx` | Footer com dados da escola |
-| `src/components/portal/BuscaCpf.tsx` | Componente de busca por CPF |
-| `src/components/portal/FaturaCard.tsx` | Card de fatura com ações |
-| `src/components/portal/ResponsavelInfo.tsx` | Exibição de dados do responsável |
-| `src/components/portal/MatriculaForm.tsx` | Formulário multi-step de matrícula |
-| `src/hooks/usePortalResponsavel.ts` | Hook para consulta pública por CPF |
-| `supabase/functions/portal-consulta-cpf/index.ts` | Edge function para consulta segura |
+## Detalhes Técnicos
 
 ### Arquivos a Modificar
 
-| Arquivo | Mudança |
-|---------|---------|
-| `src/App.tsx` | Adicionar rotas públicas `/escola/:slug/*` |
-| `src/hooks/useWebsiteBuilder.ts` | Adicionar bloco "portal_link" |
-| `supabase/functions/register-prematricula/index.ts` | Atualizar para suportar matrícula completa |
+| Arquivo | Ação |
+|---------|------|
+| `supabase/functions/asaas-webhook/index.ts` | Aprimorar com idempotência e logs expandidos |
+| `supabase/functions/sync-asaas-payments/index.ts` | **NOVO** - Edge Function de sincronização |
+| `src/hooks/useFaturas.ts` | Adicionar subscription realtime |
+| Nova migração SQL | Função de correção + Cron job |
 
-### Rotas no App.tsx
-
-```typescript
-// Rotas públicas do site escolar
-<Route path="/escola/:slug" element={<EscolaPublica />} />
-<Route path="/escola/:slug/portal" element={<PortalResponsavel />} />
-<Route path="/escola/:slug/matricula" element={<MatriculaOnline />} />
-```
-
-### Edge Function: Consulta por CPF
-
-A consulta por CPF será feita via edge function para:
-1. Validar que o CPF existe no tenant correto
-2. Retornar dados sem expor informações sensíveis
-3. Aplicar rate limiting para evitar abuso
-4. Não expor IDs internos ou dados de outros responsáveis
+### Edge Function: sync-asaas-payments
 
 ```typescript
-// Retorno da edge function
-{
-  responsavel: {
-    nome: "Maria Silva",
-    email_parcial: "m***@email.com", // parcialmente mascarado
-    telefone_parcial: "(11) ****-9999"
-  },
-  alunos: [
-    { nome: "João Silva", curso: "Reforço Escolar" }
-  ],
-  faturas: [
-    {
-      referencia: "Jan/2025",
-      valor: 180.00,
-      vencimento: "2025-01-10",
-      status: "vencida",
-      pix_payload: "00020126...", // código PIX
-      boleto_url: "https://...", // link do boleto
-      invoice_url: "https://..." // link Asaas
-    }
-  ]
-}
+// Lógica principal
+1. Autenticar via service_role (cron job)
+2. Buscar faturas abertas/vencidas com asaas_payment_id
+3. Para cada fatura (em batches de 10):
+   a. Consultar API ASAAS: GET /payments/{id}
+   b. Se status ASAAS indica pago mas local não está pago:
+      - Atualizar fatura local
+      - Criar registro em pagamentos (se não existir)
+      - Logar divergência
+4. Retornar resumo: { synced: N, errors: [] }
 ```
 
-### Segurança
+### Garantias de Segurança
 
-| Medida | Implementação |
-|--------|---------------|
-| Rate Limiting | Max 5 consultas por IP/minuto |
-| CPF Validation | Validação de dígitos verificadores |
-| Tenant Isolation | Consulta apenas no tenant do slug |
-| Data Masking | Email e telefone parcialmente mascarados |
-| HTTPS Only | Todas as requisições via HTTPS |
-| No Auth Required | Apenas CPF + tenant_id |
+- **Sem exclusão de dados**: Apenas UPDATE de status
+- **Idempotente**: Verificação antes de cada update
+- **Sem alterar IDs**: Mantém todos os identificadores
+- **Logs completos**: Rastreabilidade total
+- **Rollback automático**: Se falhar, não corrompe dados
 
-### Novo Bloco: Link do Portal
+---
 
-Adicionar bloco "Portal Link" à biblioteca de blocos para permitir que o admin adicione um banner/botão para o portal:
+## Resultado Esperado
 
-```typescript
-{
-  type: "portal_link",
-  name: "Acesso ao Portal",
-  description: "Link para área do responsável",
-  icon: "FileSearch",
-  category: "forms",
-  defaultContent: {
-    title: "Área do Responsável",
-    subtitle: "Consulte seus boletos e faturas",
-    button_text: "Acessar Portal"
-  }
-}
-```
+Após implementação:
 
-## Fluxo de Navegação
-
-```text
-                    ┌──────────────────┐
-                    │  Landing Page    │
-                    │  /escola/:slug   │
-                    └────────┬─────────┘
-                             │
-          ┌──────────────────┼──────────────────┐
-          │                  │                  │
-          ▼                  ▼                  ▼
-┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐
-│  Portal CPF     │ │  Matrícula      │ │  Contato        │
-│  /escola/portal │ │  /escola/matr.  │ │  WhatsApp/Tel   │
-└────────┬────────┘ └────────┬────────┘ └─────────────────┘
-         │                   │
-         ▼                   ▼
-┌─────────────────┐ ┌─────────────────┐
-│  Ver Boletos    │ │  Pré-Matrícula  │
-│  Copiar PIX     │ │  Cadastrada     │
-│  Pagar Online   │ │  (Notificação)  │
-└─────────────────┘ └─────────────────┘
-```
-
-## Mobile First
-
-Todo o portal será **responsivo** com foco em mobile, pois a maioria dos pais acessará pelo celular:
-
-- Botões grandes e touch-friendly
-- Layout vertical otimizado
-- Botão "Copiar PIX" com feedback visual
-- Navegação simplificada
-- Cards de fatura com swipe actions (futuro)
-
-## Próximos Passos (Fases)
-
-**Fase 1** (Esta implementação):
-- Página pública renderizando blocos existentes
-- Portal de consulta por CPF
-- Visualização e download de boletos
-
-**Fase 2** (Futuro):
-- Formulário de matrícula multi-step completo
-- Pagamento online via PIX/Cartão
-- Notificações por WhatsApp
-- Histórico de pagamentos com gráficos
-
-**Fase 3** (Futuro):
-- App PWA para pais
-- Push notifications
-- Área de documentos (boletins, declarações)
-- Chat com a escola
-
+| Antes | Depois |
+|-------|--------|
+| Pagamento ASAAS não reflete no sistema | Atualização automática via webhook + cron |
+| Dashboard desatualizado | Realtime em faturas, pagamentos, despesas |
+| Sem visibilidade de divergências | Logs detalhados em webhook_logs e gateway_transaction_logs |
+| Dependência 100% do webhook | Cron de segurança como backup (5 min) |
+| 2 faturas inconsistentes | 0 inconsistências |
