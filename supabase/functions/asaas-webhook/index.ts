@@ -68,6 +68,54 @@ serve(async (req) => {
 
     const faturaId = payment.externalReference;
 
+    // =============================================
+    // PROTEÇÃO EXTRA: Verificar webhook duplicado por timestamp
+    // =============================================
+    const { data: recentWebhook } = await supabase
+      .from("webhook_logs")
+      .select("id")
+      .eq("source", "asaas")
+      .eq("event_type", eventType)
+      .eq("status", "processed")
+      .gte("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString())
+      .limit(1);
+
+    // Verificar se o payload contém o mesmo payment.id
+    if (recentWebhook && recentWebhook.length > 0) {
+      // Buscar o log recente para comparar payment.id
+      const { data: recentLogs } = await supabase
+        .from("webhook_logs")
+        .select("payload")
+        .eq("source", "asaas")
+        .eq("event_type", eventType)
+        .eq("status", "processed")
+        .gte("created_at", new Date(Date.now() - 5 * 60 * 1000).toISOString())
+        .limit(10);
+
+      const isDuplicate = recentLogs?.some(log => {
+        const logPayload = log.payload as { payment?: { id?: string } };
+        return logPayload?.payment?.id === payment.id;
+      });
+
+      if (isDuplicate) {
+        console.log(`[asaas-webhook] Webhook duplicado detectado para payment ${payment.id} (últimos 5min)`);
+        
+        await supabase.from("webhook_logs").insert({
+          source: "asaas",
+          event_type: eventType,
+          payload,
+          status: 'skipped',
+          processing_time_ms: Date.now() - startTime,
+          ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+          error_message: "duplicate_event_within_5min"
+        });
+        
+        return new Response(JSON.stringify({ received: true, skipped: true, reason: "duplicate_event" }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+    }
+
     // Buscar fatura para obter tenant_id, gateway_config_id E status atual (idempotência)
     const { data: fatura } = await supabase
       .from("faturas")

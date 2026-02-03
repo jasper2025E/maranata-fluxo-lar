@@ -36,6 +36,57 @@ serve(async (req) => {
   try {
     console.log("[sync-asaas-payments] Iniciando sincronização...");
     
+    // =============================================
+    // FASE 0: DETECTAR FATURAS "ÓRFÃS" (sem cobrança no gateway)
+    // =============================================
+    const hoje = new Date();
+    const em7Dias = new Date(hoje.getTime() + 7 * 24 * 60 * 60 * 1000);
+    
+    const { data: faturasOrfas } = await supabase
+      .from("faturas")
+      .select("id, tenant_id, aluno_id, data_vencimento, valor")
+      .is("asaas_payment_id", null)
+      .eq("status", "Aberta")
+      .lt("data_vencimento", em7Dias.toISOString().split('T')[0])
+      .gte("data_vencimento", hoje.toISOString().split('T')[0])
+      .limit(50);
+
+    // Agrupar órfãs por tenant para notificar cada um
+    if (faturasOrfas && faturasOrfas.length > 0) {
+      const orfasPorTenant: Record<string, number> = {};
+      for (const f of faturasOrfas) {
+        const tid = f.tenant_id || 'default';
+        orfasPorTenant[tid] = (orfasPorTenant[tid] || 0) + 1;
+      }
+
+      // Verificar se já notificamos hoje (evitar spam)
+      const { data: notificacaoRecente } = await supabase
+        .from("notifications")
+        .select("id")
+        .eq("title", "Faturas sem Cobrança")
+        .gte("created_at", new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+        .limit(1);
+
+      if (!notificacaoRecente || notificacaoRecente.length === 0) {
+        for (const [tid, count] of Object.entries(orfasPorTenant)) {
+          if (tid !== 'default') {
+            await supabase.from("notifications").insert({
+              tenant_id: tid,
+              title: "Faturas sem Cobrança",
+              message: `${count} faturas vencem em até 7 dias sem cobrança no gateway. Gere as cobranças para evitar inadimplência.`,
+              type: "warning",
+              link: "/faturas"
+            });
+            console.log(`[sync-asaas-payments] Alerta: ${count} faturas órfãs para tenant ${tid}`);
+          }
+        }
+      }
+    }
+
+    // =============================================
+    // FASE 1: BUSCAR FATURAS PARA SINCRONIZAR
+    // =============================================
+    
     // 1. Primeiro buscar faturas vencidas (prioridade alta)
     const { data: faturasVencidas, error: fetchVencidasError } = await supabase
       .from("faturas")
@@ -87,7 +138,7 @@ serve(async (req) => {
 
     if (faturas.length === 0) {
       console.log("[sync-asaas-payments] Nenhuma fatura pendente para sincronizar");
-      return new Response(JSON.stringify({ ...results, message: "Nenhuma fatura pendente" }), {
+      return new Response(JSON.stringify({ ...results, message: "Nenhuma fatura pendente", faturasOrfas: faturasOrfas?.length || 0 }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
@@ -212,6 +263,19 @@ serve(async (req) => {
             }
 
             await supabase.from("faturas").update(updateData).eq("id", fatura.id);
+
+            // =============================================
+            // NOTIFICAÇÃO AUTOMÁTICA DE CORREÇÃO DE STATUS
+            // =============================================
+            if (newLocalStatus !== localStatus && fatura.tenant_id) {
+              await supabase.from("notifications").insert({
+                tenant_id: fatura.tenant_id,
+                title: "Fatura Sincronizada",
+                message: `Status atualizado automaticamente: ${localStatus} → ${newLocalStatus}`,
+                type: "info",
+                link: "/faturas"
+              });
+            }
 
             // Log da transação
             await logGatewayTransaction(supabase, {
