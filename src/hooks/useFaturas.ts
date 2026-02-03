@@ -148,16 +148,19 @@ export const queryKeys = {
 export function useFaturas() {
   const queryClient = useQueryClient();
 
-  // Subscription realtime para atualização automática
+  // Subscription realtime para atualização automática - UNIFICADA
   useEffect(() => {
     const channel = supabase
-      .channel("faturas-realtime-sync")
+      .channel("faturas-realtime-unified")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "faturas" },
         (payload) => {
           console.log("[useFaturas] Realtime update faturas:", payload.eventType);
+          // Invalidar TODOS os caches relacionados a faturas
           queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
+          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis(), refetchType: 'all' });
+          queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'], refetchType: 'all' });
         }
       )
       .on(
@@ -165,11 +168,14 @@ export function useFaturas() {
         { event: "*", schema: "public", table: "pagamentos" },
         (payload) => {
           console.log("[useFaturas] Realtime update pagamentos:", payload.eventType);
+          // Invalidar TODOS os caches relacionados quando pagamento muda
           queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all, refetchType: 'all' });
+          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis(), refetchType: 'all' });
+          queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'], refetchType: 'all' });
         }
       )
       .subscribe((status) => {
-        console.log("[useFaturas] Realtime subscription status:", status);
+        console.log("[useFaturas] Realtime unified subscription status:", status);
       });
 
     return () => {
@@ -313,14 +319,44 @@ export function useFaturaPagamentos(faturaId: string | null) {
   });
 }
 
-// Hook para KPIs
+// Hook para KPIs - COM REALTIME SUBSCRIPTION
 export function useFaturaKPIs() {
+  const queryClient = useQueryClient();
+
+  // Subscription realtime dedicada para KPIs - garante atualização instantânea
+  useEffect(() => {
+    const channel = supabase
+      .channel("faturas-kpis-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "faturas" },
+        (payload) => {
+          console.log("[useFaturaKPIs] Fatura changed - refresh KPIs:", payload.eventType);
+          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis(), refetchType: 'all' });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "pagamentos" },
+        (payload) => {
+          console.log("[useFaturaKPIs] Pagamento changed - refresh KPIs:", payload.eventType);
+          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis(), refetchType: 'all' });
+        }
+      )
+      .subscribe((status) => {
+        console.log("[useFaturaKPIs] Realtime subscription status:", status);
+      });
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   return useQuery({
     queryKey: queryKeys.faturas.kpis(),
     queryFn: async () => {
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
-      const hoje = new Date();
 
       const [faturasResult, pagamentosResult, descontosResult] = await Promise.all([
         supabase.from("faturas").select("id, status, valor, valor_total, saldo_restante, data_vencimento, dias_atraso"),
@@ -334,6 +370,12 @@ export function useFaturaKPIs() {
       const faturas = faturasResult.data || [];
       const pagamentos = pagamentosResult.data || [];
       const descontos = descontosResult.data || [];
+
+      console.log("[useFaturaKPIs] Dados carregados:", { 
+        faturas: faturas.length, 
+        pagamentos: pagamentos.length,
+        pagamentosTotal: pagamentos.reduce((s, p: any) => s + Number(p.valor || 0), 0)
+      });
 
       const totalPagamentos = pagamentos.reduce((sum, p: any) => {
         const sign = p.tipo === 'estorno' ? -1 : 1;
@@ -389,7 +431,9 @@ export function useFaturaKPIs() {
         faturasVencidas,
       };
     },
-    staleTime: 1000 * 60,
+    staleTime: 1000 * 30,        // 30 segundos - realtime cuida da invalidação
+    refetchOnMount: true,         // Sempre buscar dados frescos ao montar
+    refetchOnWindowFocus: false,
   });
 }
 
