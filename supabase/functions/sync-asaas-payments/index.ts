@@ -36,26 +36,63 @@ serve(async (req) => {
   try {
     console.log("[sync-asaas-payments] Iniciando sincronização...");
     
-    // Buscar faturas abertas/vencidas que têm asaas_payment_id
-    const { data: faturas, error: fetchError } = await supabase
+    // 1. Primeiro buscar faturas vencidas (prioridade alta)
+    const { data: faturasVencidas, error: fetchVencidasError } = await supabase
       .from("faturas")
-      .select("id, tenant_id, status, asaas_payment_id, asaas_status, gateway_config_id, valor, valor_total")
+      .select("id, tenant_id, status, asaas_payment_id, asaas_status, gateway_config_id, valor, valor_total, data_vencimento")
       .not("asaas_payment_id", "is", null)
+      .lt("data_vencimento", new Date().toISOString().split('T')[0])
       .in("status", ["Aberta", "Vencida"])
-      .limit(50); // Processar em lotes para evitar timeout
+      .order("data_vencimento", { ascending: true })
+      .limit(100);
 
-    if (fetchError) {
-      throw new Error(`Erro ao buscar faturas: ${fetchError.message}`);
+    if (fetchVencidasError) {
+      console.error("[sync-asaas-payments] Erro ao buscar faturas vencidas:", fetchVencidasError);
     }
 
-    if (!faturas || faturas.length === 0) {
+    // 2. Depois buscar faturas abertas normais
+    const { data: faturasAbertas, error: fetchAbertasError } = await supabase
+      .from("faturas")
+      .select("id, tenant_id, status, asaas_payment_id, asaas_status, gateway_config_id, valor, valor_total, data_vencimento")
+      .not("asaas_payment_id", "is", null)
+      .gte("data_vencimento", new Date().toISOString().split('T')[0])
+      .eq("status", "Aberta")
+      .order("data_vencimento", { ascending: true })
+      .limit(50);
+
+    if (fetchAbertasError) {
+      console.error("[sync-asaas-payments] Erro ao buscar faturas abertas:", fetchAbertasError);
+    }
+
+    // Combinar listas, removendo duplicatas
+    const seenIds = new Set<string>();
+    const faturas: Array<{
+      id: string;
+      tenant_id: string | null;
+      status: string;
+      asaas_payment_id: string;
+      asaas_status: string | null;
+      gateway_config_id: string | null;
+      valor: number;
+      valor_total: number | null;
+      data_vencimento: string;
+    }> = [];
+
+    for (const f of [...(faturasVencidas || []), ...(faturasAbertas || [])]) {
+      if (!seenIds.has(f.id)) {
+        seenIds.add(f.id);
+        faturas.push(f);
+      }
+    }
+
+    if (faturas.length === 0) {
       console.log("[sync-asaas-payments] Nenhuma fatura pendente para sincronizar");
       return new Response(JSON.stringify({ ...results, message: "Nenhuma fatura pendente" }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    console.log(`[sync-asaas-payments] ${faturas.length} faturas para verificar`);
+    console.log(`[sync-asaas-payments] ${faturas.length} faturas para verificar (${faturasVencidas?.length || 0} vencidas prioritárias)`);
 
     // Agrupar faturas por tenant para buscar API key correta
     const faturasByTenant: Record<string, typeof faturas> = {};
