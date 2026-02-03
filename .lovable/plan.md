@@ -1,224 +1,130 @@
 
-# Plano de Correção: Sincronização ASAAS em Tempo Real
+# Plano de Correção: sync-asaas-payments
 
-## Diagnóstico Confirmado
+## Diagnóstico
 
-Após análise detalhada do sistema em produção, identifiquei:
+O módulo de faturas não está refletindo pagamentos porque a Edge Function `sync-asaas-payments` está com um **bug crítico**:
 
-| Métrica | Valor |
-|---------|-------|
-| Total de faturas | 506 |
-| Faturas com ASAAS | 506 |
-| **Faturas Inconsistentes** | **2** |
+| Problema | Detalhe |
+|----------|---------|
+| Coluna inexistente | O código busca `api_key` diretamente da tabela `tenant_gateway_configs` |
+| Coluna inexistente | O código busca `sandbox_mode`, mas o campo correto é `environment` |
+| API key não encontrada | Por isso o log mostra "Tenant sem API key Asaas configurada" |
 
-As 2 faturas inconsistentes têm `asaas_status: RECEIVED` (confirmado pago pelo ASAAS) mas `status: Aberta` (não refletido no sistema).
-
-### Causa Raiz
-1. **Webhook recebido mas atualização parcial**: O webhook está funcionando (logs mostram `status: processed`), mas a atualização do campo `status` local não está ocorrendo corretamente em todos os casos
-2. **Sem rede de segurança (Cron)**: Se o webhook falhar, não há mecanismo de recuperação
-3. **Frontend sem atualização automática**: A lista de faturas não escuta mudanças em tempo real
-
----
-
-## Soluções (Sem Quebrar Nada)
-
-### 1. Correção Imediata das Faturas Inconsistentes
-Criar uma função SQL segura para sincronizar o status local com o `asaas_status`:
-
-```sql
--- Função para corrigir faturas desincronizadas
-CREATE OR REPLACE FUNCTION public.fix_asaas_status_inconsistencies()
-RETURNS TABLE(fatura_id uuid, old_status text, new_status text)
-LANGUAGE plpgsql
-SECURITY DEFINER
-AS $$
-BEGIN
-  RETURN QUERY
-  UPDATE faturas
-  SET 
-    status = 'Paga',
-    saldo_restante = 0,
-    updated_at = now()
-  WHERE 
-    asaas_status IN ('RECEIVED', 'CONFIRMED', 'RECEIVED_IN_CASH', 'DUNNING_RECEIVED')
-    AND status NOT IN ('Paga', 'Cancelada')
-  RETURNING id, 'Aberta/Vencida' as old_status, 'Paga' as new_status;
-END;
-$$;
+**Logs comprovando o problema:**
+```
+WARNING [sync-asaas-payments] Tenant a1692822-1e09-4e24-84e1-53bbc22253f0 sem API key Asaas configurada
 ```
 
-### 2. Webhook Aprimorado com Idempotência
-Melhorar o webhook ASAAS para:
-- Verificar se o status já foi atualizado antes de processar
-- Registrar cada mudança de status com detalhes de log expandidos
-- Garantir que TODOS os campos sejam atualizados corretamente
+**Mas a API key EXISTE** - está na tabela `tenant_gateway_secrets` (criptografada).
 
-**Mudanças no `asaas-webhook/index.ts`:**
+## Solução
+
+Corrigir o `sync-asaas-payments` para usar a função utilitária `getAsaasCredentials()` do `gateway-utils.ts` que já faz:
+1. Busca na tabela correta (`tenant_gateway_secrets`)
+2. Decriptografa o secret
+3. Determina URL da API baseado no `environment`
+
+## Mudanças Necessárias
+
+### Arquivo: `supabase/functions/sync-asaas-payments/index.ts`
+
+**Antes (código incorreto):**
 ```typescript
-// Antes de atualizar, verificar estado atual
-const { data: faturaAtual } = await supabase
-  .from("faturas")
-  .select("status, asaas_status")
-  .eq("id", faturaId)
-  .single();
+// Linhas 72-84 - Busca direta com colunas inexistentes
+const { data: gatewayConfig } = await supabase
+  .from("tenant_gateway_configs")
+  .select("id, api_key, sandbox_mode")  // ❌ Colunas não existem!
+  .eq("tenant_id", tenantId)
+  ...
 
-// Log detalhado para rastreamento
-console.log(`[asaas-webhook] Fatura ${faturaId}: ${faturaAtual?.status} → ${newStatus} (asaas: ${payment.status})`);
-
-// Só atualizar se realmente mudou
-if (faturaAtual?.status !== newStatus) {
-  // ... update logic
+if (!gatewayConfig?.api_key) {  // ❌ Sempre undefined
+  console.warn(`Tenant ${tenantId} sem API key Asaas configurada`);
+  continue;
 }
 ```
 
-### 3. Cron de Sincronização (Rede de Segurança)
-Criar uma Edge Function e agendar via pg_cron para rodar a cada 5 minutos:
-
-**Nova Edge Function: `sync-asaas-payments/index.ts`**
-- Busca todas as faturas com `asaas_payment_id` que NÃO estão Pagas/Canceladas
-- Para cada uma, consulta o status atual no ASAAS
-- Corrige inconsistências e registra em `gateway_transaction_logs`
-
-**Cron Job:**
-```sql
-SELECT cron.schedule(
-  'sync-asaas-payments-every-5min',
-  '*/5 * * * *',
-  $$
-  SELECT net.http_post(
-    url := 'https://sznckclviajjmmvsgrpp.supabase.co/functions/v1/sync-asaas-payments',
-    headers := '{"Content-Type": "application/json", "Authorization": "Bearer <anon_key>"}'::jsonb,
-    body := '{"source": "cron"}'::jsonb
-  ) AS request_id;
-  $$
-);
-```
-
-### 4. Realtime no Frontend (Lista de Faturas)
-Adicionar subscription ao `useFaturas` para atualização automática:
-
+**Depois (código corrigido):**
 ```typescript
-useEffect(() => {
-  const channel = supabase
-    .channel("faturas-realtime")
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "faturas" },
-      () => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
-      }
-    )
-    .on(
-      "postgres_changes",
-      { event: "*", schema: "public", table: "pagamentos" },
-      () => {
-        queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
-      }
-    )
-    .subscribe();
+import { getAsaasCredentials } from "../_shared/gateway-utils.ts";
 
-  return () => {
-    supabase.removeChannel(channel);
-  };
-}, [queryClient]);
+// Dentro do loop de tenants:
+const credentials = await getAsaasCredentials(supabase, tenantId);
+
+if (!credentials.apiKey) {
+  console.warn(`[sync-asaas-payments] Tenant ${tenantId} sem API key Asaas configurada`);
+  continue;
+}
+
+const ASAAS_API_URL = credentials.apiUrl;
 ```
-
-### 5. Logs Aprimorados
-Expandir o webhook para registrar divergências:
-
-| Campo | Descrição |
-|-------|-----------|
-| `payment_id` | ID do pagamento ASAAS |
-| `old_status` | Status anterior no banco local |
-| `new_status` | Novo status aplicado |
-| `asaas_status` | Status retornado pelo ASAAS |
-| `origin` | "Webhook" ou "Sync" |
-| `timestamp` | Data/hora da operação |
-
----
 
 ## Sequência de Implementação
 
 ```text
-┌─────────────────────────────────────────────────────────────────┐
-│  FASE 1: Correção Imediata (sem risco)                         │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Criar função SQL fix_asaas_status_inconsistencies          │
-│  2. Executar para corrigir as 2 faturas pendentes              │
-│  3. Validar resultado                                          │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  1. Corrigir import e uso de getAsaasCredentials             │
+├──────────────────────────────────────────────────────────────┤
+│  - Adicionar import de getAsaasCredentials                   │
+│  - Substituir query direta por chamada da função utilitária  │
+│  - Usar credentials.apiKey e credentials.apiUrl              │
+└──────────────────────────────────────────────────────────────┘
                               ↓
-┌─────────────────────────────────────────────────────────────────┐
-│  FASE 2: Aprimorar Webhook (idempotência)                      │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Adicionar verificação de estado atual antes de update      │
-│  2. Logs detalhados de divergência                             │
-│  3. Deploy do webhook aprimorado                               │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  2. Deploy automático da Edge Function                       │
+├──────────────────────────────────────────────────────────────┤
+│  - O Lovable faz deploy automático após salvar               │
+└──────────────────────────────────────────────────────────────┘
                               ↓
-┌─────────────────────────────────────────────────────────────────┐
-│  FASE 3: Criar Cron de Segurança                               │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Nova Edge Function: sync-asaas-payments                    │
-│  2. Agendar cron job (cada 5 minutos)                          │
-│  3. Testar sincronização automática                            │
-└─────────────────────────────────────────────────────────────────┘
-                              ↓
-┌─────────────────────────────────────────────────────────────────┐
-│  FASE 4: Realtime no Frontend                                  │
-├─────────────────────────────────────────────────────────────────┤
-│  1. Adicionar subscription em useFaturas                       │
-│  2. Garantir cache invalidation correto                        │
-│  3. Testar atualização automática na UI                        │
-└─────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────┐
+│  3. Testar sincronização manualmente                         │
+├──────────────────────────────────────────────────────────────┤
+│  - Invocar a Edge Function para validar                      │
+│  - Verificar se faturas inconsistentes são corrigidas        │
+└──────────────────────────────────────────────────────────────┘
 ```
-
----
 
 ## Detalhes Técnicos
 
-### Arquivos a Modificar
+### Arquivo a Modificar
 
 | Arquivo | Ação |
 |---------|------|
-| `supabase/functions/asaas-webhook/index.ts` | Aprimorar com idempotência e logs expandidos |
-| `supabase/functions/sync-asaas-payments/index.ts` | **NOVO** - Edge Function de sincronização |
-| `src/hooks/useFaturas.ts` | Adicionar subscription realtime |
-| Nova migração SQL | Função de correção + Cron job |
+| `supabase/functions/sync-asaas-payments/index.ts` | Corrigir busca de credenciais |
 
-### Edge Function: sync-asaas-payments
+### Estrutura Real do Banco
 
-```typescript
-// Lógica principal
-1. Autenticar via service_role (cron job)
-2. Buscar faturas abertas/vencidas com asaas_payment_id
-3. Para cada fatura (em batches de 10):
-   a. Consultar API ASAAS: GET /payments/{id}
-   b. Se status ASAAS indica pago mas local não está pago:
-      - Atualizar fatura local
-      - Criar registro em pagamentos (se não existir)
-      - Logar divergência
-4. Retornar resumo: { synced: N, errors: [] }
-```
+A tabela `tenant_gateway_configs` **não tem** `api_key`:
 
-### Garantias de Segurança
+| Coluna | Tipo |
+|--------|------|
+| id | uuid |
+| tenant_id | uuid |
+| gateway_type | enum |
+| environment | enum (sandbox/production) |
+| is_active | boolean |
+| is_default | boolean |
+| settings | jsonb |
 
-- **Sem exclusão de dados**: Apenas UPDATE de status
-- **Idempotente**: Verificação antes de cada update
-- **Sem alterar IDs**: Mantém todos os identificadores
-- **Logs completos**: Rastreabilidade total
-- **Rollback automático**: Se falhar, não corrompe dados
+Os secrets ficam em `tenant_gateway_secrets`:
 
----
+| Coluna | Tipo |
+|--------|------|
+| gateway_config_id | uuid (FK) |
+| key_name | text (ex: "api_key") |
+| encrypted_value | text (AES-256-GCM) |
+
+### Garantias
+
+- Sem alteração de estrutura de banco
+- Sem exclusão de dados
+- Usa função utilitária já existente e testada
+- Mantém compatibilidade com fallback global (`ASAAS_API_KEY` env var)
 
 ## Resultado Esperado
 
-Após implementação:
-
 | Antes | Depois |
 |-------|--------|
-| Pagamento ASAAS não reflete no sistema | Atualização automática via webhook + cron |
-| Dashboard desatualizado | Realtime em faturas, pagamentos, despesas |
-| Sem visibilidade de divergências | Logs detalhados em webhook_logs e gateway_transaction_logs |
-| Dependência 100% do webhook | Cron de segurança como backup (5 min) |
-| 2 faturas inconsistentes | 0 inconsistências |
+| `Tenant sem API key Asaas configurada` | Credentials encontradas e usadas |
+| 0 faturas sincronizadas | Faturas com status divergente corrigidas |
+| Dashboard desatualizado | Atualização automática via cron + realtime |
