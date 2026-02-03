@@ -1,113 +1,152 @@
 
 
-# Plano de Correção: Registro de Pagamentos e KPIs
+# Plano: Sistema de Atualização em Tempo Real Robusto
 
 ## Diagnóstico Confirmado
 
-| Problema | Detalhe |
-|----------|---------|
-| **2 faturas pagas** | `f9585a1a...` (R$ 280) e `a6756674...` (R$ 180) |
-| **0 registros em `pagamentos`** | A tabela está VAZIA |
-| **Webhook ASAAS não chegou** | Últimos logs são de 22/Jan, todos `PAYMENT_DELETED` |
-| **Sync trigger apenas atualiza status** | Não cria registro de pagamento |
+Os dados estão 100% corretos no banco de dados:
 
-### Por que os KPIs estão zerados?
+| Métrica | Valor no Banco |
+|---------|----------------|
+| Faturas Pagas | 2 (R$ 460,00) |
+| Pagamentos Fev/2026 | 2 (R$ 460,00) |
+| Faturas Abertas/Vencidas | 504 (R$ 92.468,00) |
 
-O cálculo do "Faturamento Mensal" e "Ticket Médio" é feito a partir da tabela `pagamentos`:
+**Por que não reflete no frontend?**
+
+O hook `useFaturaKPIs` não tem subscription Realtime - ele não atualiza automaticamente quando os dados mudam. O cache antigo permanece até expirar (60 segundos).
+
+## Problema: Arquitetura de Cache Fragmentada
+
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  useFaturas (com Realtime)                                      │
+│  ├── queryKeys.faturas.all → ['faturas']                        │
+│  └── Invalida: queryKeys.faturas.all                            │
+│       ❌ NÃO inclui ['faturas', 'kpis']                         │
+├─────────────────────────────────────────────────────────────────┤
+│  useFaturaKPIs (SEM Realtime)                                   │
+│  ├── queryKey: ['faturas', 'kpis']                              │
+│  └── ❌ Nunca é invalidado automaticamente                      │
+├─────────────────────────────────────────────────────────────────┤
+│  useDashboardStats (com Realtime)                               │
+│  ├── queryKey: ['dashboard', 'stats']                           │
+│  └── ✅ Atualiza ao receber eventos de pagamentos               │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+## Solução: Unificar Sistema de Atualização
+
+### Parte 1: Adicionar Realtime ao useFaturaKPIs
+
+Modificar o hook para incluir subscription Realtime que invalida o cache quando faturas ou pagamentos mudam:
 
 ```typescript
-// useFaturas.ts linhas 327-350
-const pagamentos = pagamentosResult.data || [];  // ← VAZIA!
+// src/hooks/useFaturas.ts - useFaturaKPIs
+export function useFaturaKPIs() {
+  const queryClient = useQueryClient();
 
-const faturamentoMensal = pagamentos.reduce(...);  // ← R$ 0,00
-const ticketMedio = pagamentosValidos.length > 0 ? ... : 0;  // ← R$ 0,00
+  // Adicionar subscription Realtime
+  useEffect(() => {
+    const channel = supabase
+      .channel("faturas-kpis-realtime")
+      .on("postgres_changes", 
+        { event: "*", schema: "public", table: "faturas" },
+        () => {
+          console.log("[useFaturaKPIs] Fatura changed - refresh KPIs");
+          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis() });
+        }
+      )
+      .on("postgres_changes",
+        { event: "*", schema: "public", table: "pagamentos" },
+        () => {
+          console.log("[useFaturaKPIs] Pagamento changed - refresh KPIs");
+          queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis() });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
+  return useQuery({
+    // ... configuração existente
+    refetchOnMount: true,  // Garantir dados frescos ao montar
+  });
+}
 ```
 
-Como a tabela `pagamentos` está vazia, ambos os KPIs mostram R$ 0,00.
+### Parte 2: Invalidação Centralizada no useFaturas
 
----
+Quando o realtime detectar mudanças, invalidar TODOS os caches relacionados:
 
-## Soluções Propostas
-
-### Parte 1: Correção Imediata - Inserir Pagamentos Faltantes
-
-Inserir os registros de pagamento para as faturas que estão como "Paga" mas não têm pagamento registrado:
-
-```sql
-INSERT INTO pagamentos (fatura_id, valor, metodo, data_pagamento, gateway, gateway_id, gateway_status, tenant_id)
-SELECT 
-  f.id,
-  COALESCE(f.valor_total, f.valor),
-  'Boleto',
-  COALESCE(f.updated_at::date, CURRENT_DATE),
-  'asaas',
-  f.asaas_payment_id,
-  f.asaas_status,
-  f.tenant_id
-FROM faturas f
-WHERE f.status = 'Paga'
-  AND f.asaas_payment_id IS NOT NULL
-  AND NOT EXISTS (
-    SELECT 1 FROM pagamentos p 
-    WHERE p.fatura_id = f.id
-  );
+```typescript
+// src/hooks/useFaturas.ts - useFaturas realtime handler
+.on("postgres_changes", 
+  { event: "*", schema: "public", table: "pagamentos" },
+  () => {
+    // Invalidar lista de faturas
+    queryClient.invalidateQueries({ queryKey: queryKeys.faturas.all });
+    // Invalidar KPIs
+    queryClient.invalidateQueries({ queryKey: queryKeys.faturas.kpis() });
+    // Invalidar dashboard global
+    queryClient.invalidateQueries({ queryKey: ['dashboard', 'stats'] });
+  }
+)
 ```
 
-### Parte 2: Aprimorar o Trigger de Sincronização
+### Parte 3: Configuração de Cache Otimizada
 
-Modificar a função `sync_fatura_status_from_asaas()` para também criar registro de pagamento quando o status mudar para 'Paga':
+Ajustar `staleTime` e adicionar `refetchOnMount: true` para KPIs:
 
-```sql
-CREATE OR REPLACE FUNCTION sync_fatura_status_from_asaas()
-RETURNS TRIGGER AS $$
-BEGIN
-  -- Atualização de status existente...
-  
-  -- Se está sendo marcado como pago, garantir que existe registro de pagamento
-  IF NEW.status = 'Paga' AND NEW.asaas_payment_id IS NOT NULL THEN
-    INSERT INTO pagamentos (fatura_id, valor, metodo, data_pagamento, gateway, gateway_id, gateway_status, tenant_id)
-    SELECT 
-      NEW.id,
-      COALESCE(NEW.valor_total, NEW.valor),
-      'Boleto',
-      CURRENT_DATE,
-      'asaas',
-      NEW.asaas_payment_id,
-      NEW.asaas_status,
-      NEW.tenant_id
-    WHERE NOT EXISTS (
-      SELECT 1 FROM pagamentos WHERE fatura_id = NEW.id
-    );
-  END IF;
-  
-  RETURN NEW;
-END;
-$$
+```typescript
+// useFaturaKPIs
+return useQuery({
+  queryKey: queryKeys.faturas.kpis(),
+  queryFn: async () => { ... },
+  staleTime: 1000 * 30,     // 30 segundos
+  refetchOnMount: true,      // Sempre buscar dados frescos ao montar
+  refetchOnWindowFocus: false,
+});
 ```
-
----
 
 ## Resultado Esperado
 
+```text
+┌─────────────────────────────────────────────────────────────────┐
+│  TRIGGER: Pagamento inserido via trigger SQL                   │
+│                          ↓                                      │
+│  Supabase Realtime → Notifica todos os channels ativos         │
+│                          ↓                                      │
+│  useFaturas ──────→ Invalida ['faturas']                       │
+│  useFaturaKPIs ───→ Invalida ['faturas', 'kpis']               │
+│  useDashboardStats → Invalida ['dashboard', 'stats']           │
+│                          ↓                                      │
+│  React Query → Refetch automático de todos os dados            │
+│                          ↓                                      │
+│  UI Atualizada instantaneamente em todas as telas              │
+└─────────────────────────────────────────────────────────────────┘
+```
+
 | Antes | Depois |
 |-------|--------|
-| Faturamento Mensal: R$ 0,00 | Faturamento Mensal: **R$ 460,00** (180 + 280) |
-| Ticket Médio: R$ 0,00 | Ticket Médio: **R$ 230,00** (460 / 2) |
-| Tabela `pagamentos`: 0 registros | Tabela `pagamentos`: 2 registros |
+| KPIs desatualizados até refresh manual | KPIs atualizados em <1 segundo |
+| Cache fragmentado entre hooks | Cache unificado e sincronizado |
+| Usuário precisa fazer F5 | Zero fricção - automático |
 
----
+## Arquivos a Modificar
 
-## Implementação
+| Arquivo | Mudança |
+|---------|---------|
+| `src/hooks/useFaturas.ts` | Adicionar Realtime ao `useFaturaKPIs`, unificar invalidação |
 
-### Arquivo: Nova Migração SQL
+## Garantias de Segurança
 
-1. **Inserir pagamentos faltantes** para faturas já pagas
-2. **Atualizar trigger** para criar pagamento automaticamente em futuras sincronizações
-
-### Garantias de Segurança
-
+- Sem alteração de estrutura do banco
 - Sem exclusão de dados
-- Apenas INSERT de novos pagamentos
-- Idempotente (verifica se já existe antes de inserir)
-- Mantém integridade referencial
+- Apenas ajuste de lógica de cache no frontend
+- 100% retrocompatível
+- Realtime já está habilitado para `pagamentos` e `faturas`
 
