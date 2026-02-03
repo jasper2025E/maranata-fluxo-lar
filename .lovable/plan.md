@@ -1,71 +1,113 @@
 
-# Plano de Correção: Campo saldo_restante
 
-## Problema Identificado
+# Plano de Correção: Registro de Pagamentos e KPIs
 
-O campo `saldo_restante` nas faturas está com valor **0** para todas as 504 faturas abertas, quando deveria ter o `valor_total`. Isso causa:
+## Diagnóstico Confirmado
 
-- KPI "A Receber" mostrando R$ 0,00 ao invés de R$ 92.468,00
-- Cálculos financeiros incorretos
+| Problema | Detalhe |
+|----------|---------|
+| **2 faturas pagas** | `f9585a1a...` (R$ 280) e `a6756674...` (R$ 180) |
+| **0 registros em `pagamentos`** | A tabela está VAZIA |
+| **Webhook ASAAS não chegou** | Últimos logs são de 22/Jan, todos `PAYMENT_DELETED` |
+| **Sync trigger apenas atualiza status** | Não cria registro de pagamento |
 
-## Causa
+### Por que os KPIs estão zerados?
 
-- O campo tem `DEFAULT 0` no banco
-- Ao criar faturas, o sistema NÃO inicializa `saldo_restante` com `valor_total`
-- O cálculo do KPI usa `saldo_restante` primeiro (quando não é NULL)
+O cálculo do "Faturamento Mensal" e "Ticket Médio" é feito a partir da tabela `pagamentos`:
 
-## Solução (2 Partes)
+```typescript
+// useFaturas.ts linhas 327-350
+const pagamentos = pagamentosResult.data || [];  // ← VAZIA!
 
-### 1. Correção Imediata dos Dados Existentes
-
-Atualizar todas as faturas abertas/emitidas para ter `saldo_restante = valor_total`:
-
-```sql
-UPDATE faturas
-SET saldo_restante = COALESCE(valor_total, valor)
-WHERE status IN ('Aberta', 'Vencida', 'Emitida')
-  AND (saldo_restante IS NULL OR saldo_restante = 0)
-  AND COALESCE(valor_total, valor) > 0;
+const faturamentoMensal = pagamentos.reduce(...);  // ← R$ 0,00
+const ticketMedio = pagamentosValidos.length > 0 ? ... : 0;  // ← R$ 0,00
 ```
 
-### 2. Trigger para Futuras Faturas
+Como a tabela `pagamentos` está vazia, ambos os KPIs mostram R$ 0,00.
 
-Criar trigger que inicializa `saldo_restante` automaticamente na criação:
+---
+
+## Soluções Propostas
+
+### Parte 1: Correção Imediata - Inserir Pagamentos Faltantes
+
+Inserir os registros de pagamento para as faturas que estão como "Paga" mas não têm pagamento registrado:
 
 ```sql
-CREATE OR REPLACE FUNCTION init_saldo_restante()
+INSERT INTO pagamentos (fatura_id, valor, metodo, data_pagamento, gateway, gateway_id, gateway_status, tenant_id)
+SELECT 
+  f.id,
+  COALESCE(f.valor_total, f.valor),
+  'Boleto',
+  COALESCE(f.updated_at::date, CURRENT_DATE),
+  'asaas',
+  f.asaas_payment_id,
+  f.asaas_status,
+  f.tenant_id
+FROM faturas f
+WHERE f.status = 'Paga'
+  AND f.asaas_payment_id IS NOT NULL
+  AND NOT EXISTS (
+    SELECT 1 FROM pagamentos p 
+    WHERE p.fatura_id = f.id
+  );
+```
+
+### Parte 2: Aprimorar o Trigger de Sincronização
+
+Modificar a função `sync_fatura_status_from_asaas()` para também criar registro de pagamento quando o status mudar para 'Paga':
+
+```sql
+CREATE OR REPLACE FUNCTION sync_fatura_status_from_asaas()
 RETURNS TRIGGER AS $$
 BEGIN
-  IF NEW.saldo_restante IS NULL OR NEW.saldo_restante = 0 THEN
-    NEW.saldo_restante := COALESCE(NEW.valor_total, NEW.valor, 0);
+  -- Atualização de status existente...
+  
+  -- Se está sendo marcado como pago, garantir que existe registro de pagamento
+  IF NEW.status = 'Paga' AND NEW.asaas_payment_id IS NOT NULL THEN
+    INSERT INTO pagamentos (fatura_id, valor, metodo, data_pagamento, gateway, gateway_id, gateway_status, tenant_id)
+    SELECT 
+      NEW.id,
+      COALESCE(NEW.valor_total, NEW.valor),
+      'Boleto',
+      CURRENT_DATE,
+      'asaas',
+      NEW.asaas_payment_id,
+      NEW.asaas_status,
+      NEW.tenant_id
+    WHERE NOT EXISTS (
+      SELECT 1 FROM pagamentos WHERE fatura_id = NEW.id
+    );
   END IF;
+  
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_init_saldo_restante
-  BEFORE INSERT ON faturas
-  FOR EACH ROW
-  EXECUTE FUNCTION init_saldo_restante();
+$$
 ```
+
+---
 
 ## Resultado Esperado
 
 | Antes | Depois |
 |-------|--------|
-| A Receber: R$ 0,00 | A Receber: R$ 92.468,00 |
-| saldo_restante = 0 | saldo_restante = valor_total |
-| KPIs incorretos | KPIs refletindo valores reais |
+| Faturamento Mensal: R$ 0,00 | Faturamento Mensal: **R$ 460,00** (180 + 280) |
+| Ticket Médio: R$ 0,00 | Ticket Médio: **R$ 230,00** (460 / 2) |
+| Tabela `pagamentos`: 0 registros | Tabela `pagamentos`: 2 registros |
 
-## Arquivos Afetados
+---
 
-| Arquivo | Ação |
-|---------|------|
-| Nova migração SQL | Correção de dados + Trigger |
+## Implementação
 
-## Garantias de Segurança
+### Arquivo: Nova Migração SQL
+
+1. **Inserir pagamentos faltantes** para faturas já pagas
+2. **Atualizar trigger** para criar pagamento automaticamente em futuras sincronizações
+
+### Garantias de Segurança
 
 - Sem exclusão de dados
-- Apenas UPDATE de campo numérico
-- Trigger não afeta lógica existente
-- 100% reversível se necessário
+- Apenas INSERT de novos pagamentos
+- Idempotente (verifica se já existe antes de inserir)
+- Mantém integridade referencial
+
