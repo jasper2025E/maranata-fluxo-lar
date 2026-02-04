@@ -9,17 +9,17 @@ interface GradientBackgroundProps {
 export function GradientBackground({}: GradientBackgroundProps) {
   return (
     <>
-      {/* Black and white gradient background */}
+      {/* Black and white gradient background - darker */}
       <div
         className="absolute inset-0"
         style={{
           background: `
             linear-gradient(135deg, 
-              hsl(0, 0%, 85%) 0%, 
-              hsl(0, 0%, 90%) 25%,
-              hsl(0, 0%, 88%) 50%, 
-              hsl(0, 0%, 92%) 75%,
-              hsl(0, 0%, 86%) 100%
+              hsl(0, 0%, 65%) 0%, 
+              hsl(0, 0%, 72%) 25%,
+              hsl(0, 0%, 68%) 50%, 
+              hsl(0, 0%, 75%) 75%,
+              hsl(0, 0%, 66%) 100%
             )
           `,
         }}
