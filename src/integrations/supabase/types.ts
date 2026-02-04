@@ -1734,6 +1734,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "gateway_transaction_logs_pagamento_id_fkey"
+            columns: ["pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "pagamentos_summary"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "gateway_transaction_logs_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -2007,6 +2014,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "lancamentos_contabeis_pagamento_id_fkey"
+            columns: ["pagamento_id"]
+            isOneToOne: false
+            referencedRelation: "pagamentos_summary"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "lancamentos_contabeis_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -2252,6 +2266,13 @@ export type Database = {
             referencedRelation: "system_managers"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "platform_audit_logs_manager_id_fkey"
+            columns: ["manager_id"]
+            isOneToOne: false
+            referencedRelation: "system_managers_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       platform_backups: {
@@ -2309,6 +2330,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "platform_backups_requested_by_fkey"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "system_managers_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "platform_backups_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -2357,6 +2385,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "system_managers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_changelog_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "system_managers_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -2416,6 +2451,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "system_managers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "platform_roadmap_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "system_managers_safe"
             referencedColumns: ["id"]
           },
         ]
@@ -3794,6 +3836,54 @@ export type Database = {
         }
         Relationships: []
       }
+      pagamentos_summary: {
+        Row: {
+          created_at: string | null
+          data_pagamento: string | null
+          fatura_id: string | null
+          id: string | null
+          metodo: string | null
+          tenant_id: string | null
+          tipo: string | null
+          valor: number | null
+        }
+        Insert: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          fatura_id?: string | null
+          id?: string | null
+          metodo?: string | null
+          tenant_id?: string | null
+          tipo?: string | null
+          valor?: number | null
+        }
+        Update: {
+          created_at?: string | null
+          data_pagamento?: string | null
+          fatura_id?: string | null
+          id?: string | null
+          metodo?: string | null
+          tenant_id?: string | null
+          tipo?: string | null
+          valor?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pagamentos_fatura_id_fkey"
+            columns: ["fatura_id"]
+            isOneToOne: false
+            referencedRelation: "faturas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pagamentos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_branding_public: {
         Row: {
           key: string | null
@@ -4084,6 +4174,36 @@ export type Database = {
           name?: string | null
           popular?: boolean | null
           price?: number | null
+        }
+        Relationships: []
+      }
+      system_managers_safe: {
+        Row: {
+          created_at: string | null
+          email_masked: string | null
+          id: string | null
+          is_active: boolean | null
+          nome: string | null
+          phone_masked: string | null
+          platform_role: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_masked?: never
+          id?: string | null
+          is_active?: boolean | null
+          nome?: string | null
+          phone_masked?: never
+          platform_role?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_masked?: never
+          id?: string | null
+          is_active?: boolean | null
+          nome?: string | null
+          phone_masked?: never
+          platform_role?: string | null
         }
         Relationships: []
       }
