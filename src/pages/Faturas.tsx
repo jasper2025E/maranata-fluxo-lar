@@ -128,12 +128,19 @@ const Faturas = () => {
   
   const filteredFaturas = useMemo(() => {
     return faturas.filter((fatura) => {
+      // Busca por nome, código, curso ou status
+      const searchLower = searchTerm.toLowerCase();
       const matchesSearch = !searchTerm || 
-        fatura.alunos?.nome_completo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        fatura.responsaveis?.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        fatura.codigo_sequencial?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        fatura.cursos?.nome?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === "todas" || fatura.status?.toLowerCase() === statusFilter;
+        fatura.alunos?.nome_completo?.toLowerCase().includes(searchLower) ||
+        fatura.responsaveis?.nome?.toLowerCase().includes(searchLower) ||
+        fatura.codigo_sequencial?.toLowerCase().includes(searchLower) ||
+        fatura.cursos?.nome?.toLowerCase().includes(searchLower) ||
+        fatura.status?.toLowerCase().includes(searchLower);
+      
+      // Filtro de status - normaliza para lowercase para comparação
+      const faturaStatus = fatura.status?.toLowerCase() || '';
+      const matchesStatus = statusFilter === "todas" || faturaStatus === statusFilter.toLowerCase();
+      
       const matchesAluno = alunoFilter === "todos" || fatura.aluno_id === alunoFilter;
       const matchesCurso = cursoFilter === "todos" || fatura.curso_id === cursoFilter;
       
