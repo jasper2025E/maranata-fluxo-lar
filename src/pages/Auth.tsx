@@ -324,10 +324,6 @@ const Auth = () => {
             <p className="text-sm" style={{ color: '#1A1C2D' }}>
               © {new Date().getFullYear()} {schoolName}
             </p>
-            <span style={{ color: 'rgba(26, 28, 45, 0.4)' }}>•</span>
-            <p className="text-xs" style={{ color: 'rgba(26, 28, 45, 0.7)' }}>
-              reforcomaranata.com.br
-            </p>
           </div>
           <Popover>
             <PopoverTrigger asChild>
