@@ -321,22 +321,22 @@ const Auth = () => {
       <footer className="relative z-10 py-6 px-6 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-left">
-            <p className="text-white/60 text-sm">
+            <p className="text-sm" style={{ color: '#1A1C2D' }}>
               © {new Date().getFullYear()} {schoolName}
             </p>
-            <span className="text-white/30">•</span>
-            <p className="text-white/40 text-xs">
+            <span style={{ color: 'rgba(26, 28, 45, 0.4)' }}>•</span>
+            <p className="text-xs" style={{ color: 'rgba(26, 28, 45, 0.7)' }}>
               reforcomaranata.com.br
             </p>
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 text-sm text-white/60 hover:text-white transition-colors">
+              <button className="flex items-center gap-2 text-sm transition-colors hover:opacity-80" style={{ color: '#1A1C2D' }}>
                 <Headphones className="h-4 w-4" />
                 Suporte Técnico
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-2 bg-white/10 backdrop-blur-xl border-white/20" align="end">
+            <PopoverContent className="w-auto p-2 border" style={{ backgroundColor: '#1A1C2D', borderColor: 'rgba(255, 255, 255, 0.1)' }} align="end">
               <div className="flex flex-col gap-1">
                 <a 
                   href="https://wa.me/5598981384957" 
