@@ -1,4 +1,4 @@
-import childrenPlayingBg from "@/assets/children-playing-bg.jpg";
+import doodlePatternBg from "@/assets/doodle-pattern-bg.png";
 
 interface GradientBackgroundProps {
   gradientFrom?: string;
@@ -13,30 +13,30 @@ export function GradientBackground({
 }: GradientBackgroundProps) {
   return (
     <>
-      {/* Background image of children playing */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: `url(${childrenPlayingBg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
-
-      {/* Gradient overlay for readability and branding */}
+      {/* Base gradient background */}
       <div
         className="absolute inset-0"
         style={{
           background: `
             linear-gradient(135deg, 
-              hsla(${gradientFrom}, 0.85) 0%, 
-              hsla(340, 75%, 60%, 0.8) 25%,
-              hsla(${gradientVia}, 0.75) 50%, 
-              hsla(30, 90%, 65%, 0.8) 75%,
-              hsla(${gradientTo}, 0.85) 100%
+              hsl(${gradientFrom}) 0%, 
+              hsl(340, 75%, 60%) 25%,
+              hsl(${gradientVia}) 50%, 
+              hsl(30, 90%, 65%) 75%,
+              hsl(${gradientTo}) 100%
             )
           `,
+        }}
+      />
+
+      {/* Doodle pattern overlay */}
+      <div
+        className="absolute inset-0 opacity-20"
+        style={{
+          backgroundImage: `url(${doodlePatternBg})`,
+          backgroundSize: "600px",
+          backgroundRepeat: "repeat",
+          mixBlendMode: "overlay",
         }}
       />
 
