@@ -268,44 +268,44 @@ const Auth = () => {
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-md">
-          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
+          <div className="backdrop-blur-xl bg-slate-900/70 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-8 sm:p-10">
               <div className="flex justify-center mb-8">
-                <LogoDisplay size="large" darkText />
+                <LogoDisplay size="large" />
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-slate-700 text-sm font-medium">
+                  <Label htmlFor="email" className="text-white/90 text-sm font-medium">
                     E-mail
                   </Label>
-                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seuemail@exemplo.com" className={`h-12 rounded-lg bg-white/60 border border-slate-200 text-slate-900 placeholder:text-slate-400 transition-all duration-300 ease-out focus:bg-white focus:border-primary focus:shadow-md focus:ring-0 focus:outline-none hover:border-slate-300 hover:bg-white/80 ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
-                  {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
+                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Digite o e-mail" className={`h-12 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 transition-all duration-300 ease-out focus:bg-white/15 focus:border-white/40 focus:shadow-md focus:ring-0 focus:outline-none hover:border-white/30 hover:bg-white/15 ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
+                  {errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-slate-700 text-sm font-medium">
+                  <Label htmlFor="password" className="text-white/90 text-sm font-medium">
                     Senha
                   </Label>
                   <div className="relative">
-                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className={`h-12 pr-10 rounded-lg bg-white/60 border border-slate-200 text-slate-900 placeholder:text-slate-400 transition-all duration-300 ease-out focus:bg-white focus:border-primary focus:shadow-md focus:ring-0 focus:outline-none hover:border-slate-300 hover:bg-white/80 ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
-                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onClick={() => setShowPassword(!showPassword)}>
+                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="Digite a sua senha" className={`h-12 pr-10 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 transition-all duration-300 ease-out focus:bg-white/15 focus:border-white/40 focus:shadow-md focus:ring-0 focus:outline-none hover:border-white/30 hover:bg-white/15 ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
+                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
+                  {errors.password && <p className="text-xs text-red-400">{errors.password}</p>}
                 </div>
 
-                <div className="flex items-center">
+                <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked as boolean)} className="border-slate-300 data-[state=checked]:bg-primary data-[state=checked]:text-white" />
-                    <Label htmlFor="remember" className="text-sm text-slate-600 font-normal cursor-pointer">
+                    <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked as boolean)} className="border-white/30 data-[state=checked]:bg-white data-[state=checked]:text-slate-900" />
+                    <Label htmlFor="remember" className="text-sm text-white/70 font-normal cursor-pointer">
                       Lembrar
                     </Label>
                   </div>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full h-12 font-medium text-base rounded-lg bg-slate-800 hover:bg-slate-700 text-white mt-2">
+                <Button type="submit" disabled={loading} className="w-full h-12 font-medium text-base rounded-lg bg-slate-700 hover:bg-slate-600 text-white mt-2 border border-white/10">
                   {loading ? <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Entrando...
