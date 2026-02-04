@@ -172,19 +172,23 @@ const Auth = () => {
 
   // Logo component
   const LogoDisplay = ({
-    size = "large"
+    size = "large",
+    darkText = false
   }: {
     size?: "small" | "large";
+    darkText?: boolean;
   }) => {
     const iconSize = size === "large" ? "h-20 w-20" : "h-7 w-7";
     const textSize = size === "large" ? "text-3xl" : "text-xl";
     const imgSize = size === "large" ? "h-24 w-24" : "h-8 w-8";
     const containerSize = size === "large" ? "p-4" : "p-2";
+    const textColor = darkText ? "text-slate-800" : "text-white";
+    const iconColor = darkText ? "text-slate-700" : "text-white";
     return <div className="flex flex-col items-center gap-4 text-center">
         <div className={containerSize}>
-          {schoolLogo ? <img src={schoolLogo} alt={schoolName} className={`${imgSize} object-contain rounded-xl drop-shadow-lg`} /> : <GraduationCap className={`${iconSize} text-white drop-shadow-lg`} />}
+          {schoolLogo ? <img src={schoolLogo} alt={schoolName} className={`${imgSize} object-contain rounded-xl shadow-lg`} /> : <GraduationCap className={`${iconSize} ${iconColor} drop-shadow-lg`} />}
         </div>
-        <span className={`${textSize} font-bold text-white drop-shadow-md`}>{schoolName}</span>
+        <span className={`${textSize} font-bold ${textColor}`}>{schoolName}</span>
       </div>;
   };
   // Mostrar loading enquanto verifica sessão
@@ -264,38 +268,38 @@ const Auth = () => {
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-md">
-          <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="backdrop-blur-2xl bg-white/80 border border-white/40 rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-8 sm:p-10">
               <div className="flex justify-center mb-8">
-                <LogoDisplay size="large" />
+                <LogoDisplay size="large" darkText />
               </div>
 
               <form onSubmit={handleLogin} className="space-y-4">
                 <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-white/90 text-sm font-medium">
+                  <Label htmlFor="email" className="text-slate-700 text-sm font-medium">
                     E-mail
                   </Label>
-                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seuemail@exemplo.com" className={`h-12 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
-                  {errors.email && <p className="text-xs text-red-300">{errors.email}</p>}
+                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seuemail@exemplo.com" className={`h-12 rounded-lg bg-white/60 border border-slate-200 text-slate-900 placeholder:text-slate-400 transition-all duration-300 ease-out focus:bg-white focus:border-primary focus:shadow-md focus:ring-0 focus:outline-none hover:border-slate-300 hover:bg-white/80 ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
+                  {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-white/90 text-sm font-medium">
+                  <Label htmlFor="password" className="text-slate-700 text-sm font-medium">
                     Senha
                   </Label>
                   <div className="relative">
-                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className={`h-12 pr-10 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
-                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white" onClick={() => setShowPassword(!showPassword)}>
+                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className={`h-12 pr-10 rounded-lg bg-white/60 border border-slate-200 text-slate-900 placeholder:text-slate-400 transition-all duration-300 ease-out focus:bg-white focus:border-primary focus:shadow-md focus:ring-0 focus:outline-none hover:border-slate-300 hover:bg-white/80 ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
+                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-xs text-red-300">{errors.password}</p>}
+                  {errors.password && <p className="text-xs text-red-500">{errors.password}</p>}
                 </div>
 
                 <div className="flex items-center">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked as boolean)} className="border-white/40 data-[state=checked]:bg-white data-[state=checked]:text-primary" />
-                    <Label htmlFor="remember" className="text-sm text-white/80 font-normal cursor-pointer">
+                    <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked as boolean)} className="border-slate-300 data-[state=checked]:bg-primary data-[state=checked]:text-white" />
+                    <Label htmlFor="remember" className="text-sm text-slate-600 font-normal cursor-pointer">
                       Lembrar
                     </Label>
                   </div>
