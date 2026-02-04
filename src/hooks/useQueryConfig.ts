@@ -1,18 +1,18 @@
 import { UseQueryOptions } from "@tanstack/react-query";
 
-// Default query configuration - cache otimizado para performance
+// Default query configuration - cache agressivo para navegação rápida
 export const defaultQueryConfig: Partial<UseQueryOptions> = {
-  staleTime: 1000 * 60 * 2, // 2 minutos - dados frescos por mais tempo
-  gcTime: 1000 * 60 * 15, // 15 minutos de cache
+  staleTime: 1000 * 60 * 5, // 5 minutos - navegação instantânea
+  gcTime: 1000 * 60 * 30, // 30 minutos de cache em memória
   retry: 1,
   refetchOnWindowFocus: false,
-  refetchOnMount: false, // Usa cache se disponível
+  refetchOnMount: false,
 };
 
 // Short cache for frequently changing data (dashboard, KPIs)
 export const shortCacheConfig: Partial<UseQueryOptions> = {
-  staleTime: 1000 * 30, // 30 segundos
-  gcTime: 1000 * 60 * 5, // 5 minutos
+  staleTime: 1000 * 60 * 2, // 2 minutos
+  gcTime: 1000 * 60 * 10,
   retry: 1,
   refetchOnWindowFocus: false,
   refetchOnMount: false,
@@ -20,8 +20,8 @@ export const shortCacheConfig: Partial<UseQueryOptions> = {
 
 // Long cache for rarely changing data (cursos, turmas, escola)
 export const longCacheConfig: Partial<UseQueryOptions> = {
-  staleTime: 1000 * 60 * 5, // 5 minutos
-  gcTime: 1000 * 60 * 30, // 30 minutos
+  staleTime: 1000 * 60 * 10, // 10 minutos
+  gcTime: 1000 * 60 * 60, // 1 hora
   retry: 1,
   refetchOnWindowFocus: false,
   refetchOnMount: false,

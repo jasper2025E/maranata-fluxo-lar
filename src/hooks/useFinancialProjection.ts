@@ -608,8 +608,10 @@ export function useFinancialProjection() {
   return useQuery<FinancialProjectionData>({
     queryKey: [...queryKeys.dashboard.stats(), "financial-projection"],
     queryFn: fetchFinancialProjection,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 15,
-    retry: 2,
+    staleTime: 1000 * 60 * 10, // 10 minutos - dados de projeção não mudam frequentemente
+    gcTime: 1000 * 60 * 30,
+    retry: 1,
+    refetchOnMount: false, // Usa cache na navegação
+    refetchOnWindowFocus: false,
   });
 }
