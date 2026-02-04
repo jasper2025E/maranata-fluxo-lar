@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, ShieldCheck, ArrowLeft, GraduationCap, Headphones, MessageCircle, Instagram, Mail } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { GradientBackground } from "@/components/landing/GradientBackground";
 import { useQuery } from "@tanstack/react-query";
@@ -172,33 +171,27 @@ const Auth = () => {
 
   // Logo component
   const LogoDisplay = ({
-    size = "large",
-    darkText = false
+    size = "large"
   }: {
     size?: "small" | "large";
-    darkText?: boolean;
   }) => {
     const iconSize = size === "large" ? "h-20 w-20" : "h-7 w-7";
     const textSize = size === "large" ? "text-3xl" : "text-xl";
     const imgSize = size === "large" ? "h-24 w-24" : "h-8 w-8";
     const containerSize = size === "large" ? "p-4" : "p-2";
-    const textColor = darkText ? "text-slate-800" : "text-white";
-    const iconColor = darkText ? "text-slate-700" : "text-white";
     return <div className="flex flex-col items-center gap-4 text-center">
         <div className={containerSize}>
-          {schoolLogo ? <img src={schoolLogo} alt={schoolName} className={`${imgSize} object-contain rounded-xl shadow-lg`} /> : <GraduationCap className={`${iconSize} ${iconColor} drop-shadow-lg`} />}
+          {schoolLogo ? <img src={schoolLogo} alt={schoolName} className={`${imgSize} object-contain rounded-xl drop-shadow-lg`} /> : <GraduationCap className={`${iconSize} text-white drop-shadow-lg`} />}
         </div>
-        <span className={`${textSize} font-bold ${textColor}`}>{schoolName}</span>
+        <span className={`${textSize} font-bold text-white drop-shadow-md`}>{schoolName}</span>
       </div>;
   };
   // Mostrar loading enquanto verifica sessão
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+    return <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
         <GradientBackground />
         <Loader2 className="h-8 w-8 animate-spin text-white relative z-10" />
-      </div>
-    );
+      </div>;
   }
 
   // Redirecionamento direto se já autenticado (sem useEffect)
@@ -268,9 +261,9 @@ const Auth = () => {
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-md">
-          <div className="backdrop-blur-xl bg-slate-950/90 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="backdrop-blur-xl bg-white/10 border border-white/20 rounded-2xl shadow-2xl overflow-hidden">
             <div className="p-8 sm:p-10">
-              <div className="flex justify-center mb-8">
+              <div className="flex justify-center mb-8 bg-muted-foreground">
                 <LogoDisplay size="large" />
               </div>
 
@@ -279,8 +272,8 @@ const Auth = () => {
                   <Label htmlFor="email" className="text-white/90 text-sm font-medium">
                     E-mail
                   </Label>
-                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Digite o e-mail" className={`h-12 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 transition-all duration-300 ease-out focus:bg-white/15 focus:border-white/40 focus:shadow-md focus:ring-0 focus:outline-none hover:border-white/30 hover:bg-white/15 ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
-                  {errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
+                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="seuemail@exemplo.com" className={`h-12 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
+                  {errors.email && <p className="text-xs text-red-300">{errors.email}</p>}
                 </div>
 
                 <div className="space-y-1.5">
@@ -288,24 +281,24 @@ const Auth = () => {
                     Senha
                   </Label>
                   <div className="relative">
-                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="Digite a sua senha" className={`h-12 pr-10 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 transition-all duration-300 ease-out focus:bg-white/15 focus:border-white/40 focus:shadow-md focus:ring-0 focus:outline-none hover:border-white/30 hover:bg-white/15 ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
-                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80" onClick={() => setShowPassword(!showPassword)}>
+                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" className={`h-12 pr-10 rounded-lg bg-white/5 border border-white/20 text-white placeholder:text-white/40 transition-all duration-500 ease-out focus:bg-white/10 focus:border-white/60 focus:shadow-[0_0_20px_rgba(255,255,255,0.15)] focus:ring-0 focus:outline-none hover:border-white/40 hover:bg-white/[0.07] ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
+                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/60 hover:text-white" onClick={() => setShowPassword(!showPassword)}>
                       {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                     </button>
                   </div>
-                  {errors.password && <p className="text-xs text-red-400">{errors.password}</p>}
+                  {errors.password && <p className="text-xs text-red-300">{errors.password}</p>}
                 </div>
 
-                <div className="flex items-center justify-between">
+                <div className="flex items-center">
                   <div className="flex items-center space-x-2">
-                    <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked as boolean)} className="border-white/30 data-[state=checked]:bg-white data-[state=checked]:text-slate-900" />
-                    <Label htmlFor="remember" className="text-sm text-white/70 font-normal cursor-pointer">
+                    <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked as boolean)} className="border-white/40 data-[state=checked]:bg-white data-[state=checked]:text-primary" />
+                    <Label htmlFor="remember" className="text-sm text-white/80 font-normal cursor-pointer">
                       Lembrar
                     </Label>
                   </div>
                 </div>
 
-                <Button type="submit" disabled={loading} className="w-full h-12 font-medium text-base rounded-lg bg-slate-700 hover:bg-slate-600 text-white mt-2 border border-white/10">
+                <Button type="submit" disabled={loading} className="w-full h-12 font-medium text-base rounded-lg bg-slate-800 hover:bg-slate-700 text-white mt-2">
                   {loading ? <>
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       Entrando...
@@ -321,51 +314,15 @@ const Auth = () => {
       <footer className="relative z-10 py-6 px-6 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-left">
-            <p className="text-sm" style={{ color: '#1A1C2D' }}>
+            <p className="text-white/60 text-sm">
               © {new Date().getFullYear()} {schoolName}
             </p>
-            <span style={{ color: 'rgba(26, 28, 45, 0.4)' }}>•</span>
-            <p className="text-xs" style={{ color: 'rgba(26, 28, 45, 0.7)' }}>
+            <span className="text-white/30">•</span>
+            <p className="text-white/40 text-xs text-center">
               reforcomaranata.com.br
             </p>
           </div>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 text-sm transition-colors hover:opacity-80" style={{ color: '#1A1C2D' }}>
-                <Headphones className="h-4 w-4" />
-                Suporte Técnico
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2 border" style={{ backgroundColor: '#1A1C2D', borderColor: 'rgba(255, 255, 255, 0.1)' }} align="end">
-              <div className="flex flex-col gap-1">
-                <a 
-                  href="https://wa.me/5598981384957" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
-                </a>
-                <a 
-                  href="https://www.instagram.com/mendysvictor/" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-                >
-                  <Instagram className="h-4 w-4" />
-                  Instagram
-                </a>
-                <a 
-                  href="mailto:victordbvtey@outlookk.com" 
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
-                >
-                  <Mail className="h-4 w-4" />
-                  E-mail
-                </a>
-              </div>
-            </PopoverContent>
-          </Popover>
+          
         </div>
       </footer>
     </div>;
