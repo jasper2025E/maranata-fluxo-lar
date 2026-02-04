@@ -171,10 +171,10 @@ export function AppSidebar() {
                 end={item.url === "/dashboard"}
                 className={cn(
                   "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5",
-                  "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                  "text-white/60 hover:text-white hover:bg-white/10",
                   "transition-colors duration-150"
                 )}
-                activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium"
+                activeClassName="bg-blue-500/20 text-blue-400 font-medium"
               >
                 <item.icon className="h-5 w-5 shrink-0" strokeWidth={1.75} />
               </NavLink>
@@ -191,10 +191,10 @@ export function AppSidebar() {
             end={item.url === "/dashboard"}
             className={cn(
               "flex items-center gap-3 rounded-xl px-3 py-2.5",
-              "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+              "text-white/60 hover:text-white hover:bg-white/10",
               "transition-colors duration-150"
             )}
-            activeClassName="bg-sidebar-primary/10 text-sidebar-primary font-medium border-l-2 border-sidebar-primary -ml-[2px]"
+            activeClassName="bg-blue-500/20 text-blue-400 font-medium border-l-2 border-blue-400 -ml-[2px]"
           >
             <item.icon className="h-[18px] w-[18px] shrink-0" strokeWidth={1.75} />
             <span className="text-sm flex-1">{t(item.titleKey)}</span>
@@ -219,8 +219,44 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className="border-r-0" collapsible="icon">
-      <SidebarContent className="gradient-sidebar">
+    <Sidebar className="border-r-0 relative overflow-hidden" collapsible="icon">
+      {/* Full sidebar gradient background like login */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          background: `
+            linear-gradient(135deg, 
+              hsl(0, 0%, 50%) 0%, 
+              hsl(0, 0%, 58%) 25%,
+              hsl(0, 0%, 54%) 50%, 
+              hsl(0, 0%, 60%) 75%,
+              hsl(0, 0%, 52%) 100%
+            )
+          `,
+        }}
+      />
+      {/* Doodle pattern overlay */}
+      <div
+        className="absolute inset-0 z-0"
+        style={{
+          backgroundImage: `url(${doodlePatternBg})`,
+          backgroundSize: "400px",
+          backgroundRepeat: "repeat",
+          opacity: 0.25,
+        }}
+      />
+      {/* Subtle accents */}
+      <div
+        className="absolute inset-0 z-0 opacity-15"
+        style={{
+          backgroundImage: `
+            radial-gradient(at 0% 0%, hsla(0, 0%, 70%, 0.4) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, hsla(0, 0%, 80%, 0.3) 0px, transparent 50%)
+          `,
+        }}
+      />
+      
+      <SidebarContent className="relative z-10">
         {/* Logo */}
         <div className={cn(
           "flex items-center gap-3 px-4 py-6",
@@ -242,8 +278,8 @@ export function AppSidebar() {
             <>
               {LogoContent}
               <div>
-                <h2 className="font-bold text-sidebar-foreground text-lg tracking-tight leading-tight">{escolaNome}</h2>
-                <p className="text-xs text-sidebar-foreground/50 font-medium">{t("nav.financialSystem")}</p>
+                <h2 className="font-bold text-white text-lg tracking-tight leading-tight">{escolaNome}</h2>
+                <p className="text-xs text-white/50 font-medium">{t("nav.financialSystem")}</p>
               </div>
             </>
           )}
@@ -251,7 +287,7 @@ export function AppSidebar() {
 
         <SidebarGroup className="px-3 mt-2">
           {!isCollapsed && (
-            <SidebarGroupLabel className="text-sidebar-foreground/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
+            <SidebarGroupLabel className="text-white/40 text-[10px] font-semibold uppercase tracking-widest px-3 mb-2">
               {t("nav.main")}
             </SidebarGroupLabel>
           )}
@@ -268,10 +304,10 @@ export function AppSidebar() {
                         type="button"
                         className={cn(
                           isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                          "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                          "text-white/60 hover:text-white hover:bg-white/10",
                           "transition-colors duration-150",
-                          isOperationsActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                          !isCollapsed && isOperationsActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                          isOperationsActive && "bg-blue-500/20 text-blue-400 font-medium",
+                          !isCollapsed && isOperationsActive && "border-l-2 border-blue-400 -ml-[2px]",
                         )}
                       >
                         <Wallet className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
@@ -291,7 +327,7 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                     {!isCollapsed && (
-                      <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
+                      <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-white/20 pl-3">
                         {filterByRole(operationsItems).map((item) => (
                           <SidebarMenuItem key={item.titleKey}>
                             <SidebarMenuButton asChild>
@@ -299,10 +335,10 @@ export function AppSidebar() {
                                 to={item.url}
                                 className={cn(
                                   "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
-                                  "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                                  "text-white/50 hover:text-white hover:bg-white/10",
                                   "transition-all duration-150"
                                 )}
-                                activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
+                                activeClassName="text-blue-400 font-medium bg-blue-500/10"
                               >
                                 <span className="flex-1">{t(item.titleKey)}</span>
                               </NavLink>
@@ -324,10 +360,10 @@ export function AppSidebar() {
                         type="button"
                         className={cn(
                           isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                          "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                          "text-white/60 hover:text-white hover:bg-white/10",
                           "transition-colors duration-150",
-                          isAnalysisActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                          !isCollapsed && isAnalysisActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                          isAnalysisActive && "bg-blue-500/20 text-blue-400 font-medium",
+                          !isCollapsed && isAnalysisActive && "border-l-2 border-blue-400 -ml-[2px]",
                         )}
                       >
                         <BarChart3 className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
@@ -347,7 +383,7 @@ export function AppSidebar() {
                   </CollapsibleTrigger>
                   <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                     {!isCollapsed && (
-                      <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
+                      <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-white/20 pl-3">
                         {filterByRole(analysisItems).map((item) => {
                           return (
                             <SidebarMenuItem key={item.titleKey}>
@@ -356,10 +392,10 @@ export function AppSidebar() {
                                   to={item.url}
                                   className={cn(
                                     "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
-                                    "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                                    "text-white/50 hover:text-white hover:bg-white/10",
                                     "transition-all duration-150"
                                   )}
-                                  activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
+                                  activeClassName="text-blue-400 font-medium bg-blue-500/10"
                                 >
                                   <span>{t(item.titleKey)}</span>
                                 </NavLink>
@@ -383,10 +419,10 @@ export function AppSidebar() {
                           type="button"
                           className={cn(
                             isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                            "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                            "text-white/60 hover:text-white hover:bg-white/10",
                             "transition-colors duration-150",
-                            isEscolaActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                            !isCollapsed && isEscolaActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                            isEscolaActive && "bg-blue-500/20 text-blue-400 font-medium",
+                            !isCollapsed && isEscolaActive && "border-l-2 border-blue-400 -ml-[2px]",
                           )}
                         >
                           <Building2 className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
@@ -406,7 +442,7 @@ export function AppSidebar() {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                       {!isCollapsed && (
-                        <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
+                        <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-white/20 pl-3">
                           {escolaItems.map((item) => {
                             const isTabActive = isEscolaActive && escolaTab === item.tab;
                             return (
@@ -417,8 +453,8 @@ export function AppSidebar() {
                                     className={cn(
                                       "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
                                       isTabActive
-                                        ? "text-sidebar-primary font-medium bg-sidebar-primary/5"
-                                        : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                                        ? "text-blue-400 font-medium bg-blue-500/10"
+                                        : "text-white/50 hover:text-white hover:bg-white/10",
                                       "transition-all duration-150"
                                     )}
                                     activeClassName=""
@@ -446,10 +482,10 @@ export function AppSidebar() {
                           type="button"
                           className={cn(
                             isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                            "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                            "text-white/60 hover:text-white hover:bg-white/10",
                             "transition-colors duration-150",
-                            isHRActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                            !isCollapsed && isHRActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                            isHRActive && "bg-blue-500/20 text-blue-400 font-medium",
+                            !isCollapsed && isHRActive && "border-l-2 border-blue-400 -ml-[2px]",
                           )}
                         >
                           <Briefcase className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
@@ -469,7 +505,7 @@ export function AppSidebar() {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                       {!isCollapsed && (
-                        <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
+                        <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-white/20 pl-3">
                           {hrItems.map((item) => {
                             const isTabActive = isHRActive && rhTab === item.tab;
                             return (
@@ -480,8 +516,8 @@ export function AppSidebar() {
                                   className={cn(
                                     "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
                                     isTabActive
-                                      ? "text-sidebar-primary font-medium bg-sidebar-primary/5"
-                                      : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                                      ? "text-blue-400 font-medium bg-blue-500/10"
+                                      : "text-white/50 hover:text-white hover:bg-white/10",
                                     "transition-all duration-150"
                                   )}
                                   activeClassName=""
@@ -509,10 +545,10 @@ export function AppSidebar() {
                           type="button"
                           className={cn(
                             isCollapsed ? "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full" : "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                            "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
+                            "text-white/60 hover:text-white hover:bg-white/10",
                             "transition-colors duration-150",
-                            isConfigActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                            !isCollapsed && isConfigActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                            isConfigActive && "bg-blue-500/20 text-blue-400 font-medium",
+                            !isCollapsed && isConfigActive && "border-l-2 border-blue-400 -ml-[2px]",
                           )}
                         >
                           <Settings className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
@@ -532,7 +568,7 @@ export function AppSidebar() {
                     </CollapsibleTrigger>
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                       {!isCollapsed && (
-                        <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
+                        <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-white/20 pl-3">
                           {configItems
                             .filter(item => {
                               if (item.adminOnly) return hasRole("admin");
@@ -551,8 +587,8 @@ export function AppSidebar() {
                                         "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
                                         "transition-all duration-150",
                                         isTabActive 
-                                          ? "text-sidebar-primary font-medium bg-sidebar-primary/5" 
-                                          : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                                          ? "text-blue-400 font-medium bg-blue-500/10" 
+                                          : "text-white/50 hover:text-white hover:bg-white/10"
                                       )}
                                       activeClassName=""
                                     >
@@ -573,46 +609,10 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="relative border-t border-white/10 p-3 overflow-hidden">
-        {/* Gradient background like login */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `
-              linear-gradient(135deg, 
-                hsl(0, 0%, 50%) 0%, 
-                hsl(0, 0%, 58%) 25%,
-                hsl(0, 0%, 54%) 50%, 
-                hsl(0, 0%, 60%) 75%,
-                hsl(0, 0%, 52%) 100%
-              )
-            `,
-          }}
-        />
-        {/* Doodle pattern overlay */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${doodlePatternBg})`,
-            backgroundSize: "400px",
-            backgroundRepeat: "repeat",
-            opacity: 0.25,
-          }}
-        />
-        {/* Subtle accents */}
-        <div
-          className="absolute inset-0 opacity-15"
-          style={{
-            backgroundImage: `
-              radial-gradient(at 0% 0%, hsla(0, 0%, 70%, 0.4) 0px, transparent 50%),
-              radial-gradient(at 100% 100%, hsla(0, 0%, 80%, 0.3) 0px, transparent 50%)
-            `,
-          }}
-        />
-        
+      <SidebarFooter className="relative z-10 border-t border-white/10 p-3">
         {/* School Info */}
         {!isCollapsed && (escolaCnpj || escolaEndereco) && (
-          <div className="relative z-10 mb-3 px-3 py-3 rounded-lg bg-slate-900/60 backdrop-blur-sm border border-white/10">
+          <div className="mb-3 px-3 py-3 rounded-lg bg-slate-900/60 backdrop-blur-sm border border-white/10">
             <p className="font-semibold text-sm text-white">{escolaNome}</p>
             {escolaCnpj && (
               <p className="text-xs text-blue-400 mt-0.5">CNPJ: {escolaCnpj}</p>
@@ -623,7 +623,7 @@ export function AppSidebar() {
           </div>
         )}
         
-        <SidebarMenu className="relative z-10 space-y-1">
+        <SidebarMenu className="space-y-1">
           {/* Color Picker */}
           <SidebarMenuItem>
             <SidebarColorPicker isCollapsed={isCollapsed} />
