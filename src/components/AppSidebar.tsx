@@ -219,39 +219,39 @@ export function AppSidebar() {
   );
 
   return (
-    <Sidebar className="border-r-0 relative overflow-hidden" collapsible="icon">
+    <Sidebar className="border-r-0 [&_[data-sidebar=sidebar]]:bg-transparent [&_[data-sidebar=sidebar]]:relative [&_[data-sidebar=sidebar]]:overflow-hidden" collapsible="icon">
       {/* Full sidebar gradient background like login */}
       <div
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 pointer-events-none"
         style={{
           background: `
             linear-gradient(135deg, 
-              hsl(0, 0%, 50%) 0%, 
-              hsl(0, 0%, 58%) 25%,
-              hsl(0, 0%, 54%) 50%, 
-              hsl(0, 0%, 60%) 75%,
-              hsl(0, 0%, 52%) 100%
+              hsl(220, 15%, 13%) 0%, 
+              hsl(220, 18%, 16%) 25%,
+              hsl(220, 15%, 14%) 50%, 
+              hsl(220, 18%, 17%) 75%,
+              hsl(220, 15%, 12%) 100%
             )
           `,
         }}
       />
       {/* Doodle pattern overlay */}
       <div
-        className="absolute inset-0 z-0"
+        className="absolute inset-0 z-0 pointer-events-none"
         style={{
           backgroundImage: `url(${doodlePatternBg})`,
           backgroundSize: "400px",
           backgroundRepeat: "repeat",
-          opacity: 0.25,
+          opacity: 0.15,
         }}
       />
       {/* Subtle accents */}
       <div
-        className="absolute inset-0 z-0 opacity-15"
+        className="absolute inset-0 z-0 opacity-20 pointer-events-none"
         style={{
           backgroundImage: `
-            radial-gradient(at 0% 0%, hsla(0, 0%, 70%, 0.4) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, hsla(0, 0%, 80%, 0.3) 0px, transparent 50%)
+            radial-gradient(at 0% 0%, hsla(220, 40%, 40%, 0.3) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, hsla(220, 40%, 30%, 0.2) 0px, transparent 50%)
           `,
         }}
       />
