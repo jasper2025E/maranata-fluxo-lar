@@ -268,7 +268,7 @@ const Auth = () => {
 
       <main className="relative z-10 flex-1 flex items-center justify-center px-6 py-8">
         <div className="w-full max-w-md">
-          <div className="backdrop-blur-2xl bg-white/80 border border-white/40 rounded-2xl shadow-2xl overflow-hidden">
+          <div className="bg-white border border-slate-200 rounded-2xl shadow-xl overflow-hidden">
             <div className="p-8 sm:p-10">
               <div className="flex justify-center mb-8">
                 <LogoDisplay size="large" darkText />
