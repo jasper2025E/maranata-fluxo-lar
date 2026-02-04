@@ -1,4 +1,5 @@
 import { useState } from "react";
+import doodlePatternBg from "@/assets/doodle-pattern-bg.png";
 import {
   LayoutDashboard,
   Users,
@@ -572,21 +573,57 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="gradient-sidebar border-t border-sidebar-border/50 p-3">
+      <SidebarFooter className="relative border-t border-white/10 p-3 overflow-hidden">
+        {/* Gradient background like login */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `
+              linear-gradient(135deg, 
+                hsl(0, 0%, 50%) 0%, 
+                hsl(0, 0%, 58%) 25%,
+                hsl(0, 0%, 54%) 50%, 
+                hsl(0, 0%, 60%) 75%,
+                hsl(0, 0%, 52%) 100%
+              )
+            `,
+          }}
+        />
+        {/* Doodle pattern overlay */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${doodlePatternBg})`,
+            backgroundSize: "400px",
+            backgroundRepeat: "repeat",
+            opacity: 0.25,
+          }}
+        />
+        {/* Subtle accents */}
+        <div
+          className="absolute inset-0 opacity-15"
+          style={{
+            backgroundImage: `
+              radial-gradient(at 0% 0%, hsla(0, 0%, 70%, 0.4) 0px, transparent 50%),
+              radial-gradient(at 100% 100%, hsla(0, 0%, 80%, 0.3) 0px, transparent 50%)
+            `,
+          }}
+        />
+        
         {/* School Info */}
         {!isCollapsed && (escolaCnpj || escolaEndereco) && (
-          <div className="mb-3 px-3 py-3 rounded-lg bg-sidebar-accent/50 border border-sidebar-border/30">
-            <p className="font-semibold text-sm text-sidebar-foreground">{escolaNome}</p>
+          <div className="relative z-10 mb-3 px-3 py-3 rounded-lg bg-slate-900/60 backdrop-blur-sm border border-white/10">
+            <p className="font-semibold text-sm text-white">{escolaNome}</p>
             {escolaCnpj && (
-              <p className="text-xs text-sidebar-primary mt-0.5">CNPJ: {escolaCnpj}</p>
+              <p className="text-xs text-blue-400 mt-0.5">CNPJ: {escolaCnpj}</p>
             )}
             {escolaEndereco && (
-              <p className="text-xs text-sidebar-foreground/50 mt-0.5">{escolaEndereco}</p>
+              <p className="text-xs text-white/60 mt-0.5">{escolaEndereco}</p>
             )}
           </div>
         )}
         
-        <SidebarMenu className="space-y-1">
+        <SidebarMenu className="relative z-10 space-y-1">
           {/* Color Picker */}
           <SidebarMenuItem>
             <SidebarColorPicker isCollapsed={isCollapsed} />
@@ -601,7 +638,7 @@ export function AppSidebar() {
                     onClick={handleLogout}
                     className={cn(
                       "flex items-center justify-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                      "text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10",
+                      "text-white/60 hover:text-red-400 hover:bg-red-500/10",
                       "transition-colors duration-150"
                     )}
                   >
@@ -617,7 +654,7 @@ export function AppSidebar() {
                 onClick={handleLogout}
                 className={cn(
                   "flex items-center gap-3 rounded-xl px-3 py-2.5 w-full",
-                  "text-sidebar-foreground/50 hover:text-destructive hover:bg-destructive/10",
+                  "text-white/60 hover:text-red-400 hover:bg-red-500/10",
                   "transition-colors duration-150"
                 )}
               >
