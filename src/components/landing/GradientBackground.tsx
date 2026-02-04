@@ -9,17 +9,17 @@ interface GradientBackgroundProps {
 export function GradientBackground({}: GradientBackgroundProps) {
   return (
     <>
-      {/* Darker pastel gradient background */}
+      {/* Black and white gradient background */}
       <div
         className="absolute inset-0"
         style={{
           background: `
             linear-gradient(135deg, 
-              hsl(280, 50%, 78%) 0%, 
-              hsl(320, 45%, 80%) 25%,
-              hsl(340, 40%, 82%) 50%, 
-              hsl(30, 50%, 80%) 75%,
-              hsl(45, 55%, 78%) 100%
+              hsl(0, 0%, 85%) 0%, 
+              hsl(0, 0%, 90%) 25%,
+              hsl(0, 0%, 88%) 50%, 
+              hsl(0, 0%, 92%) 75%,
+              hsl(0, 0%, 86%) 100%
             )
           `,
         }}
@@ -32,19 +32,19 @@ export function GradientBackground({}: GradientBackgroundProps) {
           backgroundImage: `url(${doodlePatternBg})`,
           backgroundSize: "500px",
           backgroundRepeat: "repeat",
-          opacity: 0.4,
+          opacity: 0.35,
         }}
       />
 
-      {/* Subtle color accents */}
+      {/* Subtle gray accents */}
       <div
-        className="absolute inset-0 opacity-30"
+        className="absolute inset-0 opacity-20"
         style={{
           backgroundImage: `
-            radial-gradient(at 0% 0%, hsla(280, 60%, 80%, 0.4) 0px, transparent 50%),
-            radial-gradient(at 100% 0%, hsla(45, 70%, 85%, 0.4) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, hsla(30, 60%, 85%, 0.3) 0px, transparent 50%),
-            radial-gradient(at 0% 100%, hsla(320, 50%, 85%, 0.3) 0px, transparent 50%)
+            radial-gradient(at 0% 0%, hsla(0, 0%, 70%, 0.4) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, hsla(0, 0%, 95%, 0.4) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, hsla(0, 0%, 80%, 0.3) 0px, transparent 50%),
+            radial-gradient(at 0% 100%, hsla(0, 0%, 75%, 0.3) 0px, transparent 50%)
           `,
         }}
       />
