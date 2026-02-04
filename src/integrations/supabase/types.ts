@@ -659,6 +659,39 @@ export type Database = {
           },
         ]
       }
+      data_retention_config: {
+        Row: {
+          anonymization_enabled: boolean | null
+          created_at: string | null
+          fields_to_anonymize: string[] | null
+          id: string
+          last_cleanup_at: string | null
+          retention_days: number
+          table_name: string
+          updated_at: string | null
+        }
+        Insert: {
+          anonymization_enabled?: boolean | null
+          created_at?: string | null
+          fields_to_anonymize?: string[] | null
+          id?: string
+          last_cleanup_at?: string | null
+          retention_days?: number
+          table_name: string
+          updated_at?: string | null
+        }
+        Update: {
+          anonymization_enabled?: boolean | null
+          created_at?: string | null
+          fields_to_anonymize?: string[] | null
+          id?: string
+          last_cleanup_at?: string | null
+          retention_days?: number
+          table_name?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       depreciacao_mensal: {
         Row: {
           ano_referencia: number
@@ -2022,6 +2055,59 @@ export type Database = {
           },
           {
             foreignKeyName: "lancamentos_contabeis_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lgpd_deletion_requests: {
+        Row: {
+          affected_tables: string[] | null
+          created_at: string | null
+          id: string
+          notes: string | null
+          processed_at: string | null
+          processed_by: string | null
+          request_type: string
+          requester_cpf: string | null
+          requester_email: string
+          status: string
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          affected_tables?: string[] | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type: string
+          requester_cpf?: string | null
+          requester_email: string
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          affected_tables?: string[] | null
+          created_at?: string | null
+          id?: string
+          notes?: string | null
+          processed_at?: string | null
+          processed_by?: string | null
+          request_type?: string
+          requester_cpf?: string | null
+          requester_email?: string
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lgpd_deletion_requests_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -3829,6 +3915,33 @@ export type Database = {
       }
     }
     Views: {
+      data_retention_status: {
+        Row: {
+          anonymization_enabled: boolean | null
+          fields_to_anonymize: string[] | null
+          last_cleanup_at: string | null
+          retention_days: number | null
+          status: string | null
+          table_name: string | null
+        }
+        Insert: {
+          anonymization_enabled?: boolean | null
+          fields_to_anonymize?: string[] | null
+          last_cleanup_at?: string | null
+          retention_days?: number | null
+          status?: never
+          table_name?: string | null
+        }
+        Update: {
+          anonymization_enabled?: boolean | null
+          fields_to_anonymize?: string[] | null
+          last_cleanup_at?: string | null
+          retention_days?: number | null
+          status?: never
+          table_name?: string | null
+        }
+        Relationships: []
+      }
       escola_public_branding: {
         Row: {
           logo_url: string | null
@@ -4209,6 +4322,7 @@ export type Database = {
       }
     }
     Functions: {
+      anonymize_old_logs: { Args: never; Returns: Json }
       atualizar_status_faturas: { Args: never; Returns: undefined }
       can_view_security_summary: { Args: never; Returns: boolean }
       criar_notificacao: {
@@ -4431,6 +4545,14 @@ export type Database = {
       is_school_user: { Args: { _user_id: string }; Returns: boolean }
       is_system_manager: { Args: { _user_id: string }; Returns: boolean }
       is_tenant_blocked: { Args: { p_tenant_id: string }; Returns: boolean }
+      log_lead_export: {
+        Args: {
+          p_export_format?: string
+          p_lead_ids: string[]
+          p_metadata?: Json
+        }
+        Returns: string
+      }
       log_manager_action: {
         Args: {
           p_action: string
