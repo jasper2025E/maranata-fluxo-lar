@@ -143,12 +143,12 @@ export const queryKeys = {
   },
 };
 
-// Hook para listar faturas - OTIMIZADO para velocidade
+// Hook para listar faturas - CORRIGIDO para garantir visibilidade de todas faturas
 export function useFaturas() {
   return useQuery({
     queryKey: queryKeys.faturas.list(),
     queryFn: async () => {
-      // Buscar faturas com campos essenciais apenas - ORDER BY no banco é mais rápido
+      // Buscar faturas com campos essenciais - ordenar por vencimento para pegar as mais urgentes
       const { data, error } = await supabase
         .from("faturas")
         .select(`
@@ -160,25 +160,32 @@ export function useFaturas() {
           cursos(nome),
           responsaveis(nome, email, telefone)
         `)
-        .order("status", { ascending: true }) // Vencida/Aberta primeiro (alfabético)
-        .order("data_vencimento", { ascending: true })
-        .limit(500); // Reduzido para performance
+        .order("data_vencimento", { ascending: true }) // Mais antigas primeiro
+        .limit(1000); // Aumentado para garantir visibilidade de Pagas e Vencidas
       
       if (error) throw error;
       
-      // Ordenação leve apenas se necessário
-      const statusPriority: Record<string, number> = { Vencida: 1, Aberta: 2, Parcial: 3, Paga: 4, Cancelada: 5 };
+      // Ordenação por prioridade de negócio: Vencida > Aberta > Parcial > Paga > Cancelada
+      const statusPriority: Record<string, number> = { 
+        Vencida: 1, 
+        Aberta: 2, 
+        Parcial: 3, 
+        Paga: 4, 
+        Cancelada: 5 
+      };
       
       return (data || []).sort((a, b) => {
         const priorityA = statusPriority[a.status] || 99;
         const priorityB = statusPriority[b.status] || 99;
-        return priorityA - priorityB;
+        if (priorityA !== priorityB) return priorityA - priorityB;
+        // Dentro do mesmo status, ordenar por data de vencimento (mais antigas primeiro)
+        return new Date(a.data_vencimento).getTime() - new Date(b.data_vencimento).getTime();
       }) as Fatura[];
     },
-    staleTime: 1000 * 60 * 3, // 3 minutos - realtime invalida quando necessário
+    staleTime: 1000 * 60 * 2, // 2 minutos
     gcTime: 1000 * 60 * 15,
     refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnMount: true, // CRÍTICO: garantir dados frescos na navegação
   });
 }
 
