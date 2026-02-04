@@ -9,42 +9,43 @@ interface GradientBackgroundProps {
 export function GradientBackground({}: GradientBackgroundProps) {
   return (
     <>
-      {/* Light pastel gradient background */}
+      {/* Dark gradient background */}
       <div
         className="absolute inset-0"
         style={{
           background: `
             linear-gradient(135deg, 
-              hsl(280, 60%, 92%) 0%, 
-              hsl(320, 50%, 93%) 25%,
-              hsl(340, 45%, 94%) 50%, 
-              hsl(30, 60%, 93%) 75%,
-              hsl(45, 70%, 92%) 100%
+              hsl(280, 40%, 15%) 0%, 
+              hsl(320, 35%, 18%) 25%,
+              hsl(340, 30%, 20%) 50%, 
+              hsl(20, 35%, 18%) 75%,
+              hsl(35, 40%, 15%) 100%
             )
           `,
         }}
       />
 
-      {/* Doodle pattern overlay - more visible */}
+      {/* Doodle pattern overlay - subtle on dark */}
       <div
         className="absolute inset-0"
         style={{
           backgroundImage: `url(${doodlePatternBg})`,
           backgroundSize: "500px",
           backgroundRepeat: "repeat",
-          opacity: 0.4,
+          opacity: 0.08,
+          mixBlendMode: "overlay",
         }}
       />
 
       {/* Subtle color accents */}
       <div
-        className="absolute inset-0 opacity-30"
+        className="absolute inset-0 opacity-40"
         style={{
           backgroundImage: `
-            radial-gradient(at 0% 0%, hsla(280, 60%, 80%, 0.4) 0px, transparent 50%),
-            radial-gradient(at 100% 0%, hsla(45, 70%, 85%, 0.4) 0px, transparent 50%),
-            radial-gradient(at 100% 100%, hsla(30, 60%, 85%, 0.3) 0px, transparent 50%),
-            radial-gradient(at 0% 100%, hsla(320, 50%, 85%, 0.3) 0px, transparent 50%)
+            radial-gradient(at 0% 0%, hsla(280, 50%, 30%, 0.5) 0px, transparent 50%),
+            radial-gradient(at 100% 0%, hsla(35, 50%, 25%, 0.4) 0px, transparent 50%),
+            radial-gradient(at 100% 100%, hsla(20, 45%, 25%, 0.4) 0px, transparent 50%),
+            radial-gradient(at 0% 100%, hsla(320, 40%, 25%, 0.4) 0px, transparent 50%)
           `,
         }}
       />
