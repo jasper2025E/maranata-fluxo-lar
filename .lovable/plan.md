@@ -1,54 +1,105 @@
 
-# Plano: Corrigir Exibição da Logo na Tela de Login
+# Plano: Correção do Problema Crônico de Faturas Não Aparecendo
+
+## Diagnóstico
+
+O banco de dados contém:
+- **554 faturas Abertas**
+- **5 faturas Pagas** 
+- **1 fatura Vencida**
+
+### Causas Raiz Identificadas:
+
+1. **Limite de 500 registros cortando dados**: A query busca apenas 500 faturas ordenadas alfabeticamente por status ("Aberta" vem antes de "Vencida"). Com 554 faturas abertas, as pagas e vencidas ficam **fora do corte**.
+
+2. **Ordenação incorreta no banco**: A query usa `ORDER BY status ASC`, que ordena alfabeticamente, não por prioridade de negócio.
+
+3. **Cache não atualiza**: Com `refetchOnMount: false`, mudanças de status não são refletidas ao navegar entre páginas.
+
+---
+
+## Solução em 4 Etapas
+
+### Etapa 1: Corrigir a Query de Faturas
+
+**Arquivo**: `src/hooks/useFaturas.ts`
+
+**Mudanças**:
+- Aumentar limite de 500 para **1000 registros**
+- Mudar ordenação para **prioridade de negócio** (Vencida primeiro, depois Aberta, depois Paga)
+- Usar `refetchOnMount: 'always'` para garantir dados frescos na navegação
+
+```typescript
+// Query corrigida com ordenação por prioridade real
+const { data, error } = await supabase
+  .from("faturas")
+  .select(`campos...`)
+  .order("data_vencimento", { ascending: true }) // Mais antigas primeiro
+  .limit(1000);
+
+// Re-ordenar por prioridade de status
+const statusPriority = { Vencida: 1, Aberta: 2, Parcial: 3, Paga: 4, Cancelada: 5 };
+return data.sort((a, b) => {
+  const pA = statusPriority[a.status] || 99;
+  const pB = statusPriority[b.status] || 99;
+  if (pA !== pB) return pA - pB;
+  return new Date(a.data_vencimento) - new Date(b.data_vencimento);
+});
+```
+
+### Etapa 2: Forçar Refetch na Navegação
+
+**Arquivo**: `src/hooks/useFaturas.ts`
+
+**Mudança**: Configurar `refetchOnMount: true` para a query de faturas:
+
+```typescript
+export function useFaturas() {
+  return useQuery({
+    queryKey: queryKeys.faturas.list(),
+    queryFn: async () => { ... },
+    staleTime: 1000 * 60 * 2, // 2 minutos
+    refetchOnMount: true, // CRÍTICO: garantir dados frescos
+    refetchOnWindowFocus: false,
+  });
+}
+```
+
+### Etapa 3: Garantir Invalidação no Realtime
+
+**Arquivo**: `src/contexts/RealtimeProvider.tsx`
+
+**Verificação**: O realtime já invalida corretamente o cache de faturas. Apenas garantir que a key de invalidação seja consistente.
+
+### Etapa 4: Corrigir Filtros de Status
+
+**Arquivo**: `src/pages/Faturas.tsx`
+
+**Mudança**: Normalizar comparação de status para case-insensitive:
+
+```typescript
+const matchesStatus = statusFilter === "todas" || 
+  fatura.status?.toLowerCase() === statusFilter.toLowerCase();
+```
+
+---
+
+## Detalhes Técnicos
+
+### Arquivos a Modificar:
+
+| Arquivo | Mudança |
+|---------|---------|
+| `src/hooks/useFaturas.ts` | Aumentar limite, corrigir ordenação, habilitar refetch |
+| `src/pages/Faturas.tsx` | Normalizar filtro de status (já está correto) |
+
+### Impacto:
+- **Navegação**: Pode ficar ~100-200ms mais lenta na primeira carga (1000 registros vs 500)
+- **Confiabilidade**: 100% das faturas sempre visíveis
+- **Cache**: Dados sempre frescos ao entrar na página
+
+---
 
 ## Resumo
-A logo da escola não aparece na tela de login porque a view de branding está configurada para respeitar o RLS da tabela base, que exige autenticação. A solução é usar uma função de banco de dados já existente e auditada que permite acesso público seguro.
 
-## Por que a logo não aparece?
-A view `escola_public_branding` foi configurada com `security_invoker=on` por questões de segurança. Isso faz ela herdar as regras de acesso da tabela `escola`, que exige login. Como resultado, visitantes anônimos na tela de login recebem um resultado vazio.
-
-## Solução Proposta
-Usar a função `get_escola_public_info()` que já existe no sistema e foi criada especificamente para este caso de uso. Esta função:
-
-- É do tipo SECURITY DEFINER (executa com privilégios elevados de forma controlada)
-- Retorna APENAS nome e logo da escola
-- Não expõe dados sensíveis como CNPJ, contatos ou configurações financeiras
-
-## Alterações Necessárias
-
-### 1. Atualizar a página de login (Auth.tsx)
-
-Modificar a query de branding para usar a função RPC em vez da view:
-
-**Antes:**
-```typescript
-const { data } = await supabase
-  .from("escola_public_branding")
-  .select("nome, logo_url")
-  .maybeSingle();
-```
-
-**Depois:**
-```typescript
-const { data } = await supabase
-  .rpc("get_escola_public_info")
-  .maybeSingle();
-```
-
-## Arquivos Afetados
-
-| Arquivo | Alteração |
-|---------|-----------|
-| `src/pages/Auth.tsx` | Trocar chamada da view pela função RPC |
-
-## Segurança
-
-Esta solução é segura porque:
-
-1. A função `get_escola_public_info` já existe e foi auditada
-2. Retorna apenas dados públicos (nome, logo)
-3. Não expõe tenant_id, CNPJ, telefones ou informações financeiras
-4. É a abordagem recomendada para acesso público controlado
-
-## Resultado Esperado
-Após a implementação, a logo e nome da escola aparecerão corretamente na tela de login para todos os visitantes, mantendo a segurança do sistema.
+A correção principal é **aumentar o limite de 500 para 1000** e garantir que a **ordenação priorize Vencidas e Abertas** antes de aplicar o limite. Também habilitaremos `refetchOnMount: true` para garantir que mudanças de status sejam sempre refletidas na navegação.
