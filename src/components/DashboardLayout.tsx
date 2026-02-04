@@ -5,6 +5,7 @@ import { AppSidebar } from "./AppSidebar";
 import { LanguageSelector } from "./LanguageSelector";
 import { GracePeriodBanner } from "./GracePeriodBanner";
 import { GlobalSearch } from "./GlobalSearch";
+import { RealtimeIndicator } from "./RealtimeIndicator";
 import { Bell, Clock, Info, AlertTriangle, CheckCircle2, Check, CalendarDays, BookOpen } from "lucide-react";
 import { useNotifications, Notification } from "@/hooks/useNotifications";
 import { format, formatDistanceToNow } from "date-fns";
@@ -321,6 +322,9 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
             {children}
           </main>
         </div>
+
+        {/* Realtime Connection Indicator */}
+        <RealtimeIndicator />
       </div>
     </SidebarProvider>
   );
