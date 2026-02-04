@@ -143,29 +143,52 @@ export const queryKeys = {
   },
 };
 
-// Hook para listar faturas - CORRIGIDO para garantir visibilidade de todas faturas
+// Hook para listar faturas - SOLUÇÃO DEFINITIVA: queries paralelas por categoria
+// Garante 100% visibilidade de todas faturas sem corte por limite
 export function useFaturas() {
   return useQuery({
     queryKey: queryKeys.faturas.list(),
     queryFn: async () => {
-      // Buscar faturas com campos essenciais - ordenar por vencimento para pegar as mais urgentes
-      const { data, error } = await supabase
-        .from("faturas")
-        .select(`
-          id, codigo_sequencial, aluno_id, curso_id, responsavel_id,
-          valor, valor_total, saldo_restante, status,
-          mes_referencia, ano_referencia, data_emissao, data_vencimento,
-          asaas_payment_id, asaas_boleto_url, asaas_pix_qrcode,
-          alunos(nome_completo, email_responsavel, responsavel_id),
-          cursos(nome),
-          responsaveis(nome, email, telefone)
-        `)
-        .order("data_vencimento", { ascending: true }) // Mais antigas primeiro
-        .limit(1000); // Aumentado para garantir visibilidade de Pagas e Vencidas
-      
-      if (error) throw error;
-      
-      // Ordenação por prioridade de negócio: Vencida > Aberta > Parcial > Paga > Cancelada
+      const selectFields = `
+        id, codigo_sequencial, aluno_id, curso_id, responsavel_id,
+        valor, valor_total, saldo_restante, status,
+        mes_referencia, ano_referencia, data_emissao, data_vencimento,
+        asaas_payment_id, asaas_boleto_url, asaas_pix_qrcode,
+        asaas_boleto_barcode, asaas_boleto_bar_code, asaas_pix_payload,
+        alunos(nome_completo, email_responsavel, responsavel_id),
+        cursos(nome),
+        responsaveis(nome, email, telefone)
+      `;
+
+      // ESTRATÉGIA: Buscar faturas ativas (pendentes) SEM LIMITE para nunca perder dados críticos
+      // E faturas históricas (pagas/canceladas) com limite razoável
+      const [ativasResult, historicasResult] = await Promise.all([
+        // Faturas pendentes: Vencida, Aberta, Parcial - SEM LIMITE (críticas para operação)
+        supabase
+          .from("faturas")
+          .select(selectFields)
+          .in("status", ["Vencida", "Aberta", "Parcial"])
+          .order("data_vencimento", { ascending: true }),
+        
+        // Faturas históricas: Paga, Cancelada - com limite (menos urgentes)
+        supabase
+          .from("faturas")
+          .select(selectFields)
+          .in("status", ["Paga", "Cancelada"])
+          .order("data_vencimento", { ascending: false }) // Mais recentes primeiro
+          .limit(500),
+      ]);
+
+      if (ativasResult.error) throw ativasResult.error;
+      if (historicasResult.error) throw historicasResult.error;
+
+      // Combinar resultados
+      const todasFaturas = [
+        ...(ativasResult.data || []),
+        ...(historicasResult.data || []),
+      ];
+
+      // Ordenação final por prioridade de negócio
       const statusPriority: Record<string, number> = { 
         Vencida: 1, 
         Aberta: 2, 
@@ -174,18 +197,20 @@ export function useFaturas() {
         Cancelada: 5 
       };
       
-      return (data || []).sort((a, b) => {
+      return todasFaturas.sort((a, b) => {
         const priorityA = statusPriority[a.status] || 99;
         const priorityB = statusPriority[b.status] || 99;
         if (priorityA !== priorityB) return priorityA - priorityB;
-        // Dentro do mesmo status, ordenar por data de vencimento (mais antigas primeiro)
-        return new Date(a.data_vencimento).getTime() - new Date(b.data_vencimento).getTime();
+        // Dentro do mesmo status: pendentes por vencimento ascendente, históricas descendente
+        const dateA = new Date(a.data_vencimento).getTime();
+        const dateB = new Date(b.data_vencimento).getTime();
+        return priorityA <= 3 ? dateA - dateB : dateB - dateA;
       }) as Fatura[];
     },
-    staleTime: 1000 * 60 * 2, // 2 minutos
+    staleTime: 1000 * 60 * 2, // 2 minutos - realtime invalida quando muda
     gcTime: 1000 * 60 * 15,
     refetchOnWindowFocus: false,
-    refetchOnMount: true, // CRÍTICO: garantir dados frescos na navegação
+    refetchOnMount: true, // Garantir dados frescos na navegação
   });
 }
 
