@@ -15,11 +15,11 @@ export function GradientBackground({}: GradientBackgroundProps) {
         style={{
           background: `
             linear-gradient(135deg, 
-              hsl(0, 0%, 65%) 0%, 
-              hsl(0, 0%, 72%) 25%,
-              hsl(0, 0%, 68%) 50%, 
-              hsl(0, 0%, 75%) 75%,
-              hsl(0, 0%, 66%) 100%
+              hsl(0, 0%, 50%) 0%, 
+              hsl(0, 0%, 58%) 25%,
+              hsl(0, 0%, 54%) 50%, 
+              hsl(0, 0%, 60%) 75%,
+              hsl(0, 0%, 52%) 100%
             )
           `,
         }}
