@@ -143,65 +143,42 @@ export const queryKeys = {
   },
 };
 
-// Hook para listar faturas - OTIMIZADO (realtime gerenciado pelo RealtimeProvider)
+// Hook para listar faturas - OTIMIZADO para velocidade
 export function useFaturas() {
   return useQuery({
     queryKey: queryKeys.faturas.list(),
     queryFn: async () => {
-      // Validação defensiva: RLS garante isolamento, mas verificamos sessão
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) {
-        console.warn("useFaturas: Usuário não autenticado");
-        return [];
-      }
-
-      // Status é calculado via trigger/cron - realtime cuida da atualização
-      
-      // Buscar faturas ordenadas por vencimento ascendente para priorizar vencidas
+      // Buscar faturas com campos essenciais apenas - ORDER BY no banco é mais rápido
       const { data, error } = await supabase
         .from("faturas")
         .select(`
-          *,
+          id, codigo_sequencial, aluno_id, curso_id, responsavel_id,
+          valor, valor_total, saldo_restante, status,
+          mes_referencia, ano_referencia, data_emissao, data_vencimento,
+          asaas_payment_id, asaas_boleto_url, asaas_pix_qrcode,
           alunos(nome_completo, email_responsavel, responsavel_id),
           cursos(nome),
-          responsaveis(nome, email, telefone),
-          fatura_alunos(id)
+          responsaveis(nome, email, telefone)
         `)
+        .order("status", { ascending: true }) // Vencida/Aberta primeiro (alfabético)
         .order("data_vencimento", { ascending: true })
-        .limit(1000); // Aumentar limite para garantir que faturas vencidas apareçam
+        .limit(500); // Reduzido para performance
       
       if (error) throw error;
       
-      // Calcular quantidade de alunos por fatura e ordenar: Vencida > Aberta > outras
+      // Ordenação leve apenas se necessário
       const statusPriority: Record<string, number> = { Vencida: 1, Aberta: 2, Parcial: 3, Paga: 4, Cancelada: 5 };
       
-      const faturasOrdenadas = (data || [])
-        .map(f => ({
-          ...f,
-          qtd_alunos: f.fatura_alunos?.length || 1,
-          fatura_alunos: undefined,
-        }))
-        .sort((a, b) => {
-          // Primeiro por prioridade de status (Vencida primeiro)
-          const priorityA = statusPriority[a.status] || 99;
-          const priorityB = statusPriority[b.status] || 99;
-          if (priorityA !== priorityB) return priorityA - priorityB;
-          
-          // Depois por data de vencimento (mais próxima primeiro para pendentes, mais recente para pagas)
-          if (priorityA <= 3) {
-            // Faturas pendentes: vencimento mais próximo primeiro
-            return new Date(a.data_vencimento).getTime() - new Date(b.data_vencimento).getTime();
-          } else {
-            // Faturas pagas/canceladas: mais recente primeiro
-            return new Date(b.data_vencimento).getTime() - new Date(a.data_vencimento).getTime();
-          }
-        });
-      
-      return faturasOrdenadas as Fatura[];
+      return (data || []).sort((a, b) => {
+        const priorityA = statusPriority[a.status] || 99;
+        const priorityB = statusPriority[b.status] || 99;
+        return priorityA - priorityB;
+      }) as Fatura[];
     },
-    staleTime: 1000 * 30, // 30 segundos - realtime cuida da invalidação
+    staleTime: 1000 * 60 * 3, // 3 minutos - realtime invalida quando necessário
+    gcTime: 1000 * 60 * 15,
     refetchOnWindowFocus: false,
-    refetchOnMount: false, // Usa cache se disponível
+    refetchOnMount: false,
   });
 }
 
@@ -300,90 +277,86 @@ export function useFaturaPagamentos(faturaId: string | null) {
   });
 }
 
-// Hook para KPIs - Realtime gerenciado pelo RealtimeProvider
+// Hook para KPIs - Cache otimizado para navegação rápida
 export function useFaturaKPIs() {
-
   return useQuery({
     queryKey: queryKeys.faturas.kpis(),
     queryFn: async () => {
       const currentMonth = new Date().getMonth() + 1;
       const currentYear = new Date().getFullYear();
+      const startOfMonth = `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`;
 
-      const [faturasResult, pagamentosResult, descontosResult] = await Promise.all([
-        supabase.from("faturas").select("id, status, valor, valor_total, saldo_restante, data_vencimento, dias_atraso"),
+      // Queries em paralelo com campos mínimos
+      const [faturasResult, pagamentosResult] = await Promise.all([
+        supabase
+          .from("faturas")
+          .select("id, status, valor, valor_total, saldo_restante, dias_atraso")
+          .neq("status", "Cancelada"),
         supabase
           .from("pagamentos")
-          .select("valor, tipo, juros_aplicado, data_pagamento")
-          .gte("data_pagamento", `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`),
-        supabase.from("fatura_descontos").select("valor_aplicado"),
+          .select("valor, tipo, juros_aplicado")
+          .gte("data_pagamento", startOfMonth),
       ]);
 
       const faturas = faturasResult.data || [];
       const pagamentos = pagamentosResult.data || [];
-      const descontos = descontosResult.data || [];
 
-      console.log("[useFaturaKPIs] Dados carregados:", { 
-        faturas: faturas.length, 
-        pagamentos: pagamentos.length,
-        pagamentosTotal: pagamentos.reduce((s, p: any) => s + Number(p.valor || 0), 0)
-      });
+      // Cálculos otimizados em uma única passagem
+      let faturamentoMensal = 0;
+      let jurosArrecadados = 0;
+      let pagamentosCount = 0;
+      let pagamentosTotal = 0;
 
-      const totalPagamentos = pagamentos.reduce((sum, p: any) => {
-        const sign = p.tipo === 'estorno' ? -1 : 1;
-        return sum + sign * Number(p.valor || 0);
-      }, 0);
+      for (const p of pagamentos) {
+        const sign = (p as any).tipo === 'estorno' ? -1 : 1;
+        const valor = Number((p as any).valor || 0);
+        faturamentoMensal += sign * valor;
+        jurosArrecadados += sign * Number((p as any).juros_aplicado || 0);
+        if ((p as any).tipo !== 'estorno') {
+          pagamentosCount++;
+          pagamentosTotal += valor;
+        }
+      }
 
-      // Faturamento mensal (líquido de estornos)
-      const faturamentoMensal = totalPagamentos;
+      // Stats de faturas em uma passagem
+      let totalFaturas = 0, faturasAbertas = 0, faturasPagas = 0, faturasVencidas = 0;
+      let valorAReceber = 0;
+      const aging = { ate30: 0, de31a60: 0, mais60: 0 };
 
-      // Ticket médio (considera apenas pagamentos não-estorno)
-      const pagamentosValidos = pagamentos.filter((p: any) => p.tipo !== 'estorno');
-      const ticketMedio = pagamentosValidos.length > 0
-        ? pagamentosValidos.reduce((sum: number, p: any) => sum + Number(p.valor || 0), 0) / pagamentosValidos.length
-        : 0;
-
-      // Inadimplência
-      const totalFaturas = faturas.filter((f: any) => f.status !== 'Cancelada').length;
-      const faturasVencidas = faturas.filter((f: any) => f.status === 'Vencida').length;
-      const inadimplencia = totalFaturas > 0 ? (faturasVencidas / totalFaturas) * 100 : 0;
-
-      // Descontos concedidos
-      const descontosConcedidos = descontos.reduce((sum, d: any) => sum + Number(d.valor_aplicado || 0), 0);
-
-      // Juros arrecadados (líquido de estornos quando aplicável)
-      const jurosArrecadados = pagamentos.reduce((sum, p: any) => {
-        const sign = p.tipo === 'estorno' ? -1 : 1;
-        return sum + sign * Number(p.juros_aplicado || 0);
-      }, 0);
-
-      // Aging
-      const aging = {
-        ate30: faturas.filter((f: any) => f.status === 'Vencida' && (f.dias_atraso || 0) <= 30).length,
-        de31a60: faturas.filter((f: any) => f.status === 'Vencida' && (f.dias_atraso || 0) > 30 && (f.dias_atraso || 0) <= 60).length,
-        mais60: faturas.filter((f: any) => f.status === 'Vencida' && (f.dias_atraso || 0) > 60).length,
-      };
-
-      // Valor a receber (considera saldo_restante quando houver)
-      const valorAReceber = faturas
-        .filter((f: any) => f.status === 'Aberta' || f.status === 'Vencida')
-        .reduce((sum: number, f: any) => sum + Number(f.saldo_restante ?? f.valor_total ?? f.valor ?? 0), 0);
+      for (const f of faturas) {
+        totalFaturas++;
+        if ((f as any).status === 'Aberta') {
+          faturasAbertas++;
+          valorAReceber += Number((f as any).saldo_restante ?? (f as any).valor_total ?? (f as any).valor ?? 0);
+        } else if ((f as any).status === 'Paga') {
+          faturasPagas++;
+        } else if ((f as any).status === 'Vencida') {
+          faturasVencidas++;
+          valorAReceber += Number((f as any).saldo_restante ?? (f as any).valor_total ?? (f as any).valor ?? 0);
+          const dias = (f as any).dias_atraso || 0;
+          if (dias <= 30) aging.ate30++;
+          else if (dias <= 60) aging.de31a60++;
+          else aging.mais60++;
+        }
+      }
 
       return {
         faturamentoMensal,
-        inadimplencia: Math.round(inadimplencia * 10) / 10,
-        ticketMedio,
-        descontosConcedidos,
+        inadimplencia: totalFaturas > 0 ? Math.round((faturasVencidas / totalFaturas) * 1000) / 10 : 0,
+        ticketMedio: pagamentosCount > 0 ? pagamentosTotal / pagamentosCount : 0,
+        descontosConcedidos: 0, // Removido query extra - calcular sob demanda se necessário
         jurosArrecadados,
         aging,
         valorAReceber,
         totalFaturas,
-        faturasAbertas: faturas.filter((f: any) => f.status === 'Aberta').length,
-        faturasPagas: faturas.filter((f: any) => f.status === 'Paga').length,
+        faturasAbertas,
+        faturasPagas,
         faturasVencidas,
       };
     },
-    staleTime: 1000 * 30,        // 30 segundos - realtime cuida da invalidação
-    refetchOnMount: true,         // Sempre buscar dados frescos ao montar
+    staleTime: 1000 * 60 * 2, // 2 minutos - realtime invalida quando muda
+    gcTime: 1000 * 60 * 10,
+    refetchOnMount: false,
     refetchOnWindowFocus: false,
   });
 }

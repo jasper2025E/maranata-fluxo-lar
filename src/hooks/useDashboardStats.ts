@@ -341,16 +341,13 @@ function processMonthlyData(
 }
 
 export function useDashboardStats() {
-  // Realtime agora é gerenciado globalmente pelo RealtimeProvider
-  // Não precisa de subscription local - o provider invalida automaticamente
-
   return useQuery<DashboardStats>({
     queryKey: queryKeys.dashboard.stats(),
     queryFn: fetchDashboardStats,
-    staleTime: 1000 * 30, // 30 segundos - mais responsivo
-    gcTime: 1000 * 60 * 10, // 10 minutos
+    staleTime: 1000 * 60 * 3, // 3 minutos - realtime cuida de invalidar
+    gcTime: 1000 * 60 * 15,
     retry: 1,
     refetchOnWindowFocus: false,
-    refetchOnMount: true, // Garante dados frescos ao montar
+    refetchOnMount: false, // Usa cache na navegação
   });
 }
