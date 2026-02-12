@@ -1,58 +1,61 @@
-# Correção: Boletos não imprimem para faturas vencidas
+# Correcao: Juros, Display e Data de Vencimento nas Faturas
 
-## Problema Encontrado
+## Problemas Identificados
 
-Identifiquei o bug exato. Quando você tenta imprimir um boleto (individual ou em lote), o sistema chama uma função chamada `isAsaasBoletoReady()` que verifica se o boleto está "pronto". Essa função exige que o status no Asaas seja **"CONFIRMED" ou "RECEIVED"** (ou seja, já pago). Resultado: só é possível imprimir boleto de fatura **já paga**, o que não faz sentido.
+### 1. Data de vencimento exibida errada (causa da fatura "Emitida" que deveria ser "Vencida")
 
-Faturas vencidas/abertas têm status "PENDING" ou "OVERDUE" no Asaas, e por isso o sistema bloqueia a impressão com a mensagem "Boleto ainda não está pronto".
+A fatura **FAT-2026-000199** tem vencimento **12/02/2026** no banco de dados, mas aparece como **11/02/26** na tela. Isso acontece porque o JavaScript interpreta datas no formato "YYYY-MM-DD" como meia-noite UTC, e no fuso horario do Brasil (UTC-3) isso vira o dia anterior (11/02 as 21h).
 
-## Sobre o QR Code impresso no mês passado
+Por isso a fatura parece vencer dia 11 mas o sistema considera dia 12 (hoje) -- logo nao esta vencida ainda.
 
-Boa notícia: **sim, os juros aparecem quando o pai escaneia o QR Code**. O QR Code PIX do Asaas é dinâmico -- quando o pai faz a leitura, o Asaas calcula automaticamente juros e multa no momento do pagamento. O valor impresso no papel pode estar desatualizado, mas o valor cobrado via PIX/boleto será o correto com os encargos.
+**Correcao**: Usar `parseISO` do date-fns em vez de `new Date()` para interpretar datas corretamente.
 
-O código de barras do boleto, porém, tem o valor fixo embutido (o valor que estava vigente quando a cobrança foi criada no Asaas). Para boletos lidos pela barra, o Asaas aplica os encargos separadamente no momento do processamento bancário.
+### 2. Juros com valor "riscado" (confuso)
 
-## Correções
+O sistema mostra o valor COM juros como valor principal e o valor SEM juros riscado abaixo. Isso gera confusao porque parece um desconto (valor menor riscado). Alem disso, a query da listagem nao busca os campos `valor_juros_aplicado` e `valor_multa_aplicado`, impedindo que a tabela mostre o detalhamento dos encargos.
 
-### 1. Corrigir `isAsaasBoletoReady` (Bug Principal)
+**Correcao**:
 
-**Arquivo**: `src/lib/asaasBoleto.ts`
+- Adicionar campos de juros/multa na query da listagem
+- Quando houver juros/multa, mostrar o valor original riscado e o valor FINAL (com encargos) em destaque, com indicacao clara de "+ juros"
+- Nao usar estilo riscado para o valor com encargos
 
-Remover a exigência de status "CONFIRMED/RECEIVED". A verificação deve apenas garantir que a linha digitável (47 dígitos) e o código de barras (44 dígitos) existem, independente do status da cobrança.
+### 3. Detalhes da fatura nao mostram juros
 
-De:
+Ao abrir o detalhe da fatura, aparece apenas "Valor Total" sem discriminar valor base, juros e multa. O usuario nao consegue entender a composicao do valor.
 
-```typescript
-const statusOk = status === "CONFIRMED" || status === "RECEIVED";
-return statusOk && digits(...).length === 47 && digits(...).length === 44;
-```
+**Correcao**: Adicionar linhas de detalhamento no resumo da fatura mostrando: Valor Base, Juros (se houver), Multa (se houver), e Total Final.
 
-Para:
+## Alteracoes Tecnicas
 
-```typescript
-return digits(fields.boletoBarcode).length === 47 && digits(fields.boletoBarCode).length === 44;
-```
+### Arquivo 1: `src/hooks/useFaturas.ts`
 
-### 2. Corrigir validação no botão "Baixar Boleto" da tabela
+- Adicionar campos `valor_juros_aplicado`, `valor_multa_aplicado`, `juros`, `multa`, `dias_atraso`, `valor_original`, `juros_percentual_diario`, `juros_percentual_mensal` na string `selectFields` da query `useFaturas()`
 
-**Arquivo**: `src/components/faturas/FaturaTable.tsx`
+### Arquivo 2: `src/components/faturas/FaturaTable.tsx`
 
-O botão "Baixar Boleto" já verifica corretamente apenas os dígitos (sem exigir status). Está OK.
+- Importar `parseISO` do date-fns para corrigir exibicao de datas
+- Alterar exibicao do valor na coluna: quando houver juros/multa, mostrar valor original riscado e valor final em destaque com indicador "+ juros"
+- Corrigir `format(new Date(fatura.data_vencimento))` para `format(parseISO(fatura.data_vencimento))`
+- Corrigir `getStatusConfig` para usar `parseISO` tambem
 
-### 3. Corrigir geração em lote (BulkActionsBar)
+### Arquivo 3: `src/components/faturas/FaturaDetails.tsx`
 
-**Arquivo**: `src/components/faturas/BulkActionsBar.tsx`
+- Importar `parseISO` do date-fns
+- Adicionar bloco de detalhamento financeiro no resumo: Valor Base, Desconto, Juros, Multa, Dias Atraso, Total Final
+- Corrigir exibicao de datas para usar `parseISO`
 
-O lote já chama `generateCarneCompacto` diretamente sem passar por `waitForAsaasBoletoReady`. Porém o download individual (Faturas.tsx e FaturaDetails.tsx) passa pelo `waitForAsaasBoletoReady` que está bloqueando. A correção no item 1 resolve todos os pontos de entrada.
+## Impacto
+
+- **Risco**: Zero. Nenhum dado sera alterado. Apenas correcoes de exibicao
+- **Dados existentes**: Os juros ja estao calculados corretamente no banco (ex: R$0,05 para 1 dia de atraso a 0,033%/dia). A correcao e apenas visual
+- **Nota sobre taxas**: A taxa atual configurada e 0,033% ao dia (1% ao mes). Se desejar juros maiores ou adicionar multa, isso pode ser ajustado nas configuracoes de cobranca
 
 ## Resumo
 
 
-| Mudança                                               | Arquivo                  | Risco                                  |
-| ----------------------------------------------------- | ------------------------ | -------------------------------------- |
-| Remover exigência de status pago para imprimir boleto | `src/lib/asaasBoleto.ts` | Zero - apenas remove bloqueio indevido |
-
-
-Nenhum dado será alterado. Apenas a lógica de validação será corrigida.
-
-sistema está em produção cuidado se essa alteração for prejudicar ou danificar algo emprodução ou atrapalhar as cobraças não faça, o objetivo é conseguir imprimir boletos/carnê em qualquer local que tenha essa opção sem erros com valores sempre atualizados independente do status da cobrança. pois o mesmo é caso  precise reemprimmir um boleto  tudo sempre funcione perfeitamente
+| Mudanca                                                                                                        | Arquivo                                    | Tipo                        |
+| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------- |
+| Adicionar campos de juros na query                                                                             | `src/hooks/useFaturas.ts`                  | Query                       |
+| Corrigir timezone nas datas e display de juros                                                                 | `src/components/faturas/FaturaTable.tsx`   | Visual                      |
+| Adicionar detalhamento de juros/multanão esqueça de verificar se existe mais faturas com o mesmo erro &nbsp; | `src/components/faturas/FaturaDetails.tsx` | Visual&nbsp;&nbsp;&nbsp; |
