@@ -222,10 +222,10 @@ function FaturaRow({
               <span className="text-xs text-muted-foreground">Pago: <span className="text-success font-semibold">{formatCurrency(pagoParcial)}</span></span>
               <span className="text-[10px] text-muted-foreground">Saldo em cobrança derivada</span>
             </>
-          ) : isPendente && saldoRestante > 0 && saldoRestante < valorFinal ? (
+          ) : isPendente && saldoRestante > 0 && saldoRestante < (fatura.valor_original || fatura.valor) ? (
             <>
               <span className="font-bold text-sm text-warning">{formatCurrency(saldoRestante)}</span>
-              <span className="text-xs text-muted-foreground line-through">{formatCurrency(valorFinal)}</span>
+              <span className="text-xs text-muted-foreground line-through">{formatCurrency(fatura.valor_original || fatura.valor)}</span>
             </>
           ) : (
             <>
