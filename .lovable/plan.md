@@ -1,80 +1,58 @@
-
-
-# Correção: Juros não contabilizados em fatura paga com atraso
+# Correção: Boletos não imprimem para faturas vencidas
 
 ## Problema Encontrado
 
-Quando uma fatura vencida é paga com atraso, o sistema **apaga os juros e multa** automaticamente.
+Identifiquei o bug exato. Quando você tenta imprimir um boleto (individual ou em lote), o sistema chama uma função chamada `isAsaasBoletoReady()` que verifica se o boleto está "pronto". Essa função exige que o status no Asaas seja **"CONFIRMED" ou "RECEIVED"** (ou seja, já pago). Resultado: só é possível imprimir boleto de fatura **já paga**, o que não faz sentido.
 
-### Causa Raiz
+Faturas vencidas/abertas têm status "PENDING" ou "OVERDUE" no Asaas, e por isso o sistema bloqueia a impressão com a mensagem "Boleto ainda não está pronto".
 
-Existe um trigger no banco de dados chamado `calcular_valor_total_fatura` que recalcula juros e multa toda vez que a fatura é atualizada. A lógica dele faz o seguinte:
+## Sobre o QR Code impresso no mês passado
 
-```
-SE status = 'Paga' ou 'Cancelada' ENTÃO
-   dias_atraso = 0
-   juros = 0
-   multa = 0
-```
+Boa notícia: **sim, os juros aparecem quando o pai escaneia o QR Code**. O QR Code PIX do Asaas é dinâmico -- quando o pai faz a leitura, o Asaas calcula automaticamente juros e multa no momento do pagamento. O valor impresso no papel pode estar desatualizado, mas o valor cobrado via PIX/boleto será o correto com os encargos.
 
-Ou seja, no exato momento em que o pagamento é registrado e o status muda para "Paga", o trigger zera todos os encargos. O valor final volta a ser o valor base, como se não houvesse atraso.
+O código de barras do boleto, porém, tem o valor fixo embutido (o valor que estava vigente quando a cobrança foi criada no Asaas). Para boletos lidos pela barra, o Asaas aplica os encargos separadamente no momento do processamento bancário.
 
-## Solucao
+## Correções
 
-Alterar o trigger para **preservar os juros e multa já calculados** quando a fatura muda para status "Paga". A lógica correta deve ser:
+### 1. Corrigir `isAsaasBoletoReady` (Bug Principal)
 
-- Se a fatura **estava vencida e agora foi paga**, manter os valores de juros e multa que já foram calculados
-- Só recalcular juros/multa para faturas que **ainda estao abertas/vencidas**
-- Nunca zerar encargos ao marcar como paga
+**Arquivo**: `src/lib/asaasBoleto.ts`
 
-### Mudanca no Trigger (SQL)
+Remover a exigência de status "CONFIRMED/RECEIVED". A verificação deve apenas garantir que a linha digitável (47 dígitos) e o código de barras (44 dígitos) existem, independente do status da cobrança.
 
-A logica atual:
+De:
 
-```sql
-IF NEW.data_vencimento < CURRENT_DATE AND NEW.status NOT IN ('Paga', 'Cancelada') THEN
-    v_dias_atraso := CURRENT_DATE - NEW.data_vencimento;
-ELSE
-    v_dias_atraso := 0;  -- AQUI ZERA TUDO quando status = Paga
-END IF;
+```typescript
+const statusOk = status === "CONFIRMED" || status === "RECEIVED";
+return statusOk && digits(...).length === 47 && digits(...).length === 44;
 ```
 
-Sera substituida por:
+Para:
 
-```sql
--- Se ja esta Paga/Cancelada, PRESERVAR os valores existentes
-IF NEW.status IN ('Paga', 'Cancelada') THEN
-    -- Manter juros e multa que ja foram calculados
-    NEW.valor_juros_aplicado := COALESCE(NEW.valor_juros_aplicado, OLD.valor_juros_aplicado, 0);
-    NEW.valor_multa_aplicado := COALESCE(NEW.valor_multa_aplicado, OLD.valor_multa_aplicado, 0);
-    NEW.juros := NEW.valor_juros_aplicado;
-    NEW.dias_atraso := COALESCE(OLD.dias_atraso, 0);
-    -- Recalcular valor_total preservando encargos
-    NEW.valor_total := v_valor_base - v_desconto + NEW.valor_juros_aplicado + NEW.valor_multa_aplicado;
-    RETURN NEW;
-END IF;
-
--- Para faturas ativas, continuar calculando normalmente
-IF NEW.data_vencimento < CURRENT_DATE THEN
-    v_dias_atraso := CURRENT_DATE - NEW.data_vencimento;
-ELSE
-    v_dias_atraso := 0;
-END IF;
+```typescript
+return digits(fields.boletoBarcode).length === 47 && digits(fields.boletoBarCode).length === 44;
 ```
 
-### Arquivo Frontend (sem alteracao necessaria)
+### 2. Corrigir validação no botão "Baixar Boleto" da tabela
 
-O frontend ja tem a logica correta em `useFaturas.ts` via funcao `getValorFinal()` que soma juros e multa ao valor. O problema esta **exclusivamente no trigger do banco** que apaga esses valores.
+**Arquivo**: `src/components/faturas/FaturaTable.tsx`
 
-## Impacto
+O botão "Baixar Boleto" já verifica corretamente apenas os dígitos (sem exigir status). Está OK.
 
-- **Risco**: Nenhum risco aos dados existentes. A migracao apenas atualiza a logica do trigger
-- **Dados existentes**: Faturas ja pagas que tiveram juros apagados continuarao com valor zerado (nao ha como recuperar automaticamente o que ja foi zerado)
-- **Novas faturas**: A partir da correção, qualquer fatura paga com atraso manterá os juros e multa corretamente
+### 3. Corrigir geração em lote (BulkActionsBar)
 
-## Resumo das alteracoes
+**Arquivo**: `src/components/faturas/BulkActionsBar.tsx`
 
-| Item | Tipo | Descricao |
-|------|------|-----------|
-| Migration SQL | Banco de dados | Corrigir trigger `calcular_valor_total_fatura` para preservar juros ao pagar |
+O lote já chama `generateCarneCompacto` diretamente sem passar por `waitForAsaasBoletoReady`. Porém o download individual (Faturas.tsx e FaturaDetails.tsx) passa pelo `waitForAsaasBoletoReady` que está bloqueando. A correção no item 1 resolve todos os pontos de entrada.
 
+## Resumo
+
+
+| Mudança                                               | Arquivo                  | Risco                                  |
+| ----------------------------------------------------- | ------------------------ | -------------------------------------- |
+| Remover exigência de status pago para imprimir boleto | `src/lib/asaasBoleto.ts` | Zero - apenas remove bloqueio indevido |
+
+
+Nenhum dado será alterado. Apenas a lógica de validação será corrigida.
+
+sistema está em produção cuidado se essa alteração for prejudicar ou danificar algo emprodução ou atrapalhar as cobraças não faça, o objetivo é conseguir imprimir boletos/carnê em qualquer local que tenha essa opção sem erros com valores sempre atualizados independente do status da cobrança. pois o mesmo é caso  precise reemprimmir um boleto  tudo sempre funcione perfeitamente
