@@ -82,7 +82,8 @@ function getStatusConfig(status: string, dataVencimento: string) {
   hoje.setHours(0, 0, 0, 0);
   const vencimento = parseISO(dataVencimento);
   vencimento.setHours(0, 0, 0, 0);
-  const vencendoEm7Dias = isAfter(vencimento, hoje) && isBefore(vencimento, addDays(hoje, 7));
+  // Inclui o próprio dia do vencimento como "Vencendo" (hoje ou dentro de 7 dias)
+  const vencimentoHojeOuProximo = (vencimento.getTime() === hoje.getTime()) || (isAfter(vencimento, hoje) && isBefore(vencimento, addDays(hoje, 7)));
 
   const normalizedStatus = status?.toLowerCase() || '';
   if (normalizedStatus === "paga") return { label: "Paga", className: "bg-success/10 text-success border-success/20", icon: CheckCircle2 };
@@ -90,7 +91,7 @@ function getStatusConfig(status: string, dataVencimento: string) {
   if (normalizedStatus === "vencida") return { label: "Vencida", className: "bg-destructive/10 text-destructive border-destructive/20", icon: AlertCircle };
   if (normalizedStatus === "cancelada") return { label: "Cancelada", className: "bg-muted text-muted-foreground border-border", icon: XCircle };
   if (normalizedStatus === "rascunho") return { label: "Rascunho", className: "bg-muted/50 text-muted-foreground border-border", icon: FileText };
-  if (vencendoEm7Dias) return { label: "Vencendo", className: "bg-warning/10 text-warning border-warning/20", icon: Clock };
+  if (vencimentoHojeOuProximo) return { label: "Vencendo", className: "bg-warning/10 text-warning border-warning/20", icon: Clock };
   return { label: "Emitida", className: "bg-primary/10 text-primary border-primary/20", icon: FileText };
 }
 
@@ -228,16 +229,15 @@ function FaturaRow({
             </>
           ) : (
             <>
+              {/* Valor final sempre em destaque, sem risco */}
               <span className="font-bold text-sm text-foreground">{formatCurrency(valorFinal)}</span>
-              {/* Mostrar juros/multa quando existirem */}
+              {/* Juros/multa: mostrar valor original riscado apenas como referência e encargos ativos SEM risco */}
               {((fatura.valor_juros_aplicado && fatura.valor_juros_aplicado > 0) || (fatura.valor_multa_aplicado && fatura.valor_multa_aplicado > 0)) ? (
-                <>
-                  <span className="text-xs text-muted-foreground line-through">{formatCurrency(fatura.valor_original || fatura.valor)}</span>
-                  <span className="text-[10px] text-destructive font-medium">
-                    + juros{fatura.valor_multa_aplicado && fatura.valor_multa_aplicado > 0 ? '/multa' : ''}: {formatCurrency((fatura.valor_juros_aplicado || 0) + (fatura.valor_multa_aplicado || 0))}
-                  </span>
-                </>
-              ) : temAlteracao ? (
+                <span className="text-[10px] text-destructive font-medium">
+                  + juros{fatura.valor_multa_aplicado && fatura.valor_multa_aplicado > 0 ? '/multa' : ''}: {formatCurrency((fatura.valor_juros_aplicado || 0) + (fatura.valor_multa_aplicado || 0))}
+                </span>
+              ) : temAlteracao && valorFinal < valorOriginal ? (
+                /* Riscado só para descontos (valor final menor que original) */
                 <span className="text-xs text-muted-foreground line-through">{formatCurrency(valorOriginal)}</span>
               ) : null}
             </>
