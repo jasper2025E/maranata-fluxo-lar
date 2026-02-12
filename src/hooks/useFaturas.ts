@@ -151,7 +151,10 @@ export function useFaturas() {
     queryFn: async () => {
       const selectFields = `
         id, codigo_sequencial, aluno_id, curso_id, responsavel_id,
-        valor, valor_total, saldo_restante, status,
+        valor, valor_total, valor_original, saldo_restante, status,
+        valor_juros_aplicado, valor_multa_aplicado,
+        juros, multa, dias_atraso,
+        juros_percentual_diario, juros_percentual_mensal,
         mes_referencia, ano_referencia, data_emissao, data_vencimento,
         asaas_payment_id, asaas_boleto_url, asaas_pix_qrcode,
         asaas_boleto_barcode, asaas_boleto_bar_code, asaas_pix_payload,

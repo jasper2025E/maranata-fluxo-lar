@@ -37,7 +37,7 @@ import {
   ArrowRight,
   GitBranch,
 } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
@@ -1086,15 +1086,41 @@ export function FaturaDetails({ fatura: faturaProp, open, onOpenChange }: Fatura
                   )}
                 </div>
               </div>
+
+              {/* Detalhamento financeiro (juros/multa) */}
+              {((fatura.valor_juros_aplicado && fatura.valor_juros_aplicado > 0) || 
+                (fatura.valor_multa_aplicado && fatura.valor_multa_aplicado > 0) ||
+                (fatura.valor_desconto_aplicado && fatura.valor_desconto_aplicado > 0)) && (
+                <div className="mt-3 pt-3 border-t border-dashed space-y-1">
+                  <InfoRow label="Valor Base" value={formatCurrency(fatura.valor_original || fatura.valor)} />
+                  {fatura.valor_desconto_aplicado && fatura.valor_desconto_aplicado > 0 && (
+                    <InfoRow label="Desconto" value={`-${formatCurrency(fatura.valor_desconto_aplicado)}`} className="text-success" />
+                  )}
+                  {fatura.valor_juros_aplicado && fatura.valor_juros_aplicado > 0 && (
+                    <InfoRow 
+                      label={`Juros${fatura.dias_atraso ? ` (${fatura.dias_atraso}d atraso)` : ''}`} 
+                      value={`+${formatCurrency(fatura.valor_juros_aplicado)}`} 
+                      className="text-destructive" 
+                    />
+                  )}
+                  {fatura.valor_multa_aplicado && fatura.valor_multa_aplicado > 0 && (
+                    <InfoRow label="Multa" value={`+${formatCurrency(fatura.valor_multa_aplicado)}`} className="text-destructive" />
+                  )}
+                  <div className="flex justify-between py-2 font-bold">
+                    <span className="text-sm">Total Final</span>
+                    <span className="text-sm">{formatCurrency(valorFinal)}</span>
+                  </div>
+                </div>
+              )}
               <Separator className="my-4" />
               <div className="grid grid-cols-3 gap-4 text-sm">
                 <div>
                   <p className="text-muted-foreground">Emissão</p>
-                  <p className="font-medium">{format(new Date(fatura.data_emissao), "dd/MM/yyyy")}</p>
+                  <p className="font-medium">{format(parseISO(fatura.data_emissao), "dd/MM/yyyy")}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Vencimento</p>
-                  <p className="font-medium">{format(new Date(fatura.data_vencimento), "dd/MM/yyyy")}</p>
+                  <p className="font-medium">{format(parseISO(fatura.data_vencimento), "dd/MM/yyyy")}</p>
                 </div>
                 <div>
                   <p className="text-muted-foreground">Status</p>

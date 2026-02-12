@@ -1,3 +1,5 @@
+import { parseISO } from "date-fns";
+
 // Utility functions for formatting
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat("pt-BR", {
@@ -6,12 +8,18 @@ export const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
+const toDate = (date: string | Date): Date => {
+  if (date instanceof Date) return date;
+  // Use parseISO for string dates to avoid timezone issues with "YYYY-MM-DD" format
+  return parseISO(date);
+};
+
 export const formatDate = (date: string | Date): string => {
   return new Intl.DateTimeFormat("pt-BR", {
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
-  }).format(new Date(date));
+  }).format(toDate(date));
 };
 
 export const formatDateTime = (date: string | Date): string => {
@@ -21,7 +29,7 @@ export const formatDateTime = (date: string | Date): string => {
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-  }).format(new Date(date));
+  }).format(toDate(date));
 };
 
 export const formatPhone = (phone: string): string => {
