@@ -21,9 +21,7 @@ export function isAsaasBoletoReady(fields: {
   boletoBarCode?: string | null;
   status?: string | null;
 }): boolean {
-  const status = String(fields.status ?? "").toUpperCase();
-  const statusOk = status === "CONFIRMED" || status === "RECEIVED";
-  return statusOk && digits(fields.boletoBarcode).length === 47 && digits(fields.boletoBarCode).length === 44;
+  return digits(fields.boletoBarcode).length === 47 && digits(fields.boletoBarCode).length === 44;
 }
 
 export async function waitForAsaasBoletoReady(
