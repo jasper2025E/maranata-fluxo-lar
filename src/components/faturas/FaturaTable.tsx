@@ -42,7 +42,7 @@ import {
   Trash2,
   Percent,
 } from "lucide-react";
-import { format, isAfter, isBefore, addDays } from "date-fns";
+import { format, isAfter, isBefore, addDays, parseISO } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Fatura, getValorFinal, formatCurrency, meses } from "@/hooks/useFaturas";
 
@@ -80,7 +80,7 @@ interface FaturaTableProps {
 function getStatusConfig(status: string, dataVencimento: string) {
   const hoje = new Date();
   hoje.setHours(0, 0, 0, 0);
-  const vencimento = new Date(dataVencimento);
+  const vencimento = parseISO(dataVencimento);
   vencimento.setHours(0, 0, 0, 0);
   const vencendoEm7Dias = isAfter(vencimento, hoje) && isBefore(vencimento, addDays(hoje, 7));
 
@@ -229,16 +229,24 @@ function FaturaRow({
           ) : (
             <>
               <span className="font-bold text-sm text-foreground">{formatCurrency(valorFinal)}</span>
-              {temAlteracao && (
+              {/* Mostrar juros/multa quando existirem */}
+              {((fatura.valor_juros_aplicado && fatura.valor_juros_aplicado > 0) || (fatura.valor_multa_aplicado && fatura.valor_multa_aplicado > 0)) ? (
+                <>
+                  <span className="text-xs text-muted-foreground line-through">{formatCurrency(fatura.valor_original || fatura.valor)}</span>
+                  <span className="text-[10px] text-destructive font-medium">
+                    + juros{fatura.valor_multa_aplicado && fatura.valor_multa_aplicado > 0 ? '/multa' : ''}: {formatCurrency((fatura.valor_juros_aplicado || 0) + (fatura.valor_multa_aplicado || 0))}
+                  </span>
+                </>
+              ) : temAlteracao ? (
                 <span className="text-xs text-muted-foreground line-through">{formatCurrency(valorOriginal)}</span>
-              )}
+              ) : null}
             </>
           )}
         </div>
       </TableCell>
       <TableCell className="text-sm">
         <div className="flex flex-col">
-          <span className="text-foreground font-medium">{format(new Date(fatura.data_vencimento), "dd/MM/yy")}</span>
+          <span className="text-foreground font-medium">{format(parseISO(fatura.data_vencimento), "dd/MM/yy")}</span>
           {fatura.dias_atraso && fatura.dias_atraso > 0 && fatura.status === "Vencida" && (
             <span className="text-xs text-destructive font-semibold">{fatura.dias_atraso}d atraso</span>
           )}
