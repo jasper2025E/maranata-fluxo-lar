@@ -1,61 +1,88 @@
-# Correcao: Juros, Display e Data de Vencimento nas Faturas
 
-## Problemas Identificados
+# Correcao: Juros Congelados e Erros no Modulo de Faturas
 
-### 1. Data de vencimento exibida errada (causa da fatura "Emitida" que deveria ser "Vencida")
+## Diagnostico Completo
 
-A fatura **FAT-2026-000199** tem vencimento **12/02/2026** no banco de dados, mas aparece como **11/02/26** na tela. Isso acontece porque o JavaScript interpreta datas no formato "YYYY-MM-DD" como meia-noite UTC, e no fuso horario do Brasil (UTC-3) isso vira o dia anterior (11/02 as 21h).
+### Problema Principal: Juros e dias de atraso CONGELADOS
 
-Por isso a fatura parece vencer dia 11 mas o sistema considera dia 12 (hoje) -- logo nao esta vencida ainda.
+O trigger `calcular_valor_total_fatura` recalcula juros e `dias_atraso` **somente quando a fatura e atualizada** (BEFORE UPDATE). O cron diario `mark_overdue_faturas` (3 AM) so muda faturas de "Aberta" para "Vencida" — ele **nao re-toca** faturas ja vencidas.
 
-**Correcao**: Usar `parseISO` do date-fns em vez de `new Date()` para interpretar datas corretamente.
+Resultado: uma fatura que venceu dia 11/02 e foi marcada como Vencida naquele dia ficou com `dias_atraso = 1` e juros de R$ 0,05. Hoje (14/02) deveria ter `dias_atraso = 3` e juros de R$ 0,16, mas o valor esta congelado.
 
-### 2. Juros com valor "riscado" (confuso)
+### Problema do Riscado (Strikethrough)
 
-O sistema mostra o valor COM juros como valor principal e o valor SEM juros riscado abaixo. Isso gera confusao porque parece um desconto (valor menor riscado). Alem disso, a query da listagem nao busca os campos `valor_juros_aplicado` e `valor_multa_aplicado`, impedindo que a tabela mostre o detalhamento dos encargos.
+A correcao anterior JA foi aplicada no codigo — confirmei visualmente no sandbox que o riscado nao aparece mais nos juros. O usuario pode estar vendo uma versao em cache do navegador. Apos o deploy, o problema visual estara resolvido.
 
-**Correcao**:
+### Datas corretas
 
-- Adicionar campos de juros/multa na query da listagem
-- Quando houver juros/multa, mostrar o valor original riscado e o valor FINAL (com encargos) em destaque, com indicacao clara de "+ juros"
-- Nao usar estilo riscado para o valor com encargos
+As datas no banco realmente sao `2026-02-11`, entao exibir "11/02/26" esta correto. Nao ha bug de timezone aqui — as faturas foram criadas com vencimento dia 11 mesmo.
 
-### 3. Detalhes da fatura nao mostram juros
+## Solucao
 
-Ao abrir o detalhe da fatura, aparece apenas "Valor Total" sem discriminar valor base, juros e multa. O usuario nao consegue entender a composicao do valor.
+### 1. Criar funcao SQL para recalcular juros diariamente
 
-**Correcao**: Adicionar linhas de detalhamento no resumo da fatura mostrando: Valor Base, Juros (se houver), Multa (se houver), e Total Final.
+Criar uma nova funcao `recalculate_overdue_interest()` que:
+- Seleciona todas faturas com status "Vencida" e `data_vencimento < CURRENT_DATE`
+- Recalcula `dias_atraso`, `valor_juros_aplicado`, `valor_multa_aplicado` e `valor_total`
+- Executa um UPDATE que dispara o trigger existente
 
-## Alteracoes Tecnicas
+### 2. Adicionar ao cron diario
 
-### Arquivo 1: `src/hooks/useFaturas.ts`
+Agendar `recalculate_overdue_interest()` para rodar apos o `mark_overdue_faturas`, garantindo que os juros acumulem diariamente.
 
-- Adicionar campos `valor_juros_aplicado`, `valor_multa_aplicado`, `juros`, `multa`, `dias_atraso`, `valor_original`, `juros_percentual_diario`, `juros_percentual_mensal` na string `selectFields` da query `useFaturas()`
+### 3. Executar recalculo imediato
 
-### Arquivo 2: `src/components/faturas/FaturaTable.tsx`
+Rodar o recalculo agora para corrigir todas as faturas atualmente com juros congelados.
 
-- Importar `parseISO` do date-fns para corrigir exibicao de datas
-- Alterar exibicao do valor na coluna: quando houver juros/multa, mostrar valor original riscado e valor final em destaque com indicador "+ juros"
-- Corrigir `format(new Date(fatura.data_vencimento))` para `format(parseISO(fatura.data_vencimento))`
-- Corrigir `getStatusConfig` para usar `parseISO` tambem
+## Detalhes Tecnicos
 
-### Arquivo 3: `src/components/faturas/FaturaDetails.tsx`
+### Migracao SQL
 
-- Importar `parseISO` do date-fns
-- Adicionar bloco de detalhamento financeiro no resumo: Valor Base, Desconto, Juros, Multa, Dias Atraso, Total Final
-- Corrigir exibicao de datas para usar `parseISO`
+```text
+-- Funcao que forca recalculo de juros em faturas vencidas
+CREATE OR REPLACE FUNCTION public.recalculate_overdue_interest()
+RETURNS integer
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  updated_count integer;
+BEGIN
+  -- Fazer UPDATE "touch" nas faturas vencidas para que o trigger
+  -- calcular_valor_total_fatura recalcule dias_atraso e juros
+  UPDATE public.faturas
+  SET updated_at = NOW()
+  WHERE status = 'Vencida'
+    AND data_vencimento < CURRENT_DATE;
+
+  GET DIAGNOSTICS updated_count = ROW_COUNT;
+  RETURN updated_count;
+END;
+$$;
+```
+
+### Cron Job
+
+Agendar para rodar diariamente as 3:05 AM (5 min apos o mark_overdue):
+
+```text
+SELECT cron.schedule(
+  'recalculate-overdue-interest',
+  '5 3 * * *',
+  'SELECT public.recalculate_overdue_interest()'
+);
+```
+
+### Execucao imediata
+
+Apos criar a funcao, executar `SELECT public.recalculate_overdue_interest()` para corrigir todas as faturas atuais.
 
 ## Impacto
 
-- **Risco**: Zero. Nenhum dado sera alterado. Apenas correcoes de exibicao
-- **Dados existentes**: Os juros ja estao calculados corretamente no banco (ex: R$0,05 para 1 dia de atraso a 0,033%/dia). A correcao e apenas visual
-- **Nota sobre taxas**: A taxa atual configurada e 0,033% ao dia (1% ao mes). Se desejar juros maiores ou adicionar multa, isso pode ser ajustado nas configuracoes de cobranca
-
-## Resumo
-
-
-| Mudanca                                                                                                        | Arquivo                                    | Tipo                        |
-| -------------------------------------------------------------------------------------------------------------- | ------------------------------------------ | --------------------------- |
-| Adicionar campos de juros na query                                                                             | `src/hooks/useFaturas.ts`                  | Query                       |
-| Corrigir timezone nas datas e display de juros                                                                 | `src/components/faturas/FaturaTable.tsx`   | Visual                      |
-| Adicionar detalhamento de juros/multanão esqueça de verificar se existe mais faturas com o mesmo erro &nbsp; | `src/components/faturas/FaturaDetails.tsx` | Visual&nbsp;&nbsp;&nbsp; |
+| Item | Detalhe |
+|------|---------|
+| Risco | Baixo - a funcao apenas faz UPDATE em `updated_at`, delegando o calculo ao trigger existente |
+| Faturas afetadas | ~11 faturas vencidas terao juros recalculados de 1 dia para 3 dias |
+| Recorrencia | Diaria, garantindo que juros acumulem corretamente todo dia |
+| Strikethrough | Ja corrigido no codigo — sem alteracao adicional necessaria |
