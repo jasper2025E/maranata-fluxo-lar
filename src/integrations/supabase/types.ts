@@ -4598,6 +4598,7 @@ export type Database = {
       }
       mark_overdue_faturas: { Args: never; Returns: number }
       recalcular_fatura: { Args: { p_fatura_id: string }; Returns: undefined }
+      recalculate_overdue_interest: { Args: never; Returns: number }
       registrar_ponto_externo: {
         Args: {
           p_accuracy?: number
