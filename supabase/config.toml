@@ -68,3 +68,6 @@ verify_jwt = false
 
 [functions.sync-asaas-payments]
 verify_jwt = false
+
+[functions.sync-asaas-interest-fine]
+verify_jwt = false

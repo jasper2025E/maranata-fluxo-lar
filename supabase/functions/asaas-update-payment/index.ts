@@ -77,6 +77,24 @@ serve(async (req) => {
       throw new Error("Cobrança foi estornada, não é possível alterar");
     }
 
+    // Buscar taxas de juros e multa da escola para incluir no update
+    let jurosMensal = 0;
+    let multaPercentual = 0;
+    let multaFixa = 0;
+
+    const { data: escolaConfig } = await supabase
+      .from("escola")
+      .select("juros_percentual_mensal_padrao, juros_percentual_diario_padrao, multa_percentual_padrao, multa_fixa_padrao")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    if (escolaConfig) {
+      jurosMensal = escolaConfig.juros_percentual_mensal_padrao 
+        || (escolaConfig.juros_percentual_diario_padrao ? escolaConfig.juros_percentual_diario_padrao * 30 : 0);
+      multaPercentual = escolaConfig.multa_percentual_padrao || 0;
+      multaFixa = escolaConfig.multa_fixa_padrao || 0;
+    }
+
     // Atualizar a cobrança no Asaas
     const updateData: Record<string, unknown> = {
       value: Number(valorAtualizado.toFixed(2)),
@@ -84,6 +102,18 @@ serve(async (req) => {
 
     if (descricao) {
       updateData.description = descricao;
+    }
+
+    // Adicionar juros nativos do Asaas
+    if (jurosMensal > 0) {
+      updateData.interest = { value: Number(jurosMensal.toFixed(2)) };
+    }
+
+    // Adicionar multa nativa do Asaas
+    if (multaFixa > 0) {
+      updateData.fine = { value: Number(multaFixa.toFixed(2)), type: "FIXED" };
+    } else if (multaPercentual > 0) {
+      updateData.fine = { value: Number(multaPercentual.toFixed(2)) };
     }
 
     const updateResponse = await fetch(`${ASAAS_API_URL}/payments/${fatura.asaas_payment_id}`, {
