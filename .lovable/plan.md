@@ -1,88 +1,72 @@
 
-# Correcao: Juros Congelados e Erros no Modulo de Faturas
 
-## Diagnostico Completo
+# Solucao Definitiva: Juros e Multas no Asaas
 
-### Problema Principal: Juros e dias de atraso CONGELADOS
+## Problema
 
-O trigger `calcular_valor_total_fatura` recalcula juros e `dias_atraso` **somente quando a fatura e atualizada** (BEFORE UPDATE). O cron diario `mark_overdue_faturas` (3 AM) so muda faturas de "Aberta" para "Vencida" — ele **nao re-toca** faturas ja vencidas.
+Atualmente, juros (0,06%/dia) e multas (1,9%) sao calculados **apenas localmente** no trigger do banco de dados. O Asaas nao sabe nada sobre esses encargos, entao quando o responsavel vai pagar:
 
-Resultado: uma fatura que venceu dia 11/02 e foi marcada como Vencida naquele dia ficou com `dias_atraso = 1` e juros de R$ 0,05. Hoje (14/02) deveria ter `dias_atraso = 3` e juros de R$ 0,16, mas o valor esta congelado.
+- **Boleto no banco**: cobra R$ 290 (valor original)
+- **PIX via QR Code**: cobra R$ 290 (valor original)
+- **Seu sistema**: mostra R$ 295,86 (com encargos)
 
-### Problema do Riscado (Strikethrough)
-
-A correcao anterior JA foi aplicada no codigo — confirmei visualmente no sandbox que o riscado nao aparece mais nos juros. O usuario pode estar vendo uma versao em cache do navegador. Apos o deploy, o problema visual estara resolvido.
-
-### Datas corretas
-
-As datas no banco realmente sao `2026-02-11`, entao exibir "11/02/26" esta correto. Nao ha bug de timezone aqui — as faturas foram criadas com vencimento dia 11 mesmo.
+O banco nunca vai cobrar os encargos porque eles nao foram informados ao Asaas.
 
 ## Solucao
 
-### 1. Criar funcao SQL para recalcular juros diariamente
+A API do Asaas suporta nativamente os campos `interest` e `fine` na criacao da cobranca. Ao incluir esses parametros, o **proprio Asaas** calcula e cobra os encargos automaticamente quando o pagamento e feito apos o vencimento.
 
-Criar uma nova funcao `recalculate_overdue_interest()` que:
-- Seleciona todas faturas com status "Vencida" e `data_vencimento < CURRENT_DATE`
-- Recalcula `dias_atraso`, `valor_juros_aplicado`, `valor_multa_aplicado` e `valor_total`
-- Executa um UPDATE que dispara o trigger existente
+## O que vai mudar
 
-### 2. Adicionar ao cron diario
+### 1. Criar cobranca com juros e multa nativos (Edge Function `asaas-create-payment`)
 
-Agendar `recalculate_overdue_interest()` para rodar apos o `mark_overdue_faturas`, garantindo que os juros acumulem diariamente.
+Ao criar a cobranca no Asaas, incluir os campos `interest` e `fine` com os valores da configuracao da escola:
 
-### 3. Executar recalculo imediato
+```text
+POST /v3/payments
+{
+  "customer": "cus_xxx",
+  "billingType": "BOLETO",
+  "value": 290.00,
+  "dueDate": "2026-02-15",
+  "interest": { "value": 1.8 },   <-- juros mensal (0.06/dia x 30 = 1.8% ao mes)
+  "fine": { "value": 1.9 }        <-- multa percentual
+}
+```
 
-Rodar o recalculo agora para corrigir todas as faturas atualmente com juros congelados.
+Com isso, quando o responsavel pagar apos o vencimento, o banco automaticamente cobra o valor **com** juros e multa.
+
+### 2. Buscar taxas da escola antes de criar a cobranca
+
+A Edge Function vai buscar `juros_percentual_mensal_padrao` e `multa_percentual_padrao` da tabela `escola` usando o `tenant_id` da fatura.
+
+### 3. Atualizar cobranças existentes
+
+Para as faturas vencidas que ja tem cobranca no Asaas **sem** os encargos configurados, vamos atualizar via API do Asaas (`PUT /v3/payments/{id}`) adicionando os campos `interest` e `fine`.
 
 ## Detalhes Tecnicos
 
-### Migracao SQL
+### Arquivo: `supabase/functions/asaas-create-payment/index.ts`
 
-```text
--- Funcao que forca recalculo de juros em faturas vencidas
-CREATE OR REPLACE FUNCTION public.recalculate_overdue_interest()
-RETURNS integer
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  updated_count integer;
-BEGIN
-  -- Fazer UPDATE "touch" nas faturas vencidas para que o trigger
-  -- calcular_valor_total_fatura recalcule dias_atraso e juros
-  UPDATE public.faturas
-  SET updated_at = NOW()
-  WHERE status = 'Vencida'
-    AND data_vencimento < CURRENT_DATE;
+- Antes de criar o pagamento, buscar da tabela `escola` os campos `juros_percentual_mensal_padrao`, `multa_percentual_padrao` e `multa_fixa_padrao`
+- Incluir no body do `POST /payments`:
+  - `interest: { value: juros_mensal }` (percentual mensal)
+  - `fine: { value: multa_percentual }` (percentual de multa)
+  - Se houver `multa_fixa_padrao`, usar `fine: { value: multa_fixa, type: "FIXED" }`
 
-  GET DIAGNOSTICS updated_count = ROW_COUNT;
-  RETURN updated_count;
-END;
-$$;
-```
+### Arquivo: `supabase/functions/asaas-update-payment/index.ts`
 
-### Cron Job
+- Ao atualizar cobranças, tambem incluir `interest` e `fine` se ainda nao estiverem configurados
 
-Agendar para rodar diariamente as 3:05 AM (5 min apos o mark_overdue):
+### Migracao: Atualizar cobranças existentes em atraso
 
-```text
-SELECT cron.schedule(
-  'recalculate-overdue-interest',
-  '5 3 * * *',
-  'SELECT public.recalculate_overdue_interest()'
-);
-```
+- Criar uma Edge Function ou SQL que identifique faturas vencidas com `asaas_payment_id` e atualize cada uma no Asaas com os campos `interest` e `fine`
+- Isso sera feito via chamada a API do Asaas para cada fatura pendente
 
-### Execucao imediata
+### Resultado esperado
 
-Apos criar a funcao, executar `SELECT public.recalculate_overdue_interest()` para corrigir todas as faturas atuais.
+- O boleto impresso continuara mostrando o valor original (R$ 290)
+- Quando o responsavel pagar **apos o vencimento**, o banco cobrara automaticamente valor + juros + multa
+- O PIX QR Code dinamico ja reflete os encargos no momento do escaneamento
+- O sistema local e o Asaas ficarao 100% sincronizados
 
-## Impacto
-
-| Item | Detalhe |
-|------|---------|
-| Risco | Baixo - a funcao apenas faz UPDATE em `updated_at`, delegando o calculo ao trigger existente |
-| Faturas afetadas | ~11 faturas vencidas terao juros recalculados de 1 dia para 3 dias |
-| Recorrencia | Diaria, garantindo que juros acumulem corretamente todo dia |
-| Strikethrough | Ja corrigido no codigo — sem alteracao adicional necessaria |
