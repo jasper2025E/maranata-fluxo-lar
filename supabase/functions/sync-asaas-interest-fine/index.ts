@@ -22,7 +22,7 @@ serve(async (req) => {
       .select("id, asaas_payment_id, tenant_id")
       .not("asaas_payment_id", "is", null)
       .in("status", ["Vencida", "Aberta"])
-      .limit(20);
+      .limit(50);
 
     if (error) throw new Error(`Erro ao buscar faturas: ${error.message}`);
     if (!faturas || faturas.length === 0) {
