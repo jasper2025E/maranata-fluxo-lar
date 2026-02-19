@@ -216,6 +216,27 @@ serve(async (req) => {
       customerId = await createAsaasCustomer();
     }
 
+    // Buscar taxas de juros e multa da escola
+    let jurosMensal = 0;
+    let multaPercentual = 0;
+    let multaFixa = 0;
+
+    const { data: escolaConfig } = await supabase
+      .from("escola")
+      .select("juros_percentual_mensal_padrao, juros_percentual_diario_padrao, multa_percentual_padrao, multa_fixa_padrao")
+      .eq("tenant_id", tenantId)
+      .maybeSingle();
+
+    if (escolaConfig) {
+      // Se tem juros mensal direto, usar; senão calcular a partir do diário (diário × 30)
+      jurosMensal = escolaConfig.juros_percentual_mensal_padrao 
+        || (escolaConfig.juros_percentual_diario_padrao ? escolaConfig.juros_percentual_diario_padrao * 30 : 0);
+      multaPercentual = escolaConfig.multa_percentual_padrao || 0;
+      multaFixa = escolaConfig.multa_fixa_padrao || 0;
+    }
+
+    console.log("Taxas da escola:", { jurosMensal, multaPercentual, multaFixa });
+
     // Calcular valor da fatura
     const valorFatura = fatura.valor_total || fatura.valor || 0;
     const mesReferencia = meses[fatura.mes_referencia - 1];
@@ -237,7 +258,7 @@ serve(async (req) => {
 
     // Função para criar cobrança
     const createPayment = async (customerIdToUse: string) => {
-      const paymentData = {
+      const paymentData: Record<string, unknown> = {
         customer: customerIdToUse,
         billingType: billingType,
         value: Number(valorFatura.toFixed(2)),
@@ -246,6 +267,18 @@ serve(async (req) => {
         externalReference: faturaId,
         postalService: false,
       };
+
+      // Adicionar juros nativos do Asaas (percentual mensal)
+      if (jurosMensal > 0) {
+        paymentData.interest = { value: Number(jurosMensal.toFixed(2)) };
+      }
+
+      // Adicionar multa nativa do Asaas
+      if (multaFixa > 0) {
+        paymentData.fine = { value: Number(multaFixa.toFixed(2)), type: "FIXED" };
+      } else if (multaPercentual > 0) {
+        paymentData.fine = { value: Number(multaPercentual.toFixed(2)) };
+      }
 
       const paymentResponse = await fetch(`${ASAAS_API_URL}/payments`, {
         method: "POST",
