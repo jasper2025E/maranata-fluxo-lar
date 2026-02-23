@@ -22,7 +22,7 @@ serve(async (req) => {
       .select("id, asaas_payment_id, tenant_id")
       .not("asaas_payment_id", "is", null)
       .in("status", ["Vencida", "Aberta"])
-      .limit(50);
+      .limit(10);
 
     if (error) throw new Error(`Erro ao buscar faturas: ${error.message}`);
     if (!faturas || faturas.length === 0) {
@@ -95,7 +95,7 @@ serve(async (req) => {
         }
 
         // Delay entre requisições
-        await new Promise(r => setTimeout(r, 200));
+        await new Promise(r => setTimeout(r, 100));
       } catch (err: unknown) {
         failed++;
         errors.push(`${fatura.id}: ${err instanceof Error ? err.message : "erro"}`);
