@@ -22,7 +22,7 @@ serve(async (req) => {
       .select("id, asaas_payment_id, tenant_id, status, data_vencimento")
       .not("asaas_payment_id", "is", null)
       .in("status", ["Vencida", "Aberta"])
-      .order("status", { ascending: true })
+      .order("status", { ascending: false })
       .order("data_vencimento", { ascending: true })
       .limit(10);
 
