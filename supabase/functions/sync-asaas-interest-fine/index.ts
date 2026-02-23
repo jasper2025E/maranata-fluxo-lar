@@ -19,9 +19,11 @@ serve(async (req) => {
     // Buscar faturas vencidas que têm asaas_payment_id
     const { data: faturas, error } = await supabase
       .from("faturas")
-      .select("id, asaas_payment_id, tenant_id")
+      .select("id, asaas_payment_id, tenant_id, status, data_vencimento")
       .not("asaas_payment_id", "is", null)
       .in("status", ["Vencida", "Aberta"])
+      .order("status", { ascending: true })
+      .order("data_vencimento", { ascending: true })
       .limit(10);
 
     if (error) throw new Error(`Erro ao buscar faturas: ${error.message}`);
