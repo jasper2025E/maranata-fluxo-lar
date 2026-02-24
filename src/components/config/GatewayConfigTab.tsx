@@ -48,7 +48,8 @@ function GatewayCard({
   };
   const copyWebhookUrl = () => {
     if (config.webhook_token) {
-      const url = `${window.location.origin}/functions/v1/gateway-webhook/${config.gateway_type}/${config.webhook_token}`;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+      const url = `${supabaseUrl}/functions/v1/gateway-webhook/${config.gateway_type}/${config.webhook_token}`;
       navigator.clipboard.writeText(url);
       toast.success("URL copiada");
     }
