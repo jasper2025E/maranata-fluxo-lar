@@ -330,18 +330,7 @@ serve(async (req) => {
 
           await supabase.from("faturas").update(updateData).eq("id", fatura.id);
 
-          // Notificação automática de correção de status
-          if (newLocalStatus !== localStatus && fatura.tenant_id) {
-            await supabase.from("notifications").insert({
-              tenant_id: fatura.tenant_id,
-              title: "Fatura Sincronizada",
-              message: `Status atualizado automaticamente: ${localStatus} → ${newLocalStatus}`,
-              type: "info",
-              link: "/faturas"
-            });
-          }
-
-          // Log da transação
+          // Log da transação (sem notificação de sincronização)
           await logGatewayTransaction(supabase, {
             tenantId: fatura.tenant_id || "",
             gatewayConfigId: fatura.gateway_config_id,
