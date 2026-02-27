@@ -7,12 +7,10 @@ const corsHeaders = {
 };
 
 serve(async (req) => {
-  // Always respond to OPTIONS
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
 
-  // Only accept POST
   if (req.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method not allowed' }), {
       status: 405,
@@ -26,7 +24,6 @@ serve(async (req) => {
   // Parse path: /gateway-webhook/{gateway_type}/{webhook_token}
   const url = new URL(req.url);
   const pathParts = url.pathname.split('/').filter(Boolean);
-  // Path will be like: /gateway-webhook/asaas/TOKEN or /functions/v1/gateway-webhook/asaas/TOKEN
   const gwIndex = pathParts.indexOf('gateway-webhook');
   const gatewayType = gwIndex >= 0 ? pathParts[gwIndex + 1] : null;
   const webhookToken = gwIndex >= 0 ? pathParts[gwIndex + 2] : null;
@@ -47,7 +44,6 @@ serve(async (req) => {
 
     if (!config) {
       console.error("[gateway-webhook] Token inválido ou config inativa");
-      // Still return 200 to avoid Asaas penalties
       return new Response(JSON.stringify({ received: true, error: "invalid_token" }), {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -65,6 +61,15 @@ serve(async (req) => {
     event = await req.json();
   } catch (e) {
     console.error("[gateway-webhook] Erro ao parsear JSON:", e);
+    await supabase.from("webhook_logs").insert({
+      source: gatewayType || "unknown",
+      event_type: "parse_error",
+      payload: {},
+      status: 'failed',
+      error_message: "Invalid JSON body",
+      processing_time_ms: Date.now() - startTime,
+      ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+    });
     return new Response(JSON.stringify({ received: true, error: "invalid_json" }), {
       status: 200,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -76,27 +81,43 @@ serve(async (req) => {
 
   console.log(`[gateway-webhook] Event: ${eventType}, Payment ID: ${payment?.id}`);
 
-  // Log webhook immediately
-  try {
-    await supabase.from("webhook_logs").insert({
-      source: gatewayType || "unknown",
-      event_type: eventType,
-      payload: event,
-      status: 'received',
-      processing_time_ms: Date.now() - startTime,
-      ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
-    });
-  } catch (logErr) {
-    console.error("[gateway-webhook] Erro ao salvar log:", logErr);
+  // Process synchronously (NOT fire-and-forget) to ensure completion before runtime shutdown
+  if (gatewayType === 'asaas' && payment) {
+    try {
+      const result = await processAsaasWebhook(supabase, event, tenantId, gatewayConfigId, startTime, req);
+      console.log(`[gateway-webhook] Processamento concluído: ${result}`);
+      return new Response(JSON.stringify({ received: true, result }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    } catch (err) {
+      console.error("[gateway-webhook] Erro no processamento:", err);
+      // Log failure but still return 200 to avoid Asaas retry storm
+      await supabase.from("webhook_logs").insert({
+        source: "asaas",
+        event_type: eventType,
+        payload: event,
+        status: 'failed',
+        error_message: err instanceof Error ? err.message : "Unknown error",
+        processing_time_ms: Date.now() - startTime,
+        ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+      });
+      return new Response(JSON.stringify({ received: true }), {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
   }
 
-  // Process asynchronously - respond 200 immediately
-  if (gatewayType === 'asaas' && payment) {
-    // Fire and forget - process in background
-    processAsaasWebhook(supabase, event, tenantId, gatewayConfigId, startTime).catch(err => {
-      console.error("[gateway-webhook] Erro no processamento async:", err);
-    });
-  }
+  // Non-payment events: just log and return
+  await supabase.from("webhook_logs").insert({
+    source: gatewayType || "unknown",
+    event_type: eventType,
+    payload: event,
+    status: 'processed',
+    processing_time_ms: Date.now() - startTime,
+    ip_address: req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip"),
+  });
 
   return new Response(JSON.stringify({ received: true }), {
     status: 200,
@@ -109,18 +130,28 @@ async function processAsaasWebhook(
   event: any,
   tenantId: string | null,
   gatewayConfigId: string | null,
-  startTime: number
-) {
+  startTime: number,
+  req: Request
+): Promise<string> {
   const { event: evtType, payment } = event;
+  const ipAddress = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
 
   if (!payment?.externalReference) {
     console.log("[gateway-webhook] Sem externalReference, ignorando processamento");
-    return;
+    await supabase.from("webhook_logs").insert({
+      source: "asaas",
+      event_type: evtType,
+      payload: event,
+      status: 'processed',
+      processing_time_ms: Date.now() - startTime,
+      ip_address: ipAddress,
+    });
+    return "no_external_reference";
   }
 
   const faturaId = payment.externalReference;
 
-  // Check for duplicate within 5 minutes
+  // Check for duplicate within 5 minutes (same payment.id + event type)
   const { data: recentLogs } = await supabase
     .from("webhook_logs")
     .select("payload")
@@ -143,9 +174,10 @@ async function processAsaasWebhook(
       payload: event,
       status: 'skipped',
       processing_time_ms: Date.now() - startTime,
+      ip_address: ipAddress,
       error_message: "duplicate_event_within_5min",
     });
-    return;
+    return "duplicate";
   }
 
   // Fetch fatura
@@ -157,17 +189,34 @@ async function processAsaasWebhook(
 
   if (!fatura) {
     console.log(`[gateway-webhook] Fatura ${faturaId} não encontrada`);
-    return;
+    await supabase.from("webhook_logs").insert({
+      source: "asaas",
+      event_type: evtType,
+      payload: event,
+      status: 'processed',
+      processing_time_ms: Date.now() - startTime,
+      ip_address: ipAddress,
+      error_message: "fatura_not_found",
+    });
+    return "fatura_not_found";
   }
 
-  // Use tenant from fatura if not from token
   const effectiveTenantId = tenantId || fatura.tenant_id;
   const effectiveGatewayConfigId = gatewayConfigId || fatura.gateway_config_id;
 
   // Idempotency check
   if (fatura.asaas_status === payment.status) {
     console.log(`[gateway-webhook] Status ${payment.status} já processado para fatura ${faturaId}`);
-    return;
+    await supabase.from("webhook_logs").insert({
+      source: "asaas",
+      event_type: evtType,
+      payload: event,
+      status: 'skipped',
+      processing_time_ms: Date.now() - startTime,
+      ip_address: ipAddress,
+      error_message: "already_processed",
+    });
+    return "already_processed";
   }
 
   // Build update
@@ -261,7 +310,9 @@ async function processAsaasWebhook(
     payload: event,
     status: 'processed',
     processing_time_ms: Date.now() - startTime,
+    ip_address: ipAddress,
   });
 
   console.log(`[gateway-webhook] Fatura ${faturaId} atualizada: ${updateData.status || payment.status}`);
+  return `updated:${updateData.status || payment.status}`;
 }
