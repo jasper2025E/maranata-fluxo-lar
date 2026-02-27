@@ -57,7 +57,7 @@ serve(async (req) => {
       email: responsavel.email || null,
       phone: responsavel.telefone?.replace(/\D/g, '') || null,
       mobilePhone: responsavel.telefone?.replace(/\D/g, '') || null,
-      notificationDisabled: false,
+      notificationDisabled: true,
     };
 
     const asaasResponse = await fetch(`${ASAAS_API_URL}/customers`, {
