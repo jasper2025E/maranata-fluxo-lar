@@ -240,7 +240,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   </ScrollArea>
                   {notifications.length > 0 && (
                     <div className="p-3 border-t">
-                      <Button variant="ghost" className="w-full text-sm" size="sm">
+                      <Button variant="ghost" className="w-full text-sm" size="sm" onClick={markAllAsRead}>
+                        <Check className="h-3.5 w-3.5 mr-1.5" />
                         {t("common.viewAll")}
                       </Button>
                     </div>
