@@ -174,7 +174,7 @@ serve(async (req) => {
         name: responsavel.nome,
         email: responsavel.email || null,
         mobilePhone: responsavel.telefone?.replace(/\D/g, '') || null,
-        notificationDisabled: false,
+        notificationDisabled: true,
       };
       
       if (validCpfCnpj) {
@@ -266,6 +266,7 @@ serve(async (req) => {
         description: description,
         externalReference: faturaId,
         postalService: false,
+        notificationDisabled: true,
       };
 
       // Adicionar juros nativos do Asaas (percentual mensal)

@@ -63,6 +63,9 @@ serve(async (req) => {
       updateData.email = responsavel.email;
     }
     
+    // Sempre desativar notificações para evitar taxa de R$0,99
+    updateData.notificationDisabled = "true";
+
     if (responsavel.telefone) {
       const phone = responsavel.telefone.replace(/\D/g, '');
       // ASAAS requer telefone com DDD (mínimo 10 dígitos)
