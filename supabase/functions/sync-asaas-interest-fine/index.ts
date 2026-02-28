@@ -24,7 +24,7 @@ serve(async (req) => {
       .in("status", ["Vencida", "Aberta"])
       .eq("asaas_status", "PENDING")
       .order("data_vencimento", { ascending: true })
-      .limit(50);
+      .limit(100);
 
     if (error) throw new Error(`Erro ao buscar faturas: ${error.message}`);
     if (!faturas || faturas.length === 0) {
