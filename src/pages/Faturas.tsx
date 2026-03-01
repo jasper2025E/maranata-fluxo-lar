@@ -449,41 +449,45 @@ const Faturas = () => {
       <div className="max-w-6xl mx-auto space-y-6">
 
         {/* Header - Shopify Style */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center h-12 w-12 rounded-2xl bg-primary/10">
-              <FileText className="h-6 w-6 text-primary" />
+            <div className="flex items-center justify-center h-10 w-10 sm:h-12 sm:w-12 rounded-2xl bg-primary/10">
+              <FileText className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">Faturas</h1>
-              <p className="text-sm text-muted-foreground">Gerencie as cobranças dos seus alunos</p>
+              <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Faturas</h1>
+              <p className="text-xs sm:text-sm text-muted-foreground">Gerencie as cobranças dos seus alunos</p>
             </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3">
             <Button 
               variant="outline" 
               onClick={handleBulkSyncAsaas}
               disabled={isSyncing}
-              className={`h-11 px-5 rounded-xl gap-2 transition-all duration-200 font-medium ${
+              size="sm"
+              className={`h-9 sm:h-11 px-3 sm:px-5 rounded-xl gap-2 transition-all duration-200 font-medium ${
                 isSyncing 
                   ? 'bg-primary/5 border-primary/30' 
                   : 'hover:bg-primary/5 hover:border-primary/50 hover:shadow-md'
               }`}
             >
               <RefreshCw className={`h-4 w-4 transition-transform duration-300 ${isSyncing ? 'animate-spin' : ''}`} />
-              {isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar'}
+              <span className="hidden sm:inline">{isSyncing ? 'Sincronizando...' : selectedFaturasIds.size > 0 ? `Sincronizar (${selectedFaturasIds.size})` : 'Sincronizar'}</span>
+              <span className="sm:hidden">{isSyncing ? '...' : 'Sync'}</span>
             </Button>
             <Button 
               variant="outline"
-              onClick={() => setIsCreateConsolidadaOpen(true)} 
-              className="h-11 px-5 rounded-xl gap-2 font-medium hover:bg-primary/5 hover:border-primary/50"
+              onClick={() => setIsCreateConsolidadaOpen(true)}
+              size="sm"
+              className="h-9 sm:h-11 px-3 sm:px-5 rounded-xl gap-2 font-medium hover:bg-primary/5 hover:border-primary/50"
             >
               <UsersRound className="h-4 w-4" />
-              Consolidada
+              <span className="hidden sm:inline">Consolidada</span>
             </Button>
             <Button 
-              onClick={() => setIsCreateOpen(true)} 
-              className="h-11 px-5 rounded-xl gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
+              onClick={() => setIsCreateOpen(true)}
+              size="sm"
+              className="h-9 sm:h-11 px-3 sm:px-5 rounded-xl gap-2 font-semibold shadow-md hover:shadow-lg transition-all"
             >
               <Plus className="h-4 w-4" />
               {t("invoices.newInvoice")}
