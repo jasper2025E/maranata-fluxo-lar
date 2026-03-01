@@ -14,6 +14,7 @@ import { useContentProtection } from "@/hooks/useContentProtection";
 import { useUserLanguage } from "@/hooks/useUserLanguage";
 import { queryClient } from "@/lib/queryClient";
 import { PageLoader } from "@/components/PageLoader";
+import { PWAInstallBanner, PWAUpdatePrompt, NetworkStatusIndicator } from "@/components/pwa";
 
 // Lazy load all pages for optimal bundle splitting
 const Auth = lazy(() => import("./pages/Auth"));
@@ -50,6 +51,8 @@ function AppContent() {
 
   return (
     <>
+      <NetworkStatusIndicator />
+      <PWAUpdatePrompt />
       <Toaster />
       <Sonner />
       <BrowserRouter>
@@ -203,6 +206,7 @@ function AppContent() {
           </Routes>
         </Suspense>
       </BrowserRouter>
+      <PWAInstallBanner />
     </>
   );
 }
