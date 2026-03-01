@@ -19,6 +19,7 @@ import {
   Loader2 
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface SearchResult {
@@ -206,7 +207,17 @@ export function GlobalSearch() {
 
   return (
     <>
-      {/* Search Input */}
+      {/* Mobile Search Button */}
+      <Button
+        variant="ghost"
+        size="icon"
+        className="md:hidden h-9 w-9 rounded-xl"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="h-4 w-4 text-muted-foreground" />
+      </Button>
+
+      {/* Desktop Search Input */}
       <div className="hidden md:flex relative w-80">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input

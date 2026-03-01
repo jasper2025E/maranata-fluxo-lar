@@ -119,7 +119,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <GracePeriodBanner />
           
           {/* Premium Header */}
-          <header className="h-16 border-b border-border/50 bg-card/95 backdrop-blur-sm flex items-center justify-between px-6 sticky top-0 z-10">
+          <header className="h-14 sm:h-16 border-b border-border/50 bg-card/95 backdrop-blur-sm flex items-center justify-between px-3 sm:px-6 sticky top-0 z-10">
             <div className="flex items-center gap-4 flex-shrink-0">
               <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
               
@@ -145,7 +145,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               </TooltipProvider>
             </div>
 
-            <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
               <LanguageSelector />
 
               {/* Notifications */}
@@ -249,12 +249,12 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 </PopoverContent>
               </Popover>
 
-              {/* Calendar Picker */}
+              {/* Calendar Picker - hidden on mobile */}
               <Popover>
                 <PopoverTrigger asChild>
                   <Button 
                     variant="ghost" 
-                    className="h-10 px-3 rounded-xl hover:bg-muted flex items-center gap-2"
+                    className="hidden sm:flex h-10 px-3 rounded-xl hover:bg-muted items-center gap-2"
                   >
                     <CalendarDays className="h-[18px] w-[18px] text-muted-foreground" strokeWidth={1.75} />
                     <span className="hidden sm:inline text-sm font-medium text-foreground">
@@ -319,7 +319,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           </header>
 
           {/* Main Content */}
-          <main className="flex-1 p-6 lg:p-8 animate-fade-in">
+          <main className="flex-1 p-3 sm:p-6 lg:p-8 animate-fade-in">
             {children}
           </main>
         </div>
