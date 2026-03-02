@@ -342,28 +342,28 @@ const Relatorios = () => {
 
         {/* Filters Bar */}
         <div className="bg-card border border-border rounded-lg">
-          <div className="flex flex-wrap items-center justify-between gap-4 p-4">
-            <div className="flex flex-wrap items-center gap-3">
-              <div className="flex items-center gap-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 sm:p-4">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-1.5">
                 <span className="text-xs text-muted-foreground">De</span>
                 <Input
                   type="date"
                   value={periodoInicio}
                   onChange={(e) => setPeriodoInicio(e.target.value)}
-                  className="h-8 w-36 text-xs"
+                  className="h-8 w-[130px] text-xs"
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5">
                 <span className="text-xs text-muted-foreground">até</span>
                 <Input
                   type="date"
                   value={periodoFim}
                   onChange={(e) => setPeriodoFim(e.target.value)}
-                  className="h-8 w-36 text-xs"
+                  className="h-8 w-[130px] text-xs"
                 />
               </div>
               <Select value={anoSelecionado} onValueChange={setAnoSelecionado}>
-                <SelectTrigger className="h-8 w-24 text-xs">
+                <SelectTrigger className="h-8 w-20 text-xs">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -375,12 +375,12 @@ const Relatorios = () => {
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportarReceitaMensal}>
-                <Download className="h-3.5 w-3.5 mr-1.5" />
-                Mensal
+                <Download className="h-3.5 w-3.5 sm:mr-1.5" />
+                <span className="hidden sm:inline">Mensal</span>
               </Button>
               <Button variant="outline" size="sm" className="h-8 text-xs" onClick={exportarInadimplencia}>
-                <Download className="h-3.5 w-3.5 mr-1.5" />
-                Inadimplência
+                <Download className="h-3.5 w-3.5 sm:mr-1.5" />
+                <span className="hidden sm:inline">Inadimplência</span>
               </Button>
             </div>
           </div>
@@ -423,7 +423,7 @@ const Relatorios = () => {
         </div>
 
         {/* Secondary Stats */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
           <div className="bg-card border border-border rounded-lg px-4 py-3 flex items-center gap-3">
             <Receipt className="h-4 w-4 text-muted-foreground" />
             <div>
@@ -468,14 +468,14 @@ const Relatorios = () => {
         </div>
 
         {/* Section Navigation */}
-        <div className="bg-card border border-border rounded-lg">
-          <div className="flex border-b border-border">
+        <div className="bg-card border border-border rounded-lg overflow-hidden">
+          <div className="flex border-b border-border overflow-x-auto">
             {sections.map((section) => (
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
                 className={cn(
-                  "px-4 py-2.5 text-sm font-medium transition-colors border-b-2 -mb-px",
+                  "px-3 sm:px-4 py-2.5 text-xs sm:text-sm font-medium transition-colors border-b-2 -mb-px whitespace-nowrap",
                   activeSection === section.id
                     ? "text-foreground border-primary"
                     : "text-muted-foreground border-transparent hover:text-foreground"
