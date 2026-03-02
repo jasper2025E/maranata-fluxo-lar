@@ -166,7 +166,7 @@ export default function SiteEscolar() {
   if (isLoading) {
     return (
       <DashboardLayout>
-        <div className="container max-w-6xl mx-auto px-4 py-8">
+          <div className="max-w-6xl mx-auto space-y-6">
           <PageHeader
             title="Site Escolar"
             description="Portal público da escola"
@@ -187,7 +187,7 @@ export default function SiteEscolar() {
   if (error || !tenant) {
     return (
       <DashboardLayout>
-        <div className="container max-w-6xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto space-y-6">
           <PageHeader title="Site Escolar" description="Portal público da escola" />
           <Card className="mt-6">
             <CardContent className="pt-6 text-center py-12">
@@ -210,7 +210,7 @@ export default function SiteEscolar() {
 
   return (
     <DashboardLayout>
-      <div className="container max-w-6xl mx-auto px-4 py-8">
+        <div className="max-w-6xl mx-auto space-y-6">
         <PageHeader
           title="Site Escolar"
           description="Gerencie seu portal público e compartilhe com responsáveis"
@@ -284,10 +284,10 @@ export default function SiteEscolar() {
 
           {/* Tabs */}
           <Tabs defaultValue="links" className="space-y-6">
-            <TabsList className="bg-muted/50 p-1">
+            <TabsList className="bg-muted/50 p-1 w-full sm:w-auto overflow-x-auto">
               <TabsTrigger value="links" className="text-xs">
                 <Globe className="h-3.5 w-3.5 mr-1.5" />
-                Links & QR Codes
+                Links
               </TabsTrigger>
               <TabsTrigger value="preview" className="text-xs">
                 <Eye className="h-3.5 w-3.5 mr-1.5" />
