@@ -342,7 +342,7 @@ const Turmas = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             {isLoading ? (
               <TableSkeleton />
             ) : turmas.length === 0 ? (

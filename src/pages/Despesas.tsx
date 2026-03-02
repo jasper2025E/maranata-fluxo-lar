@@ -214,7 +214,7 @@ const Despesas = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -345,12 +345,12 @@ const Despesas = () => {
         {/* Table Card */}
         <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
           <CardHeader className="border-b border-border/50 bg-muted/30">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-lg font-semibold text-foreground">{t("expenses.expenseList")}</CardTitle>
                 <CardDescription>{filteredDespesas.length} {t("expenses.expensesCount")}</CardDescription>
               </div>
-              <div className="relative w-64">
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder={t("common.search")}
@@ -361,7 +361,7 @@ const Despesas = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             {isLoading ? (
               <p className="text-muted-foreground p-6">{t("common.loading")}</p>
             ) : filteredDespesas.length === 0 ? (

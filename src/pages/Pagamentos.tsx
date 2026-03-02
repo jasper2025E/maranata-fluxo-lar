@@ -103,7 +103,7 @@ const Pagamentos = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="max-w-6xl mx-auto space-y-6">
 
         {/* Header */}
         <div>
@@ -145,7 +145,7 @@ const Pagamentos = () => {
                 <CardTitle className="text-foreground">{t("payments.history")}</CardTitle>
                 <CardDescription className="text-muted-foreground">{filteredPagamentos.length} {t("payments.paymentsCount")}</CardDescription>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                 <Tabs value={gatewayFilter} onValueChange={setGatewayFilter} className="w-auto">
                   <TabsList className="h-9">
                     <TabsTrigger value="todos" className="text-xs">{t("common.all")}</TabsTrigger>
@@ -154,7 +154,7 @@ const Pagamentos = () => {
                     <TabsTrigger value="manual" className="text-xs">{t("payments.manual")}</TabsTrigger>
                   </TabsList>
                 </Tabs>
-                <div className="relative w-64">
+                <div className="relative w-full sm:w-64">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder={t("common.search")}
@@ -166,7 +166,7 @@ const Pagamentos = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-0 overflow-x-auto">
             {isLoading ? (
               <p className="text-muted-foreground">{t("common.loading")}</p>
             ) : filteredPagamentos.length === 0 ? (

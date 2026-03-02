@@ -39,7 +39,7 @@ const SaudeFinanceira = () => {
 
   return (
     <DashboardLayout>
-        <div className="max-w-6xl mx-auto p-6 space-y-6">
+        <div className="max-w-6xl mx-auto space-y-6">
           {/* Mobile Tabs */}
           <div className="flex gap-2 overflow-x-auto pb-2 lg:hidden">
             {tabs.map((tab) => {
