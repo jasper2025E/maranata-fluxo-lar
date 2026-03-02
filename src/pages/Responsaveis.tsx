@@ -481,11 +481,11 @@ export default function Responsaveis() {
         {/* Table */}
         <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
           <CardHeader className="border-b border-border/50 bg-muted/30">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <CardTitle className="text-lg font-semibold text-foreground">
                 {t("guardians.guardianList")}
               </CardTitle>
-              <div className="relative w-64">
+              <div className="relative w-full sm:w-64">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder={t("common.search")}
@@ -496,7 +496,7 @@ export default function Responsaveis() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             {isLoading ? (
               <TableSkeleton />
             ) : !filteredResponsaveis?.length ? (

@@ -734,7 +734,7 @@ const Alunos = () => {
         {/* Table Card */}
         <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
           <CardHeader className="border-b border-border/50 bg-muted/30">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <CardTitle className="text-lg font-semibold text-foreground">
                   {t("students.studentList")}
@@ -743,7 +743,7 @@ const Alunos = () => {
                   {filteredAlunos.length} {t("students.studentsRegistered")}
                 </CardDescription>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                 <Button
                   variant={filterSemTurma ? "default" : "outline"}
                   size="sm"
@@ -751,7 +751,7 @@ const Alunos = () => {
                 >
                   {t("students.withoutClass")}
                 </Button>
-                <div className="relative w-64">
+                <div className="relative w-full sm:w-64">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                   <Input
                     placeholder={t("common.search")}
@@ -763,7 +763,7 @@ const Alunos = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             {isLoading ? (
               <TableSkeleton />
             ) : filteredAlunos.length === 0 ? (

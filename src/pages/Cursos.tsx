@@ -330,7 +330,7 @@ const Cursos = () => {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-0">
+          <CardContent className="p-0 overflow-x-auto">
             {isLoading ? (
               <TableSkeleton />
             ) : cursos.length === 0 ? (
