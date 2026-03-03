@@ -303,7 +303,7 @@ export default function SiteEscolar() {
             <TabsContent value="links" className="space-y-6">
               {/* Quick Stats */}
               <motion.div 
-                className="grid gap-4 grid-cols-2 lg:grid-cols-4"
+                className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
                 variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
               >
                 <motion.div variants={fadeIn}>
