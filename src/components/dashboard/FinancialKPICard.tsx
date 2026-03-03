@@ -65,28 +65,28 @@ const variantConfig = {
 
 const sizeConfig = {
   sm: {
-    padding: "p-4",
-    iconSize: "h-11 w-11",
-    iconInner: "h-5 w-5",
-    titleSize: "text-xs",
-    valueSize: "text-xl",
-    subtitleSize: "text-[11px]",
+    padding: "p-3 sm:p-4",
+    iconSize: "h-9 w-9 sm:h-11 sm:w-11",
+    iconInner: "h-4 w-4 sm:h-5 sm:w-5",
+    titleSize: "text-[10px] sm:text-xs",
+    valueSize: "text-lg sm:text-xl",
+    subtitleSize: "text-[10px] sm:text-[11px]",
   },
   md: {
-    padding: "p-5",
-    iconSize: "h-13 w-13",
-    iconInner: "h-6 w-6",
-    titleSize: "text-xs",
-    valueSize: "text-2xl",
-    subtitleSize: "text-xs",
+    padding: "p-3 sm:p-5",
+    iconSize: "h-9 w-9 sm:h-13 sm:w-13",
+    iconInner: "h-4 w-4 sm:h-6 sm:w-6",
+    titleSize: "text-[10px] sm:text-xs",
+    valueSize: "text-lg sm:text-2xl",
+    subtitleSize: "text-[10px] sm:text-xs",
   },
   lg: {
-    padding: "p-6",
-    iconSize: "h-14 w-14",
-    iconInner: "h-7 w-7",
-    titleSize: "text-sm",
-    valueSize: "text-3xl",
-    subtitleSize: "text-sm",
+    padding: "p-4 sm:p-6",
+    iconSize: "h-10 w-10 sm:h-14 sm:w-14",
+    iconInner: "h-5 w-5 sm:h-7 sm:w-7",
+    titleSize: "text-xs sm:text-sm",
+    valueSize: "text-xl sm:text-3xl",
+    subtitleSize: "text-xs sm:text-sm",
   },
 };
 
@@ -151,9 +151,9 @@ export function FinancialKPICard({
         }}
       />
 
-      <div className="relative flex flex-col gap-3">
+      <div className="relative flex flex-col gap-2 sm:gap-3 min-w-0">
         {/* Header: Icon + Title */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <motion.div
             whileHover={{ scale: 1.1, rotate: 8 }}
             whileTap={{ scale: 0.95 }}
@@ -174,7 +174,7 @@ export function FinancialKPICard({
           </motion.div>
           <p className={cn(
             sizes.titleSize,
-            "font-semibold text-muted-foreground/80 uppercase tracking-wider"
+            "font-semibold text-muted-foreground/80 uppercase tracking-wider truncate"
           )}>
             {title}
           </p>
@@ -184,7 +184,7 @@ export function FinancialKPICard({
         <motion.p 
           className={cn(
             sizes.valueSize, 
-            "font-bold text-foreground tracking-tight leading-none"
+            "font-bold text-foreground tracking-tight leading-none truncate"
           )}
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
