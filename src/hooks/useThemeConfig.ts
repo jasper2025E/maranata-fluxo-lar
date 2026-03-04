@@ -66,6 +66,17 @@ export function applyThemeConfig(cfg: ThemeConfig, isDark: boolean) {
   const root = document.documentElement;
   const colors = isDark ? cfg.darkColors : cfg.lightColors;
 
+  const getLightness = (hsl: string): number => {
+    const match = hsl.match(/\d+(?:\.\d+)?\s+\d+(?:\.\d+)?%\s+(\d+(?:\.\d+)?)%/);
+    return match ? Number(match[1]) : 50;
+  };
+
+  const sidebarIsLight = getLightness(colors.sidebarBackground) >= 45;
+  const sidebarForeground = sidebarIsLight ? "222 47% 11%" : "210 40% 98%";
+  const sidebarAccent = sidebarIsLight ? "220 14% 90%" : "222 35% 18%";
+  const sidebarAccentForeground = sidebarIsLight ? "222 47% 11%" : "210 40% 98%";
+  const sidebarBorder = sidebarIsLight ? "220 13% 84%" : "222 35% 18%";
+
   // Apply colors
   root.style.setProperty("--primary", colors.primary);
   root.style.setProperty("--accent", colors.accent);
@@ -74,6 +85,11 @@ export function applyThemeConfig(cfg: ThemeConfig, isDark: boolean) {
   root.style.setProperty("--destructive", colors.destructive);
   root.style.setProperty("--sidebar-background", colors.sidebarBackground);
   root.style.setProperty("--sidebar-primary", colors.sidebarPrimary);
+  root.style.setProperty("--sidebar-foreground", sidebarForeground);
+  root.style.setProperty("--sidebar-primary-foreground", "0 0% 100%");
+  root.style.setProperty("--sidebar-accent", sidebarAccent);
+  root.style.setProperty("--sidebar-accent-foreground", sidebarAccentForeground);
+  root.style.setProperty("--sidebar-border", sidebarBorder);
   root.style.setProperty("--ring", colors.primary);
 
   // Apply layout
@@ -154,11 +170,16 @@ export function useThemeConfig(userId: string | null) {
 
         if (data?.custom_colors && typeof data.custom_colors === "object") {
           const saved = data.custom_colors as Record<string, unknown>;
+          const savedLight = (saved.lightColors as Partial<ColorConfig>) || {};
+          const savedDark = (saved.darkColors as Partial<ColorConfig>) || {};
+          const savedLayout = (saved.layout as Partial<LayoutConfig>) || {};
+          const savedTypography = (saved.typography as Partial<TypographyConfig>) || {};
+
           config = {
-            lightColors: (saved.lightColors as ColorConfig) || defaultLightColors,
-            darkColors: (saved.darkColors as ColorConfig) || defaultDarkColors,
-            layout: (saved.layout as LayoutConfig) || defaultLayout,
-            typography: (saved.typography as TypographyConfig) || defaultTypography,
+            lightColors: { ...defaultLightColors, ...savedLight },
+            darkColors: { ...defaultDarkColors, ...savedDark },
+            layout: { ...defaultLayout, ...savedLayout },
+            typography: { ...defaultTypography, ...savedTypography },
           };
         }
 
