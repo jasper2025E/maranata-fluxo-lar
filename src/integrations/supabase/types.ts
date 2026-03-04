@@ -2583,8 +2583,8 @@ export type Database = {
           editado_por: string | null
           entrada: string | null
           funcionario_id: string
-          horas_extras: unknown
-          horas_trabalhadas: unknown
+          horas_extras: string | null
+          horas_trabalhadas: string | null
           id: string
           ip_address: string | null
           latitude: number | null
@@ -2606,8 +2606,8 @@ export type Database = {
           editado_por?: string | null
           entrada?: string | null
           funcionario_id: string
-          horas_extras?: unknown
-          horas_trabalhadas?: unknown
+          horas_extras?: string | null
+          horas_trabalhadas?: string | null
           id?: string
           ip_address?: string | null
           latitude?: number | null
@@ -2629,8 +2629,8 @@ export type Database = {
           editado_por?: string | null
           entrada?: string | null
           funcionario_id?: string
-          horas_extras?: unknown
-          horas_trabalhadas?: unknown
+          horas_extras?: string | null
+          horas_trabalhadas?: string | null
           id?: string
           ip_address?: string | null
           latitude?: number | null
