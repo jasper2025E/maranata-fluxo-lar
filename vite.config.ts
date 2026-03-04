@@ -15,6 +15,7 @@ export default defineConfig(({ mode }) => ({
     mode === "development" && componentTagger(),
     VitePWA({
       registerType: "prompt",
+      manifestFilename: "manifest-v4.webmanifest",
       includeAssets: [
         "favicon.ico",
         "icons/*.png",
@@ -33,11 +34,11 @@ export default defineConfig(({ mode }) => ({
         orientation: "any",
         lang: "pt-BR",
         icons: [
-          { src: "/icons/icon-192.png?v=3", sizes: "192x192", type: "image/png" },
-          { src: "/icons/icon-512.png?v=3", sizes: "512x512", type: "image/png" },
-          { src: "/icons/maskable-192.png?v=3", sizes: "192x192", type: "image/png", purpose: "maskable" },
-          { src: "/icons/maskable-512.png?v=3", sizes: "512x512", type: "image/png", purpose: "maskable" },
-          { src: "/icons/apple-touch-icon-180.png?v=3", sizes: "180x180", type: "image/png" },
+          { src: "/icons/icon-192-v4.png", sizes: "192x192", type: "image/png" },
+          { src: "/icons/icon-512-v4.png", sizes: "512x512", type: "image/png" },
+          { src: "/icons/maskable-192-v4.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+          { src: "/icons/maskable-512-v4.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          { src: "/icons/apple-touch-icon-180-v4.png", sizes: "180x180", type: "image/png" },
         ],
       },
       workbox: {
