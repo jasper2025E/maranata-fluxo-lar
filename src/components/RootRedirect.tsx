@@ -9,9 +9,9 @@ export default function RootRedirect() {
     return null;
   }
 
-  // If not logged in, show the Index page (presentation)
+  // If not logged in, redirect to auth
   if (!user) {
-    return null;
+    return <Navigate to="/auth" replace />;
   }
 
   return <Navigate to="/dashboard" replace />;
