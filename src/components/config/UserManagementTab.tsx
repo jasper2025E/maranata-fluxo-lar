@@ -164,6 +164,15 @@ export function UserManagementTab() {
 
     setSubmitting(true);
     try {
+      // Buscar tenant_id ativo para atribuir ao novo usuário
+      const { data: tenantData } = await supabase
+        .from("tenants")
+        .select("id")
+        .eq("status", "ativo")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
       const response = await supabase.functions.invoke("admin-manage-users", {
         body: {
           action: "create",
@@ -171,6 +180,7 @@ export function UserManagementTab() {
           password: newUser.password,
           nome: newUser.nome,
           role: newUser.role,
+          tenant_id: tenantData?.id || undefined,
         },
       });
 
