@@ -114,7 +114,7 @@ const Dashboard = () => {
 
 
         {/* Main KPIs Grid */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           <FinancialKPICard
             title={t("dashboard.monthlyRevenues")}
             value={formatCurrency(stats.totalReceitas ?? 0)}
@@ -158,7 +158,7 @@ const Dashboard = () => {
         </div>
 
         {/* Secondary KPIs */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           <FinancialKPICard
             title={t("dashboard.monthlyBalance")}
             value={formatCurrency(stats.saldoMensal ?? 0)}
