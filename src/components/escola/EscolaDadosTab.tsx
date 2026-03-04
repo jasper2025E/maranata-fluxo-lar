@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Building2, Camera } from "lucide-react";
+import { Building2, Camera, Download } from "lucide-react";
+import { downloadImage } from "@/lib/downloadImage";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -208,6 +209,18 @@ const EscolaDadosTab = () => {
                   />
                 </Label>
               </div>
+              {logoUrl && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="mt-2"
+                  onClick={() => downloadImage(logoUrl, `logo-escola.png`)}
+                >
+                  <Download className="h-4 w-4 mr-1.5" />
+                  Baixar logo
+                </Button>
+              )}
               <div className="flex-1 min-w-0">
                 <div className="space-y-1">
                   <Label htmlFor="nome" className="text-sm font-medium">

@@ -2,7 +2,8 @@ import { useState, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Camera, Loader2, User } from "lucide-react";
+import { Camera, Loader2, User, Download } from "lucide-react";
+import { downloadImage } from "@/lib/downloadImage";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -125,6 +126,18 @@ export function FotoUpload({ funcionarioId, currentPhotoUrl, onUploadComplete, d
           </>
         )}
       </Button>
+
+      {previewUrl && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => downloadImage(previewUrl, `foto-funcionario.png`)}
+        >
+          <Download className="mr-2 h-4 w-4" />
+          Baixar foto
+        </Button>
+      )}
     </div>
   );
 }
