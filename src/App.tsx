@@ -9,10 +9,11 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { RealtimeProvider } from "@/contexts/RealtimeProvider";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
+import RootRedirect from "@/components/RootRedirect";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { useContentProtection } from "@/hooks/useContentProtection";
-import { useUserLanguage } from "@/hooks/useUserLanguage";
 import { queryClient } from "@/lib/queryClient";
+import { useUserLanguage } from "@/hooks/useUserLanguage";
 import { PageLoader } from "@/components/PageLoader";
 import { PWAInstallBanner, PWAUpdatePrompt, NetworkStatusIndicator } from "@/components/pwa";
 
@@ -58,8 +59,8 @@ function AppContent() {
       <BrowserRouter>
         <Suspense fallback={<PageLoader />}>
           <Routes>
-            {/* Público - Redireciona para login */}
-            <Route path="/" element={<Auth />} />
+            {/* Público - raiz inteligente */}
+            <Route path="/" element={<RootRedirect />} />
             <Route path="/auth" element={<Auth />} />
             
             {/* Protegido - Escola Maranata */}
