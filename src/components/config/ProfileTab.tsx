@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Loader2, Camera } from "lucide-react";
+import { Loader2, Camera, Download } from "lucide-react";
+import { downloadImage } from "@/lib/downloadImage";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -177,6 +178,18 @@ export function ProfileTab({ user, role, avatarUrl, setAvatarUrl }: ProfileTabPr
             <p className="text-xs text-muted-foreground">
               {role ? roleLabels[role] : "Usuário"} · Membro desde {memberSince}
             </p>
+            {avatarUrl && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2"
+                onClick={() => downloadImage(avatarUrl, `meu-avatar.png`)}
+              >
+                <Download className="h-4 w-4 mr-1.5" />
+                Baixar foto
+              </Button>
+            )}
           </div>
         </div>
       </div>
