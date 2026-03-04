@@ -599,10 +599,6 @@ export function AppSidebar() {
         )}
         
         <SidebarMenu className="space-y-1">
-          {/* Color Picker */}
-          <SidebarMenuItem>
-            <SidebarColorPicker isCollapsed={isCollapsed} />
-          </SidebarMenuItem>
 
           {/* Logout */}
           <SidebarMenuItem>
