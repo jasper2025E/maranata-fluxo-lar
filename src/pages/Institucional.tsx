@@ -26,7 +26,7 @@ export default function Institucional() {
         <link rel="canonical" href="https://maranata-fluxo-lar.lovable.app" />
       </Helmet>
 
-      <div className="min-h-screen bg-[#f8fafc] overflow-x-hidden font-[Nunito]">
+      <div className="min-h-screen bg-white overflow-x-hidden font-[Nunito]">
         <InstitucionalNavbar />
         <InstitucionalHero />
         <InstitucionalStats />

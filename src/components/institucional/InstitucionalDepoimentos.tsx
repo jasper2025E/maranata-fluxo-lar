@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { Star } from "lucide-react";
 
 const depoimentos = [
   {
@@ -29,52 +29,41 @@ const depoimentos = [
 
 export function InstitucionalDepoimentos() {
   return (
-    <section id="depoimentos" className="py-24 bg-gradient-to-br from-[#0d47a1] to-[#1e88e5] relative overflow-hidden">
+    <section id="depoimentos" className="py-20 bg-[#0d47a1]">
       <div className="max-w-[1200px] mx-auto px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-16"
-        >
-          <span className="inline-block bg-white/20 text-white px-5 py-1.5 rounded-full font-bold text-sm uppercase tracking-wider mb-4">
-            Depoimentos
-          </span>
-          <h3 className="text-3xl sm:text-4xl font-bold text-white mb-4 font-[Quicksand]">
-            O que as famílias de Barreirinhas dizem
-          </h3>
-          <p className="text-white/80 text-lg max-w-[600px] mx-auto">
-            Histórias reais de pais que viram seus filhos transformarem os resultados escolares
+        <div className="text-center mb-14">
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-3 font-[Quicksand]">
+            O que as famílias dizem
+          </h2>
+          <p className="text-white/70 text-lg max-w-[500px] mx-auto">
+            Pais que viram seus filhos melhorarem de verdade
           </p>
-        </motion.div>
+        </div>
 
-        <div className="grid md:grid-cols-2 gap-10">
+        <div className="grid md:grid-cols-2 gap-6">
           {depoimentos.map((d, i) => (
-            <motion.div
+            <div
               key={i}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="bg-white/95 backdrop-blur-sm rounded-3xl p-10 relative hover:-translate-y-1.5 hover:shadow-[0_20px_40px_rgba(0,0,0,0.2)] transition-all"
+              className="bg-white rounded-xl p-8"
             >
-              <span className="absolute top-5 right-6 text-7xl text-[#64b5f6] opacity-30 font-serif leading-none select-none">
-                "
-              </span>
-              <p className="text-lg text-[#2c3e50] leading-relaxed mb-6 italic">
-                {d.text}
+              <div className="flex gap-1 mb-4">
+                {[1, 2, 3, 4, 5].map((s) => (
+                  <Star key={s} className="h-4 w-4 fill-[#ffc107] text-[#ffc107]" />
+                ))}
+              </div>
+              <p className="text-[#2c3e50] leading-relaxed mb-6">
+                "{d.text}"
               </p>
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#f57c00] to-[#ffc107] flex items-center justify-center text-white font-extrabold text-lg border-[3px] border-white shadow-md">
+              <div className="flex items-center gap-3 pt-4 border-t border-[#e3f2fd]">
+                <div className="w-10 h-10 rounded-full bg-[#f57c00] flex items-center justify-center text-white font-bold text-sm">
                   {d.initials}
                 </div>
                 <div>
-                  <h5 className="text-lg font-bold text-[#0d47a1]">{d.name}</h5>
-                  <span className="text-[#607d8b] text-sm font-semibold">{d.role}</span>
-                  <div className="text-[#ffc107] text-lg mt-0.5">★★★★★</div>
+                  <p className="font-bold text-[#0d47a1] text-sm">{d.name}</p>
+                  <p className="text-[#607d8b] text-xs">{d.role}</p>
                 </div>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>
