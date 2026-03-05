@@ -279,7 +279,31 @@ const Auth = () => {
                 {errors.password && <p className="text-xs text-red-400">{errors.password}</p>}
               </div>
 
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <button type="button" className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors">
+                      <Headphones className="h-3.5 w-3.5" />
+                      Suporte
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-2 bg-[#1a1a2e] border-white/10" align="start">
+                    <div className="flex flex-col gap-1">
+                      <a href="https://wa.me/5598981384957" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors">
+                        <MessageCircle className="h-4 w-4" />
+                        WhatsApp
+                      </a>
+                      <a href="https://www.instagram.com/mendysvictor/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors">
+                        <Instagram className="h-4 w-4" />
+                        Instagram
+                      </a>
+                      <a href="mailto:victordbvtey@outlook.com" className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors">
+                        <Mail className="h-4 w-4" />
+                        E-mail
+                      </a>
+                    </div>
+                  </PopoverContent>
+                </Popover>
                 <button type="button" className="text-sm text-white/50 hover:text-white/80 underline underline-offset-4 transition-colors">
                   Esqueci minha senha
                 </button>
@@ -307,37 +331,13 @@ const Auth = () => {
         </div>
 
         {/* Footer */}
-        <div className="pt-6 flex items-center justify-between">
+        <div className="pt-6 text-center">
           <p className="text-sm text-white/30">
             © {new Date().getFullYear()} | Desenvolvido por{" "}
             <a href="https://www.instagram.com/mendysvictor/" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/50 transition-colors">
               Victor Mendys
             </a>
           </p>
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 text-sm text-white/30 hover:text-white/60 transition-colors">
-                <Headphones className="h-4 w-4" />
-                Suporte
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2 bg-[#1a1a2e] border-white/10" align="end">
-              <div className="flex flex-col gap-1">
-                <a href="https://wa.me/5598981384957" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors">
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
-                </a>
-                <a href="https://www.instagram.com/mendysvictor/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors">
-                  <Instagram className="h-4 w-4" />
-                  Instagram
-                </a>
-                <a href="mailto:victordbvtey@outlook.com" className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors">
-                  <Mail className="h-4 w-4" />
-                  E-mail
-                </a>
-              </div>
-            </PopoverContent>
-          </Popover>
         </div>
       </div>
 
