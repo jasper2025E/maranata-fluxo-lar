@@ -37,10 +37,7 @@ export function InstitucionalNavbar() {
           <ul className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <li key={link.href}>
-                <a
-                  href={link.href}
-                  className="text-[13px] text-[#888] hover:text-white transition-colors"
-                >
+                <a href={link.href} className="text-[13px] text-[#888] hover:text-white transition-colors">
                   {link.label}
                 </a>
               </li>
@@ -58,7 +55,8 @@ export function InstitucionalNavbar() {
             </a>
             <Link
               to="/auth"
-              className="inst-btn-shine text-[13px] font-medium text-black bg-white px-4 py-1.5 rounded-full hover:bg-gray-200 transition-colors"
+              className="inst-btn-shine text-[13px] font-medium px-4 py-1.5 rounded-full transition-colors"
+              style={{ background: "#2196F3", color: "white" }}
             >
               Entrar
             </Link>
@@ -74,21 +72,12 @@ export function InstitucionalNavbar() {
         <div className="md:hidden border-t border-white/[0.08] bg-black/95">
           <div className="px-6 py-4 space-y-1">
             {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className="block py-2.5 text-sm text-[#888] hover:text-white transition-colors"
-              >
+              <a key={link.href} href={link.href} onClick={() => setMobileOpen(false)} className="block py-2.5 text-sm text-[#888] hover:text-white transition-colors">
                 {link.label}
               </a>
             ))}
-            <div className="pt-3 mt-2 border-t border-white/[0.08] flex gap-3">
-              <Link
-                to="/auth"
-                onClick={() => setMobileOpen(false)}
-                className="flex-1 text-center text-sm font-medium text-black bg-white py-2 rounded-full"
-              >
+            <div className="pt-3 mt-2 border-t border-white/[0.08]">
+              <Link to="/auth" onClick={() => setMobileOpen(false)} className="block text-center text-sm font-medium py-2 rounded-full" style={{ background: "#2196F3", color: "white" }}>
                 Entrar
               </Link>
             </div>

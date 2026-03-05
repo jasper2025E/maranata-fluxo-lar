@@ -1,14 +1,14 @@
-/* Modern institutional site — Stripe/Vercel inspired */
+/* Modern institutional site — brand-driven (blue + orange from logo) */
 .inst {
+  --inst-blue: #2196F3;
+  --inst-blue-dark: #1565C0;
+  --inst-orange: #F5A623;
+  --inst-orange-dark: #E89A1C;
+  --inst-red: #E53935;
   --inst-bg: #000000;
-  --inst-bg-subtle: #0a0a0a;
   --inst-border: rgba(255,255,255,0.08);
   --inst-text: #ededed;
   --inst-text-secondary: #888888;
-  --inst-accent: #ffffff;
-  --inst-gradient-1: #7c3aed;
-  --inst-gradient-2: #2563eb;
-  --inst-gradient-3: #06b6d4;
 }
 
 .inst {
@@ -19,22 +19,22 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Gradient text */
+/* Gradient text using brand colors */
 .inst-gradient-text {
-  background: linear-gradient(135deg, var(--inst-gradient-1), var(--inst-gradient-2), var(--inst-gradient-3));
+  background: linear-gradient(135deg, var(--inst-blue), var(--inst-orange));
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
 
-/* Glow effect on hero */
+/* Glow effect */
 .inst-glow {
   position: absolute;
   width: 600px;
   height: 600px;
   border-radius: 50%;
   filter: blur(120px);
-  opacity: 0.15;
+  opacity: 0.12;
   pointer-events: none;
 }
 
@@ -51,7 +51,7 @@
   transform: translateY(-2px);
 }
 
-/* Subtle grid pattern */
+/* Grid bg */
 .inst-grid-bg {
   background-image: 
     linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
@@ -68,9 +68,6 @@
 
 /* Stat divider */
 @media (min-width: 768px) {
-  .inst-stat-divider {
-    position: relative;
-  }
   .inst-stat-divider::after {
     content: '';
     position: absolute;
@@ -80,6 +77,9 @@
     height: 32px;
     width: 1px;
     background: var(--inst-border);
+  }
+  .inst-stat-divider {
+    position: relative;
   }
 }
 
@@ -107,10 +107,19 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.05) 55%, transparent 60%);
+  background: linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.15) 45%, rgba(255,255,255,0.05) 55%, transparent 60%);
   transform: translateX(-100%);
   transition: transform 0.6s;
 }
 .inst-btn-shine:hover::after {
   transform: translateX(100%);
+}
+
+/* Brand accent border on cards */
+.inst-card-accent {
+  border-top: 2px solid transparent;
+  transition: border-color 0.3s;
+}
+.inst-card-accent:hover {
+  border-top-color: var(--inst-blue);
 }
