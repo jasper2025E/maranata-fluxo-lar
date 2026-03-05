@@ -1,39 +1,47 @@
+import { BookOpen, Calculator, FlaskConical, ClipboardCheck, GraduationCap, Target } from "lucide-react";
+
 const services = [
   {
-    emoji: "📖",
+    icon: BookOpen,
     title: "Reforço em Português",
     description: "Leitura, interpretação de texto, gramática e redação com exercícios práticos e acompanhamento contínuo.",
-    meta: ["📚 Fundamental I e II", "⏰ Manhã ou tarde"],
+    level: "Fundamental I e II",
+    schedule: "Manhã ou tarde",
   },
   {
-    emoji: "🔢",
+    icon: Calculator,
     title: "Reforço em Matemática",
     description: "Das operações básicas à matemática avançada, com metodologia visual e prática no ritmo do aluno.",
-    meta: ["📚 Fundamental I e II", "⏰ Manhã ou tarde"],
+    level: "Fundamental I e II",
+    schedule: "Manhã ou tarde",
   },
   {
-    emoji: "🔬",
+    icon: FlaskConical,
     title: "Reforço em Ciências",
     description: "Ciências naturais de forma acessível com explicações claras e experimentos simples para fixar o conteúdo.",
-    meta: ["📚 Fundamental I e II", "⏰ Manhã ou tarde"],
+    level: "Fundamental I e II",
+    schedule: "Manhã ou tarde",
   },
   {
-    emoji: "📝",
+    icon: ClipboardCheck,
     title: "Auxílio nas Tarefas",
     description: "Acompanhamento nas tarefas de casa e trabalhos escolares. Seu filho não fica mais perdido com os deveres.",
-    meta: ["🎒 Todas as séries", "⏰ Tarde"],
+    level: "Todas as séries",
+    schedule: "Tarde",
   },
   {
-    emoji: "🎨",
+    icon: GraduationCap,
     title: "Alfabetização",
     description: "Método fônico para crianças em fase de alfabetização. Leitura e escrita com paciência e carinho.",
-    meta: ["👶 Educação Infantil", "⏰ Manhã ou tarde"],
+    level: "Educação Infantil",
+    schedule: "Manhã ou tarde",
   },
   {
-    emoji: "🎯",
+    icon: Target,
     title: "Preparação para Provas",
     description: "Revisão e simulados antes das avaliações escolares. Seu filho vai para a prova com segurança.",
-    meta: ["📝 Todas as séries", "⏰ Flexível"],
+    level: "Todas as séries",
+    schedule: "Flexível",
   },
 ];
 
@@ -56,34 +64,34 @@ export function InstitucionalModulos() {
         </div>
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((service, i) => (
-            <div
-              key={i}
-              className="inst-course-card p-8 border border-[#e0d5c7]"
-              style={{ background: "var(--inst-bg-warm)" }}
-            >
+          {services.map((service, i) => {
+            const Icon = service.icon;
+            return (
               <div
-                className="w-[60px] h-[60px] bg-white border-2 flex items-center justify-center mb-5 text-2xl"
-                style={{ borderColor: "var(--inst-secondary)" }}
+                key={i}
+                className="inst-course-card bg-white p-8 border border-[#e0d5c7]"
               >
-                {service.emoji}
+                <div className="w-14 h-14 rounded-lg flex items-center justify-center mb-5"
+                  style={{ background: "#f5f1eb" }}
+                >
+                  <Icon className="h-6 w-6" style={{ color: "var(--inst-primary)" }} />
+                </div>
+                <h4
+                  className="text-xl font-semibold mb-3"
+                  style={{ fontFamily: "'Crimson Text', serif", color: "var(--inst-primary)" }}
+                >
+                  {service.title}
+                </h4>
+                <p className="text-[#5a6c7d] leading-relaxed text-[0.95rem] mb-5">
+                  {service.description}
+                </p>
+                <div className="flex justify-between pt-4 border-t border-[#e0d5c7] text-xs text-[#5a6c7d] font-medium uppercase tracking-wider">
+                  <span>{service.level}</span>
+                  <span>{service.schedule}</span>
+                </div>
               </div>
-              <h4
-                className="text-xl font-semibold mb-3"
-                style={{ fontFamily: "'Crimson Text', serif", color: "var(--inst-primary)" }}
-              >
-                {service.title}
-              </h4>
-              <p className="text-[#5a6c7d] leading-relaxed mb-5">
-                {service.description}
-              </p>
-              <div className="flex justify-between pt-4 border-t border-[#e0d5c7] text-sm text-[#5a6c7d]">
-                {service.meta.map((m, j) => (
-                  <span key={j}>{m}</span>
-                ))}
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
