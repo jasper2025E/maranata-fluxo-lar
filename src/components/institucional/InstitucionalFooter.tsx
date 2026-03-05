@@ -8,10 +8,12 @@ export function InstitucionalFooter() {
         <div className="grid lg:grid-cols-4 gap-10 mb-12">
           {/* Brand */}
           <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="h-9 w-9 rounded-xl gradient-luz-mina flex items-center justify-center">
-                <span className="text-white font-bold text-lg">M</span>
-              </div>
+            <div className="flex items-center gap-3 mb-4">
+              <img
+                src="/escola-logo.png"
+                alt="Logo Maranata"
+                className="h-10 w-10 rounded-full object-cover border border-border"
+              />
               <span className="text-xl font-bold text-foreground tracking-tight">
                 Maranata
               </span>

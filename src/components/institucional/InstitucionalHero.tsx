@@ -2,6 +2,8 @@ import { motion } from "framer-motion";
 import { ArrowRight, BookOpen } from "lucide-react";
 import schoolHero from "@/assets/school-hero.jpg";
 
+const LOGO_URL = "/escola-logo.png";
+
 export function InstitucionalHero() {
   return (
     <section id="inicio" className="relative min-h-screen flex items-center overflow-hidden">
@@ -20,15 +22,22 @@ export function InstitucionalHero() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 lg:py-40">
         <div className="max-w-2xl">
-          {/* Badge */}
+          {/* Logo + Badge */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-white/90 text-sm font-medium mb-8"
+            className="flex items-center gap-4 mb-8"
           >
-            <BookOpen className="h-3.5 w-3.5" />
-            Matrículas Abertas 2026
+            <img
+              src={LOGO_URL}
+              alt="Logo Maranata"
+              className="h-16 w-16 rounded-full object-cover border-2 border-white/20 shadow-lg"
+            />
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-white/90 text-sm font-medium">
+              <BookOpen className="h-3.5 w-3.5" />
+              Matrículas Abertas 2026
+            </div>
           </motion.div>
 
           {/* Headline */}
