@@ -38,7 +38,7 @@ export function InstitucionalDepoimentos() {
             O que dizem as famílias{" "}
             <span style={{ color: "var(--inst-secondary)" }}>•</span>
           </h3>
-          <p className="text-[#5a6c7d] text-lg max-w-[600px] mx-auto">
+          <p className="text-lg max-w-[600px] mx-auto" style={{ color: "var(--inst-text-light)" }}>
             Pais que viram seus filhos melhorarem de verdade
           </p>
         </div>
@@ -47,7 +47,7 @@ export function InstitucionalDepoimentos() {
           {depoimentos.map((d, i) => (
             <div
               key={i}
-              className="inst-testimonial p-8"
+              className="inst-testimonial p-8 rounded-lg"
               style={{
                 background: "var(--inst-bg-warm)",
                 borderLeft: "4px solid var(--inst-secondary)",
@@ -73,7 +73,7 @@ export function InstitucionalDepoimentos() {
                   >
                     {d.name}
                   </h5>
-                  <span className="text-sm text-[#5a6c7d]">{d.role}</span>
+                  <span className="text-sm" style={{ color: "var(--inst-text-light)" }}>{d.role}</span>
                 </div>
               </div>
             </div>

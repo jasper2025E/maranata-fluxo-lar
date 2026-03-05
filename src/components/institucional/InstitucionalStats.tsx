@@ -7,7 +7,7 @@ const stats = [
 
 export function InstitucionalStats() {
   return (
-    <section style={{ background: "var(--inst-primary)" }} className="text-white py-12 lg:py-16">
+    <section className="text-white py-12 lg:py-16" style={{ background: "var(--inst-primary)" }}>
       <div className="max-w-[1200px] mx-auto px-8">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
           {stats.map((stat, i) => (

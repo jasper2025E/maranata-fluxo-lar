@@ -58,7 +58,7 @@ export function InstitucionalModulos() {
             Nossos Serviços{" "}
             <span style={{ color: "var(--inst-secondary)" }}>•</span>
           </h3>
-          <p className="text-[#5a6c7d] text-lg max-w-[600px] mx-auto">
+          <p className="text-lg max-w-[600px] mx-auto" style={{ color: "var(--inst-text-light)" }}>
             Reforço escolar completo com atenção individualizada em Barreirinhas
           </p>
         </div>
@@ -69,10 +69,11 @@ export function InstitucionalModulos() {
             return (
               <div
                 key={i}
-                className="inst-course-card bg-white p-8 border border-[#e0d5c7]"
+                className="inst-course-card p-8 border rounded-lg"
+                style={{ background: "var(--inst-bg-warm)", borderColor: "var(--inst-border)" }}
               >
-                <div className="w-14 h-14 rounded-lg flex items-center justify-center mb-5"
-                  style={{ background: "#f5f1eb" }}
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-5"
+                  style={{ background: "rgba(21, 101, 192, 0.08)" }}
                 >
                   <Icon className="h-6 w-6" style={{ color: "var(--inst-primary)" }} />
                 </div>
@@ -82,10 +83,10 @@ export function InstitucionalModulos() {
                 >
                   {service.title}
                 </h4>
-                <p className="text-[#5a6c7d] leading-relaxed text-[0.95rem] mb-5">
+                <p className="leading-relaxed text-[0.95rem] mb-5" style={{ color: "var(--inst-text-light)" }}>
                   {service.description}
                 </p>
-                <div className="flex justify-between pt-4 border-t border-[#e0d5c7] text-xs text-[#5a6c7d] font-medium uppercase tracking-wider">
+                <div className="flex justify-between pt-4 border-t text-xs font-medium uppercase tracking-wider" style={{ borderColor: "var(--inst-border)", color: "var(--inst-text-light)" }}>
                   <span>{service.level}</span>
                   <span>{service.schedule}</span>
                 </div>

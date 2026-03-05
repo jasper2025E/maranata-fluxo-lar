@@ -15,19 +15,11 @@ export function InstitucionalCTA() {
           href="https://wa.me/559898828634?text=Olá! Gostaria de saber mais sobre o Reforço Maranata e agendar uma visita."
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block px-10 py-4 font-bold uppercase tracking-wider border-2 transition-all hover:bg-transparent hover:shadow-lg"
+          className="inline-block px-10 py-4 font-bold uppercase tracking-wider border-2 rounded-lg transition-all hover:bg-transparent hover:shadow-lg"
           style={{
             background: "var(--inst-secondary)",
-            color: "var(--inst-primary)",
+            color: "var(--inst-primary-dark)",
             borderColor: "var(--inst-secondary)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "var(--inst-secondary)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--inst-secondary)";
-            e.currentTarget.style.color = "var(--inst-primary)";
           }}
         >
           Chamar no WhatsApp

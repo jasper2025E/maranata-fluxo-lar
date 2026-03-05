@@ -39,12 +39,13 @@ export function InstitucionalBeneficios() {
               {diferenciais.map((d, i) => (
                 <li
                   key={i}
-                  className="inst-diff-item py-4 border-b border-[#e0d5c7] flex items-start gap-3"
+                  className="inst-diff-item py-4 border-b flex items-start gap-3"
+                  style={{ borderColor: "var(--inst-border)" }}
                 >
-                  <span className="text-[#c9a227] font-bold text-lg leading-none mt-0.5">—</span>
+                  <span className="font-bold text-lg leading-none mt-0.5" style={{ color: "var(--inst-secondary)" }}>—</span>
                   <div>
-                    <strong className="text-[#2c3e50]">{d.title}:</strong>{" "}
-                    <span className="text-[#5a6c7d]">{d.description}</span>
+                    <strong style={{ color: "var(--inst-text)" }}>{d.title}:</strong>{" "}
+                    <span style={{ color: "var(--inst-text-light)" }}>{d.description}</span>
                   </div>
                 </li>
               ))}
@@ -56,8 +57,7 @@ export function InstitucionalBeneficios() {
             <img
               src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&h=800&fit=crop"
               alt="Sala de aula do Reforço Maranata"
-              className="w-full h-[500px] object-cover"
-              style={{ filter: "sepia(20%)" }}
+              className="w-full h-[500px] object-cover rounded-lg"
               loading="lazy"
             />
           </div>
