@@ -226,14 +226,7 @@ const Auth = () => {
       {/* Left Panel - Form */}
       <div className="flex-1 flex flex-col justify-between bg-[#0a0a0f] px-8 sm:px-12 lg:px-16 py-8 min-h-screen lg:min-h-0 lg:max-w-[55%]">
         {/* Logo */}
-        <div className="flex items-center gap-3 mb-8 lg:mb-0">
-          {schoolLogo ? (
-            <img src={schoolLogo} alt={schoolName} className="h-10 w-10 object-contain rounded-lg" />
-          ) : (
-            <GraduationCap className="h-8 w-8 text-white/80" />
-          )}
-          <span className="text-lg font-semibold text-white/90">{schoolName}</span>
-        </div>
+        <div className="mb-8 lg:mb-0" />
 
         {/* Form centered */}
         <div className="flex-1 flex items-center">
