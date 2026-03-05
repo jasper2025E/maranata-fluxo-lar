@@ -113,14 +113,6 @@ const Dashboard = () => {
         </motion.div>
 
 
-        {/* Resumo Financeiro Mensal - Informação Prioritária */}
-        <FinancialSummaryCard
-          receitas={stats.totalReceitas ?? 0}
-          despesas={stats.totalDespesas ?? 0}
-          saldo={stats.saldoMensal ?? 0}
-          saldoAnterior={stats.saldoAnterior ?? 0}
-        />
-
         {/* Main KPIs Grid */}
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           <FinancialKPICard
@@ -207,7 +199,6 @@ const Dashboard = () => {
 
         {/* Charts Section */}
         <div className="grid gap-5 lg:grid-cols-3">
-          {/* Main Composed Chart */}
           <FinancialChart
             title={t("dashboard.financialEvolution")}
             description={t("dashboard.financialEvolutionDesc")}
@@ -216,8 +207,6 @@ const Dashboard = () => {
             height={320}
             className="lg:col-span-2"
           />
-
-          {/* Inadimplência Card */}
           <InadimplenciaCard
             taxa={stats.inadimplenciaResponsaveis ?? 0}
             valorTotal={stats.valorVencido ?? 0}
@@ -227,14 +216,22 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Revenue vs Expenses Chart */}
-        <FinancialChart
-          title={t("dashboard.revenueVsExpenses")}
-          description={t("dashboard.monthlyComparison")}
-          data={stats.combinedData ?? []}
-          type="comparison"
-          height={280}
-        />
+        {/* Secondary Charts + Resumo Financeiro */}
+        <div className="grid gap-5 lg:grid-cols-2">
+          <FinancialChart
+            title={t("dashboard.revenueVsExpenses")}
+            description={t("dashboard.monthlyComparison")}
+            data={stats.combinedData ?? []}
+            type="comparison"
+            height={280}
+          />
+          <FinancialSummaryCard
+            receitas={stats.totalReceitas ?? 0}
+            despesas={stats.totalDespesas ?? 0}
+            saldo={stats.saldoMensal ?? 0}
+            saldoAnterior={stats.saldoAnterior ?? 0}
+          />
+        </div>
 
         {/* Revenue Trend */}
         <FinancialChart
