@@ -345,9 +345,12 @@ const Auth = () => {
         </div>
 
         {/* Footer */}
-        <div className="pt-6">
+        <div className="pt-6 text-center">
           <p className="text-sm text-white/30">
-            © {new Date().getFullYear()} {schoolName}
+            © {new Date().getFullYear()} | Desenvolvido por{" "}
+            <a href="https://www.instagram.com/mendysvictor/" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/50 transition-colors">
+              Victor Mendys
+            </a>
           </p>
         </div>
       </div>
