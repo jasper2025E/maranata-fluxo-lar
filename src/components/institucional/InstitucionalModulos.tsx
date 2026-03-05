@@ -1,102 +1,86 @@
 import { motion } from "framer-motion";
-import { Heart, Users, Target, Clock } from "lucide-react";
 
-const values = [
+const services = [
   {
-    icon: Heart,
-    title: "Compromisso com o Aluno",
-    description: "Cada aluno é único. Trabalhamos com dedicação para entender suas necessidades e oferecer o suporte certo para o seu desenvolvimento.",
+    icon: "📖",
+    title: "Reforço Escolar",
+    description: "Acompanhamento pedagógico nas disciplinas do currículo escolar com foco nas dificuldades específicas de cada aluno.",
+    meta: "Fundamental I e II",
   },
   {
-    icon: Users,
-    title: "Turmas Reduzidas",
-    description: "Com turmas menores, garantimos atenção individualizada, permitindo que cada aluno tire suas dúvidas e avance no seu ritmo.",
+    icon: "🎯",
+    title: "Preparatório ENEM",
+    description: "Método focado em resultados para o vestibular mais importante do país. Simulados e correção personalizada.",
+    meta: "Ensino Médio",
   },
   {
-    icon: Target,
-    title: "Foco em Resultados",
-    description: "Nosso método é direcionado para a melhoria concreta das notas e do desempenho escolar, com acompanhamento contínuo.",
+    icon: "🔢",
+    title: "Matemática Aplicada",
+    description: "Descomplicamos os números com metodologia visual e prática. Do básico à matemática avançada.",
+    meta: "Todas as idades",
   },
   {
-    icon: Clock,
-    title: "Horários Flexíveis",
-    description: "Entendemos a rotina das famílias. Oferecemos horários adaptáveis para facilitar o dia a dia de pais e alunos.",
+    icon: "🌍",
+    title: "Inglês Kids",
+    description: "Aprendizado de idiomas através de jogos, músicas e atividades lúdicas. Professores nativos disponíveis.",
+    meta: "A partir de 4 anos",
+  },
+  {
+    icon: "✍️",
+    title: "Redação e Literatura",
+    description: "Desenvolvimento da escrita criativa e interpretação de texto. Preparação para competições de redação.",
+    meta: "Todos os níveis",
+  },
+  {
+    icon: "🧠",
+    title: "Alfabetização",
+    description: "Método fônico atualizado para crianças em fase de alfabetização. Leitura e escrita com prazer.",
+    meta: "Educação Infantil",
   },
 ];
 
-const fadeIn = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0 },
-};
-
-const stagger = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12 } },
-};
-
 export function InstitucionalModulos() {
   return (
-    <section id="sobre" className="py-24 lg:py-32 bg-[hsl(40,30%,97%)]">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Section header */}
+    <section id="servicos" className="py-24 bg-[#f8fafc]">
+      <div className="max-w-[1200px] mx-auto px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <p className="text-amber-600 font-semibold text-sm mb-3 uppercase tracking-[0.15em]">
-            Sobre a Escola
-          </p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[hsl(220,25%,12%)] tracking-tight mb-5">
-            Por que escolher a Maranata?
-          </h2>
-          <p className="text-[hsl(220,10%,45%)] text-lg max-w-2xl mx-auto leading-relaxed">
-            Somos mais do que um reforço escolar. Somos parceiros na jornada educacional 
-            do seu filho, oferecendo estrutura, método e acolhimento.
+          <span className="inline-block bg-[#64b5f6] text-[#0d47a1] px-5 py-1.5 rounded-full font-bold text-sm uppercase tracking-wider mb-4">
+            Nossos Serviços
+          </span>
+          <h3 className="text-3xl sm:text-4xl font-bold text-[#0d47a1] mb-4 font-[Quicksand]">
+            Como podemos ajudar seu filho?
+          </h3>
+          <p className="text-[#607d8b] text-lg max-w-[600px] mx-auto">
+            Oferecemos diferentes modalidades de ensino para atender às necessidades específicas de cada aluno
           </p>
         </motion.div>
 
-        {/* Values grid */}
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true }}
-          className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6"
-        >
-          {values.map((v, i) => (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map((service, i) => (
             <motion.div
               key={i}
-              variants={fadeIn}
-              className="group bg-white rounded-2xl p-7 border border-[hsl(40,20%,90%)] hover:border-amber-200 hover:shadow-xl hover:shadow-amber-500/5 transition-all duration-300"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.08 }}
+              className="group bg-white rounded-3xl p-10 text-center border-[3px] border-transparent hover:-translate-y-2.5 hover:border-[#64b5f6] hover:shadow-[0_20px_40px_rgba(30,136,229,0.15)] transition-all duration-400 relative overflow-hidden before:content-[''] before:absolute before:top-0 before:left-0 before:w-full before:h-[5px] before:bg-gradient-to-r before:from-[#1e88e5] before:to-[#f57c00] before:scale-x-0 before:transition-transform hover:before:scale-x-100"
             >
-              <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 flex items-center justify-center mb-5 group-hover:from-amber-100 group-hover:to-orange-100 transition-colors">
-                <v.icon className="h-5 w-5 text-amber-600" />
+              <div className="w-[90px] h-[90px] bg-gradient-to-br from-[#64b5f6] to-[#1e88e5] rounded-full flex items-center justify-center mx-auto mb-6 text-4xl shadow-[0_10px_25px_rgba(30,136,229,0.3)] group-hover:rotate-[10deg] group-hover:scale-110 group-hover:from-[#f57c00] group-hover:to-[#ff9800] transition-all">
+                {service.icon}
               </div>
-              <h3 className="text-lg font-semibold text-[hsl(220,25%,12%)] mb-2">{v.title}</h3>
-              <p className="text-sm text-[hsl(220,10%,50%)] leading-relaxed">{v.description}</p>
+              <h4 className="text-xl font-bold text-[#0d47a1] mb-3 font-[Quicksand]">{service.title}</h4>
+              <p className="text-[#607d8b] leading-relaxed mb-6">{service.description}</p>
+              <span className="inline-block bg-[#f8fafc] px-4 py-2 rounded-full text-sm font-bold text-[#1e88e5]">
+                {service.meta}
+              </span>
             </motion.div>
           ))}
-        </motion.div>
-
-        {/* About text */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="mt-20 max-w-3xl mx-auto text-center"
-        >
-          <p className="text-[hsl(220,10%,40%)] text-base leading-relaxed">
-            A <strong className="text-[hsl(220,25%,12%)]">Escola Maranata</strong> nasceu 
-            da vontade de fazer a diferença na educação. Com uma equipe dedicada de 
-            professores e um ambiente acolhedor, ajudamos crianças e adolescentes a 
-            superar suas dificuldades escolares e alcançar todo o seu potencial 
-            acadêmico. Acreditamos que cada aluno pode brilhar quando recebe o 
-            apoio certo.
-          </p>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

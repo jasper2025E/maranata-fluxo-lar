@@ -1,56 +1,33 @@
 import { motion } from "framer-motion";
-import { ArrowRight, GraduationCap } from "lucide-react";
 
 export function InstitucionalCTA() {
   return (
-    <section id="contato" className="py-20 lg:py-28 bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="contato" className="py-20 bg-[#f8fafc]">
+      <div className="max-w-[1200px] mx-auto px-8">
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-[hsl(220,25%,12%)] via-[hsl(220,30%,18%)] to-[hsl(220,25%,12%)] p-10 lg:p-16 text-center"
+          className="bg-white rounded-[30px] p-10 lg:p-16 max-w-[800px] mx-auto shadow-[0_20px_60px_rgba(30,136,229,0.15)] relative overflow-hidden text-center before:content-[''] before:absolute before:top-0 before:left-0 before:right-0 before:h-[5px] before:bg-gradient-to-r before:from-[#1e88e5] before:via-[#f57c00] before:to-[#ffc107]"
         >
-          {/* Decorative elements */}
-          <div className="absolute top-0 left-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2" />
-          <div className="absolute bottom-0 right-0 w-48 h-48 bg-orange-500/10 rounded-full blur-3xl translate-x-1/2 translate-y-1/2" />
-
-          <div className="relative">
-            <img
-              src="/escola-logo.png"
-              alt="Logo Maranata"
-              className="h-16 w-16 rounded-full object-cover border-2 border-white/20 mx-auto mb-6"
-            />
-
-            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-white/90 text-sm font-medium mb-6">
-              <GraduationCap className="h-4 w-4" />
-              Vagas Limitadas
-            </div>
-
-            <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white tracking-tight mb-4">
-              Garanta a vaga do seu filho!
-            </h2>
-            <p className="text-lg text-white/70 max-w-2xl mx-auto mb-8">
-              Entre em contato pelo nosso Instagram e saiba mais sobre turmas, 
-              horários e valores. Turmas reduzidas com acompanhamento individualizado.
-            </p>
-
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <a
-                href="https://www.instagram.com/reforcomaranatabhs/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold px-8 py-4 rounded-xl text-base hover:from-amber-600 hover:to-orange-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/25"
-              >
-                Fale Conosco no Instagram
-                <ArrowRight className="h-4 w-4" />
-              </a>
-            </div>
-
-            <p className="text-sm text-white/50 mt-6">
-              Atendimento de segunda a sexta · Resposta rápida
-            </p>
-          </div>
+          <h3 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-[#0d47a1] mb-4 font-[Quicksand]">
+            Pronto para transformar a vida escolar do seu filho?
+          </h3>
+          <p className="text-[#607d8b] text-lg mb-8">
+            Agende uma aula experimental gratuita e conheça nossa metodologia sem compromisso. 
+            Vamos juntos construir um futuro de sucesso!
+          </p>
+          <a
+            href="https://www.instagram.com/reforcomaranatabhs/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block bg-gradient-to-r from-[#f57c00] to-[#ff9800] text-white font-extrabold text-lg px-14 py-5 rounded-full shadow-[0_10px_30px_rgba(245,124,0,0.3)] hover:-translate-y-1 hover:shadow-[0_15px_40px_rgba(245,124,0,0.4)] transition-all"
+          >
+            Quero Agendar Minha Aula Grátis 🚀
+          </a>
+          <p className="mt-6 text-sm text-[#607d8b]">
+            📞 Ou ligue agora: (31) 99999-9999
+          </p>
         </motion.div>
       </div>
     </section>

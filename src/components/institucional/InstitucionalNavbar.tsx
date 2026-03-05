@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X, LogIn } from "lucide-react";
+import { Menu, X, LogIn, Phone, Mail } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const navLinks = [
-  { label: "Início", href: "#inicio" },
-  { label: "Sobre Nós", href: "#sobre" },
-  { label: "Cursos", href: "#cursos" },
-  { label: "Diferenciais", href: "#diferenciais" },
+  { label: "Serviços", href: "#servicos" },
+  { label: "Metodologia", href: "#metodologia" },
+  { label: "Depoimentos", href: "#depoimentos" },
   { label: "Contato", href: "#contato" },
 ];
 
@@ -22,100 +21,116 @@ export function InstitucionalNavbar() {
   }, []);
 
   return (
-    <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
-          ? "bg-[hsl(220,25%,10%)]/95 backdrop-blur-xl shadow-lg shadow-black/10"
-          : "bg-transparent"
-      }`}
-    >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 lg:h-20">
-          {/* Logo */}
-          <a href="#inicio" className="flex items-center gap-3">
-            <img
-              src="/escola-logo.png"
-              alt="Logo Maranata"
-              className="h-10 w-10 rounded-full object-cover border-2 border-white/20"
-            />
-            <div className="flex flex-col">
-              <span className="text-lg font-bold text-white tracking-tight leading-tight">
-                Maranata
-              </span>
-              <span className="text-[10px] text-white/60 uppercase tracking-[0.2em] leading-tight">
-                Reforço Escolar
-              </span>
-            </div>
-          </a>
-
-          {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="text-sm font-medium text-white/70 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/5"
-              >
-                {link.label}
-              </a>
-            ))}
+    <>
+      {/* Top Bar */}
+      <div className="bg-[#0d47a1] text-white py-2 text-sm font-semibold">
+        <div className="max-w-[1200px] mx-auto px-8 flex justify-between items-center">
+          <div className="hidden sm:flex items-center gap-4">
+            <span className="inline-flex items-center gap-2 bg-white/15 px-4 py-1 rounded-full hover:bg-[#f57c00] transition-all cursor-pointer">
+              <Phone className="h-3.5 w-3.5" /> (31) 99999-9999
+            </span>
+            <span className="inline-flex items-center gap-2 bg-white/15 px-4 py-1 rounded-full hover:bg-[#f57c00] transition-all cursor-pointer">
+              <Mail className="h-3.5 w-3.5" /> contato@maranata.com.br
+            </span>
           </div>
-
-          {/* CTA */}
-          <div className="hidden lg:flex items-center gap-3">
-            <Link
-              to="/auth"
-              className="flex items-center gap-2 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-xl transition-all border border-white/10 hover:border-white/20"
-            >
-              <LogIn className="h-4 w-4" />
-              Área do Aluno
-            </Link>
+          <div className="font-bold text-center sm:text-right w-full sm:w-auto">
+            🎉 Matrículas 2026 abertas!
           </div>
-
-          {/* Mobile toggle */}
-          <button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2 text-white"
-          >
-            {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
         </div>
       </div>
 
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-[hsl(220,25%,10%)]/98 backdrop-blur-xl border-b border-white/10"
-          >
-            <div className="px-4 py-4 space-y-1">
+      {/* Header */}
+      <header
+        className={`sticky top-0 z-50 bg-white transition-shadow duration-300 ${
+          scrolled ? "shadow-[0_4px_20px_rgba(30,136,229,0.1)]" : ""
+        }`}
+      >
+        <div className="max-w-[1200px] mx-auto px-8">
+          <nav className="flex items-center justify-between py-4">
+            {/* Logo */}
+            <a href="#inicio" className="flex items-center gap-4 group">
+              <img
+                src="/escola-logo.png"
+                alt="Reforço Escolar Maranata"
+                className="h-[70px] w-auto drop-shadow-md group-hover:scale-105 group-hover:-rotate-2 transition-transform"
+              />
+              <div className="flex flex-col">
+                <span className="text-[1.8rem] font-bold text-[#0d47a1] leading-tight tracking-tight font-[Quicksand]">
+                  Reforço Escolar
+                </span>
+                <span className="text-[0.85rem] text-[#f57c00] font-bold uppercase tracking-[2px]">
+                  Maranata
+                </span>
+              </div>
+            </a>
+
+            {/* Desktop Nav */}
+            <ul className="hidden lg:flex items-center gap-10">
               {navLinks.map((link) => (
-                <a
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  className="block px-4 py-3 text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
-                >
-                  {link.label}
-                </a>
+                <li key={link.href}>
+                  <a
+                    href={link.href}
+                    className="relative text-base font-bold text-[#2c3e50] hover:text-[#1e88e5] transition-colors py-2 after:content-[''] after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[3px] after:bg-[#f57c00] after:rounded after:transition-all hover:after:w-full"
+                  >
+                    {link.label}
+                  </a>
+                </li>
               ))}
-              <div className="pt-3 border-t border-white/10">
+              <li>
                 <Link
                   to="/auth"
-                  onClick={() => setMobileOpen(false)}
-                  className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-white/10 rounded-xl"
+                  className="bg-gradient-to-r from-[#f57c00] to-[#ff9800] text-white font-bold px-8 py-3 rounded-full shadow-[0_4px_15px_rgba(245,124,0,0.3)] hover:-translate-y-1 hover:shadow-[0_6px_20px_rgba(245,124,0,0.4)] transition-all"
                 >
-                  <LogIn className="h-4 w-4" />
                   Área do Aluno
                 </Link>
+              </li>
+            </ul>
+
+            {/* Mobile toggle */}
+            <button
+              onClick={() => setMobileOpen(!mobileOpen)}
+              className="lg:hidden p-2 text-[#2c3e50]"
+            >
+              {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+            </button>
+          </nav>
+        </div>
+
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="lg:hidden bg-white border-t border-[#e3f2fd]"
+            >
+              <div className="px-8 py-4 space-y-1">
+                {navLinks.map((link) => (
+                  <a
+                    key={link.href}
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="block px-4 py-3 text-base font-bold text-[#2c3e50] hover:text-[#1e88e5] hover:bg-[#f8fafc] rounded-lg transition-colors"
+                  >
+                    {link.label}
+                  </a>
+                ))}
+                <div className="pt-3 border-t border-[#e3f2fd]">
+                  <Link
+                    to="/auth"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center justify-center gap-2 px-4 py-3 text-base font-bold text-white bg-gradient-to-r from-[#f57c00] to-[#ff9800] rounded-full"
+                  >
+                    <LogIn className="h-4 w-4" />
+                    Área do Aluno
+                  </Link>
+                </div>
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </nav>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </header>
+    </>
   );
 }
