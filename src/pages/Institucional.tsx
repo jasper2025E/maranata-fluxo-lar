@@ -21,12 +21,12 @@ export default function Institucional() {
   return (
     <>
       <Helmet>
-        <title>Sistema Maranata — Gestão Escolar Completa</title>
-        <meta name="description" content="Plataforma completa de gestão escolar. Controle financeiro, matrículas, turmas e relatórios em um só lugar. Simplifique a administração da sua escola." />
+        <title>Reforço Escolar Maranata — Ensino de Qualidade</title>
+        <meta name="description" content="Reforço escolar com ensino de qualidade, turmas reduzidas e acompanhamento individualizado. Matrículas abertas para Fundamental e Ensino Médio." />
         <link rel="canonical" href="https://maranata-fluxo-lar.lovable.app" />
       </Helmet>
 
-      <div className="min-h-screen bg-background overflow-x-hidden">
+      <div className="min-h-screen bg-white overflow-x-hidden">
         <InstitucionalNavbar />
         <InstitucionalHero />
         <InstitucionalModulos />

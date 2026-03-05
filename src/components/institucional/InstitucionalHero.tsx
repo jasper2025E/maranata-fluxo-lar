@@ -1,127 +1,95 @@
 import { motion } from "framer-motion";
-import { ArrowRight, Play } from "lucide-react";
-import dashboardMockup from "@/assets/dashboard-mockup.png";
+import { ArrowRight, BookOpen } from "lucide-react";
+import schoolHero from "@/assets/school-hero.jpg";
 
 export function InstitucionalHero() {
   return (
-    <section className="relative min-h-screen flex items-center pt-20 lg:pt-0 overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-background">
-        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-transparent" />
-        <div className="absolute top-20 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-20 right-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
+    <section id="inicio" className="relative min-h-screen flex items-center overflow-hidden">
+      {/* Background Image */}
+      <div className="absolute inset-0">
+        <img
+          src={schoolHero}
+          alt="Ambiente de estudo Maranata"
+          className="w-full h-full object-cover"
+          loading="eager"
+        />
+        {/* Dark overlay with gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-[hsl(220,25%,8%)]/95 via-[hsl(220,25%,8%)]/80 to-[hsl(220,25%,8%)]/50" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[hsl(220,25%,8%)] via-transparent to-transparent" />
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24">
-        <div className="text-center max-w-4xl mx-auto mb-12 lg:mb-16">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-32 lg:py-40">
+        <div className="max-w-2xl">
           {/* Badge */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-sm font-medium mb-8"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6 }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-sm border border-white/10 text-white/90 text-sm font-medium mb-8"
           >
-            <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-            Plataforma de Gestão Escolar #1
+            <BookOpen className="h-3.5 w-3.5" />
+            Matrículas Abertas 2026
           </motion.div>
 
           {/* Headline */}
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="text-4xl sm:text-5xl lg:text-7xl font-bold text-foreground tracking-tight leading-[1.1] mb-6"
+            transition={{ duration: 0.7, delay: 0.1 }}
+            className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white tracking-tight leading-[1.1] mb-6"
           >
-            Gestão Escolar Completa{" "}
-            <span className="text-gradient">em um Só Lugar</span>
+            Reforço Escolar
+            <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-orange-400">
+              Maranata
+            </span>
           </motion.h1>
 
-          {/* Subheadline */}
+          {/* Subtitle */}
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="text-lg sm:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="text-lg sm:text-xl text-white/70 max-w-xl mb-10 leading-relaxed"
           >
-            Simplifique a administração da sua escola com soluções integradas.
-            Financeiro, matrículas, turmas e relatórios — tudo em uma plataforma
-            intuitiva e poderosa.
+            Transformando o futuro dos nossos alunos com ensino de qualidade, 
+            acompanhamento individualizado e dedicação em cada etapa da aprendizagem.
           </motion.p>
 
           {/* CTAs */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.3 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            transition={{ duration: 0.7, delay: 0.3 }}
+            className="flex flex-col sm:flex-row gap-4"
           >
             <a
-              href="#cta"
-              className="w-full sm:w-auto gradient-luz-mina text-white font-semibold px-8 py-4 rounded-xl text-base hover:opacity-90 transition-opacity flex items-center justify-center gap-2 shadow-lg shadow-primary/25"
+              href="#cursos"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold px-8 py-4 rounded-xl text-base hover:from-amber-600 hover:to-orange-600 transition-all shadow-lg shadow-amber-500/25"
             >
-              Agendar Demonstração
+              Conheça Nossos Cursos
               <ArrowRight className="h-4 w-4" />
             </a>
             <a
-              href="#funcionalidades"
-              className="w-full sm:w-auto bg-muted text-foreground font-semibold px-8 py-4 rounded-xl text-base hover:bg-muted/80 transition-colors flex items-center justify-center gap-2 border border-border"
+              href="#contato"
+              className="inline-flex items-center justify-center gap-2 bg-white/10 backdrop-blur-sm text-white font-semibold px-8 py-4 rounded-xl text-base hover:bg-white/20 transition-all border border-white/10"
             >
-              <Play className="h-4 w-4" />
-              Ver Funcionalidades
+              Fale Conosco
             </a>
           </motion.div>
         </div>
-
-        {/* Dashboard Mockup */}
-        <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="relative max-w-5xl mx-auto"
-        >
-          <div className="relative rounded-2xl overflow-hidden border border-border/50 shadow-2xl shadow-primary/10 bg-card">
-            <img
-              src={dashboardMockup}
-              alt="Dashboard do Sistema Maranata - Visão geral financeira"
-              className="w-full h-auto"
-              loading="eager"
-            />
-            {/* Overlay gradient at bottom */}
-            <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-background to-transparent" />
-          </div>
-
-          {/* Floating badges */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.8, duration: 0.5 }}
-            className="absolute -left-4 top-1/3 hidden lg:flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-3 shadow-lg"
-          >
-            <div className="h-8 w-8 rounded-lg bg-success/10 flex items-center justify-center">
-              <span className="text-success text-sm font-bold">✓</span>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-foreground">Pagamento confirmado</p>
-              <p className="text-xs text-muted-foreground">R$ 450,00 — há 2min</p>
-            </div>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 1, duration: 0.5 }}
-            className="absolute -right-4 top-1/4 hidden lg:flex items-center gap-2 bg-card border border-border rounded-xl px-4 py-3 shadow-lg"
-          >
-            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
-              <span className="text-primary text-sm font-bold">📊</span>
-            </div>
-            <div>
-              <p className="text-xs font-semibold text-foreground">Taxa de arrecadação</p>
-              <p className="text-xs text-muted-foreground">92.5% este mês</p>
-            </div>
-          </motion.div>
-        </motion.div>
       </div>
+
+      {/* Scroll indicator */}
+      <motion.div
+        animate={{ y: [0, 8, 0] }}
+        transition={{ duration: 2, repeat: Infinity }}
+        className="absolute bottom-8 left-1/2 -translate-x-1/2"
+      >
+        <div className="w-6 h-10 rounded-full border-2 border-white/20 flex justify-center pt-2">
+          <div className="w-1 h-2 bg-white/40 rounded-full" />
+        </div>
+      </motion.div>
     </section>
   );
 }

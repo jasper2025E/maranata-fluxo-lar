@@ -1,13 +1,14 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, LogIn } from "lucide-react";
 import { Link } from "react-router-dom";
 
 const navLinks = [
-  { label: "Funcionalidades", href: "#funcionalidades" },
+  { label: "Início", href: "#inicio" },
+  { label: "Sobre Nós", href: "#sobre" },
+  { label: "Cursos", href: "#cursos" },
   { label: "Diferenciais", href: "#diferenciais" },
-  { label: "Como Funciona", href: "#como-funciona" },
-  { label: "Depoimentos", href: "#depoimentos" },
+  { label: "Contato", href: "#contato" },
 ];
 
 export function InstitucionalNavbar() {
@@ -22,31 +23,38 @@ export function InstitucionalNavbar() {
 
   return (
     <nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
         scrolled
-          ? "bg-background/90 backdrop-blur-xl border-b border-border/50 shadow-sm"
+          ? "bg-[hsl(220,25%,10%)]/95 backdrop-blur-xl shadow-lg shadow-black/10"
           : "bg-transparent"
       }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
-          <a href="#" className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-xl gradient-luz-mina flex items-center justify-center">
-              <span className="text-white font-bold text-lg">M</span>
+          <a href="#inicio" className="flex items-center gap-3">
+            <img
+              src="/escola-logo.png"
+              alt="Logo Maranata"
+              className="h-10 w-10 rounded-full object-cover border-2 border-white/20"
+            />
+            <div className="flex flex-col">
+              <span className="text-lg font-bold text-white tracking-tight leading-tight">
+                Maranata
+              </span>
+              <span className="text-[10px] text-white/60 uppercase tracking-[0.2em] leading-tight">
+                Reforço Escolar
+              </span>
             </div>
-            <span className="text-xl font-bold text-foreground tracking-tight">
-              Maranata
-            </span>
           </a>
 
           {/* Desktop Nav */}
-          <div className="hidden lg:flex items-center gap-8">
+          <div className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => (
               <a
                 key={link.href}
                 href={link.href}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                className="text-sm font-medium text-white/70 hover:text-white transition-colors px-4 py-2 rounded-lg hover:bg-white/5"
               >
                 {link.label}
               </a>
@@ -57,22 +65,17 @@ export function InstitucionalNavbar() {
           <div className="hidden lg:flex items-center gap-3">
             <Link
               to="/auth"
-              className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-4 py-2"
+              className="flex items-center gap-2 text-sm font-semibold text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm px-5 py-2.5 rounded-xl transition-all border border-white/10 hover:border-white/20"
             >
-              Entrar
+              <LogIn className="h-4 w-4" />
+              Área do Aluno
             </Link>
-            <a
-              href="#cta"
-              className="gradient-luz-mina text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:opacity-90 transition-opacity"
-            >
-              Agendar Demonstração
-            </a>
           </div>
 
           {/* Mobile toggle */}
           <button
             onClick={() => setMobileOpen(!mobileOpen)}
-            className="lg:hidden p-2 text-foreground"
+            className="lg:hidden p-2 text-white"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -86,32 +89,28 @@ export function InstitucionalNavbar() {
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
-            className="lg:hidden bg-background/95 backdrop-blur-xl border-b border-border"
+            className="lg:hidden bg-[hsl(220,25%,10%)]/98 backdrop-blur-xl border-b border-white/10"
           >
-            <div className="px-4 py-4 space-y-2">
+            <div className="px-4 py-4 space-y-1">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground hover:bg-muted rounded-lg transition-colors"
+                  className="block px-4 py-3 text-sm font-medium text-white/70 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
                 >
                   {link.label}
                 </a>
               ))}
-              <div className="pt-2 border-t border-border space-y-2">
+              <div className="pt-3 border-t border-white/10">
                 <Link
                   to="/auth"
-                  className="block text-center px-4 py-3 text-sm font-medium text-foreground hover:bg-muted rounded-lg"
+                  onClick={() => setMobileOpen(false)}
+                  className="flex items-center justify-center gap-2 px-4 py-3 text-sm font-semibold text-white bg-white/10 rounded-xl"
                 >
-                  Entrar
+                  <LogIn className="h-4 w-4" />
+                  Área do Aluno
                 </Link>
-                <a
-                  href="#cta"
-                  className="block text-center gradient-luz-mina text-white text-sm font-semibold px-4 py-3 rounded-xl"
-                >
-                  Agendar Demonstração
-                </a>
               </div>
             </div>
           </motion.div>
