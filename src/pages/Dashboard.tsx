@@ -113,6 +113,13 @@ const Dashboard = () => {
         </motion.div>
 
 
+        {/* Resumo Financeiro Mensal - Informação Prioritária */}
+        <FinancialSummaryCard
+          receitas={stats.totalReceitas ?? 0}
+          despesas={stats.totalDespesas ?? 0}
+          saldo={stats.saldoMensal ?? 0}
+        />
+
         {/* Main KPIs Grid */}
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
           <FinancialKPICard
@@ -140,11 +147,11 @@ const Dashboard = () => {
             index={1}
           />
           <FinancialKPICard
-            title={t("dashboard.receivable")}
-            value={formatCurrency(stats.valorAReceber ?? 0)}
-            subtitle={t("dashboard.pendingInvoicesCount", { count: (stats.faturasAbertas ?? 0) + (stats.faturasVencidas ?? 0) })}
-            icon={Receipt}
-            variant="info"
+            title={t("dashboard.collectionRate")}
+            value={`${(stats.taxaArrecadacao ?? 0).toFixed(1)}%`}
+            subtitle={t("dashboard.ofExpected")}
+            icon={Target}
+            variant={(stats.taxaArrecadacao ?? 0) >= 80 ? "success" : (stats.taxaArrecadacao ?? 0) >= 50 ? "warning" : "danger"}
             index={2}
           />
           <FinancialKPICard
@@ -169,11 +176,11 @@ const Dashboard = () => {
             index={4}
           />
           <FinancialKPICard
-            title={t("dashboard.collectionRate")}
-            value={`${(stats.taxaArrecadacao ?? 0).toFixed(1)}%`}
-            subtitle={t("dashboard.ofExpected")}
-            icon={Target}
-            variant={(stats.taxaArrecadacao ?? 0) >= 80 ? "success" : (stats.taxaArrecadacao ?? 0) >= 50 ? "warning" : "danger"}
+            title={t("dashboard.receivable")}
+            value={formatCurrency(stats.valorAReceber ?? 0)}
+            subtitle={t("dashboard.pendingInvoicesCount", { count: (stats.faturasAbertas ?? 0) + (stats.faturasVencidas ?? 0) })}
+            icon={Receipt}
+            variant="info"
             size="sm"
             index={5}
           />
@@ -219,21 +226,14 @@ const Dashboard = () => {
           />
         </div>
 
-        {/* Secondary Charts */}
-        <div className="grid gap-5 lg:grid-cols-2">
-          <FinancialChart
-            title={t("dashboard.revenueVsExpenses")}
-            description={t("dashboard.monthlyComparison")}
-            data={stats.combinedData ?? []}
-            type="comparison"
-            height={280}
-          />
-          <FinancialSummaryCard
-            receitas={stats.totalReceitas ?? 0}
-            despesas={stats.totalDespesas ?? 0}
-            saldo={stats.saldoMensal ?? 0}
-          />
-        </div>
+        {/* Revenue vs Expenses Chart */}
+        <FinancialChart
+          title={t("dashboard.revenueVsExpenses")}
+          description={t("dashboard.monthlyComparison")}
+          data={stats.combinedData ?? []}
+          type="comparison"
+          height={280}
+        />
 
         {/* Revenue Trend */}
         <FinancialChart
