@@ -326,6 +326,8 @@ export function useFaturaKPIs() {
         supabase
           .from("faturas")
           .select("id, status, valor, valor_total, saldo_restante, dias_atraso")
+          .eq("mes_referencia", currentMonth)
+          .eq("ano_referencia", currentYear)
           .neq("status", "Cancelada"),
         supabase
           .from("pagamentos")
