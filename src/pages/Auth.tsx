@@ -320,13 +320,13 @@ const Auth = () => {
       <footer className="relative z-10 py-6 px-6 flex-shrink-0">
         <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-left">
-            <p className="text-sm" style={{ color: '#1A1C2D' }}>
+            <p className="text-sm text-foreground/70">
               © {new Date().getFullYear()} {schoolName}
             </p>
           </div>
           <Popover>
             <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 text-sm transition-colors hover:opacity-80" style={{ color: '#1A1C2D' }}>
+              <button className="flex items-center gap-2 text-sm transition-colors text-foreground/70 hover:text-foreground/90">
                 <Headphones className="h-4 w-4" />
                 Suporte Técnico
               </button>
@@ -352,7 +352,7 @@ const Auth = () => {
                   Instagram
                 </a>
                 <a 
-                  href="mailto:victordbvtey@outlookk.com" 
+                  href="mailto:victordbvtey@outlook.com" 
                   className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
                 >
                   <Mail className="h-4 w-4" />

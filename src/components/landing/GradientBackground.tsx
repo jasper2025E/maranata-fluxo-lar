@@ -1,12 +1,6 @@
 import doodlePatternBg from "@/assets/doodle-pattern-bg.png";
 
-interface GradientBackgroundProps {
-  gradientFrom?: string;
-  gradientVia?: string;
-  gradientTo?: string;
-}
-
-export function GradientBackground({}: GradientBackgroundProps) {
+export function GradientBackground() {
   return (
     <>
       {/* Black and white gradient background - darker */}
