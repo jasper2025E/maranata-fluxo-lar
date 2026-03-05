@@ -1,26 +1,10 @@
 import { Users, MessageCircle, Gamepad2, Home } from "lucide-react";
 
 const items = [
-  {
-    icon: Users,
-    title: "Turmas reduzidas",
-    description: "Cada aluno recebe atenção individualizada no seu próprio ritmo.",
-  },
-  {
-    icon: MessageCircle,
-    title: "Feedback aos pais",
-    description: "Acompanhamento constante sobre progresso e pontos a melhorar.",
-  },
-  {
-    icon: Gamepad2,
-    title: "Aprendizado lúdico",
-    description: "Jogos e atividades educativas que tornam o estudo prazeroso.",
-  },
-  {
-    icon: Home,
-    title: "Ambiente acolhedor",
-    description: "Espaço familiar onde as crianças se sentem seguras para aprender.",
-  },
+  { icon: Users, title: "Turmas reduzidas", description: "Cada aluno recebe atenção individualizada no seu próprio ritmo." },
+  { icon: MessageCircle, title: "Feedback aos pais", description: "Acompanhamento constante sobre progresso e pontos a melhorar." },
+  { icon: Gamepad2, title: "Aprendizado lúdico", description: "Jogos e atividades educativas que tornam o estudo prazeroso." },
+  { icon: Home, title: "Ambiente acolhedor", description: "Espaço familiar onde as crianças se sentem seguras para aprender." },
 ];
 
 export function InstitucionalBeneficios() {
@@ -28,9 +12,8 @@ export function InstitucionalBeneficios() {
     <section id="metodo" className="py-20 lg:py-28 border-t border-white/[0.08]">
       <div className="max-w-[1200px] mx-auto px-6">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
-          {/* Left */}
           <div>
-            <p className="text-xs text-[#666] uppercase tracking-widest mb-3">Metodologia</p>
+            <p className="text-xs uppercase tracking-widest mb-3" style={{ color: "#F5A623" }}>Metodologia</p>
             <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight mb-4">
               Por que as famílias{" "}
               <span className="inst-gradient-text">confiam</span> no Maranata?
@@ -44,8 +27,8 @@ export function InstitucionalBeneficios() {
                 const Icon = item.icon;
                 return (
                   <div key={i} className="flex gap-4">
-                    <div className="w-9 h-9 rounded-lg bg-white/[0.05] border border-white/[0.08] flex items-center justify-center flex-shrink-0 mt-0.5">
-                      <Icon className="h-4 w-4 text-[#888]" />
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5" style={{ background: "rgba(245,166,35,0.1)", border: "1px solid rgba(245,166,35,0.15)" }}>
+                      <Icon className="h-4 w-4" style={{ color: "#F5A623" }} />
                     </div>
                     <div>
                       <h4 className="text-sm font-semibold text-white mb-0.5">{item.title}</h4>
@@ -57,7 +40,6 @@ export function InstitucionalBeneficios() {
             </div>
           </div>
 
-          {/* Right — image */}
           <div className="relative rounded-2xl overflow-hidden border border-white/[0.08]">
             <img
               src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&h=700&fit=crop"
@@ -67,7 +49,7 @@ export function InstitucionalBeneficios() {
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
             <div className="absolute bottom-6 left-6">
-              <span className="text-3xl font-bold text-white">100%</span>
+              <span className="text-3xl font-bold" style={{ color: "#F5A623" }}>100%</span>
               <span className="block text-xs text-white/60 uppercase tracking-wider">Dedicação</span>
             </div>
           </div>
