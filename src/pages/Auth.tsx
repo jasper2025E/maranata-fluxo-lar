@@ -282,7 +282,7 @@ const Auth = () => {
               <div className="flex items-center justify-between">
                 <Popover>
                   <PopoverTrigger asChild>
-                    <button type="button" className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 transition-colors">
+                    <button type="button" className="flex items-center gap-1.5 text-sm text-white/50 hover:text-white/80 underline underline-offset-4 transition-colors">
                       <Headphones className="h-3.5 w-3.5" />
                       Suporte
                     </button>
