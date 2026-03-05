@@ -10,6 +10,7 @@ interface FinancialSummaryCardProps {
   receitas: number;
   despesas: number;
   saldo: number;
+  saldoAnterior?: number;
   meta?: number;
   className?: string;
 }
@@ -18,11 +19,13 @@ export function FinancialSummaryCard({
   receitas,
   despesas,
   saldo,
+  saldoAnterior = 0,
   meta,
   className,
 }: FinancialSummaryCardProps) {
   const { t } = useTranslation();
   const isPositive = saldo >= 0;
+  const saldoDoMes = receitas - despesas;
   const progressMeta = meta ? Math.min((receitas / meta) * 100, 100) : 0;
 
   return (
@@ -34,6 +37,19 @@ export function FinancialSummaryCard({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Previous Month Balance */}
+        {saldoAnterior !== 0 && (
+          <div className="flex items-center justify-between p-3 rounded-lg bg-muted/30 border border-border/30">
+            <span className="text-sm text-muted-foreground">{t("dashboard.previousBalance")}</span>
+            <span className={cn(
+              "text-sm font-semibold",
+              saldoAnterior >= 0 ? "text-success" : "text-destructive"
+            )}>
+              {formatCurrency(saldoAnterior)}
+            </span>
+          </div>
+        )}
+
         {/* Main Balance */}
         <div className="text-center py-4 px-6 rounded-xl bg-gradient-to-br from-muted/50 to-muted/20 border border-border/30">
           <p className="text-sm text-muted-foreground mb-1">{t("dashboard.currentBalance")}</p>
@@ -57,6 +73,13 @@ export function FinancialSummaryCard({
               {isPositive ? t("dashboard.surplus") : t("dashboard.deficit")}
             </span>
           </div>
+          {saldoAnterior !== 0 && (
+            <p className="text-xs text-muted-foreground mt-2">
+              {t("dashboard.monthResult")}: <span className={cn("font-semibold", saldoDoMes >= 0 ? "text-success" : "text-destructive")}>{formatCurrency(saldoDoMes)}</span>
+              {" + "}
+              {t("dashboard.previousBalance").toLowerCase()}: <span className={cn("font-semibold", saldoAnterior >= 0 ? "text-success" : "text-destructive")}>{formatCurrency(saldoAnterior)}</span>
+            </p>
+          )}
         </div>
 
         {/* Income vs Expenses */}
