@@ -28,6 +28,7 @@ export interface DashboardStats {
   totalReceitas: number;
   totalDespesas: number;
   saldoMensal: number;
+  saldoAnterior: number;
   valorAReceber: number;
   valorVencido: number;
   ticketMedio: number;
@@ -223,6 +224,7 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const totalDespesas = despesas.reduce((sum, d) => sum + Number(d.valor), 0);
   const totalReceitasPrev = pagamentosPrev.reduce((sum, p) => sum + Number(p.valor), 0);
   const totalDespesasPrev = despesasPrev.reduce((sum, d) => sum + Number(d.valor), 0);
+  const saldoAnterior = totalReceitasPrev - totalDespesasPrev;
 
   // Variações
   const variacaoReceitas = totalReceitasPrev > 0 
@@ -293,7 +295,8 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     faturasVencidas,
     totalReceitas,
     totalDespesas,
-    saldoMensal: totalReceitas - totalDespesas,
+    saldoMensal: saldoAnterior + totalReceitas - totalDespesas,
+    saldoAnterior,
     valorAReceber,
     valorVencido,
     ticketMedio,

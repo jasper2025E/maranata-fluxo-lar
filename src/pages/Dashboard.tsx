@@ -118,6 +118,7 @@ const Dashboard = () => {
           receitas={stats.totalReceitas ?? 0}
           despesas={stats.totalDespesas ?? 0}
           saldo={stats.saldoMensal ?? 0}
+          saldoAnterior={stats.saldoAnterior ?? 0}
         />
 
         {/* Main KPIs Grid */}

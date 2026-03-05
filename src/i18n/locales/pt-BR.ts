@@ -170,6 +170,8 @@ const ptBR = {
       currentBalance: "Saldo Atual",
       surplus: "Superávit",
       deficit: "Déficit",
+      previousBalance: "Saldo Anterior",
+      monthResult: "Resultado do mês",
       collectionRate: "Taxa de Arrecadação",
       ofExpected: "Do valor esperado",
       totalOverdue: "Total em Atraso",
