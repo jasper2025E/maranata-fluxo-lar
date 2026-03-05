@@ -22,7 +22,7 @@ export function InstitucionalNavbar() {
   return (
     <>
       {/* Top Bar */}
-      <div style={{ background: "var(--inst-primary)", borderBottom: "3px solid var(--inst-secondary)" }} className="text-white py-2 text-sm">
+      <div className="text-white py-2 text-sm" style={{ background: "var(--inst-primary-dark)", borderBottom: "3px solid var(--inst-secondary)" }}>
         <div className="max-w-[1200px] mx-auto px-8">
           <div className="flex justify-between items-center">
             <div className="hidden sm:flex items-center gap-6 opacity-90">
@@ -40,7 +40,7 @@ export function InstitucionalNavbar() {
               href="https://www.instagram.com/reforcomaranatabhs/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-white/80 hover:text-[#c9a227] transition-colors text-sm"
+              className="text-white/80 hover:text-[#f9a825] transition-colors text-sm"
             >
               Instagram
             </a>
@@ -55,19 +55,19 @@ export function InstitucionalNavbar() {
         }`}
       >
         <div className="max-w-[1200px] mx-auto px-8">
-          <nav className="flex items-center justify-between py-4">
+          <nav className="flex items-center justify-between py-3">
             {/* Logo */}
             <a href="#inicio" className="flex items-center gap-3">
               <img
-                src="/escola-logo.png"
+                src="/escola-logo-nobg.png"
                 alt="Reforço Maranata"
-                className="h-[50px] w-auto"
+                className="h-[55px] w-auto"
               />
               <div>
                 <h1 style={{ fontFamily: "'Crimson Text', serif", color: "var(--inst-primary)" }} className="text-2xl font-semibold leading-tight">
                   Reforço Maranata
                 </h1>
-                <span className="text-xs uppercase tracking-[2px] text-[#5a6c7d] font-medium">
+                <span className="text-xs uppercase tracking-[2px] font-medium" style={{ color: "var(--inst-text-light)" }}>
                   Reforço Escolar
                 </span>
               </div>
@@ -79,7 +79,8 @@ export function InstitucionalNavbar() {
                 <li key={link.href}>
                   <a
                     href={link.href}
-                    className="inst-nav-link text-[0.95rem] font-medium text-[#2c3e50] hover:text-[#1a3a52] transition-colors"
+                    className="inst-nav-link text-[0.95rem] font-medium transition-colors"
+                    style={{ color: "var(--inst-text)" }}
                   >
                     {link.label}
                   </a>
@@ -88,8 +89,8 @@ export function InstitucionalNavbar() {
               <li>
                 <Link
                   to="/auth"
+                  className="text-white font-semibold px-6 py-2.5 text-sm rounded-lg hover:opacity-90 transition-opacity"
                   style={{ background: "var(--inst-primary)" }}
-                  className="text-white font-semibold px-6 py-2.5 text-sm hover:opacity-90 transition-opacity"
                 >
                   Área do Aluno
                 </Link>
@@ -99,7 +100,8 @@ export function InstitucionalNavbar() {
             {/* Mobile toggle */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="lg:hidden p-2 text-[#2c3e50]"
+              className="lg:hidden p-2"
+              style={{ color: "var(--inst-text)" }}
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
@@ -108,24 +110,25 @@ export function InstitucionalNavbar() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="lg:hidden bg-white border-t border-[#e0d5c7]">
+          <div className="lg:hidden bg-white border-t" style={{ borderColor: "var(--inst-border)" }}>
             <div className="px-8 py-4 space-y-1">
               {navLinks.map((link) => (
                 <a
                   key={link.href}
                   href={link.href}
                   onClick={() => setMobileOpen(false)}
-                  className="block px-4 py-3 text-sm font-medium text-[#2c3e50] hover:text-[#1a3a52] hover:bg-[#faf8f5] rounded transition-colors"
+                  className="block px-4 py-3 text-sm font-medium rounded transition-colors"
+                  style={{ color: "var(--inst-text)" }}
                 >
                   {link.label}
                 </a>
               ))}
-              <div className="pt-3 border-t border-[#e0d5c7]">
+              <div className="pt-3 border-t" style={{ borderColor: "var(--inst-border)" }}>
                 <Link
                   to="/auth"
                   onClick={() => setMobileOpen(false)}
+                  className="block text-center px-4 py-3 text-sm font-semibold text-white rounded-lg"
                   style={{ background: "var(--inst-primary)" }}
-                  className="block text-center px-4 py-3 text-sm font-semibold text-white"
                 >
                   Área do Aluno
                 </Link>

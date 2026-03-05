@@ -2,17 +2,20 @@ import { Instagram, Phone, Mail, MapPin } from "lucide-react";
 
 export function InstitucionalFooter() {
   return (
-    <footer className="text-white pt-16 pb-6" style={{ background: "#0f1f2e" }}>
+    <footer className="text-white pt-16 pb-6" style={{ background: "#0d1b2a" }}>
       <div className="max-w-[1200px] mx-auto px-8">
         <div className="grid sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-8 mb-10">
           {/* Brand */}
           <div>
-            <h4
-              className="text-2xl font-semibold text-white mb-3"
-              style={{ fontFamily: "'Crimson Text', serif" }}
-            >
-              Reforço Maranata
-            </h4>
+            <div className="flex items-center gap-3 mb-4">
+              <img src="/escola-logo-nobg.png" alt="Reforço Maranata" className="h-12 w-auto" />
+              <h4
+                className="text-2xl font-semibold text-white"
+                style={{ fontFamily: "'Crimson Text', serif" }}
+              >
+                Reforço Maranata
+              </h4>
+            </div>
             <p className="text-white/60 leading-relaxed mb-5 text-sm">
               Reforço escolar de qualidade em Barreirinhas&nbsp;–&nbsp;MA.
               Ajudamos crianças e adolescentes a superarem dificuldades
@@ -22,7 +25,10 @@ export function InstitucionalFooter() {
               href="https://www.instagram.com/reforcomaranatabhs/"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-white/60 hover:text-[#c9a227] transition-colors text-sm"
+              className="inline-flex items-center gap-2 text-white/60 transition-colors text-sm"
+              style={{ color: undefined }}
+              onMouseEnter={(e) => e.currentTarget.style.color = "var(--inst-secondary)"}
+              onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.6)"}
             >
               <Instagram className="h-4 w-4" />
               @reforcomaranatabhs
@@ -40,7 +46,7 @@ export function InstitucionalFooter() {
             <ul className="space-y-2 text-sm">
               {["Português", "Matemática", "Ciências", "Alfabetização", "Preparação para Provas"].map((item) => (
                 <li key={item}>
-                  <a href="#servicos" className="text-white/60 hover:text-[#c9a227] hover:pl-1 transition-all inline-block">
+                  <a href="#servicos" className="text-white/60 hover:pl-1 transition-all inline-block" style={{}} onMouseEnter={(e) => e.currentTarget.style.color = "var(--inst-secondary)"} onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.6)"}>
                     {item}
                   </a>
                 </li>
@@ -63,7 +69,7 @@ export function InstitucionalFooter() {
                 { label: "Contato", href: "#contato" },
               ].map((item) => (
                 <li key={item.label}>
-                  <a href={item.href} className="text-white/60 hover:text-[#c9a227] hover:pl-1 transition-all inline-block">
+                  <a href={item.href} className="text-white/60 hover:pl-1 transition-all inline-block" onMouseEnter={(e) => e.currentTarget.style.color = "var(--inst-secondary)"} onMouseLeave={(e) => e.currentTarget.style.color = "rgba(255,255,255,0.6)"}>
                     {item.label}
                   </a>
                 </li>
@@ -105,7 +111,8 @@ export function InstitucionalFooter() {
               href="https://www.instagram.com/reforcomaranatabhs/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-[#c9a227] hover:underline"
+              style={{ color: "var(--inst-secondary)" }}
+              className="hover:underline"
             >
               Victor Mendys
             </a>

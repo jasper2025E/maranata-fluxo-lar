@@ -1,13 +1,14 @@
-/* Editorial Institutional Site Styles */
+/* Maranata Institutional Site — Identity from Logo */
 .inst {
-  --inst-primary: #1a3a52;
-  --inst-secondary: #c9a227;
-  --inst-accent: #8b4513;
-  --inst-text: #2c3e50;
-  --inst-text-light: #5a6c7d;
-  --inst-bg-warm: #faf8f5;
-  --inst-bg-cream: #f5f1eb;
-  --inst-border: #e0d5c7;
+  --inst-primary: #1565c0;
+  --inst-primary-dark: #0d47a1;
+  --inst-secondary: #f9a825;
+  --inst-accent: #e65100;
+  --inst-text: #263238;
+  --inst-text-light: #546e7a;
+  --inst-bg-warm: #fafbfd;
+  --inst-bg-cream: #f0f4f8;
+  --inst-border: #cfd8dc;
 }
 
 .inst {
@@ -23,14 +24,13 @@
   line-height: 1.2;
 }
 
-/* Hero asymmetric image */
+/* Hero logo float */
 .inst-hero-img {
-  box-shadow: 20px 20px 0 var(--inst-secondary);
-  filter: grayscale(20%);
-  transition: filter 0.5s;
+  filter: drop-shadow(0 10px 30px rgba(21, 101, 192, 0.2));
+  transition: transform 0.5s;
 }
 .inst-hero-img:hover {
-  filter: grayscale(0%);
+  transform: scale(1.03);
 }
 
 /* Course card top-line effect */
@@ -52,8 +52,8 @@
   transform-origin: left;
 }
 .inst-course-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
+  transform: translateY(-8px);
+  box-shadow: 0 16px 40px rgba(21, 101, 192, 0.1);
   border-color: var(--inst-secondary);
 }
 .inst-course-card:hover::before {
@@ -111,7 +111,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.03"><path d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/></g></g></svg>');
+  background: url('data:image/svg+xml,<svg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"><g fill="none" fill-rule="evenodd"><g fill="%23ffffff" fill-opacity="0.04"><path d="M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z"/></g></g></svg>');
   opacity: 0.5;
 }
 
@@ -149,8 +149,8 @@
   right: -10%;
   width: 600px;
   height: 600px;
-  background: var(--inst-secondary);
-  opacity: 0.1;
+  background: var(--inst-primary);
+  opacity: 0.06;
   border-radius: 50%;
 }
 
