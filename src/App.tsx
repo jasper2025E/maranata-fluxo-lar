@@ -37,6 +37,7 @@ const PontoEletronico = lazy(() => import("./pages/PontoEletronico"));
 const SaudeFinanceira = lazy(() => import("./pages/SaudeFinanceira"));
 const Contabilidade = lazy(() => import("./pages/Contabilidade"));
 const NotFound = lazy(() => import("./pages/NotFound"));
+const Institucional = lazy(() => import("./pages/Institucional"));
 
 // Componente interno que usa hooks de proteção
 function AppContent() {
@@ -57,6 +58,7 @@ function AppContent() {
           <Routes>
             {/* Público - raiz inteligente */}
             <Route path="/" element={<RootRedirect />} />
+            <Route path="/site" element={<Institucional />} />
             <Route path="/auth" element={<Auth />} />
             
             {/* Protegido - Escola Maranata */}
