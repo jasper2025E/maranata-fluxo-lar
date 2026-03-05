@@ -22,7 +22,7 @@ export function InstitucionalFooter() {
             </p>
             <div className="flex gap-3">
               <a
-                href="https://www.instagram.com/mendysvictor/"
+                href="https://www.instagram.com/reforcomaranatabhs/"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
@@ -71,7 +71,7 @@ export function InstitucionalFooter() {
           <p className="text-xs text-muted-foreground">
             Desenvolvido por{" "}
             <a
-              href="https://www.instagram.com/mendysvictor/"
+              href="https://www.instagram.com/reforcomaranatabhs/"
               target="_blank"
               rel="noopener noreferrer"
               className="text-primary hover:underline"
