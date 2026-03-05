@@ -1,37 +1,35 @@
+import { ArrowRight } from "lucide-react";
+
 export function InstitucionalCTA() {
   return (
-    <section id="contato" className="inst-cta-pattern py-16 lg:py-20 text-center" style={{ background: "var(--inst-primary)" }}>
-      <div className="max-w-[600px] mx-auto px-8 relative z-10">
-        <h3
-          className="text-2xl sm:text-3xl lg:text-[2.5rem] font-semibold text-white mb-4"
-          style={{ fontFamily: "'Crimson Text', serif" }}
-        >
+    <section id="contato" className="py-20 lg:py-28 border-t border-white/[0.08] relative overflow-hidden">
+      <div className="inst-glow bg-purple-600 -top-40 left-1/3" />
+      <div className="inst-glow bg-blue-600 -bottom-40 right-1/3" />
+
+      <div className="max-w-xl mx-auto px-6 text-center relative z-10">
+        <p className="text-xs text-[#666] uppercase tracking-widest mb-3">Contato</p>
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-white tracking-tight mb-4">
           Garanta a vaga do seu filho
-        </h3>
-        <p className="text-white/80 text-lg mb-8">
+        </h2>
+        <p className="text-[#666] mb-8 leading-relaxed">
           Entre em contato e agende uma visita. Conheça nosso espaço e veja como podemos ajudar.
         </p>
+
         <a
           href="https://wa.me/559898828634?text=Olá! Gostaria de saber mais sobre o Reforço Maranata e agendar uma visita."
           target="_blank"
           rel="noopener noreferrer"
-          className="inline-block px-10 py-4 font-bold uppercase tracking-wider border-2 transition-all hover:bg-transparent hover:shadow-lg"
-          style={{
-            background: "var(--inst-secondary)",
-            color: "var(--inst-primary)",
-            borderColor: "var(--inst-secondary)",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "var(--inst-secondary)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "var(--inst-secondary)";
-            e.currentTarget.style.color = "var(--inst-primary)";
-          }}
+          className="inst-btn-shine inline-flex items-center gap-2 bg-white text-black font-medium px-8 py-3.5 rounded-full text-sm hover:bg-gray-200 transition-colors"
         >
           Chamar no WhatsApp
+          <ArrowRight className="h-4 w-4" />
         </a>
+
+        <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-6 text-xs text-[#666]">
+          <span>📞 (98) 98828-6034</span>
+          <span>✉️ jn.ney@hotmail.com</span>
+          <span>📍 Barreirinhas – MA</span>
+        </div>
       </div>
     </section>
   );
