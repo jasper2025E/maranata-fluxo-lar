@@ -3,39 +3,39 @@ import { motion } from "framer-motion";
 const services = [
   {
     icon: "📖",
-    title: "Reforço Escolar",
-    description: "Acompanhamento pedagógico nas disciplinas do currículo escolar com foco nas dificuldades específicas de cada aluno.",
+    title: "Reforço em Português",
+    description: "Leitura, interpretação de texto, gramática e redação. Ajudamos seu filho a dominar a língua portuguesa com exercícios práticos e acompanhamento contínuo.",
     meta: "Fundamental I e II",
   },
   {
-    icon: "🎯",
-    title: "Preparatório ENEM",
-    description: "Método focado em resultados para o vestibular mais importante do país. Simulados e correção personalizada.",
-    meta: "Ensino Médio",
-  },
-  {
     icon: "🔢",
-    title: "Matemática Aplicada",
-    description: "Descomplicamos os números com metodologia visual e prática. Do básico à matemática avançada.",
-    meta: "Todas as idades",
+    title: "Reforço em Matemática",
+    description: "Das operações básicas à matemática avançada. Descomplicamos os números com metodologia visual e prática, respeitando o ritmo de cada aluno.",
+    meta: "Fundamental I e II",
   },
   {
     icon: "🌍",
-    title: "Inglês Kids",
-    description: "Aprendizado de idiomas através de jogos, músicas e atividades lúdicas. Professores nativos disponíveis.",
-    meta: "A partir de 4 anos",
+    title: "Reforço em Ciências",
+    description: "Ciências naturais, biologia, física e química de forma acessível. Experimentos simples e explicações claras para fixar o conteúdo.",
+    meta: "Fundamental I e II",
   },
   {
-    icon: "✍️",
-    title: "Redação e Literatura",
-    description: "Desenvolvimento da escrita criativa e interpretação de texto. Preparação para competições de redação.",
-    meta: "Todos os níveis",
+    icon: "📝",
+    title: "Auxílio nas Tarefas",
+    description: "Acompanhamento diário nas tarefas de casa e trabalhos escolares. Seu filho nunca mais vai ficar perdido com os deveres.",
+    meta: "Todas as séries",
   },
   {
     icon: "🧠",
     title: "Alfabetização",
-    description: "Método fônico atualizado para crianças em fase de alfabetização. Leitura e escrita com prazer.",
+    description: "Método fônico atualizado para crianças em fase de alfabetização. Desenvolvemos a leitura e escrita com paciência e carinho.",
     meta: "Educação Infantil",
+  },
+  {
+    icon: "🎯",
+    title: "Preparação para Provas",
+    description: "Revisão intensiva e simulados antes das avaliações escolares. Seu filho vai para a prova com segurança e confiança.",
+    meta: "Todas as séries",
   },
 ];
 
@@ -56,7 +56,7 @@ export function InstitucionalModulos() {
             Como podemos ajudar seu filho?
           </h3>
           <p className="text-[#607d8b] text-lg max-w-[600px] mx-auto">
-            Oferecemos diferentes modalidades de ensino para atender às necessidades específicas de cada aluno
+            Reforço escolar completo para todas as disciplinas, com atenção individualizada em Barreirinhas
           </p>
         </motion.div>
 

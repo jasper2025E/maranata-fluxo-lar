@@ -26,12 +26,12 @@ export function InstitucionalNavbar() {
       <div className="bg-[#0d47a1] text-white py-2 text-sm font-semibold">
         <div className="max-w-[1200px] mx-auto px-8 flex justify-between items-center">
           <div className="hidden sm:flex items-center gap-4">
-            <span className="inline-flex items-center gap-2 bg-white/15 px-4 py-1 rounded-full hover:bg-[#f57c00] transition-all cursor-pointer">
-              <Phone className="h-3.5 w-3.5" /> (31) 99999-9999
-            </span>
-            <span className="inline-flex items-center gap-2 bg-white/15 px-4 py-1 rounded-full hover:bg-[#f57c00] transition-all cursor-pointer">
-              <Mail className="h-3.5 w-3.5" /> contato@maranata.com.br
-            </span>
+            <a href="tel:+559898828634" className="inline-flex items-center gap-2 bg-white/15 px-4 py-1 rounded-full hover:bg-[#f57c00] transition-all">
+              <Phone className="h-3.5 w-3.5" /> (98) 98828-6034
+            </a>
+            <a href="mailto:jn.ney@hotmail.com" className="inline-flex items-center gap-2 bg-white/15 px-4 py-1 rounded-full hover:bg-[#f57c00] transition-all">
+              <Mail className="h-3.5 w-3.5" /> jn.ney@hotmail.com
+            </a>
           </div>
           <div className="font-bold text-center sm:text-right w-full sm:w-auto">
             🎉 Matrículas 2026 abertas!
@@ -51,15 +51,15 @@ export function InstitucionalNavbar() {
             <a href="#inicio" className="flex items-center gap-4 group">
               <img
                 src="/escola-logo.png"
-                alt="Reforço Escolar Maranata"
+                alt="Reforço Maranata"
                 className="h-[70px] w-auto drop-shadow-md group-hover:scale-105 group-hover:-rotate-2 transition-transform"
               />
               <div className="flex flex-col">
                 <span className="text-[1.8rem] font-bold text-[#0d47a1] leading-tight tracking-tight font-[Quicksand]">
-                  Reforço Escolar
+                  Reforço Maranata
                 </span>
                 <span className="text-[0.85rem] text-[#f57c00] font-bold uppercase tracking-[2px]">
-                  Maranata
+                  Barreirinhas - MA
                 </span>
               </div>
             </a>

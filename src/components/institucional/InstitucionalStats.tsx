@@ -1,10 +1,10 @@
 import { motion } from "framer-motion";
 
 const stats = [
-  { number: "12+", label: "Anos de Experiência" },
-  { number: "850+", label: "Alunos Atendidos" },
-  { number: "98%", label: "Taxa de Aprovação" },
-  { number: "4.9", label: "Avaliação Média" },
+  { number: "5+", label: "Anos de Experiência" },
+  { number: "200+", label: "Alunos Atendidos" },
+  { number: "95%", label: "Melhora nas Notas" },
+  { number: "4.9", label: "Avaliação dos Pais" },
 ];
 
 export function InstitucionalStats() {

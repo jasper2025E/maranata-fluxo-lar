@@ -1,5 +1,4 @@
-import { Instagram } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Instagram, Phone, Mail, MapPin } from "lucide-react";
 
 export function InstitucionalFooter() {
   return (
@@ -9,11 +8,12 @@ export function InstitucionalFooter() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-4 mb-6">
-              <img src="/escola-logo.png" alt="Maranata" className="h-[60px] w-auto" />
+              <img src="/escola-logo.png" alt="Reforço Maranata" className="h-[60px] w-auto" />
             </div>
             <p className="text-white/70 leading-relaxed mb-6">
-              Há mais de 12 anos transformando a educação com amor, dedicação e metodologia comprovada. 
-              Cada aluno é único e merece atenção especial.
+              Reforço escolar de qualidade em Barreirinhas - MA. 
+              Ajudamos crianças e adolescentes a superarem dificuldades 
+              escolares com dedicação e carinho.
             </p>
             <div className="flex gap-4">
               <a
@@ -31,7 +31,7 @@ export function InstitucionalFooter() {
           <div>
             <h5 className="text-[#ffc107] text-lg font-bold mb-6 font-[Quicksand]">Serviços</h5>
             <ul className="space-y-3">
-              {["Reforço Escolar", "Preparatório ENEM", "Aulas de Inglês", "Alfabetização"].map((item) => (
+              {["Reforço em Português", "Reforço em Matemática", "Alfabetização", "Auxílio nas Tarefas", "Preparação para Provas"].map((item) => (
                 <li key={item}>
                   <a href="#servicos" className="text-white/70 hover:text-white hover:pl-1.5 transition-all inline-flex items-center gap-2 before:content-['→'] before:opacity-0 before:text-[#f57c00] before:transition-opacity hover:before:opacity-100">
                     {item}
@@ -45,10 +45,14 @@ export function InstitucionalFooter() {
           <div>
             <h5 className="text-[#ffc107] text-lg font-bold mb-6 font-[Quicksand]">Institucional</h5>
             <ul className="space-y-3">
-              {["Sobre Nós", "Nossa Equipe", "Depoimentos"].map((item) => (
-                <li key={item}>
-                  <a href="#depoimentos" className="text-white/70 hover:text-white hover:pl-1.5 transition-all inline-flex items-center gap-2 before:content-['→'] before:opacity-0 before:text-[#f57c00] before:transition-opacity hover:before:opacity-100">
-                    {item}
+              {[
+                { label: "Metodologia", href: "#metodologia" },
+                { label: "Depoimentos", href: "#depoimentos" },
+                { label: "Contato", href: "#contato" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <a href={item.href} className="text-white/70 hover:text-white hover:pl-1.5 transition-all inline-flex items-center gap-2 before:content-['→'] before:opacity-0 before:text-[#f57c00] before:transition-opacity hover:before:opacity-100">
+                    {item.label}
                   </a>
                 </li>
               ))}
@@ -58,21 +62,26 @@ export function InstitucionalFooter() {
           {/* Contato */}
           <div>
             <h5 className="text-[#ffc107] text-lg font-bold mb-6 font-[Quicksand]">Contato</h5>
-            <ul className="space-y-3">
-              {["Agende uma Visita", "Fale Conosco", "Localização"].map((item) => (
-                <li key={item}>
-                  <a href="#contato" className="text-white/70 hover:text-white hover:pl-1.5 transition-all inline-flex items-center gap-2 before:content-['→'] before:opacity-0 before:text-[#f57c00] before:transition-opacity hover:before:opacity-100">
-                    {item}
-                  </a>
-                </li>
-              ))}
+            <ul className="space-y-4">
+              <li className="flex items-center gap-3 text-white/70">
+                <Phone className="h-4 w-4 text-[#ffc107] flex-shrink-0" />
+                <a href="tel:+559898828634" className="hover:text-white transition-colors">(98) 98828-6034</a>
+              </li>
+              <li className="flex items-center gap-3 text-white/70">
+                <Mail className="h-4 w-4 text-[#ffc107] flex-shrink-0" />
+                <a href="mailto:jn.ney@hotmail.com" className="hover:text-white transition-colors">jn.ney@hotmail.com</a>
+              </li>
+              <li className="flex items-center gap-3 text-white/70">
+                <MapPin className="h-4 w-4 text-[#ffc107] flex-shrink-0" />
+                <span>Barreirinhas - MA</span>
+              </li>
             </ul>
           </div>
         </div>
 
         {/* Bottom bar */}
         <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-white/50 text-sm">
-          <p>© {new Date().getFullYear()} Reforço Escolar Maranata. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} Reforço Maranata. Todos os direitos reservados.</p>
           <p>
             Desenvolvido por{" "}
             <a
