@@ -69,7 +69,7 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     alunosResult,
     faturasCurrentMonthResult,
     faturasEmAbertoMesResult,
-    faturasVencidasResult,
+    overdueRpcResult,
     faturasPagasCurrentMonthResult,
     pagamentosResult,
     pagamentosPrevResult,
@@ -101,11 +101,8 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .eq("mes_referencia", currentMonth)
       .eq("ano_referencia", currentYear),
     
-    // All overdue invoices with aging
-    supabase
-      .from("faturas")
-      .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
-      .eq("status", "Vencida"),
+    // All overdue invoices aggregated via RPC (bypasses 1000-row limit)
+    supabase.rpc("get_overdue_invoices_summary"),
     
     // Paid invoices for current month (for revenue calculation)
     supabase
@@ -180,7 +177,6 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const alunos = alunosResult.data || [];
   const faturasCurrentMonth = faturasCurrentMonthResult.data || [];
   const faturasEmAbertoMes = faturasEmAbertoMesResult.data || [];
-  const faturasVencidasAll = faturasVencidasResult.data || [];
   const faturasPagasCurrentMonth = faturasPagasCurrentMonthResult.data || [];
   const pagamentos = pagamentosResult.data || [];
   const pagamentosPrev = pagamentosPrevResult.data || [];
@@ -189,12 +185,20 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const funcionarios = funcionariosResult.data || [];
   const folhaPagamento = folhaPagamentoResult.data || [];
 
+  // Overdue aggregation from RPC (accurate, bypasses row limits)
+  const overdueData = overdueRpcResult.data?.[0] || {
+    total_valor_vencido: 0,
+    total_faturas_vencidas: 0,
+    total_responsaveis_inadimplentes: 0,
+    aging_ate30: 0,
+    aging_de31a60: 0,
+    aging_mais60: 0,
+  };
+
   // Responsáveis stats
   const totalResponsaveis = responsaveis.length;
   const responsaveisAtivos = responsaveis.filter(r => r.ativo).length;
-  const responsaveisComVencidas = new Set(
-    faturasVencidasAll.map(f => f.responsavel_id).filter(Boolean)
-  ).size;
+  const responsaveisComVencidas = Number(overdueData.total_responsaveis_inadimplentes);
 
   // Alunos stats
   const totalAlunos = alunos.length;
@@ -210,8 +214,8 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const valorAReceber = faturasEmAbertoMes
     .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
   
-  const valorVencido = faturasVencidasAll
-    .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
+  // Valor vencido from RPC (accurate across ALL invoices)
+  const valorVencido = Number(overdueData.total_valor_vencido);
   
   // Financeiro - Receitas = faturas PAGAS do mês atual + pagamentos registrados
   const receitasFaturasPagas = faturasPagasCurrentMonth.reduce(
@@ -251,18 +255,12 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     ? Math.round((responsaveisComVencidas / responsaveisAtivos) * 100)
     : 0;
 
-  // Calculate aging
-  const aging: AgingData = { ate30: 0, de31a60: 0, mais60: 0 };
-  const todayDate = new Date(today);
-  
-  faturasVencidasAll.forEach(f => {
-    const vencimento = new Date(f.data_vencimento);
-    const diasAtraso = Math.floor((todayDate.getTime() - vencimento.getTime()) / (1000 * 60 * 60 * 24));
-    
-    if (diasAtraso <= 30) aging.ate30++;
-    else if (diasAtraso <= 60) aging.de31a60++;
-    else aging.mais60++;
-  });
+  // Calculate aging from RPC data
+  const aging: AgingData = {
+    ate30: Number(overdueData.aging_ate30),
+    de31a60: Number(overdueData.aging_de31a60),
+    mais60: Number(overdueData.aging_mais60),
+  };
 
   // Process historical data for charts
   const monthNames = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];

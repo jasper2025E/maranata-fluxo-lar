@@ -4394,6 +4394,17 @@ export type Database = {
           secondary_color: string
         }[]
       }
+      get_overdue_invoices_summary: {
+        Args: never
+        Returns: {
+          aging_ate30: number
+          aging_de31a60: number
+          aging_mais60: number
+          total_faturas_vencidas: number
+          total_responsaveis_inadimplentes: number
+          total_valor_vencido: number
+        }[]
+      }
       get_public_website_by_slug: {
         Args: { p_slug: string }
         Returns: {
