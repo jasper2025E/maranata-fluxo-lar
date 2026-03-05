@@ -118,7 +118,7 @@ const ptBR = {
       escola: {
         dados: "Dados da Escola",
         assinatura: "Assinatura",
-        website: "Site Escolar",
+        
       },
       exitSystem: "Sair do Sistema",
       financialSystem: "Sistema Financeiro",
@@ -1019,10 +1019,6 @@ const ptBR = {
         classManagement: {
           title: "Gestão de Turmas",
           description: "Gestão completa de turmas, enturmação de alunos e controle de professores. Disponível a partir do plano Profissional.",
-        },
-        schoolWebsite: {
-          title: "Site Escolar Incluso",
-          description: "Site institucional profissional para sua escola com landing page e formulário de pré-matrícula. Disponível apenas no plano Enterprise.",
         },
         default: {
           title: "Recurso Premium",

@@ -61,7 +61,6 @@ const menuItems = [
 // Escola Sub-items
 const escolaItems = [
   { titleKey: "nav.escola.dados", url: "/escola", tab: "dados" },
-  { titleKey: "nav.escola.website", url: "/site-escolar", tab: "website" },
 ];
 
 // HR Sub-items
@@ -132,9 +131,9 @@ export function AppSidebar() {
   const configTab = new URLSearchParams(location.search).get("tab") || "perfil";
   
   // Check if Escola route is active
-  const isEscolaActive = location.pathname.startsWith("/escola") || location.pathname.startsWith("/site-escolar");
+  const isEscolaActive = location.pathname.startsWith("/escola");
   const [isEscolaOpen, setIsEscolaOpen] = useState(isEscolaActive);
-  const escolaTab = location.pathname.startsWith("/site-escolar") ? "website" : "dados";
+  const escolaTab = "dados";
 
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
