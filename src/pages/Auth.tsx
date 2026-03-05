@@ -225,46 +225,8 @@ const Auth = () => {
     <div className="min-h-screen flex flex-col lg:flex-row">
       {/* Left Panel - Form */}
       <div className="flex-1 flex flex-col justify-between bg-[#0a0a0f] px-8 sm:px-12 lg:px-16 py-8 min-h-screen lg:min-h-0 lg:max-w-[55%]">
-        {/* Support button top-right */}
-        <div className="flex justify-end">
-          <Popover>
-            <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 text-sm text-white/30 hover:text-white/60 transition-colors">
-                <Headphones className="h-4 w-4" />
-                Suporte
-              </button>
-            </PopoverTrigger>
-            <PopoverContent className="w-auto p-2 bg-[#1a1a2e] border-white/10" align="end">
-              <div className="flex flex-col gap-1">
-                <a
-                  href="https://wa.me/5598981384957"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  WhatsApp
-                </a>
-                <a
-                  href="https://www.instagram.com/mendysvictor/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors"
-                >
-                  <Instagram className="h-4 w-4" />
-                  Instagram
-                </a>
-                <a
-                  href="mailto:victordbvtey@outlook.com"
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors"
-                >
-                  <Mail className="h-4 w-4" />
-                  E-mail
-                </a>
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+        {/* Spacer */}
+        <div />
 
         {/* Form centered */}
         <div className="flex-1 flex items-center">
@@ -345,13 +307,37 @@ const Auth = () => {
         </div>
 
         {/* Footer */}
-        <div className="pt-6 text-center">
+        <div className="pt-6 flex items-center justify-between">
           <p className="text-sm text-white/30">
             © {new Date().getFullYear()} | Desenvolvido por{" "}
             <a href="https://www.instagram.com/mendysvictor/" target="_blank" rel="noopener noreferrer" className="underline hover:text-white/50 transition-colors">
               Victor Mendys
             </a>
           </p>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="flex items-center gap-2 text-sm text-white/30 hover:text-white/60 transition-colors">
+                <Headphones className="h-4 w-4" />
+                Suporte
+              </button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-2 bg-[#1a1a2e] border-white/10" align="end">
+              <div className="flex flex-col gap-1">
+                <a href="https://wa.me/5598981384957" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors">
+                  <MessageCircle className="h-4 w-4" />
+                  WhatsApp
+                </a>
+                <a href="https://www.instagram.com/mendysvictor/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors">
+                  <Instagram className="h-4 w-4" />
+                  Instagram
+                </a>
+                <a href="mailto:victordbvtey@outlook.com" className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors">
+                  <Mail className="h-4 w-4" />
+                  E-mail
+                </a>
+              </div>
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
 
