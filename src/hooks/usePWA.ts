@@ -68,10 +68,17 @@ export function usePWA() {
 
   const promptInstall = useCallback(async () => {
     if (!installPrompt) return false;
-    await installPrompt.prompt();
-    const { outcome } = await installPrompt.userChoice;
-    setInstallPrompt(null);
-    return outcome === "accepted";
+
+    try {
+      await installPrompt.prompt();
+      const { outcome } = await installPrompt.userChoice;
+      setInstallPrompt(null);
+      return outcome === "accepted";
+    } catch (error) {
+      console.error("Install prompt error:", error);
+      setInstallPrompt(null);
+      return false;
+    }
   }, [installPrompt]);
 
   const applyUpdate = useCallback(() => {
