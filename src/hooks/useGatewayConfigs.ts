@@ -49,6 +49,17 @@ export interface TestResult {
   environment: string;
 }
 
+// Gateway logo SVGs as data URIs (inline, no external dependencies)
+const GATEWAY_LOGOS = {
+  asaas: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%230052CC"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white">A</text></svg>')}`,
+  mercado_pago: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%2300B1EA"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white">MP</text></svg>')}`,
+  stripe: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%23635BFF"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white">S</text></svg>')}`,
+  pagarme: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%2365A300"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white">P</text></svg>')}`,
+  gerencianet: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%23F37021"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white">Efí</text></svg>')}`,
+  pix_banco: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%2332BCAD"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="12" fill="white">PIX</text></svg>')}`,
+  custom_api: "",
+};
+
 // Gateway metadata for UI
 export const GATEWAY_INFO: Record<GatewayType, {
   name: string;
@@ -60,7 +71,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   asaas: {
     name: "Asaas",
     description: "PIX, Boleto e Cartão de Crédito",
-    logo: "https://logo.clearbit.com/asaas.com",
+    logo: GATEWAY_LOGOS.asaas,
     requiredSecrets: [
       { key: "api_key", label: "API Key", placeholder: "$aact_..." },
     ],
@@ -69,7 +80,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   mercado_pago: {
     name: "Mercado Pago",
     description: "PIX, Boleto e Cartão",
-    logo: "https://logo.clearbit.com/mercadopago.com.br",
+    logo: GATEWAY_LOGOS.mercado_pago,
     requiredSecrets: [
       { key: "access_token", label: "Access Token", placeholder: "APP_USR-..." },
       { key: "public_key", label: "Public Key", placeholder: "APP_USR-..." },
@@ -79,7 +90,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   stripe: {
     name: "Stripe",
     description: "Pagamentos Internacionais",
-    logo: "https://logo.clearbit.com/stripe.com",
+    logo: GATEWAY_LOGOS.stripe,
     requiredSecrets: [
       { key: "secret_key", label: "Secret Key", placeholder: "sk_..." },
       { key: "publishable_key", label: "Publishable Key", placeholder: "pk_..." },
@@ -89,7 +100,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   pagarme: {
     name: "Pagar.me",
     description: "Gateway Nacional",
-    logo: "https://logo.clearbit.com/pagar.me",
+    logo: GATEWAY_LOGOS.pagarme,
     requiredSecrets: [
       { key: "api_key", label: "API Key", placeholder: "ak_..." },
     ],
@@ -98,7 +109,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   gerencianet: {
     name: "Gerencianet (Efí)",
     description: "PIX e Boleto",
-    logo: "https://logo.clearbit.com/gerencianet.com.br",
+    logo: GATEWAY_LOGOS.gerencianet,
     requiredSecrets: [
       { key: "client_id", label: "Client ID", placeholder: "Client_Id_..." },
       { key: "client_secret", label: "Client Secret", placeholder: "Client_Secret_..." },
@@ -108,7 +119,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   pix_banco: {
     name: "PIX Banco",
     description: "PIX via API do Banco",
-    logo: "",
+    logo: GATEWAY_LOGOS.pix_banco,
     requiredSecrets: [
       { key: "api_key", label: "API Key", placeholder: "" },
       { key: "pix_key", label: "Chave PIX", placeholder: "" },
@@ -118,7 +129,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   custom_api: {
     name: "API Customizada",
     description: "Integração REST personalizada",
-    logo: "",
+    logo: GATEWAY_LOGOS.custom_api,
     requiredSecrets: [
       { key: "api_url", label: "URL da API", placeholder: "https://..." },
       { key: "api_key", label: "API Key", placeholder: "" },
