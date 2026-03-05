@@ -2,72 +2,102 @@ import { Instagram, Phone, Mail, MapPin } from "lucide-react";
 
 export function InstitucionalFooter() {
   return (
-    <footer className="bg-gray-900 text-gray-400 pt-12 pb-6">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+    <footer className="text-white pt-16 pb-6" style={{ background: "#0f1f2e" }}>
+      <div className="max-w-[1200px] mx-auto px-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-[2fr_1fr_1fr_1fr] gap-8 mb-10">
           {/* Brand */}
-          <div className="sm:col-span-2 lg:col-span-1">
-            <img src="/escola-logo.png" alt="Reforço Maranata" className="h-12 w-auto mb-4" />
-            <p className="text-sm leading-relaxed">
+          <div>
+            <h4
+              className="text-2xl font-semibold text-white mb-3"
+              style={{ fontFamily: "'Crimson Text', serif" }}
+            >
+              Reforço Maranata
+            </h4>
+            <p className="text-white/60 leading-relaxed mb-5 text-sm">
               Reforço escolar de qualidade em Barreirinhas&nbsp;–&nbsp;MA.
+              Ajudamos crianças e adolescentes a superarem dificuldades
+              escolares com dedicação e carinho.
             </p>
+            <a
+              href="https://www.instagram.com/reforcomaranatabhs/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-white/60 hover:text-[#c9a227] transition-colors text-sm"
+            >
+              <Instagram className="h-4 w-4" />
+              @reforcomaranatabhs
+            </a>
           </div>
 
           {/* Serviços */}
           <div>
-            <h5 className="text-white text-sm font-semibold mb-4">Serviços</h5>
+            <h5
+              className="text-sm font-semibold uppercase tracking-[2px] mb-5"
+              style={{ color: "var(--inst-secondary)" }}
+            >
+              Serviços
+            </h5>
             <ul className="space-y-2 text-sm">
-              {["Português", "Matemática", "Ciências", "Alfabetização", "Tarefas"].map((item) => (
+              {["Português", "Matemática", "Ciências", "Alfabetização", "Preparação para Provas"].map((item) => (
                 <li key={item}>
-                  <a href="#servicos" className="hover:text-white transition-colors">{item}</a>
+                  <a href="#servicos" className="text-white/60 hover:text-[#c9a227] hover:pl-1 transition-all inline-block">
+                    {item}
+                  </a>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Links */}
+          {/* Institucional */}
           <div>
-            <h5 className="text-white text-sm font-semibold mb-4">Institucional</h5>
+            <h5
+              className="text-sm font-semibold uppercase tracking-[2px] mb-5"
+              style={{ color: "var(--inst-secondary)" }}
+            >
+              Institucional
+            </h5>
             <ul className="space-y-2 text-sm">
-              <li><a href="#metodologia" className="hover:text-white transition-colors">Sobre</a></li>
-              <li><a href="#depoimentos" className="hover:text-white transition-colors">Depoimentos</a></li>
-              <li><a href="#contato" className="hover:text-white transition-colors">Contato</a></li>
+              {[
+                { label: "Sobre Nós", href: "#sobre" },
+                { label: "Depoimentos", href: "#depoimentos" },
+                { label: "Contato", href: "#contato" },
+              ].map((item) => (
+                <li key={item.label}>
+                  <a href={item.href} className="text-white/60 hover:text-[#c9a227] hover:pl-1 transition-all inline-block">
+                    {item.label}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
 
           {/* Contato */}
           <div>
-            <h5 className="text-white text-sm font-semibold mb-4">Contato</h5>
+            <h5
+              className="text-sm font-semibold uppercase tracking-[2px] mb-5"
+              style={{ color: "var(--inst-secondary)" }}
+            >
+              Contato
+            </h5>
             <ul className="space-y-3 text-sm">
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 text-white/60">
                 <Phone className="h-3.5 w-3.5 flex-shrink-0" />
                 <a href="tel:+559898828634" className="hover:text-white transition-colors">(98) 98828-6034</a>
               </li>
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 text-white/60">
                 <Mail className="h-3.5 w-3.5 flex-shrink-0" />
                 <a href="mailto:jn.ney@hotmail.com" className="hover:text-white transition-colors">jn.ney@hotmail.com</a>
               </li>
-              <li className="flex items-center gap-2">
+              <li className="flex items-center gap-2 text-white/60">
                 <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
                 <span>Barreirinhas – MA</span>
               </li>
             </ul>
-            <div className="mt-4">
-              <a
-                href="https://www.instagram.com/reforcomaranatabhs/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-sm hover:text-white transition-colors"
-              >
-                <Instagram className="h-4 w-4" />
-                Instagram
-              </a>
-            </div>
           </div>
         </div>
 
-        {/* Bottom */}
-        <div className="border-t border-gray-800 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-gray-500">
+        {/* Bottom bar */}
+        <div className="border-t border-white/10 pt-6 flex flex-col sm:flex-row justify-between items-center gap-3 text-white/40 text-sm">
           <p>© {new Date().getFullYear()} Reforço Maranata. Todos os direitos reservados.</p>
           <p>
             Desenvolvido por{" "}
@@ -75,7 +105,7 @@ export function InstitucionalFooter() {
               href="https://www.instagram.com/reforcomaranatabhs/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-white transition-colors"
+              className="text-[#c9a227] hover:underline"
             >
               Victor Mendys
             </a>
