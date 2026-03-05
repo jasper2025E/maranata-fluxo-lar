@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Helmet } from "react-helmet-async";
 
+import "@/components/institucional/institucional.css";
 import { InstitucionalNavbar } from "@/components/institucional/InstitucionalNavbar";
 import { InstitucionalHero } from "@/components/institucional/InstitucionalHero";
 import { InstitucionalStats } from "@/components/institucional/InstitucionalStats";
@@ -24,9 +25,12 @@ export default function Institucional() {
         <title>Reforço Maranata — Reforço Escolar em Barreirinhas - MA</title>
         <meta name="description" content="Reforço escolar de qualidade em Barreirinhas - MA. Acompanhamento individualizado em todas as matérias para Fundamental I e II. Matrículas abertas!" />
         <link rel="canonical" href="https://maranata-fluxo-lar.lovable.app" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet" />
       </Helmet>
 
-      <div className="min-h-screen bg-white overflow-x-hidden antialiased">
+      <div className="inst min-h-screen overflow-x-hidden">
         <InstitucionalNavbar />
         <InstitucionalHero />
         <InstitucionalStats />

@@ -1,63 +1,63 @@
-import { Users, MessageSquare, Gamepad2, Home } from "lucide-react";
-
 const diferenciais = [
   {
-    icon: Users,
-    title: "Turmas reduzidas",
-    description: "Cada aluno recebe a atenção que precisa para evoluir.",
+    title: "Atenção Individualizada",
+    description: "Turmas reduzidas para que cada aluno receba o acompanhamento que precisa, no seu próprio ritmo.",
   },
   {
-    icon: MessageSquare,
-    title: "Acompanhamento aos pais",
-    description: "Feedback constante sobre progresso e pontos a melhorar.",
+    title: "Acompanhamento aos Pais",
+    description: "Feedback constante sobre o progresso, conquistas e pontos a melhorar de cada aluno.",
   },
   {
-    icon: Gamepad2,
-    title: "Aprendizado lúdico",
-    description: "Atividades e jogos educativos que tornam o estudo prazeroso.",
+    title: "Aprendizado Divertido",
+    description: "Atividades lúdicas e jogos educativos para tornar o estudo prazeroso e eficiente.",
   },
   {
-    icon: Home,
-    title: "Ambiente acolhedor",
-    description: "Espaço familiar onde as crianças se sentem seguras.",
+    title: "Ambiente Familiar",
+    description: "Espaço acolhedor em Barreirinhas onde as crianças se sentem seguras e à vontade para aprender.",
+  },
+  {
+    title: "Dedicação Comprovada",
+    description: "Mais de 5 anos ajudando crianças e adolescentes a superarem dificuldades escolares com carinho.",
   },
 ];
 
 export function InstitucionalBeneficios() {
   return (
-    <section id="metodologia" className="py-16 lg:py-20 bg-gray-50">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
-          {/* Left */}
+    <section id="sobre" className="py-16 lg:py-24" style={{ background: "var(--inst-bg-cream)" }}>
+      <div className="max-w-[1200px] mx-auto px-8">
+        <div className="grid lg:grid-cols-2 gap-12 lg:gap-20 items-center">
+          {/* Text */}
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-              Por que escolher o Maranata?
-            </h2>
-            <p className="text-gray-500 mb-8">
-              Metodologia que funciona, com resultados comprovados em Barreirinhas.
-            </p>
+            <h3
+              className="text-2xl sm:text-3xl lg:text-[2.5rem] font-semibold mb-6 leading-snug"
+              style={{ fontFamily: "'Crimson Text', serif", color: "var(--inst-primary)" }}
+            >
+              Por que as famílias confiam no Reforço Maranata?
+            </h3>
 
-            <div className="space-y-4">
+            <ul className="space-y-0">
               {diferenciais.map((d, i) => (
-                <div key={i} className="flex gap-4">
-                  <div className="w-9 h-9 bg-blue-900 rounded flex items-center justify-center flex-shrink-0 mt-0.5">
-                    <d.icon className="h-4 w-4 text-white" />
-                  </div>
+                <li
+                  key={i}
+                  className="inst-diff-item py-4 border-b border-[#e0d5c7] flex items-start gap-3"
+                >
+                  <span className="text-[#c9a227] font-bold text-lg leading-none mt-0.5">—</span>
                   <div>
-                    <h4 className="text-sm font-semibold text-gray-900 mb-0.5">{d.title}</h4>
-                    <p className="text-sm text-gray-500 leading-relaxed">{d.description}</p>
+                    <strong className="text-[#2c3e50]">{d.title}:</strong>{" "}
+                    <span className="text-[#5a6c7d]">{d.description}</span>
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           </div>
 
-          {/* Right — image */}
-          <div className="relative rounded-lg overflow-hidden">
+          {/* Image */}
+          <div className="inst-diff-image relative">
             <img
-              src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&h=700&fit=crop"
-              alt="Sala de aula"
-              className="w-full h-80 lg:h-96 object-cover rounded-lg"
+              src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&h=800&fit=crop"
+              alt="Sala de aula do Reforço Maranata"
+              className="w-full h-[500px] object-cover"
+              style={{ filter: "sepia(20%)" }}
               loading="lazy"
             />
           </div>
