@@ -253,7 +253,7 @@ const Auth = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder=""
-                  className={`h-14 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30 transition-all focus:bg-white/8 focus:border-white/25 focus:ring-0 ${errors.email ? "border-red-400/60" : ""}`}
+                  className={`h-14 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30 transition-all focus:bg-white/[0.08] focus:border-white/20 focus-visible:ring-0 focus-visible:ring-offset-0 ${errors.email ? "border-red-400/60" : ""}`}
                   disabled={loading}
                   autoComplete="email"
                 />
@@ -271,7 +271,7 @@ const Auth = () => {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder=""
-                    className={`h-14 pr-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30 transition-all focus:bg-white/8 focus:border-amber-500/40 focus:ring-0 ${errors.password ? "border-red-400/60" : ""}`}
+                    className={`h-14 pr-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30 transition-all focus:bg-white/[0.08] focus:border-white/20 focus-visible:ring-0 focus-visible:ring-offset-0 ${errors.password ? "border-red-400/60" : ""}`}
                     disabled={loading}
                     autoComplete="current-password"
                   />
