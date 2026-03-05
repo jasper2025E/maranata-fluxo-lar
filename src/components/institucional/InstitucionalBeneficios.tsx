@@ -1,87 +1,92 @@
 import { motion } from "framer-motion";
-import { Sparkles, Clock, BarChart3, School } from "lucide-react";
 
 const diferenciais = [
   {
-    icon: Sparkles,
-    title: "Interface moderna e amigável",
-    description: "Design premium pensado para facilitar o uso diário. Nada de interfaces confusas.",
+    icon: "👨‍🏫",
+    title: "Professores Especializados",
+    description: "Equipe formada em pedagogia com pós-graduação e constante atualização em novas metodologias.",
   },
   {
-    icon: Clock,
-    title: "Organização que economiza tempo",
-    description: "Processos automatizados que eliminam tarefas repetitivas e liberam sua equipe.",
+    icon: "📊",
+    title: "Acompanhamento Individual",
+    description: "Relatórios mensais detalhados sobre o progresso do aluno e reuniões periódicas com os pais.",
   },
   {
-    icon: BarChart3,
-    title: "Relatórios para decisões estratégicas",
-    description: "Dados claros e acionáveis para entender a saúde financeira e crescer com segurança.",
+    icon: "🎮",
+    title: "Aprendizado Lúdico",
+    description: "Utilizamos jogos educativos, tecnologia e atividades práticas para tornar o estudo prazeroso.",
   },
   {
-    icon: School,
-    title: "Feito para escolas",
-    description: "Desenvolvido especificamente para atender as necessidades reais de instituições de ensino.",
+    icon: "🏠",
+    title: "Ambiente Acolhedor",
+    description: "Salas climatizadas, material didático completo e espaço projetado para o bem-estar das crianças.",
   },
 ];
 
 export function InstitucionalBeneficios() {
   return (
-    <section id="diferenciais" className="py-20 lg:py-28 bg-background">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="text-center mb-14"
-        >
-          <p className="text-primary font-medium text-sm mb-3 uppercase tracking-wider">Diferenciais</p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight mb-4">
-            Por que escolher o Maranata?
-          </h2>
-          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-            Mais do que um sistema, uma parceria para o crescimento da sua escola.
-          </p>
-        </motion.div>
+    <section id="metodologia" className="py-24 bg-white relative overflow-hidden">
+      {/* Blob decorativo */}
+      <div className="absolute -bottom-[100px] -left-[100px] w-[400px] h-[400px] bg-[rgba(30,136,229,0.05)] rounded-[60%_40%_30%_70%/60%_30%_70%_40%] animate-[morph_8s_ease-in-out_infinite]" />
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {diferenciais.map((d, i) => (
-            <motion.div
-              key={i}
-              initial={{ opacity: 0, y: 30 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className="text-center p-8 rounded-2xl bg-muted/30 border border-border/50 hover:bg-card hover:border-border hover:shadow-lg transition-all duration-300"
-            >
-              <div className="inline-flex items-center justify-center h-14 w-14 rounded-2xl gradient-luz-mina text-white mb-5">
-                <d.icon className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-semibold text-foreground mb-3">{d.title}</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">{d.description}</p>
-            </motion.div>
-          ))}
-        </div>
-
-        {/* Stats bar */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3 }}
-          className="mt-16 grid grid-cols-2 lg:grid-cols-4 gap-8 border-t border-border pt-12"
-        >
-          {[
-            { value: "500+", label: "Escolas ativas" },
-            { value: "50k+", label: "Alunos gerenciados" },
-            { value: "99.9%", label: "Uptime garantido" },
-            { value: "4.9/5", label: "Avaliação média" },
-          ].map((stat, i) => (
-            <div key={i} className="text-center">
-              <p className="text-3xl lg:text-4xl font-bold text-foreground mb-1">{stat.value}</p>
-              <p className="text-muted-foreground text-sm">{stat.label}</p>
+      <div className="max-w-[1200px] mx-auto px-8 relative z-[1]">
+        <div className="grid lg:grid-cols-2 gap-20 items-center">
+          {/* Image */}
+          <motion.div
+            initial={{ opacity: 0, x: -40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="relative"
+          >
+            <div className="rounded-[30px] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.15)]">
+              <img
+                src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&h=800&fit=crop"
+                alt="Sala de aula Maranata"
+                className="w-full h-[500px] object-cover block"
+                loading="lazy"
+              />
             </div>
-          ))}
-        </motion.div>
+            <motion.div
+              animate={{ y: [0, -15, 0] }}
+              transition={{ duration: 3, repeat: Infinity }}
+              className="absolute -bottom-5 -right-5 bg-[#f57c00] text-white p-6 rounded-[20px] text-center shadow-[0_10px_30px_rgba(245,124,0,0.3)]"
+            >
+              <span className="block text-4xl font-extrabold leading-none">100%</span>
+              <span className="text-sm font-semibold">Avaliações<br />Positivas</span>
+            </motion.div>
+          </motion.div>
+
+          {/* Text + items */}
+          <motion.div
+            initial={{ opacity: 0, x: 40 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+          >
+            <span className="inline-block bg-[#64b5f6] text-[#0d47a1] px-5 py-1.5 rounded-full font-bold text-sm uppercase tracking-wider mb-4">
+              Por que escolher a Maranata?
+            </span>
+            <h3 className="text-3xl sm:text-4xl font-bold text-[#0d47a1] mb-8 leading-[1.3] font-[Quicksand]">
+              Uma metodologia que realmente funciona
+            </h3>
+
+            <div className="space-y-4">
+              {diferenciais.map((d, i) => (
+                <div
+                  key={i}
+                  className="flex items-start gap-5 p-6 bg-[#f8fafc] rounded-2xl border-l-4 border-transparent hover:bg-white hover:shadow-[0_10px_30px_rgba(0,0,0,0.08)] hover:border-l-[#f57c00] hover:translate-x-2.5 transition-all cursor-default"
+                >
+                  <div className="w-[50px] h-[50px] bg-gradient-to-br from-[#1e88e5] to-[#0d47a1] rounded-xl flex items-center justify-center text-2xl flex-shrink-0 text-white">
+                    {d.icon}
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-[#0d47a1] mb-1 font-[Quicksand]">{d.title}</h4>
+                    <p className="text-[#607d8b] text-[0.95rem] leading-relaxed">{d.description}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
       </div>
     </section>
   );

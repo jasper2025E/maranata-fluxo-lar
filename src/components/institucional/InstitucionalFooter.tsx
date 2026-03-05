@@ -1,82 +1,85 @@
-import { Mail, Phone, MapPin, Instagram } from "lucide-react";
+import { Instagram } from "lucide-react";
 import { Link } from "react-router-dom";
 
 export function InstitucionalFooter() {
   return (
-    <footer className="bg-card border-t border-border py-12 lg:py-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-4 gap-10 mb-12">
+    <footer className="bg-[#0d47a1] text-white pt-16 pb-6">
+      <div className="max-w-[1200px] mx-auto px-8">
+        <div className="grid lg:grid-cols-[1.5fr_1fr_1fr_1fr] gap-12 mb-12">
           {/* Brand */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center gap-3 mb-4">
-              <img
-                src="/escola-logo.png"
-                alt="Logo Maranata"
-                className="h-10 w-10 rounded-full object-cover border border-border"
-              />
-              <span className="text-xl font-bold text-foreground tracking-tight">
-                Maranata
-              </span>
+          <div>
+            <div className="flex items-center gap-4 mb-6">
+              <img src="/escola-logo.png" alt="Maranata" className="h-[60px] w-auto" />
             </div>
-            <p className="text-muted-foreground max-w-md leading-relaxed mb-6">
-              Plataforma completa de gestão escolar. Simplifique a administração,
-              controle suas finanças e foque no que realmente importa: a educação.
+            <p className="text-white/70 leading-relaxed mb-6">
+              Há mais de 12 anos transformando a educação com amor, dedicação e metodologia comprovada. 
+              Cada aluno é único e merece atenção especial.
             </p>
-            <div className="flex gap-3">
+            <div className="flex gap-4">
               <a
                 href="https://www.instagram.com/reforcomaranatabhs/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="h-10 w-10 rounded-xl bg-muted flex items-center justify-center text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
+                className="w-[45px] h-[45px] bg-white/10 rounded-full flex items-center justify-center text-white hover:bg-[#f57c00] hover:-translate-y-1 transition-all"
               >
-                <Instagram className="h-4 w-4" />
+                <Instagram className="h-5 w-5" />
               </a>
             </div>
           </div>
 
-          {/* Links */}
+          {/* Serviços */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Produto</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li><a href="#funcionalidades" className="hover:text-foreground transition-colors">Funcionalidades</a></li>
-              <li><a href="#diferenciais" className="hover:text-foreground transition-colors">Diferenciais</a></li>
-              <li><a href="#como-funciona" className="hover:text-foreground transition-colors">Como Funciona</a></li>
-              <li><a href="#depoimentos" className="hover:text-foreground transition-colors">Depoimentos</a></li>
+            <h5 className="text-[#ffc107] text-lg font-bold mb-6 font-[Quicksand]">Serviços</h5>
+            <ul className="space-y-3">
+              {["Reforço Escolar", "Preparatório ENEM", "Aulas de Inglês", "Alfabetização"].map((item) => (
+                <li key={item}>
+                  <a href="#servicos" className="text-white/70 hover:text-white hover:pl-1.5 transition-all inline-flex items-center gap-2 before:content-['→'] before:opacity-0 before:text-[#f57c00] before:transition-opacity hover:before:opacity-100">
+                    {item}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
 
-          {/* Contact */}
+          {/* Institucional */}
           <div>
-            <h4 className="font-semibold text-foreground mb-4">Contato</h4>
-            <ul className="space-y-3 text-sm text-muted-foreground">
-              <li className="flex items-center gap-2">
-                <Mail className="h-4 w-4 text-primary" />
-                <span>contato@maranata.com</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <Phone className="h-4 w-4 text-primary" />
-                <span>(00) 0000-0000</span>
-              </li>
-              <li className="flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-primary" />
-                <span>Brasil</span>
-              </li>
+            <h5 className="text-[#ffc107] text-lg font-bold mb-6 font-[Quicksand]">Institucional</h5>
+            <ul className="space-y-3">
+              {["Sobre Nós", "Nossa Equipe", "Depoimentos"].map((item) => (
+                <li key={item}>
+                  <a href="#depoimentos" className="text-white/70 hover:text-white hover:pl-1.5 transition-all inline-flex items-center gap-2 before:content-['→'] before:opacity-0 before:text-[#f57c00] before:transition-opacity hover:before:opacity-100">
+                    {item}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+
+          {/* Contato */}
+          <div>
+            <h5 className="text-[#ffc107] text-lg font-bold mb-6 font-[Quicksand]">Contato</h5>
+            <ul className="space-y-3">
+              {["Agende uma Visita", "Fale Conosco", "Localização"].map((item) => (
+                <li key={item}>
+                  <a href="#contato" className="text-white/70 hover:text-white hover:pl-1.5 transition-all inline-flex items-center gap-2 before:content-['→'] before:opacity-0 before:text-[#f57c00] before:transition-opacity hover:before:opacity-100">
+                    {item}
+                  </a>
+                </li>
+              ))}
             </ul>
           </div>
         </div>
 
         {/* Bottom bar */}
-        <div className="border-t border-border pt-8 flex flex-col sm:flex-row justify-between items-center gap-4">
-          <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Sistema Maranata. Todos os direitos reservados.
-          </p>
-          <p className="text-xs text-muted-foreground">
+        <div className="border-t border-white/10 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-white/50 text-sm">
+          <p>© {new Date().getFullYear()} Reforço Escolar Maranata. Todos os direitos reservados.</p>
+          <p>
             Desenvolvido por{" "}
             <a
               href="https://www.instagram.com/reforcomaranatabhs/"
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary hover:underline"
+              className="text-[#ffc107] hover:underline"
             >
               Victor Mendys
             </a>
