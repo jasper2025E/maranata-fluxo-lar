@@ -4,34 +4,27 @@ import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { toast } from "sonner";
 import { Loader2, Eye, EyeOff, ShieldCheck, ArrowLeft, GraduationCap, Headphones, MessageCircle, Instagram, Mail } from "lucide-react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { GradientBackground } from "@/components/landing/GradientBackground";
 import { useQuery } from "@tanstack/react-query";
+import loginBg from "@/assets/login-bg.jpg";
+
 const loginSchema = z.object({
   email: z.string().email("E-mail inválido"),
-  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres")
+  password: z.string().min(6, "Senha deve ter no mínimo 6 caracteres"),
 });
+
 const Auth = () => {
   const location = useLocation();
-  const {
-    user,
-    loading: authLoading
-  } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [rememberMe, setRememberMe] = useState(true);
-  const [errors, setErrors] = useState<{
-    email?: string;
-    password?: string;
-  }>({});
+  const [errors, setErrors] = useState<{ email?: string; password?: string }>({});
 
   // MFA state
   const [mfaRequired, setMfaRequired] = useState(false);
@@ -40,53 +33,41 @@ const Auth = () => {
   const [mfaVerifying, setMfaVerifying] = useState(false);
 
   // Fetch school branding
-  const {
-    data: escola
-  } = useQuery({
+  const { data: escola } = useQuery({
     queryKey: ["escola-branding"],
     queryFn: async () => {
-      // Use SECURITY DEFINER function for public access to branding data
-      const { data, error } = await supabase
-        .rpc("get_escola_public_info")
-        .maybeSingle();
+      const { data, error } = await supabase.rpc("get_escola_public_info").maybeSingle();
       if (error) {
         console.error("Error fetching escola branding:", error);
         return null;
       }
       return data;
     },
-    staleTime: 1000 * 60 * 10
+    staleTime: 1000 * 60 * 10,
   });
+
   const schoolName = escola?.nome || "Escola Maranata";
   const schoolLogo = escola?.logo_url;
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
-    const result = loginSchema.safeParse({
-      email,
-      password
-    });
+
+    const result = loginSchema.safeParse({ email, password });
     if (!result.success) {
-      const fieldErrors: {
-        email?: string;
-        password?: string;
-      } = {};
-      result.error.errors.forEach(err => {
+      const fieldErrors: { email?: string; password?: string } = {};
+      result.error.errors.forEach((err) => {
         if (err.path[0] === "email") fieldErrors.email = err.message;
         if (err.path[0] === "password") fieldErrors.password = err.message;
       });
       setErrors(fieldErrors);
       return;
     }
+
     setLoading(true);
     try {
-      const {
-        data,
-        error
-      } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
+      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
           toast.error("E-mail ou senha incorretos");
@@ -95,22 +76,18 @@ const Auth = () => {
         }
         return;
       }
+
       if (data.session === null && data.user === null) {
         toast.error("Erro inesperado no login");
         return;
       }
 
       // Check for MFA factors
-      const {
-        data: factorsData,
-        error: factorsError
-      } = await supabase.auth.mfa.listFactors();
+      const { data: factorsData, error: factorsError } = await supabase.auth.mfa.listFactors();
       if (!factorsError && factorsData.totp.length > 0) {
-        const verifiedFactors = factorsData.totp.filter(f => f.status === "verified");
+        const verifiedFactors = factorsData.totp.filter((f) => f.status === "verified");
         if (verifiedFactors.length > 0) {
-          const {
-            data: aalData
-          } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+          const { data: aalData } = await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
           if (aalData && aalData.currentLevel === "aal1" && aalData.nextLevel === "aal2") {
             setMfaFactorId(verifiedFactors[0].id);
             setMfaRequired(true);
@@ -118,6 +95,7 @@ const Auth = () => {
           }
         }
       }
+
       toast.success("Login realizado com sucesso!");
     } catch (error: any) {
       toast.error("Erro inesperado ao fazer login");
@@ -125,29 +103,26 @@ const Auth = () => {
       setLoading(false);
     }
   };
+
   const handleMFAVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     if (mfaCode.length !== 6) {
       toast.error("Digite um código de 6 dígitos");
       return;
     }
+
     setMfaVerifying(true);
     try {
-      const {
-        data: challengeData,
-        error: challengeError
-      } = await supabase.auth.mfa.challenge({
-        factorId: mfaFactorId
-      });
+      const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({ factorId: mfaFactorId });
       if (challengeError) throw challengeError;
-      const {
-        error: verifyError
-      } = await supabase.auth.mfa.verify({
+
+      const { error: verifyError } = await supabase.auth.mfa.verify({
         factorId: mfaFactorId,
         challengeId: challengeData.id,
-        code: mfaCode
+        code: mfaCode,
       });
       if (verifyError) throw verifyError;
+
       toast.success("Login realizado com sucesso!");
     } catch (error: any) {
       console.error("MFA verification error:", error);
@@ -161,6 +136,7 @@ const Auth = () => {
       setMfaVerifying(false);
     }
   };
+
   const handleBackToLogin = async () => {
     await supabase.auth.signOut();
     setMfaRequired(false);
@@ -169,191 +145,209 @@ const Auth = () => {
     setPassword("");
   };
 
-  // Logo component
-  const LogoDisplay = ({
-    size = "large",
-    darkText = false
-  }: {
-    size?: "small" | "large";
-    darkText?: boolean;
-  }) => {
-    const iconSize = size === "large" ? "h-20 w-20" : "h-7 w-7";
-    const textSize = size === "large" ? "text-3xl" : "text-xl";
-    const imgSize = size === "large" ? "h-24 w-24" : "h-8 w-8";
-    const containerSize = size === "large" ? "p-4" : "p-2";
-    const textColor = darkText ? "text-slate-800" : "text-white";
-    const iconColor = darkText ? "text-slate-700" : "text-white";
-    return <div className="flex flex-col items-center gap-4 text-center">
-        <div className={containerSize}>
-          {schoolLogo ? <img src={schoolLogo} alt={schoolName} className={`${imgSize} object-contain rounded-xl shadow-lg`} /> : <GraduationCap className={`${iconSize} ${iconColor} drop-shadow-lg`} />}
-        </div>
-        <span className={`${textSize} font-bold ${textColor}`}>{schoolName}</span>
-      </div>;
-  };
-  // Mostrar loading enquanto verifica sessão
+  // Loading state
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-        <GradientBackground />
-        <Loader2 className="h-8 w-8 animate-spin text-white relative z-10" />
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+        <Loader2 className="h-8 w-8 animate-spin text-white" />
       </div>
     );
   }
 
-  // Redirecionamento direto se já autenticado (sem useEffect)
+  // Already authenticated
   if (user) {
     const from = (location.state as any)?.from;
     const to = from?.pathname ? `${from.pathname}${from.search || ""}${from.hash || ""}` : "/dashboard";
     return <Navigate to={to} replace />;
   }
 
-  // MFA Verification Screen
+  // MFA Screen
   if (mfaRequired) {
-    return <div className="min-h-screen flex flex-col relative overflow-x-hidden">
-        <div className="fixed inset-0 z-0">
-          <GradientBackground />
-        </div>
-        
-        <header className="relative z-10 p-6 flex-shrink-0">
-          <LogoDisplay size="small" />
-        </header>
-
-        <main className="relative z-10 flex-1 flex items-center justify-center p-6">
-          <div className="w-full max-w-md">
-            <div className="bg-white rounded-lg shadow-2xl overflow-hidden">
-              <div className="p-8">
-                <div className="flex justify-center mb-6">
-                  <div className="p-3 rounded-full bg-primary/10">
-                    <ShieldCheck className="h-8 w-8 text-primary" />
-                  </div>
-                </div>
-
-                <h1 className="text-2xl font-semibold text-foreground text-center mb-2">
-                  Verificação em Duas Etapas
-                </h1>
-                <p className="text-muted-foreground text-center text-sm mb-8">
-                  Digite o código de 6 dígitos do seu app autenticador
-                </p>
-
-                <form onSubmit={handleMFAVerify} className="space-y-6">
-                  <Input value={mfaCode} onChange={e => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="000000" className="text-center text-3xl tracking-[0.5em] font-mono h-14 border-border" maxLength={6} autoFocus autoComplete="one-time-code" inputMode="numeric" disabled={mfaVerifying} />
-
-                  <Button type="submit" disabled={mfaVerifying || mfaCode.length !== 6} className="w-full h-11 font-medium">
-                    {mfaVerifying ? <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Verificando...
-                      </> : "Verificar"}
-                  </Button>
-
-                  <Button type="button" variant="ghost" className="w-full text-muted-foreground" onClick={handleBackToLogin} disabled={mfaVerifying}>
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Voltar ao login
-                  </Button>
-                </form>
-              </div>
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0a0a0f]">
+        <div className="w-full max-w-md p-8">
+          <div className="flex justify-center mb-6">
+            <div className="p-3 rounded-full bg-white/5 border border-white/10">
+              <ShieldCheck className="h-8 w-8 text-purple-400" />
             </div>
           </div>
-        </main>
 
-        <footer className="relative z-10 py-4 flex-shrink-0 text-center text-white/70 text-sm">
-          © {new Date().getFullYear()} {schoolName}
-        </footer>
-      </div>;
-  }
-  return <div className="min-h-screen flex flex-col relative overflow-x-hidden">
-      <div className="fixed inset-0 z-0">
-        <GradientBackground />
+          <h1 className="text-2xl font-semibold text-white text-center mb-2">
+            Verificação em Duas Etapas
+          </h1>
+          <p className="text-white/50 text-center text-sm mb-8">
+            Digite o código de 6 dígitos do seu app autenticador
+          </p>
+
+          <form onSubmit={handleMFAVerify} className="space-y-6">
+            <Input
+              value={mfaCode}
+              onChange={(e) => setMfaCode(e.target.value.replace(/\D/g, "").slice(0, 6))}
+              placeholder="000000"
+              className="text-center text-3xl tracking-[0.5em] font-mono h-14 bg-white/5 border-white/10 text-white placeholder:text-white/20"
+              maxLength={6}
+              autoFocus
+              autoComplete="one-time-code"
+              inputMode="numeric"
+              disabled={mfaVerifying}
+            />
+
+            <Button
+              type="submit"
+              disabled={mfaVerifying || mfaCode.length !== 6}
+              className="w-full h-12 font-semibold text-base rounded-full text-white"
+              style={{
+                background: "linear-gradient(135deg, hsl(280 70% 50%) 0%, hsl(340 80% 58%) 50%, hsl(30 90% 60%) 100%)",
+              }}
+            >
+              {mfaVerifying ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Verificando...
+                </>
+              ) : (
+                "Verificar"
+              )}
+            </Button>
+
+            <Button type="button" variant="ghost" className="w-full text-white/50 hover:text-white hover:bg-white/5" onClick={handleBackToLogin} disabled={mfaVerifying}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Voltar ao login
+            </Button>
+          </form>
+        </div>
       </div>
+    );
+  }
 
-      <main className="relative z-10 flex-1 flex items-center justify-center px-6 py-8">
-        <div className="w-full max-w-md">
-          <div className="backdrop-blur-xl bg-slate-950/90 border border-white/10 rounded-2xl shadow-2xl overflow-hidden">
-            <div className="p-8 sm:p-10">
-              <div className="flex justify-center mb-8">
-                <LogoDisplay size="large" />
+  // Main Login Screen
+  return (
+    <div className="min-h-screen flex flex-col lg:flex-row">
+      {/* Left Panel - Form */}
+      <div className="flex-1 flex flex-col justify-between bg-[#0a0a0f] px-8 sm:px-12 lg:px-16 py-8 min-h-screen lg:min-h-0 lg:max-w-[55%]">
+        {/* Logo */}
+        <div className="flex items-center gap-3 mb-8 lg:mb-0">
+          {schoolLogo ? (
+            <img src={schoolLogo} alt={schoolName} className="h-10 w-10 object-contain rounded-lg" />
+          ) : (
+            <GraduationCap className="h-8 w-8 text-white/80" />
+          )}
+          <span className="text-lg font-semibold text-white/90">{schoolName}</span>
+        </div>
+
+        {/* Form centered */}
+        <div className="flex-1 flex items-center">
+          <div className="w-full max-w-[420px]">
+            <h1 className="text-4xl sm:text-5xl font-bold text-white mb-12 tracking-tight">
+              Faça seu Login<span className="text-transparent bg-clip-text" style={{ backgroundImage: "linear-gradient(135deg, hsl(280 70% 50%), hsl(340 80% 58%), hsl(30 90% 60%))" }}>.</span>
+            </h1>
+
+            <form onSubmit={handleLogin} className="space-y-6">
+              <div className="space-y-2">
+                <Label htmlFor="email" className="text-white/70 text-sm font-medium">
+                  Email
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder=""
+                  className={`h-14 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30 transition-all focus:bg-white/8 focus:border-white/25 focus:ring-0 ${errors.email ? "border-red-400/60" : ""}`}
+                  disabled={loading}
+                  autoComplete="email"
+                />
+                {errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
               </div>
 
-              <form onSubmit={handleLogin} className="space-y-4">
-                <div className="space-y-1.5">
-                  <Label htmlFor="email" className="text-white/90 text-sm font-medium">
-                    E-mail
-                  </Label>
-                  <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Digite o e-mail" className={`h-12 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 transition-all duration-300 ease-out focus:bg-white/15 focus:border-white/40 focus:shadow-md focus:ring-0 focus:outline-none hover:border-white/30 hover:bg-white/15 ${errors.email ? "border-red-400" : ""}`} disabled={loading} autoComplete="email" />
-                  {errors.email && <p className="text-xs text-red-400">{errors.email}</p>}
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-white/70 text-sm font-medium">
+                  Senha
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder=""
+                    className={`h-14 pr-12 rounded-xl bg-white/5 border-white/10 text-white placeholder:text-white/30 transition-all focus:bg-white/8 focus:border-amber-500/40 focus:ring-0 ${errors.password ? "border-red-400/60" : ""}`}
+                    disabled={loading}
+                    autoComplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-white/30 hover:text-white/60 transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
                 </div>
+                {errors.password && <p className="text-xs text-red-400">{errors.password}</p>}
+              </div>
 
-                <div className="space-y-1.5">
-                  <Label htmlFor="password" className="text-white/90 text-sm font-medium">
-                    Senha
-                  </Label>
-                  <div className="relative">
-                    <Input id="password" type={showPassword ? "text" : "password"} value={password} onChange={e => setPassword(e.target.value)} placeholder="Digite a sua senha" className={`h-12 pr-10 rounded-lg bg-white/10 border border-white/20 text-white placeholder:text-white/50 transition-all duration-300 ease-out focus:bg-white/15 focus:border-white/40 focus:shadow-md focus:ring-0 focus:outline-none hover:border-white/30 hover:bg-white/15 ${errors.password ? "border-red-400" : ""}`} disabled={loading} autoComplete="current-password" />
-                    <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-white/50 hover:text-white/80" onClick={() => setShowPassword(!showPassword)}>
-                      {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                    </button>
-                  </div>
-                  {errors.password && <p className="text-xs text-red-400">{errors.password}</p>}
-                </div>
+              <div className="flex justify-end">
+                <button type="button" className="text-sm text-white/50 hover:text-white/80 underline underline-offset-4 transition-colors">
+                  Esqueci minha senha
+                </button>
+              </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="remember" checked={rememberMe} onCheckedChange={checked => setRememberMe(checked as boolean)} className="border-white/30 data-[state=checked]:bg-white data-[state=checked]:text-slate-900" />
-                    <Label htmlFor="remember" className="text-sm text-white/70 font-normal cursor-pointer">
-                      Lembrar
-                    </Label>
-                  </div>
-                </div>
-
-                <Button type="submit" disabled={loading} className="w-full h-12 font-medium text-base rounded-lg bg-slate-700 hover:bg-slate-600 text-white mt-2 border border-white/10">
-                  {loading ? <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Entrando...
-                    </> : "Entrar"}
-                </Button>
-
-              </form>
-            </div>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-14 font-semibold text-lg rounded-full text-white border-0 mt-4"
+                style={{
+                  background: "linear-gradient(135deg, hsl(280 70% 50%) 0%, hsl(340 80% 58%) 50%, hsl(30 90% 60%) 100%)",
+                }}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                    Entrando...
+                  </>
+                ) : (
+                  "Entrar"
+                )}
+              </Button>
+            </form>
           </div>
         </div>
-      </main>
 
-      <footer className="relative z-10 py-6 px-6 flex-shrink-0">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-left">
-            <p className="text-sm text-foreground/70">
-              © {new Date().getFullYear()} {schoolName}
-            </p>
-          </div>
+        {/* Footer */}
+        <div className="flex items-center justify-between pt-6">
+          <p className="text-sm text-white/30">
+            © {new Date().getFullYear()} {schoolName}
+          </p>
           <Popover>
             <PopoverTrigger asChild>
-              <button className="flex items-center gap-2 text-sm transition-colors text-foreground/70 hover:text-foreground/90">
+              <button className="flex items-center gap-2 text-sm text-white/30 hover:text-white/60 transition-colors">
                 <Headphones className="h-4 w-4" />
-                Suporte Técnico
+                Suporte
               </button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-2 border" style={{ backgroundColor: '#1A1C2D', borderColor: 'rgba(255, 255, 255, 0.1)' }} align="end">
+            <PopoverContent className="w-auto p-2 bg-[#1a1a2e] border-white/10" align="end">
               <div className="flex flex-col gap-1">
-                <a 
-                  href="https://wa.me/5598981384957" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                <a
+                  href="https://wa.me/5598981384957"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors"
                 >
                   <MessageCircle className="h-4 w-4" />
                   WhatsApp
                 </a>
-                <a 
-                  href="https://www.instagram.com/mendysvictor/" 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                <a
+                  href="https://www.instagram.com/mendysvictor/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors"
                 >
                   <Instagram className="h-4 w-4" />
                   Instagram
                 </a>
-                <a 
-                  href="mailto:victordbvtey@outlook.com" 
-                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-md transition-colors"
+                <a
+                  href="mailto:victordbvtey@outlook.com"
+                  className="flex items-center gap-2 px-3 py-2 text-sm text-white/70 hover:text-white hover:bg-white/5 rounded-md transition-colors"
                 >
                   <Mail className="h-4 w-4" />
                   E-mail
@@ -362,7 +356,25 @@ const Auth = () => {
             </PopoverContent>
           </Popover>
         </div>
-      </footer>
-    </div>;
+      </div>
+
+      {/* Right Panel - Image */}
+      <div className="hidden lg:block flex-1 relative">
+        <img
+          src={loginBg}
+          alt=""
+          className="absolute inset-0 w-full h-full object-cover"
+        />
+        {/* Gradient overlay for smooth transition */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: "linear-gradient(90deg, #0a0a0f 0%, transparent 30%)",
+          }}
+        />
+      </div>
+    </div>
+  );
 };
+
 export default Auth;
