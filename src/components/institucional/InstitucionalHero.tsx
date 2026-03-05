@@ -1,25 +1,22 @@
-import { ArrowRight } from "lucide-react";
-
 export function InstitucionalHero() {
   return (
-    <section id="inicio" className="bg-[#0d47a1] py-16 lg:py-20">
-      <div className="max-w-[1200px] mx-auto px-8">
-        <div className="grid lg:grid-cols-[1.1fr_1fr] gap-12 items-center">
+    <section id="inicio" className="bg-blue-900 relative overflow-hidden">
+      <div className="max-w-6xl mx-auto px-6 py-16 lg:py-24">
+        <div className="grid lg:grid-cols-2 gap-10 items-center">
           {/* Text */}
           <div>
-            <span className="inline-block bg-[#ffc107] text-[#0d47a1] px-5 py-1.5 rounded-md font-bold text-sm mb-5">
+            <p className="text-blue-200 text-sm font-medium mb-4 tracking-wide uppercase">
               Matrículas Abertas 2026
-            </span>
+            </p>
 
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white mb-5 leading-tight font-[Quicksand]">
-              Seu filho pode aprender mais com o{" "}
-              <span className="text-[#ffc107]">Reforço Maranata</span>
+            <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-bold text-white leading-snug mb-5">
+              Reforço escolar que transforma o aprendizado do seu filho
             </h1>
 
-            <p className="text-lg text-white/85 mb-8 leading-relaxed max-w-[540px]">
-              Acompanhamento escolar personalizado em Barreirinhas - MA. 
-              Ajudamos seu filho a superar dificuldades, melhorar as notas 
-              e ganhar confiança nos estudos.
+            <p className="text-blue-100/80 text-base lg:text-lg leading-relaxed mb-8 max-w-lg">
+              Acompanhamento personalizado em Barreirinhas&nbsp;–&nbsp;MA. 
+              Ajudamos crianças e adolescentes a superarem dificuldades, 
+              melhorarem as notas e ganharem confiança nos estudos.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-3">
@@ -27,26 +24,25 @@ export function InstitucionalHero() {
                 href="https://wa.me/559898828634?text=Olá! Gostaria de saber mais sobre o Reforço Maranata."
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 bg-[#ffc107] text-[#0d47a1] px-8 py-3.5 font-bold rounded-lg hover:bg-[#ffca28] transition-colors text-center"
+                className="inline-flex items-center justify-center gap-2 bg-green-600 text-white px-6 py-3 text-sm font-medium rounded-md hover:bg-green-700 transition-colors"
               >
                 Fale pelo WhatsApp
-                <ArrowRight className="h-4 w-4" />
               </a>
               <a
                 href="#servicos"
-                className="inline-flex items-center justify-center bg-white/10 text-white px-8 py-3.5 font-semibold rounded-lg border border-white/20 hover:bg-white/20 transition-colors text-center"
+                className="inline-flex items-center justify-center bg-white/10 text-white px-6 py-3 text-sm font-medium rounded-md border border-white/20 hover:bg-white/15 transition-colors"
               >
-                Ver Serviços
+                Nossos Serviços
               </a>
             </div>
           </div>
 
-          {/* Logo destaque */}
+          {/* Logo */}
           <div className="flex justify-center">
             <img
               src="/escola-logo.png"
               alt="Logo Reforço Escolar Maranata"
-              className="w-[280px] lg:w-[380px] h-auto drop-shadow-2xl"
+              className="w-56 lg:w-72 h-auto opacity-95"
               loading="eager"
             />
           </div>
