@@ -4,3 +4,5 @@ export { AlertsPanel } from './AlertsPanel';
 export { RecommendationsPanel } from './RecommendationsPanel';
 export { ProjectionChart } from './ProjectionChart';
 export { ProjectionKPIs } from './ProjectionKPIs';
+export { AnnualHistoryChart } from './AnnualHistoryChart';
+export { AnnualSummaryCards } from './AnnualSummaryCards';
