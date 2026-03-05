@@ -1,129 +1,81 @@
 import { motion } from "framer-motion";
 import { Star, Quote } from "lucide-react";
 
-const testimonials = [
+const depoimentos = [
   {
-    quote:
-      "A gestão financeira ficou muito mais organizada. O controle de inadimplência com cobrança automática via PIX e boleto revolucionou nosso fluxo de caixa.",
-    author: "Carla Mendes",
-    role: "Diretora Administrativa",
-    company: "Colégio Esperança",
-    avatar: "CM",
+    name: "Maria Santos",
+    role: "Diretora",
+    school: "Escola Vida Nova",
+    text: "O Maranata transformou a gestão financeira da nossa escola. Antes, perdíamos horas com planilhas. Agora, tudo é automático e transparente.",
+    rating: 5,
   },
   {
-    quote:
-      "O módulo de RH e folha de pagamento integrados economizam horas por mês. O ponto eletrônico é simples e eficiente.",
-    author: "Roberto Almeida",
-    role: "Gestor de RH",
-    company: "Instituto Educacional Futuro",
-    avatar: "RA",
+    name: "Carlos Oliveira",
+    role: "Coordenador Financeiro",
+    school: "Colégio Esperança",
+    text: "Reduzimos a inadimplência em 35% nos primeiros 3 meses. Os relatórios são claros e nos ajudam a tomar decisões melhores.",
+    rating: 5,
   },
   {
-    quote:
-      "Gerenciar 3 unidades com dados isolados mas relatórios consolidados era exatamente o que precisávamos. Sistema robusto e confiável.",
-    author: "Fernanda Lima",
-    role: "Diretora Geral",
-    company: "Rede de Ensino Crescer",
-    avatar: "FL",
+    name: "Ana Ferreira",
+    role: "Proprietária",
+    school: "Centro Educacional Futuro",
+    text: "Interface linda e fácil de usar. Minha equipe adotou o sistema rapidamente. O suporte é excelente, sempre prontos a ajudar.",
+    rating: 5,
   },
 ];
 
 export function InstitucionalDepoimentos() {
   return (
-    <section className="py-24 lg:py-32 bg-white">
+    <section id="depoimentos" className="py-20 lg:py-28 bg-muted/30">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-14"
         >
-          <p className="text-primary font-medium mb-4">Depoimentos</p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-slate-900 tracking-tight mb-6">
-            O que nossos clientes dizem
+          <p className="text-primary font-medium text-sm mb-3 uppercase tracking-wider">Depoimentos</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight mb-4">
+            O que dizem nossos clientes
           </h2>
-          <p className="text-lg text-slate-600 max-w-2xl mx-auto">
-            Escolas de todo o Brasil já transformaram sua gestão.
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Escolas de todo o Brasil já confiam no Maranata para gerenciar suas operações.
           </p>
         </motion.div>
 
-        {/* Testimonials Grid */}
-        <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((testimonial, index) => (
+        <div className="grid md:grid-cols-3 gap-6">
+          {depoimentos.map((d, i) => (
             <motion.div
-              key={index}
+              key={i}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: index * 0.1 }}
-              className="relative bg-slate-50 rounded-2xl p-8 border border-transparent hover:border-slate-200 hover:bg-white hover:shadow-lg transition-all"
+              transition={{ delay: i * 0.1 }}
+              className="bg-card border border-border rounded-2xl p-8 hover:shadow-lg transition-shadow relative"
             >
-              {/* Quote icon */}
-              <Quote className="w-10 h-10 text-primary/20 mb-4" />
-
-              {/* Stars */}
+              <Quote className="h-8 w-8 text-primary/20 absolute top-6 right-6" />
+              
               <div className="flex gap-1 mb-4">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    className="w-5 h-5 text-amber-400 fill-amber-400"
-                  />
+                {Array.from({ length: d.rating }).map((_, s) => (
+                  <Star key={s} className="h-4 w-4 fill-warning text-warning" />
                 ))}
               </div>
 
-              {/* Quote */}
-              <p className="text-slate-700 mb-6 leading-relaxed">
-                "{testimonial.quote}"
-              </p>
-
-              {/* Author */}
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                  {testimonial.avatar}
+              <p className="text-foreground leading-relaxed mb-6 italic">"{d.text}"</p>
+              
+              <div className="flex items-center gap-3 pt-4 border-t border-border">
+                <div className="h-10 w-10 rounded-full gradient-luz-mina flex items-center justify-center text-white font-bold text-sm">
+                  {d.name[0]}
                 </div>
                 <div>
-                  <div className="font-semibold text-slate-900">
-                    {testimonial.author}
-                  </div>
-                  <div className="text-sm text-slate-500">
-                    {testimonial.role} • {testimonial.company}
-                  </div>
+                  <p className="font-semibold text-foreground text-sm">{d.name}</p>
+                  <p className="text-xs text-muted-foreground">{d.role} — {d.school}</p>
                 </div>
               </div>
             </motion.div>
           ))}
         </div>
-
-        {/* Logos strip */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          whileInView={{ opacity: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4 }}
-          className="mt-16 pt-16 border-t border-slate-200"
-        >
-          <p className="text-center text-sm text-slate-500 mb-8">
-            Escolas de todo o Brasil confiam em nossa plataforma
-          </p>
-          <div className="flex flex-wrap justify-center gap-8 lg:gap-12 opacity-40">
-            {[
-              "Colégio Alpha",
-              "Escola Beta",
-              "Instituto Gamma",
-              "Rede Delta",
-              "Grupo Epsilon",
-            ].map((name, index) => (
-              <div
-                key={index}
-                className="text-lg font-bold text-slate-600"
-              >
-                {name}
-              </div>
-            ))}
-          </div>
-        </motion.div>
       </div>
     </section>
   );

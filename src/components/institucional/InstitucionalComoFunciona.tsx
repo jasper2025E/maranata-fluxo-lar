@@ -1,118 +1,72 @@
 import { motion } from "framer-motion";
-import { UserPlus, Settings, Rocket, ArrowRight } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { INSTITUCIONAL_COLORS } from "./colors";
-
-// Usando cores da paleta unificada
-const stepColors = [
-  `from-[hsl(${INSTITUCIONAL_COLORS.gradient.from})] to-[hsl(${INSTITUCIONAL_COLORS.gradient.via1})]`,
-  `from-[hsl(${INSTITUCIONAL_COLORS.gradient.via2})] to-[hsl(${INSTITUCIONAL_COLORS.gradient.via3})]`,
-  `from-[hsl(${INSTITUCIONAL_COLORS.gradient.via3})] to-[hsl(${INSTITUCIONAL_COLORS.gradient.to})]`,
-];
+import { School, Users, Zap } from "lucide-react";
 
 const steps = [
   {
-    icon: UserPlus,
     number: "01",
-    title: "Crie sua conta",
-    description:
-      "Cadastre sua escola em menos de 2 minutos. Sem cartão de crédito, sem compromisso.",
+    icon: School,
+    title: "Cadastre sua escola",
+    description: "Crie sua conta em minutos. Configure os dados da sua instituição, cursos e turmas.",
   },
   {
-    icon: Settings,
     number: "02",
-    title: "Configure sua escola",
-    description:
-      "Personalize cursos, turmas, formas de pagamento e automatize processos. Nossa equipe ajuda você.",
+    icon: Users,
+    title: "Organize alunos e turmas",
+    description: "Importe ou cadastre alunos, responsáveis e defina as regras de cobrança.",
   },
   {
-    icon: Rocket,
     number: "03",
-    title: "Comece a crescer",
-    description:
-      "Gerencie tudo em um só lugar. Matrículas, pagamentos, funcionários e relatórios.",
+    icon: Zap,
+    title: "Controle financeiro automatizado",
+    description: "Faturas geradas automaticamente, cobranças integradas e relatórios em tempo real.",
   },
 ];
 
 export function InstitucionalComoFunciona() {
   return (
-    <section
-      id="como-funciona"
-      className="py-24 lg:py-32 bg-muted/30 relative overflow-hidden"
-    >
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
+    <section id="como-funciona" className="py-20 lg:py-28 bg-muted/30">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-          className="text-center mb-16 lg:mb-20"
+          className="text-center mb-14"
         >
-          <p className="text-primary font-medium mb-4">Como funciona</p>
-          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-foreground tracking-tight mb-6">
-            Simples de começar,{" "}
-            <span className="text-primary">poderoso de usar</span>
+          <p className="text-primary font-medium text-sm mb-3 uppercase tracking-wider">Como funciona</p>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-foreground tracking-tight mb-4">
+            3 passos para transformar sua escola
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Em apenas 3 passos sua escola está pronta para uma gestão 
-            moderna e eficiente.
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Comece a usar o Maranata em poucos minutos. Simples, rápido e eficiente.
           </p>
         </motion.div>
 
-        {/* Steps */}
-        <div className="grid lg:grid-cols-3 gap-8 lg:gap-12 mb-16">
-          {steps.map((step, index) => (
+        <div className="grid lg:grid-cols-3 gap-8 lg:gap-12 relative">
+          <div className="hidden lg:block absolute top-24 left-[20%] right-[20%] h-px bg-border" />
+
+          {steps.map((step, i) => (
             <motion.div
-              key={index}
+              key={i}
               initial={{ opacity: 0, y: 30 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: index * 0.15 }}
-              className="relative"
+              transition={{ delay: i * 0.15 }}
+              className="relative text-center"
             >
-              {/* Connector line */}
-              {index < steps.length - 1 && (
-                <div className="hidden lg:block absolute top-20 left-full w-full h-px bg-border z-0" />
-              )}
-
-              <div className="relative bg-card rounded-2xl p-8 border border-border shadow-sm hover:shadow-lg transition-shadow">
-                {/* Step number */}
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-xl bg-primary text-primary-foreground font-bold text-lg mb-6">
-                  {step.number}
+              <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl gradient-luz-mina text-white text-xl font-bold mb-6 relative z-10 shadow-lg shadow-primary/20">
+                {step.number}
+              </div>
+              
+              <div className="bg-card border border-border rounded-2xl p-8 hover:shadow-lg transition-shadow">
+                <div className="inline-flex items-center justify-center h-12 w-12 rounded-xl bg-primary/10 text-primary mb-4">
+                  <step.icon className="h-6 w-6" />
                 </div>
-
-                {/* Content */}
-                <h3 className="text-xl font-semibold text-foreground mb-3">
-                  {step.title}
-                </h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  {step.description}
-                </p>
+                <h3 className="text-xl font-semibold text-foreground mb-3">{step.title}</h3>
+                <p className="text-muted-foreground leading-relaxed">{step.description}</p>
               </div>
             </motion.div>
           ))}
         </div>
-
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-center"
-        >
-          <Link to="/cadastro">
-            <Button size="lg" className="h-14 px-8 text-base font-semibold gap-2 group">
-              Criar conta gratuita
-              <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
-            </Button>
-          </Link>
-          <p className="mt-4 text-sm text-muted-foreground">
-            Configuração em menos de 5 minutos • Sem cartão de crédito
-          </p>
-        </motion.div>
       </div>
     </section>
   );
