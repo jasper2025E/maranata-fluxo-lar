@@ -67,7 +67,7 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     responsaveisResult,
     alunosResult,
     faturasCurrentMonthResult,
-    faturasAllOpenResult,
+    faturasEmAbertoMesResult,
     faturasVencidasResult,
     faturasPagasCurrentMonthResult,
     pagamentosResult,
@@ -92,11 +92,13 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .eq("mes_referencia", currentMonth)
       .eq("ano_referencia", currentYear),
     
-    // ALL open invoices (Aberta status) - for "Valor a Receber"
+    // Open invoices from current month only (for monthly dashboard "Valor a Receber")
     supabase
       .from("faturas")
       .select("id, status, valor, valor_total, responsavel_id, data_vencimento")
-      .in("status", ["Aberta", "Vencida"]),
+      .in("status", ["Aberta", "Vencida"])
+      .eq("mes_referencia", currentMonth)
+      .eq("ano_referencia", currentYear),
     
     // All overdue invoices with aging
     supabase
@@ -176,7 +178,7 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const responsaveis = responsaveisResult.data || [];
   const alunos = alunosResult.data || [];
   const faturasCurrentMonth = faturasCurrentMonthResult.data || [];
-  const faturasAllOpen = faturasAllOpenResult.data || [];
+  const faturasEmAbertoMes = faturasEmAbertoMesResult.data || [];
   const faturasVencidasAll = faturasVencidasResult.data || [];
   const faturasPagasCurrentMonth = faturasPagasCurrentMonthResult.data || [];
   const pagamentos = pagamentosResult.data || [];
@@ -203,8 +205,8 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const faturasPagas = faturasCurrentMonth.filter(f => f.status === "Paga").length;
   const faturasVencidas = faturasCurrentMonth.filter(f => f.status === "Vencida").length;
   
-  // Valor a receber = ALL open/overdue invoices (not just current month)
-  const valorAReceber = faturasAllOpen
+  // Valor a receber = ONLY open/overdue invoices from current month
+  const valorAReceber = faturasEmAbertoMes
     .reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
   
   const valorVencido = faturasVencidasAll
