@@ -60,7 +60,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   asaas: {
     name: "Asaas",
     description: "PIX, Boleto e Cartão de Crédito",
-    logo: "https://www.asaas.com/favicon.ico",
+    logo: "https://logo.clearbit.com/asaas.com",
     requiredSecrets: [
       { key: "api_key", label: "API Key", placeholder: "$aact_..." },
     ],
@@ -69,7 +69,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   mercado_pago: {
     name: "Mercado Pago",
     description: "PIX, Boleto e Cartão",
-    logo: "https://http2.mlstatic.com/frontend-assets/mp-web-navigation/ui-navigation/5.21.22/mercadopago/favicon.svg",
+    logo: "https://logo.clearbit.com/mercadopago.com.br",
     requiredSecrets: [
       { key: "access_token", label: "Access Token", placeholder: "APP_USR-..." },
       { key: "public_key", label: "Public Key", placeholder: "APP_USR-..." },
@@ -79,7 +79,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   stripe: {
     name: "Stripe",
     description: "Pagamentos Internacionais",
-    logo: "https://stripe.com/favicon.ico",
+    logo: "https://logo.clearbit.com/stripe.com",
     requiredSecrets: [
       { key: "secret_key", label: "Secret Key", placeholder: "sk_..." },
       { key: "publishable_key", label: "Publishable Key", placeholder: "pk_..." },
@@ -89,7 +89,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   pagarme: {
     name: "Pagar.me",
     description: "Gateway Nacional",
-    logo: "https://pagar.me/favicon.ico",
+    logo: "https://logo.clearbit.com/pagar.me",
     requiredSecrets: [
       { key: "api_key", label: "API Key", placeholder: "ak_..." },
     ],
@@ -98,7 +98,7 @@ export const GATEWAY_INFO: Record<GatewayType, {
   gerencianet: {
     name: "Gerencianet (Efí)",
     description: "PIX e Boleto",
-    logo: "https://gerencianet.com.br/favicon.ico",
+    logo: "https://logo.clearbit.com/gerencianet.com.br",
     requiredSecrets: [
       { key: "client_id", label: "Client ID", placeholder: "Client_Id_..." },
       { key: "client_secret", label: "Client Secret", placeholder: "Client_Secret_..." },

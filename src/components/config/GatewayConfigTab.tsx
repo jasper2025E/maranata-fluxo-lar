@@ -59,7 +59,8 @@ function GatewayCard({
       <div className="flex items-center justify-between px-4 py-3 border-b border-border">
         <div className="flex items-center gap-3">
           <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center">
-            {info.logo ? <img src={info.logo} alt={info.name} className="w-5 h-5" /> : <CreditCard className="w-4 h-4 text-muted-foreground" />}
+            {info.logo ? <img src={info.logo} alt={info.name} className="w-5 h-5 object-contain" onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling && ((e.currentTarget.nextElementSibling as HTMLElement).style.display = 'block'); }} /> : null}
+            {info.logo ? <CreditCard className="w-4 h-4 text-muted-foreground hidden" /> : <CreditCard className="w-4 h-4 text-muted-foreground" />}
           </div>
           <div>
             <span className="text-sm font-medium text-foreground">{config.display_name}</span>
