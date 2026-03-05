@@ -49,14 +49,14 @@ export interface TestResult {
   environment: string;
 }
 
-// Gateway logo SVGs as data URIs (inline, no external dependencies)
+// Gateway logos stored locally to ensure reliability in production
 const GATEWAY_LOGOS = {
-  asaas: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%230052CC"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white">A</text></svg>')}`,
-  mercado_pago: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%2300B1EA"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white">MP</text></svg>')}`,
-  stripe: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%23635BFF"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white">S</text></svg>')}`,
-  pagarme: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%2365A300"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white">P</text></svg>')}`,
-  gerencianet: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%23F37021"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="14" fill="white">Efí</text></svg>')}`,
-  pix_banco: `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40"><rect width="40" height="40" rx="8" fill="%2332BCAD"/><text x="20" y="26" text-anchor="middle" font-family="Arial,sans-serif" font-weight="bold" font-size="12" fill="white">PIX</text></svg>')}`,
+  asaas: "/logos/asaas.png",
+  mercado_pago: "/logos/mercado-pago.png",
+  stripe: "/logos/stripe.png",
+  pagarme: "/logos/pagarme.png",
+  gerencianet: "/logos/gerencianet.png",
+  pix_banco: "",
   custom_api: "",
 };
 
