@@ -21,8 +21,8 @@ export default function Institucional() {
   return (
     <>
       <Helmet>
-        <title>Reforço Escolar Maranata — Excelência no Ensino Personalizado</title>
-        <meta name="description" content="Reforço escolar com ensino de qualidade, turmas reduzidas e acompanhamento individualizado. Matrículas abertas para Fundamental e Ensino Médio." />
+        <title>Reforço Maranata — Reforço Escolar em Barreirinhas - MA</title>
+        <meta name="description" content="Reforço escolar de qualidade em Barreirinhas - MA. Acompanhamento individualizado em todas as matérias para Fundamental I e II. Matrículas abertas!" />
         <link rel="canonical" href="https://maranata-fluxo-lar.lovable.app" />
       </Helmet>
 

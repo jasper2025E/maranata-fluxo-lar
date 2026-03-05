@@ -2,28 +2,28 @@ import { motion } from "framer-motion";
 
 const depoimentos = [
   {
-    initials: "CF",
-    name: "Carla Ferreira",
-    role: "Mãe do Pedro, 9 anos",
-    text: "Meu filho odiava matemática e tirava notas baixas. Depois de 6 meses na Maranata, ele não apenas melhorou as notas, mas começou a gostar da matéria. A professora Ana tem um dom!",
+    initials: "AF",
+    name: "Ana Ferreira",
+    role: "Mãe do Lucas, 8 anos",
+    text: "O Lucas estava com muita dificuldade em matemática e não queria nem abrir o caderno. Depois que começou no Reforço Maranata, ele melhorou muito as notas e hoje faz as tarefas sozinho!",
   },
   {
-    initials: "JS",
-    name: "João Silva",
-    role: "Aprovado em Medicina - USP",
-    text: "O reforço para o ENEM foi decisivo para minha aprovação em Medicina. A metodologia de redação e a quantidade de simulados fizeram toda a diferença no dia da prova.",
-  },
-  {
-    initials: "MO",
-    name: "Marina Oliveira",
-    role: "Mãe da Luísa, 11 anos",
-    text: "Minha filha tem TDAH e sempre teve dificuldade de concentração. Na Maranata encontramos profissionais que entendem e adaptam o ensino. Hoje ela é uma aluna destacada.",
+    initials: "MS",
+    name: "Marcos Souza",
+    role: "Pai da Beatriz, 10 anos",
+    text: "A Beatriz sempre teve vergonha de perguntar na escola. No Maranata ela se sente à vontade para tirar dúvidas. O ambiente é muito acolhedor e os professores são muito pacientes.",
   },
   {
     initials: "RS",
-    name: "Roberto Santos",
-    role: "Pai de alunos do 3º e 7º ano",
-    text: "O ambiente é extremamente acolhedor. Meus dois filhos frequentam e adoram. O diferencial é o carinho e a atenção individual que cada aluno recebe.",
+    name: "Rita Santos",
+    role: "Mãe do Pedro e da Julia",
+    text: "Meus dois filhos estudam no Maranata e a evolução foi impressionante. O Pedro melhorou em português e a Julia foi alfabetizada antes do esperado. Super recomendo!",
+  },
+  {
+    initials: "CL",
+    name: "Carlos Lima",
+    role: "Pai do Gabriel, 12 anos",
+    text: "O Gabriel ia mal em quase todas as matérias. O acompanhamento individual do Maranata fez toda a diferença. Hoje ele é um dos melhores da turma. Gratidão enorme!",
   },
 ];
 
@@ -41,10 +41,10 @@ export function InstitucionalDepoimentos() {
             Depoimentos
           </span>
           <h3 className="text-3xl sm:text-4xl font-bold text-white mb-4 font-[Quicksand]">
-            O que as famílias dizem sobre nós
+            O que as famílias de Barreirinhas dizem
           </h3>
           <p className="text-white/80 text-lg max-w-[600px] mx-auto">
-            Histórias reais de transformação e conquistas dos nossos alunos
+            Histórias reais de pais que viram seus filhos transformarem os resultados escolares
           </p>
         </motion.div>
 

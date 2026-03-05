@@ -15,30 +15,32 @@ export function InstitucionalHero() {
             transition={{ duration: 0.7 }}
           >
             <div className="inline-block bg-[#ffc107] text-[#0d47a1] px-6 py-2 rounded-full font-extrabold text-sm mb-6 shadow-md animate-pulse">
-              ⭐ A melhor avaliação da região
+              ⭐ Referência em reforço escolar em Barreirinhas
             </div>
 
             <h2 className="text-4xl sm:text-5xl lg:text-[3.2rem] font-bold text-white mb-6 leading-[1.2] font-[Quicksand] tracking-tight">
-              Aprendizado que{" "}
+              Seu filho pode{" "}
               <span className="relative inline-block text-[#ffc107]">
-                transforma
+                aprender mais
                 <span className="absolute bottom-[5px] left-0 w-full h-2 bg-[rgba(255,193,7,0.3)] rounded -z-[1]" />
               </span>{" "}
-              resultados
+              com a gente
             </h2>
 
             <p className="text-xl text-white/90 mb-10 leading-relaxed max-w-[90%]">
-              Reforço escolar personalizado para alunos do Ensino Fundamental e Médio. 
-              Metodologia lúdica, professores especializados e acompanhamento individual 
-              que faz a diferença no desenvolvimento do seu filho.
+              O <strong>Reforço Maranata</strong> oferece acompanhamento escolar personalizado 
+              em Barreirinhas - MA. Ajudamos seu filho a superar dificuldades, melhorar as notas 
+              e ganhar confiança nos estudos com atenção individualizada.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4">
               <a
-                href="#contato"
+                href="https://wa.me/559898828634?text=Olá! Gostaria de saber mais sobre o Reforço Maranata."
+                target="_blank"
+                rel="noopener noreferrer"
                 className="inline-block bg-[#ffc107] text-[#0d47a1] px-10 py-4 font-extrabold rounded-full shadow-[0_6px_20px_rgba(0,0,0,0.2)] hover:bg-white hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,0,0,0.3)] transition-all text-center"
               >
-                Começar Agora
+                Fale pelo WhatsApp 📱
               </a>
               <a
                 href="#metodologia"

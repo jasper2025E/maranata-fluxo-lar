@@ -2,31 +2,30 @@ import { motion } from "framer-motion";
 
 const diferenciais = [
   {
-    icon: "👨‍🏫",
-    title: "Professores Especializados",
-    description: "Equipe formada em pedagogia com pós-graduação e constante atualização em novas metodologias.",
+    icon: "👩‍🏫",
+    title: "Atenção Individualizada",
+    description: "Turmas reduzidas para que cada aluno receba o acompanhamento que precisa. Ninguém fica para trás.",
   },
   {
     icon: "📊",
-    title: "Acompanhamento Individual",
-    description: "Relatórios mensais detalhados sobre o progresso do aluno e reuniões periódicas com os pais.",
+    title: "Acompanhamento aos Pais",
+    description: "Mantemos os pais informados sobre o progresso do aluno, com feedback constante sobre as conquistas e pontos a melhorar.",
   },
   {
     icon: "🎮",
-    title: "Aprendizado Lúdico",
-    description: "Utilizamos jogos educativos, tecnologia e atividades práticas para tornar o estudo prazeroso.",
+    title: "Aprendizado Divertido",
+    description: "Usamos atividades lúdicas, jogos educativos e métodos criativos para tornar o estudo prazeroso e eficiente.",
   },
   {
     icon: "🏠",
-    title: "Ambiente Acolhedor",
-    description: "Salas climatizadas, material didático completo e espaço projetado para o bem-estar das crianças.",
+    title: "Ambiente Familiar",
+    description: "Espaço acolhedor em Barreirinhas onde as crianças se sentem em casa. Segurança e carinho em cada detalhe.",
   },
 ];
 
 export function InstitucionalBeneficios() {
   return (
     <section id="metodologia" className="py-24 bg-white relative overflow-hidden">
-      {/* Blob decorativo */}
       <div className="absolute -bottom-[100px] -left-[100px] w-[400px] h-[400px] bg-[rgba(30,136,229,0.05)] rounded-[60%_40%_30%_70%/60%_30%_70%_40%] animate-[morph_8s_ease-in-out_infinite]" />
 
       <div className="max-w-[1200px] mx-auto px-8 relative z-[1]">
@@ -41,7 +40,7 @@ export function InstitucionalBeneficios() {
             <div className="rounded-[30px] overflow-hidden shadow-[0_30px_60px_rgba(0,0,0,0.15)]">
               <img
                 src="https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=600&h=800&fit=crop"
-                alt="Sala de aula Maranata"
+                alt="Sala de aula do Reforço Maranata"
                 className="w-full h-[500px] object-cover block"
                 loading="lazy"
               />
@@ -52,7 +51,7 @@ export function InstitucionalBeneficios() {
               className="absolute -bottom-5 -right-5 bg-[#f57c00] text-white p-6 rounded-[20px] text-center shadow-[0_10px_30px_rgba(245,124,0,0.3)]"
             >
               <span className="block text-4xl font-extrabold leading-none">100%</span>
-              <span className="text-sm font-semibold">Avaliações<br />Positivas</span>
+              <span className="text-sm font-semibold">Dedicação<br />aos alunos</span>
             </motion.div>
           </motion.div>
 
@@ -63,7 +62,7 @@ export function InstitucionalBeneficios() {
             viewport={{ once: true }}
           >
             <span className="inline-block bg-[#64b5f6] text-[#0d47a1] px-5 py-1.5 rounded-full font-bold text-sm uppercase tracking-wider mb-4">
-              Por que escolher a Maranata?
+              Por que escolher o Reforço Maranata?
             </span>
             <h3 className="text-3xl sm:text-4xl font-bold text-[#0d47a1] mb-8 leading-[1.3] font-[Quicksand]">
               Uma metodologia que realmente funciona
