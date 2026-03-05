@@ -1,26 +1,21 @@
 const stats = [
-  { number: "5+", label: "Anos de Experiência" },
-  { number: "200+", label: "Alunos Atendidos" },
-  { number: "95%", label: "Melhora nas Notas" },
-  { number: "4.9", label: "Avaliação dos Pais" },
+  { number: "5+", label: "Anos de experiência" },
+  { number: "200+", label: "Alunos atendidos" },
+  { number: "95%", label: "Melhora nas notas" },
+  { number: "4.9", label: "Avaliação dos pais" },
 ];
 
 export function InstitucionalStats() {
   return (
-    <div className="max-w-[1100px] mx-auto px-8 -mt-8 relative z-10">
-      <div className="bg-white rounded-xl shadow-lg border border-[#e3f2fd] py-6 px-6">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-center">
+    <div className="bg-gray-50 border-y border-gray-200">
+      <div className="max-w-6xl mx-auto px-6 py-10">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 text-center">
           {stats.map((stat, i) => (
-            <div
-              key={i}
-              className={`py-3 ${
-                i < stats.length - 1 ? "lg:border-r lg:border-[#e3f2fd]" : ""
-              }`}
-            >
-              <span className="block text-3xl lg:text-4xl font-extrabold text-[#1e88e5] leading-none mb-1 font-[Quicksand]">
+            <div key={i}>
+              <span className="block text-2xl lg:text-3xl font-bold text-blue-900">
                 {stat.number}
               </span>
-              <span className="text-sm text-[#607d8b] font-medium">{stat.label}</span>
+              <span className="text-sm text-gray-500 mt-1">{stat.label}</span>
             </div>
           ))}
         </div>
