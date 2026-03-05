@@ -204,11 +204,12 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const totalAlunos = alunos.length;
   const alunosAtivos = alunos.filter(a => a.status_matricula === "ativo").length;
   
-  // Faturas stats (current month)
+  // Faturas stats (current month for general counts, RPC for overdue totals)
   const totalFaturas = faturasCurrentMonth.length;
   const faturasAbertas = faturasCurrentMonth.filter(f => f.status === "Aberta").length;
   const faturasPagas = faturasCurrentMonth.filter(f => f.status === "Paga").length;
-  const faturasVencidas = faturasCurrentMonth.filter(f => f.status === "Vencida").length;
+  // Use RPC total for overdue count (includes ALL months, not just current)
+  const faturasVencidas = Number(overdueData.total_faturas_vencidas);
   
   // Valor a receber = ONLY open/overdue invoices from current month
   const valorAReceber = faturasEmAbertoMes
