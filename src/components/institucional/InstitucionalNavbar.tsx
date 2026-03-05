@@ -59,7 +59,7 @@ export function InstitucionalNavbar() {
             {/* Logo */}
             <a href="#inicio" className="flex items-center gap-3">
               <img
-                src="/escola-logo-nobg.png"
+                src="/escola-logo-clean.png"
                 alt="Reforço Maranata"
                 className="h-[55px] w-auto"
               />

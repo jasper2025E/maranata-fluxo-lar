@@ -43,7 +43,7 @@ export function InstitucionalHero() {
           {/* Logo Image */}
           <div className="relative flex justify-center">
             <img
-              src="/escola-logo-nobg.png"
+              src="/escola-logo-clean.png"
               alt="Logo Reforço Escolar Maranata"
               className="w-full max-w-[380px] mx-auto h-auto inst-hero-img"
               loading="eager"
