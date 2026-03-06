@@ -42,17 +42,15 @@ export function InstitucionalHero() {
 
           {/* Logo Image */}
           <div className="relative flex justify-center items-center">
-            <div className="relative bg-white rounded-2xl shadow-xl p-6 lg:p-8">
-              <img
-                src="/escola-logo-transparent-real.png?v=4"
-                alt="Logo Reforço Escolar Maranata"
-                className="w-full max-w-[320px] lg:max-w-[400px] mx-auto h-auto inst-hero-img"
-                loading="eager"
-              />
-            </div>
+            <img
+              src="/escola-logo-nobg.png?v=1"
+              alt="Logo Reforço Escolar Maranata"
+              className="w-full max-w-[340px] lg:max-w-[430px] mx-auto h-auto inst-hero-img"
+              loading="eager"
+            />
             <div
-              className="absolute -bottom-6 left-4 lg:-left-4 bg-white p-5 shadow-lg rounded-xl"
-              style={{ borderLeft: "4px solid var(--inst-secondary)" }}
+              className="absolute -bottom-6 left-4 lg:-left-4 p-5 shadow-lg rounded-xl"
+              style={{ borderLeft: "4px solid var(--inst-secondary)", background: "var(--inst-bg-warm)" }}
             >
               <span className="text-5xl font-bold block leading-none" style={{ fontFamily: "'Crimson Text', serif", color: "var(--inst-primary)" }}>5+</span>
               <span className="text-sm uppercase tracking-wider" style={{ color: "var(--inst-text-light)" }}>Anos de<br/>Experiência</span>
