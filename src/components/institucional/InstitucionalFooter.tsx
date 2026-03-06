@@ -8,7 +8,7 @@ export function InstitucionalFooter() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-4">
-              <img src="/escola-logo-transparent-real.png?v=3" alt="Reforço Maranata" className="h-12 w-auto" />
+              <img src="/escola-logo-transparent-real.png?v=3" alt="Reforço Maranata" className="h-12 w-auto" style={{ filter: "brightness(0) invert(1)", opacity: 0.9 }} />
               <h4
                 className="text-2xl font-semibold text-white"
                 style={{ fontFamily: "'Crimson Text', serif" }}
