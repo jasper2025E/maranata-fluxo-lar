@@ -36,6 +36,7 @@ const RH = lazy(() => import("./pages/RH"));
 const PontoEletronico = lazy(() => import("./pages/PontoEletronico"));
 const SaudeFinanceira = lazy(() => import("./pages/SaudeFinanceira"));
 const Contabilidade = lazy(() => import("./pages/Contabilidade"));
+const PerfilAluno = lazy(() => import("./pages/PerfilAluno"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Institucional = lazy(() => import("./pages/Institucional"));
 
@@ -186,6 +187,16 @@ function AppContent() {
             {/* Público funcional */}
             <Route path="/pagamento/resultado" element={<PaymentResult />} />
             <Route path="/ponto/:token" element={<PontoEletronico />} />
+            
+            {/* Perfil do Aluno */}
+            <Route
+              path="/alunos/:alunoId/perfil"
+              element={
+                <ProtectedRoute>
+                  <PerfilAluno />
+                </ProtectedRoute>
+              }
+            />
             
             
             {/* Catch-all */}
