@@ -193,6 +193,60 @@ export type Database = {
         }
         Relationships: []
       }
+      atividades_extracurriculares: {
+        Row: {
+          aluno_id: string
+          created_at: string | null
+          data_fim: string | null
+          data_inicio: string | null
+          descricao: string | null
+          id: string
+          nome: string
+          status: string | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          descricao?: string | null
+          id?: string
+          nome: string
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string | null
+          data_fim?: string | null
+          data_inicio?: string | null
+          descricao?: string | null
+          id?: string
+          nome?: string
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atividades_extracurriculares_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atividades_extracurriculares_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           acao: string
@@ -319,6 +373,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      avaliacoes_desempenho: {
+        Row: {
+          aluno_id: string
+          avaliador_nome: string
+          created_at: string | null
+          id: string
+          nota_geral: number | null
+          observacoes: string | null
+          periodo: string
+          pontos_fortes: string | null
+          pontos_melhoria: string | null
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          aluno_id: string
+          avaliador_nome: string
+          created_at?: string | null
+          id?: string
+          nota_geral?: number | null
+          observacoes?: string | null
+          periodo: string
+          pontos_fortes?: string | null
+          pontos_melhoria?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          avaliador_nome?: string
+          created_at?: string | null
+          id?: string
+          nota_geral?: number | null
+          observacoes?: string | null
+          periodo?: string
+          pontos_fortes?: string | null
+          pontos_melhoria?: string | null
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "avaliacoes_desempenho_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "avaliacoes_desempenho_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bens_patrimoniais: {
         Row: {
@@ -799,6 +910,54 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "despesas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      disciplinas: {
+        Row: {
+          ativo: boolean | null
+          created_at: string | null
+          curso_id: string
+          descricao: string | null
+          id: string
+          nome: string
+          tenant_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          ativo?: boolean | null
+          created_at?: string | null
+          curso_id: string
+          descricao?: string | null
+          id?: string
+          nome: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          ativo?: boolean | null
+          created_at?: string | null
+          curso_id?: string
+          descricao?: string | null
+          id?: string
+          nome?: string
+          tenant_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "disciplinas_curso_id_fkey"
+            columns: ["curso_id"]
+            isOneToOne: false
+            referencedRelation: "cursos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "disciplinas_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1396,6 +1555,64 @@ export type Database = {
           },
         ]
       }
+      feedback_professores: {
+        Row: {
+          aluno_id: string
+          comentario: string
+          created_at: string | null
+          data_feedback: string
+          disciplina_id: string | null
+          id: string
+          professor_nome: string
+          tenant_id: string | null
+          tipo: string | null
+        }
+        Insert: {
+          aluno_id: string
+          comentario: string
+          created_at?: string | null
+          data_feedback?: string
+          disciplina_id?: string | null
+          id?: string
+          professor_nome: string
+          tenant_id?: string | null
+          tipo?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          comentario?: string
+          created_at?: string | null
+          data_feedback?: string
+          disciplina_id?: string | null
+          id?: string
+          professor_nome?: string
+          tenant_id?: string | null
+          tipo?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_professores_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_professores_disciplina_id_fkey"
+            columns: ["disciplina_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "feedback_professores_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       folha_pagamento: {
         Row: {
           adicional_noturno: number | null
@@ -1492,6 +1709,61 @@ export type Database = {
           },
           {
             foreignKeyName: "folha_pagamento_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      frequencia: {
+        Row: {
+          aluno_id: string
+          created_at: string | null
+          data: string
+          disciplina_id: string | null
+          id: string
+          justificativa: string | null
+          presente: boolean
+          tenant_id: string | null
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string | null
+          data?: string
+          disciplina_id?: string | null
+          id?: string
+          justificativa?: string | null
+          presente?: boolean
+          tenant_id?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string | null
+          data?: string
+          disciplina_id?: string | null
+          id?: string
+          justificativa?: string | null
+          presente?: boolean
+          tenant_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "frequencia_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frequencia_disciplina_id_fkey"
+            columns: ["disciplina_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "frequencia_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -2108,6 +2380,73 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "lgpd_deletion_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notas: {
+        Row: {
+          aluno_id: string
+          bimestre: number | null
+          created_at: string | null
+          data_avaliacao: string
+          descricao: string | null
+          disciplina_id: string
+          id: string
+          nota: number
+          peso: number | null
+          tenant_id: string | null
+          tipo: string
+          updated_at: string | null
+        }
+        Insert: {
+          aluno_id: string
+          bimestre?: number | null
+          created_at?: string | null
+          data_avaliacao?: string
+          descricao?: string | null
+          disciplina_id: string
+          id?: string
+          nota: number
+          peso?: number | null
+          tenant_id?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Update: {
+          aluno_id?: string
+          bimestre?: number | null
+          created_at?: string | null
+          data_avaliacao?: string
+          descricao?: string | null
+          disciplina_id?: string
+          id?: string
+          nota?: number
+          peso?: number | null
+          tenant_id?: string | null
+          tipo?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notas_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_disciplina_id_fkey"
+            columns: ["disciplina_id"]
+            isOneToOne: false
+            referencedRelation: "disciplinas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notas_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
