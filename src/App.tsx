@@ -188,6 +188,16 @@ function AppContent() {
             <Route path="/pagamento/resultado" element={<PaymentResult />} />
             <Route path="/ponto/:token" element={<PontoEletronico />} />
             
+            {/* Perfil do Aluno */}
+            <Route
+              path="/alunos/:alunoId/perfil"
+              element={
+                <ProtectedRoute>
+                  <PerfilAluno />
+                </ProtectedRoute>
+              }
+            />
+            
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
