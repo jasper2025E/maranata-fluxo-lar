@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -7,79 +7,21 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Switch } from "@/components/ui/switch";
-import { Plus, Pencil, Trash2, Search, Eye, Users, UserCheck, UserX, GraduationCap, Phone, Mail, MapPin, Calendar, BookOpen, ChevronRight } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Search, Calendar, ChevronRight, Users, UserCheck, UserX, GraduationCap, Filter } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { alunoSchema } from "@/lib/validations";
 import { cn } from "@/lib/utils";
 import { useEnturmar } from "@/hooks/useEnturmacao";
-import { FinancialKPICard } from "@/components/dashboard";
-
-interface Aluno {
-  id: string;
-  nome_completo: string;
-  data_nascimento: string;
-  curso_id: string;
-  turma_id: string | null;
-  responsavel_id: string | null;
-  telefone_responsavel: string;
-  email_responsavel: string;
-  endereco: string;
-  data_matricula: string;
-  status_matricula: 'ativo' | 'trancado' | 'cancelado' | 'transferido';
-  desconto_percentual: number;
-  observacoes: string | null;
-  // Campos de configuração de faturamento
-  dia_vencimento: number | null;
-  data_inicio_cobranca: string | null;
-  quantidade_parcelas: number | null;
-  cursos?: { nome: string; mensalidade: number };
-  turmas?: { nome: string; serie: string } | null;
-  responsaveis?: { id: string; nome: string } | null;
-}
-
-interface Responsavel {
-  id: string;
-  nome: string;
-  telefone: string;
-}
-
-interface Curso {
-  id: string;
-  nome: string;
-  mensalidade: number;
-}
-
-interface Turma {
-  id: string;
-  nome: string;
-  serie: string;
-}
-
-// Loading skeleton for table
-function TableSkeleton() {
-  return (
-    <div className="space-y-3">
-      {[...Array(5)].map((_, i) => (
-        <div key={i} className="flex items-center gap-4 p-4">
-          <Skeleton className="h-4 w-40" />
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-28" />
-          <Skeleton className="h-6 w-16 rounded-full" />
-          <Skeleton className="h-8 w-24 ml-auto" />
-        </div>
-      ))}
-    </div>
-  );
-}
+import {
+  AlunoKPIs, AlunoTable, AlunoViewDialog, AlunoEnturmarDialog,
+  AlunoBatchActions, ExportButton,
+} from "@/components/alunos";
+import type { Aluno, Responsavel, Curso, Turma, StatusFilter } from "@/components/alunos";
 
 const Alunos = () => {
   const { t } = useTranslation();
@@ -88,38 +30,23 @@ const Alunos = () => {
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isEnturmarOpen, setIsEnturmarOpen] = useState(false);
   const [enturmandoAluno, setEnturmandoAluno] = useState<Aluno | null>(null);
-  const [selectedTurmaId, setSelectedTurmaId] = useState("");
   const [viewingAluno, setViewingAluno] = useState<Aluno | null>(null);
   const [editingAluno, setEditingAluno] = useState<Aluno | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterSemTurma, setFilterSemTurma] = useState(false);
-  const [gerarNovasFaturas, setGerarNovasFaturas] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("todos");
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [modoFaturamento, setModoFaturamento] = useState<"nenhum" | "novas" | "substituir">("nenhum");
   const [formData, setFormData] = useState({
-    nome_completo: "",
-    data_nascimento: "",
-    curso_id: "",
-    turma_id: "",
-    responsavel_id: "",
-    telefone_responsavel: "",
-    email_responsavel: "",
-    endereco: "",
-    observacoes: "",
-    // Campos de configuração de faturamento
-    dia_vencimento: 10,
+    nome_completo: "", data_nascimento: "", curso_id: "", turma_id: "",
+    responsavel_id: "", telefone_responsavel: "", email_responsavel: "",
+    endereco: "", observacoes: "", dia_vencimento: 10,
     data_inicio_cobranca: new Date().toISOString().split("T")[0],
     quantidade_parcelas: 12,
   });
 
-  const statusConfig = {
-    ativo: { label: t("students.statusActive"), color: "bg-emerald-100 text-emerald-700" },
-    trancado: { label: t("students.statusLocked"), color: "bg-amber-100 text-amber-700" },
-    cancelado: { label: t("students.statusCanceled"), color: "bg-rose-100 text-rose-700" },
-    transferido: { label: t("students.statusTransferred"), color: "bg-gray-100 text-gray-700" },
-  };
-
   const enturmarMutation = useEnturmar();
 
+  // Queries
   const { data: alunos = [], isLoading } = useQuery({
     queryKey: ["alunos"],
     queryFn: async () => {
@@ -135,11 +62,7 @@ const Alunos = () => {
   const { data: responsaveisLista = [] } = useQuery({
     queryKey: ["responsaveis-lista"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("responsaveis")
-        .select("id, nome, telefone")
-        .eq("ativo", true)
-        .order("nome");
+      const { data, error } = await supabase.from("responsaveis").select("id, nome, telefone").eq("ativo", true).order("nome");
       if (error) throw error;
       return data as Responsavel[];
     },
@@ -163,62 +86,54 @@ const Alunos = () => {
     },
   });
 
+  // Faturas vencidas por aluno
+  const { data: faturasVencidas = {} } = useQuery({
+    queryKey: ["faturas-vencidas-por-aluno"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("faturas")
+        .select("aluno_id")
+        .eq("status", "Vencida");
+      if (error) throw error;
+      const map: Record<string, number> = {};
+      (data || []).forEach(f => { map[f.aluno_id] = (map[f.aluno_id] || 0) + 1; });
+      return map;
+    },
+  });
+
+  // Mutations
   const createMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const { data: newAluno, error } = await supabase
-        .from("alunos")
-        .insert({
-          nome_completo: data.nome_completo,
-          data_nascimento: data.data_nascimento,
-          curso_id: data.curso_id,
-          turma_id: data.turma_id || null,
-          responsavel_id: data.responsavel_id || null,
-          telefone_responsavel: data.telefone_responsavel,
-          email_responsavel: data.email_responsavel,
-          endereco: data.endereco,
-          observacoes: data.observacoes || null,
-          dia_vencimento: data.dia_vencimento,
-          data_inicio_cobranca: data.data_inicio_cobranca,
-          quantidade_parcelas: data.quantidade_parcelas,
-        })
-        .select()
-        .single();
+      const { data: newAluno, error } = await supabase.from("alunos").insert({
+        nome_completo: data.nome_completo, data_nascimento: data.data_nascimento,
+        curso_id: data.curso_id, turma_id: data.turma_id || null,
+        responsavel_id: data.responsavel_id || null, telefone_responsavel: data.telefone_responsavel,
+        email_responsavel: data.email_responsavel, endereco: data.endereco,
+        observacoes: data.observacoes || null, dia_vencimento: data.dia_vencimento,
+        data_inicio_cobranca: data.data_inicio_cobranca, quantidade_parcelas: data.quantidade_parcelas,
+      }).select().single();
       if (error) throw error;
       return newAluno;
     },
     onSuccess: () => {
-      // Apenas salva o aluno - NÃO gera faturas automaticamente
-      // O usuário deve criar faturas manualmente em Faturas → Nova Fatura
       queryClient.invalidateQueries({ queryKey: ["alunos"] });
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
       toast.success(t("students.createSuccess"));
       resetForm();
     },
-    onError: (error) => {
-      console.error(error);
-      toast.error(t("students.createError"));
-    },
+    onError: (error) => { console.error(error); toast.error(t("students.createError")); },
   });
 
   const updateMutation = useMutation({
-    mutationFn: async (data: { id: string; modoFaturamento?: "nenhum" | "novas" | "substituir" } & typeof formData) => {
-      const { error } = await supabase
-        .from("alunos")
-        .update({
-          nome_completo: data.nome_completo,
-          data_nascimento: data.data_nascimento,
-          curso_id: data.curso_id,
-          turma_id: data.turma_id || null,
-          responsavel_id: data.responsavel_id || null,
-          telefone_responsavel: data.telefone_responsavel,
-          email_responsavel: data.email_responsavel,
-          endereco: data.endereco,
-          observacoes: data.observacoes || null,
-          dia_vencimento: data.dia_vencimento,
-          data_inicio_cobranca: data.data_inicio_cobranca,
-          quantidade_parcelas: data.quantidade_parcelas,
-        })
-        .eq("id", data.id);
+    mutationFn: async (data: { id: string; modoFaturamento?: string } & typeof formData) => {
+      const { error } = await supabase.from("alunos").update({
+        nome_completo: data.nome_completo, data_nascimento: data.data_nascimento,
+        curso_id: data.curso_id, turma_id: data.turma_id || null,
+        responsavel_id: data.responsavel_id || null, telefone_responsavel: data.telefone_responsavel,
+        email_responsavel: data.email_responsavel, endereco: data.endereco,
+        observacoes: data.observacoes || null, dia_vencimento: data.dia_vencimento,
+        data_inicio_cobranca: data.data_inicio_cobranca, quantidade_parcelas: data.quantidade_parcelas,
+      }).eq("id", data.id);
       if (error) throw error;
       return data;
     },
@@ -227,62 +142,26 @@ const Alunos = () => {
       queryClient.invalidateQueries({ queryKey: ["responsaveis"] });
       toast.success(t("students.updateSuccess"));
 
-      // Gerar novas faturas ou substituir existentes
       if (data.modoFaturamento && data.modoFaturamento !== "nenhum" && data.quantidade_parcelas > 0) {
         void (async () => {
           try {
-            const curso = cursos.find((c) => c.id === data.curso_id);
+            const curso = cursos.find(c => c.id === data.curso_id);
             if (!curso) return;
-
-            // Se modo for "substituir", cancela as faturas abertas existentes
             if (data.modoFaturamento === "substituir") {
-              await supabase
-                .from("faturas")
-                .update({ status: "Cancelada", motivo_cancelamento: "Substituída por nova configuração" })
-                .eq("aluno_id", data.id)
-                .eq("status", "Aberta");
+              await supabase.from("faturas").update({ status: "Cancelada", motivo_cancelamento: "Substituída por nova configuração" }).eq("aluno_id", data.id).eq("status", "Aberta");
               toast.info("Faturas antigas foram canceladas");
             }
-
             const dataInicio = new Date(data.data_inicio_cobranca);
             dataInicio.setDate(data.dia_vencimento);
-
             await supabase.rpc("gerar_faturas_aluno", {
-              p_aluno_id: data.id,
-              p_curso_id: data.curso_id,
-              p_valor: curso.mensalidade,
-              p_data_inicio: dataInicio.toISOString().split("T")[0],
-              p_quantidade_meses: data.quantidade_parcelas,
+              p_aluno_id: data.id, p_curso_id: data.curso_id, p_valor: curso.mensalidade,
+              p_data_inicio: dataInicio.toISOString().split("T")[0], p_quantidade_meses: data.quantidade_parcelas,
             });
-
             queryClient.invalidateQueries({ queryKey: ["faturas"] });
             toast.success(`${data.quantidade_parcelas} novas faturas geradas!`);
-
-            // Integrar com Asaas
-            const responsavelId = data.responsavel_id || null;
-            if (responsavelId) {
-              const { data: faturasGeradas } = await supabase
-                .from("faturas")
-                .select("id")
-                .eq("aluno_id", data.id)
-                .eq("status", "Aberta")
-                .is("asaas_payment_id", null)
-                .order("data_vencimento", { ascending: true })
-                .limit(3);
-
-              for (const fatura of faturasGeradas || []) {
-                await supabase.functions.invoke("asaas-create-payment", {
-                   body: { faturaId: fatura.id, billingType: "BOLETO" },
-                }).catch(() => {});
-              }
-            }
-          } catch (err) {
-            console.warn("Falha ao gerar faturas:", err);
-            toast.error("Erro ao gerar novas faturas");
-          }
+          } catch (err) { console.warn("Falha ao gerar faturas:", err); toast.error("Erro ao gerar novas faturas"); }
         })();
       }
-
       resetForm();
     },
     onError: () => toast.error(t("students.updateError")),
@@ -293,128 +172,96 @@ const Alunos = () => {
       const { error } = await supabase.from("alunos").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["alunos"] });
-      toast.success(t("students.deleteSuccess"));
-    },
+    onSuccess: () => { queryClient.invalidateQueries({ queryKey: ["alunos"] }); toast.success(t("students.deleteSuccess")); },
     onError: () => toast.error(t("students.deleteError")),
   });
 
+  const batchStatusMutation = useMutation({
+    mutationFn: async ({ ids, status }: { ids: string[]; status: string }) => {
+      const { error } = await supabase.from("alunos").update({ status_matricula: status as any }).in("id", ids);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["alunos"] });
+      setSelectedIds([]);
+      toast.success("Status atualizado em lote!");
+    },
+    onError: () => toast.error("Erro ao atualizar status em lote"),
+  });
+
+  // Helpers
   const resetForm = () => {
     setFormData({
-      nome_completo: "",
-      data_nascimento: "",
-      curso_id: "",
-      turma_id: "",
-      responsavel_id: "",
-      telefone_responsavel: "",
-      email_responsavel: "",
-      endereco: "",
-      observacoes: "",
-      dia_vencimento: 10,
-      data_inicio_cobranca: new Date().toISOString().split("T")[0],
-      quantidade_parcelas: 12,
+      nome_completo: "", data_nascimento: "", curso_id: "", turma_id: "",
+      responsavel_id: "", telefone_responsavel: "", email_responsavel: "",
+      endereco: "", observacoes: "", dia_vencimento: 10,
+      data_inicio_cobranca: new Date().toISOString().split("T")[0], quantidade_parcelas: 12,
     });
-    setEditingAluno(null);
-    setGerarNovasFaturas(false);
-    setModoFaturamento("nenhum");
-    setIsOpen(false);
+    setEditingAluno(null); setModoFaturamento("nenhum"); setIsOpen(false);
   };
 
   const handleEdit = (aluno: Aluno) => {
     setEditingAluno(aluno);
-    setGerarNovasFaturas(false);
     setModoFaturamento("nenhum");
     setFormData({
-      nome_completo: aluno.nome_completo,
-      data_nascimento: aluno.data_nascimento,
-      curso_id: aluno.curso_id,
-      turma_id: aluno.turma_id || "",
-      responsavel_id: aluno.responsavel_id || "",
-      telefone_responsavel: aluno.telefone_responsavel,
-      email_responsavel: aluno.email_responsavel,
-      endereco: aluno.endereco,
-      observacoes: aluno.observacoes || "",
-      // Carrega os dados de faturamento salvos do aluno
-      dia_vencimento: aluno.dia_vencimento ?? 10,
+      nome_completo: aluno.nome_completo, data_nascimento: aluno.data_nascimento,
+      curso_id: aluno.curso_id, turma_id: aluno.turma_id || "",
+      responsavel_id: aluno.responsavel_id || "", telefone_responsavel: aluno.telefone_responsavel,
+      email_responsavel: aluno.email_responsavel, endereco: aluno.endereco,
+      observacoes: aluno.observacoes || "", dia_vencimento: aluno.dia_vencimento ?? 10,
       data_inicio_cobranca: aluno.data_inicio_cobranca || new Date().toISOString().split("T")[0],
       quantidade_parcelas: aluno.quantidade_parcelas ?? 12,
     });
     setIsOpen(true);
   };
 
-  const handleView = (aluno: Aluno) => {
-    setViewingAluno(aluno);
-    setIsViewOpen(true);
-  };
-
-  const handleEnturmar = (aluno: Aluno) => {
-    setEnturmandoAluno(aluno);
-    setSelectedTurmaId(aluno.turma_id || "");
-    setIsEnturmarOpen(true);
-  };
-
-  const handleConfirmEnturmacao = async () => {
-    if (!enturmandoAluno || !selectedTurmaId) return;
-
-    const curso = cursos.find((c) => c.id === enturmandoAluno.curso_id);
-    if (!curso) {
-      toast.error(t("errors.courseNotFound"));
-      return;
-    }
-
-    // Apenas vincula à turma - NÃO gera faturas automaticamente
-    await enturmarMutation.mutateAsync({
-      alunoId: enturmandoAluno.id,
-      turmaId: selectedTurmaId,
-      cursoId: enturmandoAluno.curso_id,
-      valorMensalidade: curso.mensalidade,
-      responsavelId: (enturmandoAluno as any).responsavel_id,
-      gerarFaturas: false, // Faturas devem ser criadas manualmente
-    });
-
-    setIsEnturmarOpen(false);
-    setEnturmandoAluno(null);
-    setSelectedTurmaId("");
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const result = alunoSchema.safeParse(formData);
-    if (!result.success) {
-      const firstError = result.error.errors[0];
-      toast.error(firstError.message);
-      return;
-    }
+    if (!result.success) { toast.error(result.error.errors[0].message); return; }
     if (editingAluno) {
-      // Usa o modo de faturamento selecionado
       updateMutation.mutate({ id: editingAluno.id, ...formData, modoFaturamento });
     } else {
       createMutation.mutate(formData);
     }
   };
 
-  const filteredAlunos = alunos.filter((aluno) => {
-    const matchesSearch = 
-      aluno.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      aluno.email_responsavel?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesTurmaFilter = filterSemTurma ? !aluno.turma_id : true;
-    return matchesSearch && matchesTurmaFilter;
-  });
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+  const handleConfirmEnturmacao = async (turmaId: string) => {
+    if (!enturmandoAluno) return;
+    const curso = cursos.find(c => c.id === enturmandoAluno.curso_id);
+    if (!curso) { toast.error(t("errors.courseNotFound")); return; }
+    await enturmarMutation.mutateAsync({
+      alunoId: enturmandoAluno.id, turmaId, cursoId: enturmandoAluno.curso_id,
+      valorMensalidade: curso.mensalidade, responsavelId: enturmandoAluno.responsavel_id,
+      gerarFaturas: false,
+    });
+    setEnturmandoAluno(null);
   };
 
-  const totalAlunos = alunos.length;
-  const alunosAtivos = alunos.filter(a => a.status_matricula === 'ativo').length;
-  const alunosTrancados = alunos.filter(a => a.status_matricula === 'trancado').length;
-  const alunosCancelados = alunos.filter(a => a.status_matricula === 'cancelado' || a.status_matricula === 'transferido').length;
-  const alunosSemTurma = alunos.filter(a => !a.turma_id).length;
+  const formatCurrency = (value: number) => new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
+  // Filtered list
+  const filteredAlunos = useMemo(() => {
+    return alunos.filter(aluno => {
+      const matchesSearch = aluno.nome_completo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        aluno.email_responsavel?.toLowerCase().includes(searchTerm.toLowerCase());
+      if (statusFilter === 'sem_turma') return matchesSearch && !aluno.turma_id;
+      if (statusFilter !== 'todos') return matchesSearch && aluno.status_matricula === statusFilter;
+      return matchesSearch;
+    });
+  }, [alunos, searchTerm, statusFilter]);
+
+  const statusCounts = useMemo(() => ({
+    todos: alunos.length,
+    ativo: alunos.filter(a => a.status_matricula === 'ativo').length,
+    trancado: alunos.filter(a => a.status_matricula === 'trancado').length,
+    cancelado: alunos.filter(a => a.status_matricula === 'cancelado' || a.status_matricula === 'transferido').length,
+    sem_turma: alunos.filter(a => !a.turma_id).length,
+  }), [alunos]);
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm">
           <span className="text-muted-foreground">{t("nav.registrations")}</span>
@@ -424,541 +271,223 @@ const Alunos = () => {
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            
-          </div>
-          <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsOpen(open); }}>
-            <DialogTrigger asChild>
-              <Button size="sm">
-                <Plus className="mr-2 h-4 w-4" />
-                {t("students.newStudent")}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-              <form onSubmit={handleSubmit}>
-                <DialogHeader>
-                  <DialogTitle className="text-xl font-semibold">
-                    {editingAluno ? t("students.editStudent") : t("students.newStudent")}
-                  </DialogTitle>
-                  <DialogDescription className="text-muted-foreground">
-                    {editingAluno ? t("students.updateData") : t("students.invoicesGenerated")}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-5 py-6">
-                  <div className="grid gap-2">
-                    <Label htmlFor="nome" className="text-sm font-medium text-muted-foreground">
-                      {t("students.fullName")}
-                    </Label>
-                    <Input
-                      id="nome"
-                      value={formData.nome_completo}
-                      onChange={(e) => setFormData({ ...formData, nome_completo: e.target.value })}
-                      className="h-11"
-                      required
-                    />
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div />
+          <div className="flex items-center gap-2">
+            <ExportButton alunos={filteredAlunos} />
+            <Dialog open={isOpen} onOpenChange={(open) => { if (!open) resetForm(); setIsOpen(open); }}>
+              <DialogTrigger asChild>
+                <Button size="sm"><Plus className="mr-2 h-4 w-4" />{t("students.newStudent")}</Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+                <form onSubmit={handleSubmit}>
+                  <DialogHeader>
+                    <DialogTitle className="text-xl font-semibold">
+                      {editingAluno ? t("students.editStudent") : t("students.newStudent")}
+                    </DialogTitle>
+                    <DialogDescription className="text-muted-foreground">
+                      {editingAluno ? t("students.updateData") : t("students.invoicesGenerated")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-5 py-6">
+                    {/* Nome */}
                     <div className="grid gap-2">
-                      <Label htmlFor="nascimento" className="text-sm font-medium text-muted-foreground">
-                        {t("students.birthDate")}
-                      </Label>
-                      <Input
-                        id="nascimento"
-                        type="date"
-                        value={formData.data_nascimento}
-                        onChange={(e) => setFormData({ ...formData, data_nascimento: e.target.value })}
-                        className="h-11"
-                        required
-                      />
+                      <Label htmlFor="nome" className="text-sm font-medium text-muted-foreground">{t("students.fullName")}</Label>
+                      <Input id="nome" value={formData.nome_completo} onChange={e => setFormData({ ...formData, nome_completo: e.target.value })} className="h-11" required />
                     </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="curso" className="text-sm font-medium text-muted-foreground">
-                        {t("students.course")}
-                      </Label>
-                      <Select value={formData.curso_id} onValueChange={(value) => setFormData({ ...formData, curso_id: value })}>
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder={t("students.selectCourse")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {cursos.map((curso) => (
-                            <SelectItem key={curso.id} value={curso.id}>
-                              {curso.nome} - {formatCurrency(curso.mensalidade)}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="turma" className="text-sm font-medium text-muted-foreground">
-                        {t("students.class")}
-                      </Label>
-                      <Select value={formData.turma_id} onValueChange={(value) => setFormData({ ...formData, turma_id: value })}>
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder={t("students.selectClass")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {turmas.map((turma) => (
-                            <SelectItem key={turma.id} value={turma.id}>
-                              {turma.nome} - {turma.serie}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="responsavel" className="text-sm font-medium text-muted-foreground">
-                        {t("students.guardian")}
-                      </Label>
-                      <Select value={formData.responsavel_id} onValueChange={(value) => setFormData({ ...formData, responsavel_id: value })}>
-                        <SelectTrigger className="h-11">
-                          <SelectValue placeholder={t("students.selectGuardian")} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {responsaveisLista.map((resp) => (
-                            <SelectItem key={resp.id} value={resp.id}>
-                              {resp.nome}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label htmlFor="telefone" className="text-sm font-medium text-muted-foreground">
-                        {t("students.phone")}
-                      </Label>
-                      <Input
-                        id="telefone"
-                        value={formData.telefone_responsavel}
-                        onChange={(e) => setFormData({ ...formData, telefone_responsavel: e.target.value })}
-                        className="h-11"
-                      />
-                    </div>
-                    <div className="grid gap-2">
-                      <Label htmlFor="email" className="text-sm font-medium text-muted-foreground">
-                        {t("students.email")}
-                      </Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        value={formData.email_responsavel}
-                        onChange={(e) => setFormData({ ...formData, email_responsavel: e.target.value })}
-                        className="h-11"
-                      />
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="endereco" className="text-sm font-medium text-muted-foreground">
-                      {t("students.address")}
-                    </Label>
-                    <Input
-                      id="endereco"
-                      value={formData.endereco}
-                      onChange={(e) => setFormData({ ...formData, endereco: e.target.value })}
-                      className="h-11"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="observacoes" className="text-sm font-medium text-muted-foreground">
-                      {t("students.observations")}
-                    </Label>
-                    <Textarea
-                      id="observacoes"
-                      value={formData.observacoes}
-                      onChange={(e) => setFormData({ ...formData, observacoes: e.target.value })}
-                      rows={3}
-                    />
-                  </div>
-
-                  {/* Configuração de Faturamento */}
-                  <div className="border-t pt-5 mt-2">
-                    <h4 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      {editingAluno ? "Gerenciamento de Faturas" : "Configuração de Faturamento"}
-                    </h4>
-                    
-                    {/* Opções de modo de faturamento (apenas para edição) */}
-                    {editingAluno && (
-                      <div className="mb-4 space-y-2">
-                        <div 
-                          className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                            modoFaturamento === "nenhum" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/50"
-                          )}
-                          onClick={() => setModoFaturamento("nenhum")}
-                        >
-                          <div className={cn(
-                            "w-4 h-4 rounded-full border-2 flex items-center justify-center",
-                            modoFaturamento === "nenhum" ? "border-primary" : "border-muted-foreground"
-                          )}>
-                            {modoFaturamento === "nenhum" && <div className="w-2 h-2 rounded-full bg-primary" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Apenas salvar dados</p>
-                            <p className="text-xs text-muted-foreground">Atualiza o cadastro sem mexer nas faturas</p>
-                          </div>
-                        </div>
-                        
-                        <div 
-                          className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                            modoFaturamento === "novas" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/50"
-                          )}
-                          onClick={() => setModoFaturamento("novas")}
-                        >
-                          <div className={cn(
-                            "w-4 h-4 rounded-full border-2 flex items-center justify-center",
-                            modoFaturamento === "novas" ? "border-primary" : "border-muted-foreground"
-                          )}>
-                            {modoFaturamento === "novas" && <div className="w-2 h-2 rounded-full bg-primary" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Gerar novas faturas</p>
-                            <p className="text-xs text-muted-foreground">Mantém as faturas antigas e cria novas</p>
-                          </div>
-                        </div>
-                        
-                        <div 
-                          className={cn(
-                            "flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
-                            modoFaturamento === "substituir" ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/50"
-                          )}
-                          onClick={() => setModoFaturamento("substituir")}
-                        >
-                          <div className={cn(
-                            "w-4 h-4 rounded-full border-2 flex items-center justify-center",
-                            modoFaturamento === "substituir" ? "border-primary" : "border-muted-foreground"
-                          )}>
-                            {modoFaturamento === "substituir" && <div className="w-2 h-2 rounded-full bg-primary" />}
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">Substituir faturas existentes</p>
-                            <p className="text-xs text-muted-foreground">Cancela as faturas abertas e gera novas</p>
-                          </div>
-                        </div>
+                    {/* Nascimento + Curso */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-medium text-muted-foreground">{t("students.birthDate")}</Label>
+                        <Input type="date" value={formData.data_nascimento} onChange={e => setFormData({ ...formData, data_nascimento: e.target.value })} className="h-11" required />
                       </div>
-                    )}
-                    
-                    {/* Campos de configuração (mostrar sempre para novo, ou quando modo != nenhum para edição) */}
-                    {(!editingAluno || modoFaturamento !== "nenhum") && (
-                      <>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="dia_vencimento" className="text-sm font-medium text-muted-foreground">
-                              Dia de Vencimento
-                            </Label>
-                            <Select 
-                              value={formData.dia_vencimento.toString()} 
-                              onValueChange={(value) => setFormData({ ...formData, dia_vencimento: parseInt(value) })}
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-medium text-muted-foreground">{t("students.course")}</Label>
+                        <Select value={formData.curso_id} onValueChange={v => setFormData({ ...formData, curso_id: v })}>
+                          <SelectTrigger className="h-11"><SelectValue placeholder={t("students.selectCourse")} /></SelectTrigger>
+                          <SelectContent>{cursos.map(c => <SelectItem key={c.id} value={c.id}>{c.nome} - {formatCurrency(c.mensalidade)}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {/* Turma + Responsável */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-medium text-muted-foreground">{t("students.class")}</Label>
+                        <Select value={formData.turma_id} onValueChange={v => setFormData({ ...formData, turma_id: v })}>
+                          <SelectTrigger className="h-11"><SelectValue placeholder={t("students.selectClass")} /></SelectTrigger>
+                          <SelectContent>{turmas.map(t => <SelectItem key={t.id} value={t.id}>{t.nome} - {t.serie}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-medium text-muted-foreground">{t("students.guardian")}</Label>
+                        <Select value={formData.responsavel_id} onValueChange={v => setFormData({ ...formData, responsavel_id: v })}>
+                          <SelectTrigger className="h-11"><SelectValue placeholder={t("students.selectGuardian")} /></SelectTrigger>
+                          <SelectContent>{responsaveisLista.map(r => <SelectItem key={r.id} value={r.id}>{r.nome}</SelectItem>)}</SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    {/* Telefone + Email */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-medium text-muted-foreground">{t("students.phone")}</Label>
+                        <Input value={formData.telefone_responsavel} onChange={e => setFormData({ ...formData, telefone_responsavel: e.target.value })} className="h-11" />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label className="text-sm font-medium text-muted-foreground">{t("students.email")}</Label>
+                        <Input type="email" value={formData.email_responsavel} onChange={e => setFormData({ ...formData, email_responsavel: e.target.value })} className="h-11" />
+                      </div>
+                    </div>
+                    {/* Endereço */}
+                    <div className="grid gap-2">
+                      <Label className="text-sm font-medium text-muted-foreground">{t("students.address")}</Label>
+                      <Input value={formData.endereco} onChange={e => setFormData({ ...formData, endereco: e.target.value })} className="h-11" />
+                    </div>
+                    {/* Observações */}
+                    <div className="grid gap-2">
+                      <Label className="text-sm font-medium text-muted-foreground">{t("students.observations")}</Label>
+                      <Textarea value={formData.observacoes} onChange={e => setFormData({ ...formData, observacoes: e.target.value })} rows={3} />
+                    </div>
+
+                    {/* Configuração de Faturamento */}
+                    <div className="border-t pt-5 mt-2">
+                      <h4 className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" />
+                        {editingAluno ? "Gerenciamento de Faturas" : "Configuração de Faturamento"}
+                      </h4>
+                      {editingAluno && (
+                        <div className="mb-4 space-y-2">
+                          {(["nenhum", "novas", "substituir"] as const).map(modo => (
+                            <div key={modo}
+                              className={cn("flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors",
+                                modoFaturamento === modo ? "border-primary bg-primary/5" : "border-border hover:border-muted-foreground/50"
+                              )}
+                              onClick={() => setModoFaturamento(modo)}
                             >
-                              <SelectTrigger className="h-11">
-                                <SelectValue placeholder="Dia" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {[1, 5, 10, 15, 20, 25, 28].map((dia) => (
-                                  <SelectItem key={dia} value={dia.toString()}>
-                                    Dia {dia}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="data_inicio" className="text-sm font-medium text-muted-foreground">
-                              Início da Cobrança
-                            </Label>
-                            <Input
-                              id="data_inicio"
-                              type="date"
-                              value={formData.data_inicio_cobranca}
-                              onChange={(e) => setFormData({ ...formData, data_inicio_cobranca: e.target.value })}
-                              className="h-11"
-                            />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="quantidade_parcelas" className="text-sm font-medium text-muted-foreground">
-                              Qtd. de Parcelas
-                            </Label>
-                            <Select 
-                              value={formData.quantidade_parcelas.toString()} 
-                              onValueChange={(value) => setFormData({ ...formData, quantidade_parcelas: parseInt(value) })}
-                            >
-                              <SelectTrigger className="h-11">
-                                <SelectValue placeholder="Parcelas" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {[1, 2, 3, 4, 5, 6, 10, 11, 12].map((qtd) => (
-                                  <SelectItem key={qtd} value={qtd.toString()}>
-                                    {qtd} {qtd === 1 ? "parcela" : "parcelas"}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
+                              <div className={cn("w-4 h-4 rounded-full border-2 flex items-center justify-center", modoFaturamento === modo ? "border-primary" : "border-muted-foreground")}>
+                                {modoFaturamento === modo && <div className="w-2 h-2 rounded-full bg-primary" />}
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium">
+                                  {modo === "nenhum" ? "Apenas salvar dados" : modo === "novas" ? "Gerar novas faturas" : "Substituir faturas existentes"}
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                  {modo === "nenhum" ? "Atualiza o cadastro sem mexer nas faturas" : modo === "novas" ? "Mantém as faturas antigas e cria novas" : "Cancela as faturas abertas e gera novas"}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          {formData.quantidade_parcelas} faturas serão geradas a partir de {formData.data_inicio_cobranca ? format(new Date(formData.data_inicio_cobranca + "T00:00:00"), "dd/MM/yyyy") : "-"}, vencendo todo dia {formData.dia_vencimento}.
-                        </p>
-                      </>
-                    )}
+                      )}
+                      {(!editingAluno || modoFaturamento !== "nenhum") && (
+                        <>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-medium text-muted-foreground">Dia de Vencimento</Label>
+                              <Select value={formData.dia_vencimento.toString()} onValueChange={v => setFormData({ ...formData, dia_vencimento: parseInt(v) })}>
+                                <SelectTrigger className="h-11"><SelectValue placeholder="Dia" /></SelectTrigger>
+                                <SelectContent>{[1, 5, 10, 15, 20, 25, 28].map(d => <SelectItem key={d} value={d.toString()}>Dia {d}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-medium text-muted-foreground">Início da Cobrança</Label>
+                              <Input type="date" value={formData.data_inicio_cobranca} onChange={e => setFormData({ ...formData, data_inicio_cobranca: e.target.value })} className="h-11" />
+                            </div>
+                            <div className="grid gap-2">
+                              <Label className="text-sm font-medium text-muted-foreground">Qtd. de Parcelas</Label>
+                              <Select value={formData.quantidade_parcelas.toString()} onValueChange={v => setFormData({ ...formData, quantidade_parcelas: parseInt(v) })}>
+                                <SelectTrigger className="h-11"><SelectValue placeholder="Parcelas" /></SelectTrigger>
+                                <SelectContent>{[1, 2, 3, 4, 5, 6, 10, 11, 12].map(q => <SelectItem key={q} value={q.toString()}>{q} {q === 1 ? "parcela" : "parcelas"}</SelectItem>)}</SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-2">
+                            {formData.quantidade_parcelas} faturas serão geradas a partir de {formData.data_inicio_cobranca ? format(new Date(formData.data_inicio_cobranca + "T00:00:00"), "dd/MM/yyyy") : "-"}, vencendo todo dia {formData.dia_vencimento}.
+                          </p>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-                <DialogFooter className="gap-2">
-                  <Button type="button" variant="outline" onClick={resetForm}>
-                    {t("common.cancel")}
-                  </Button>
-                  <Button 
-                    type="submit" 
-                    disabled={createMutation.isPending || updateMutation.isPending}
-                  >
-                    {createMutation.isPending || updateMutation.isPending ? t("common.saving") : editingAluno ? t("common.save") : t("common.register")}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+                  <DialogFooter className="gap-2">
+                    <Button type="button" variant="outline" onClick={resetForm}>{t("common.cancel")}</Button>
+                    <Button type="submit" disabled={createMutation.isPending || updateMutation.isPending}>
+                      {createMutation.isPending || updateMutation.isPending ? t("common.saving") : editingAluno ? t("common.save") : t("common.register")}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
         </div>
 
-        {/* Stats Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 animate-fade-in">
-          <FinancialKPICard title={t("students.totalStudents")} value={totalAlunos} icon={Users} variant="info" size="sm" index={0} />
-          <FinancialKPICard title={t("students.activeStudents")} value={alunosAtivos} icon={UserCheck} variant="success" size="sm" index={1} />
-          <FinancialKPICard title={t("students.lockedStudents")} value={alunosTrancados} icon={Users} variant="warning" size="sm" index={2} />
-          <FinancialKPICard title={t("students.canceledStudents")} value={alunosCancelados} icon={UserX} variant="danger" size="sm" index={3} />
-          <FinancialKPICard title={t("students.withoutClass")} value={alunosSemTurma} icon={GraduationCap} variant="premium" size="sm" index={4} />
-        </div>
+        {/* KPIs */}
+        <AlunoKPIs alunos={alunos} />
+
+        {/* Batch Actions */}
+        <AlunoBatchActions
+          selectedIds={selectedIds}
+          alunos={alunos}
+          onClearSelection={() => setSelectedIds([])}
+          onStatusChange={(ids, status) => batchStatusMutation.mutate({ ids, status })}
+        />
 
         {/* Table Card */}
         <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden animate-fade-in">
           <CardHeader className="border-b border-border/50 bg-muted/30">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <div>
-                <CardTitle className="text-lg font-semibold text-foreground">
-                  {t("students.studentList")}
-                </CardTitle>
-                <CardDescription>
-                  {filteredAlunos.length} {t("students.studentsRegistered")}
-                </CardDescription>
-              </div>
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                <Button
-                  variant={filterSemTurma ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setFilterSemTurma(!filterSemTurma)}
-                >
-                  {t("students.withoutClass")}
-                </Button>
+            <div className="flex flex-col gap-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <CardTitle className="text-lg font-semibold text-foreground">{t("students.studentList")}</CardTitle>
+                  <CardDescription>{filteredAlunos.length} {t("students.studentsRegistered")}</CardDescription>
+                </div>
                 <div className="relative w-full sm:w-64">
                   <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-                  <Input
-                    placeholder={t("common.search")}
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-8"
-                  />
+                  <Input placeholder={t("common.search")} value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-8" />
                 </div>
               </div>
+              {/* Status Tabs */}
+              <Tabs value={statusFilter} onValueChange={v => { setStatusFilter(v as StatusFilter); setSelectedIds([]); }}>
+                <TabsList className="h-9 w-full sm:w-auto">
+                  <TabsTrigger value="todos" className="text-xs gap-1">
+                    <Users className="h-3 w-3" /> Todos ({statusCounts.todos})
+                  </TabsTrigger>
+                  <TabsTrigger value="ativo" className="text-xs gap-1">
+                    <UserCheck className="h-3 w-3" /> Ativos ({statusCounts.ativo})
+                  </TabsTrigger>
+                  <TabsTrigger value="trancado" className="text-xs gap-1">
+                    Trancados ({statusCounts.trancado})
+                  </TabsTrigger>
+                  <TabsTrigger value="cancelado" className="text-xs gap-1">
+                    <UserX className="h-3 w-3" /> Inativos ({statusCounts.cancelado})
+                  </TabsTrigger>
+                  <TabsTrigger value="sem_turma" className="text-xs gap-1">
+                    <GraduationCap className="h-3 w-3" /> Sem turma ({statusCounts.sem_turma})
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
           </CardHeader>
           <CardContent className="p-0 overflow-x-auto">
-            {isLoading ? (
-              <TableSkeleton />
-            ) : filteredAlunos.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                  <Users className="h-8 w-8 text-muted-foreground" />
-                </div>
-                <h3 className="text-lg font-medium text-foreground mb-1">
-                  {t("students.noStudentsFound")}
-                </h3>
-                <p className="text-sm text-muted-foreground max-w-sm">
-                  {t("students.noStudentsDescription")}
-                </p>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="font-semibold text-foreground">{t("students.name")}</TableHead>
-                    <TableHead className="font-semibold text-foreground">{t("students.course")}</TableHead>
-                    <TableHead className="font-semibold text-foreground">{t("students.class")}</TableHead>
-                    <TableHead className="font-semibold text-foreground">{t("students.guardian")}</TableHead>
-                    <TableHead className="font-semibold text-foreground">{t("students.status")}</TableHead>
-                    <TableHead className="text-right font-semibold text-foreground">{t("common.actions")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAlunos.map((aluno) => (
-                    <TableRow 
-                      key={aluno.id}
-                      className="hover:bg-muted/50 transition-colors"
-                    >
-                      <TableCell className="font-medium text-foreground">{aluno.nome_completo}</TableCell>
-                      <TableCell className="text-muted-foreground">{aluno.cursos?.nome}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {aluno.turmas ? `${aluno.turmas.nome} - ${aluno.turmas.serie}` : (
-                          <Badge variant="outline" className="text-amber-600 border-amber-300">
-                            {t("students.withoutClass")}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">{aluno.responsaveis?.nome || "-"}</TableCell>
-                      <TableCell>
-                        <Badge className={cn("font-medium", statusConfig[aluno.status_matricula]?.color)}>
-                          {statusConfig[aluno.status_matricula]?.label}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10"
-                            onClick={() => handleEnturmar(aluno)}
-                            title={t("students.assignClass")}
-                          >
-                            <GraduationCap className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                            onClick={() => handleView(aluno)}
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
-                            onClick={() => handleEdit(aluno)}
-                          >
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                            onClick={() => {
-                              if (confirm(t("students.confirmDelete"))) {
-                                deleteMutation.mutate(aluno.id);
-                              }
-                            }}
-                            disabled={deleteMutation.isPending}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
+            <AlunoTable
+              alunos={filteredAlunos}
+              isLoading={isLoading}
+              onView={(aluno) => { setViewingAluno(aluno); setIsViewOpen(true); }}
+              onEdit={handleEdit}
+              onDelete={(id) => { if (confirm(t("students.confirmDelete"))) deleteMutation.mutate(id); }}
+              onEnturmar={(aluno) => { setEnturmandoAluno(aluno); setIsEnturmarOpen(true); }}
+              isDeleting={deleteMutation.isPending}
+              selectedIds={selectedIds}
+              onSelectionChange={setSelectedIds}
+              faturasVencidas={faturasVencidas}
+            />
           </CardContent>
         </Card>
 
-        {/* View Dialog */}
-        <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
-          <DialogContent className="sm:max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{t("students.studentDetails")}</DialogTitle>
-            </DialogHeader>
-            {viewingAluno && (
-              <div className="space-y-4">
-                <div className="grid gap-4">
-                  <div className="flex items-center gap-3">
-                    <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                      <Users className="h-6 w-6 text-primary" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-lg">{viewingAluno.nome_completo}</h3>
-                      <p className="text-sm text-muted-foreground">{viewingAluno.cursos?.nome}</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-muted-foreground" />
-                      <span>{format(new Date(viewingAluno.data_nascimento), "dd/MM/yyyy")}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <GraduationCap className="h-4 w-4 text-muted-foreground" />
-                      <span>{viewingAluno.turmas ? `${viewingAluno.turmas.nome}` : t("students.withoutClass")}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Phone className="h-4 w-4 text-muted-foreground" />
-                      <span>{viewingAluno.telefone_responsavel || "-"}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Mail className="h-4 w-4 text-muted-foreground" />
-                      <span>{viewingAluno.email_responsavel || "-"}</span>
-                    </div>
-                  </div>
-                  {viewingAluno.endereco && (
-                    <div className="flex items-start gap-2 text-sm pt-2">
-                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
-                      <span>{viewingAluno.endereco}</span>
-                    </div>
-                  )}
-                  {viewingAluno.observacoes && (
-                    <div className="pt-2">
-                      <p className="text-sm font-medium text-muted-foreground mb-1">{t("students.observations")}:</p>
-                      <p className="text-sm">{viewingAluno.observacoes}</p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
-
-        {/* Enturmar Dialog */}
-        <Dialog open={isEnturmarOpen} onOpenChange={setIsEnturmarOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle>{t("students.assignClass")}</DialogTitle>
-              <DialogDescription>
-                {t("students.selectClassFor")} {enturmandoAluno?.nome_completo}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="grid gap-2">
-                <Label>{t("students.class")}</Label>
-                <Select value={selectedTurmaId} onValueChange={setSelectedTurmaId}>
-                  <SelectTrigger>
-                    <SelectValue placeholder={t("students.selectClass")} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {turmas.map((turma) => (
-                      <SelectItem key={turma.id} value={turma.id}>
-                        {turma.nome} - {turma.serie}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {!enturmandoAluno?.turma_id && (
-                <div className="bg-blue-50 text-blue-700 p-3 rounded-lg text-sm">
-                  {t("students.invoicesWillBeGenerated")}
-                </div>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsEnturmarOpen(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                onClick={handleConfirmEnturmacao}
-                disabled={!selectedTurmaId || enturmarMutation.isPending}
-              >
-                {enturmarMutation.isPending ? t("common.saving") : t("common.confirm")}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        {/* Dialogs */}
+        <AlunoViewDialog open={isViewOpen} onOpenChange={setIsViewOpen} aluno={viewingAluno} faturasVencidas={faturasVencidas} />
+        <AlunoEnturmarDialog
+          open={isEnturmarOpen} onOpenChange={setIsEnturmarOpen}
+          aluno={enturmandoAluno} turmas={turmas}
+          onConfirm={handleConfirmEnturmacao} isPending={enturmarMutation.isPending}
+        />
       </div>
     </DashboardLayout>
   );
