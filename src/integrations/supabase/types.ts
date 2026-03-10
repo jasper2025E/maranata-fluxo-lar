@@ -3139,6 +3139,62 @@ export type Database = {
           },
         ]
       }
+      receitas: {
+        Row: {
+          categoria: string
+          created_at: string | null
+          data_confirmacao: string | null
+          data_recebimento: string
+          id: string
+          observacoes: string | null
+          origem: string | null
+          recebida: boolean | null
+          recorrente: boolean | null
+          tenant_id: string | null
+          titulo: string
+          updated_at: string | null
+          valor: number
+        }
+        Insert: {
+          categoria: string
+          created_at?: string | null
+          data_confirmacao?: string | null
+          data_recebimento: string
+          id?: string
+          observacoes?: string | null
+          origem?: string | null
+          recebida?: boolean | null
+          recorrente?: boolean | null
+          tenant_id?: string | null
+          titulo: string
+          updated_at?: string | null
+          valor: number
+        }
+        Update: {
+          categoria?: string
+          created_at?: string | null
+          data_confirmacao?: string | null
+          data_recebimento?: string
+          id?: string
+          observacoes?: string | null
+          origem?: string | null
+          recebida?: boolean | null
+          recorrente?: boolean | null
+          tenant_id?: string | null
+          titulo?: string
+          updated_at?: string | null
+          valor?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "receitas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       responsaveis: {
         Row: {
           asaas_customer_id: string | null
