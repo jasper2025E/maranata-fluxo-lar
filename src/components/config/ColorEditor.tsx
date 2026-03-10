@@ -150,40 +150,11 @@ export function ColorEditor({ userId }: ColorEditorProps) {
     loadConfig();
   }, [userId]);
 
-  // Apply config to CSS
+  // Apply config to CSS using the shared function
   useEffect(() => {
-    applyConfig(config);
+    const isDark = document.documentElement.classList.contains("dark");
+    applyThemeConfig(config, isDark);
   }, [config]);
-
-  const applyConfig = (cfg: ThemeConfig) => {
-    const root = document.documentElement;
-    const isDark = root.classList.contains("dark");
-    const colors = isDark ? cfg.darkColors : cfg.lightColors;
-    
-    // Apply colors
-    root.style.setProperty("--primary", colors.primary);
-    root.style.setProperty("--accent", colors.accent);
-    root.style.setProperty("--success", colors.success);
-    root.style.setProperty("--warning", colors.warning);
-    root.style.setProperty("--destructive", colors.destructive);
-    root.style.setProperty("--sidebar-background", colors.sidebarBackground);
-    root.style.setProperty("--sidebar-primary", colors.sidebarPrimary);
-    root.style.setProperty("--ring", colors.primary);
-    
-    // Apply layout
-    root.style.setProperty("--radius", `${cfg.layout.borderRadius / 16}rem`);
-    
-    // Apply shadow based on intensity
-    const shadowOpacity = cfg.layout.shadowIntensity / 100;
-    root.style.setProperty("--shadow-sm", `0 1px 2px 0 rgb(0 0 0 / ${shadowOpacity * 0.05})`);
-    root.style.setProperty("--shadow", `0 1px 3px 0 rgb(0 0 0 / ${shadowOpacity * 0.1}), 0 1px 2px -1px rgb(0 0 0 / ${shadowOpacity * 0.1})`);
-    root.style.setProperty("--shadow-md", `0 4px 6px -1px rgb(0 0 0 / ${shadowOpacity * 0.1}), 0 2px 4px -2px rgb(0 0 0 / ${shadowOpacity * 0.1})`);
-    root.style.setProperty("--shadow-lg", `0 10px 15px -3px rgb(0 0 0 / ${shadowOpacity * 0.1}), 0 4px 6px -4px rgb(0 0 0 / ${shadowOpacity * 0.1})`);
-    
-    // Apply typography
-    root.style.setProperty("--font-sans", cfg.typography.fontFamily);
-    root.style.fontSize = `${cfg.typography.fontSize}px`;
-  };
 
   const handleColorChange = (mode: "light" | "dark", key: keyof ColorConfig, value: string) => {
     setConfig(prev => ({
