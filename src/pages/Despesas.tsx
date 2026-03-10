@@ -167,9 +167,13 @@ const Despesas = () => {
     });
   }, [despesas, selectedYear, selectedMonth]);
 
-  // Monthly totals
-  const totalReceitasMes = filteredRecebimentos.reduce((s, r) => s + (r.valor_total || r.valor), 0);
-  const receitasPagasMes = filteredRecebimentos.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0);
+  // Monthly totals (faturas + receitas avulsas)
+  const totalReceitasFaturas = filteredRecebimentos.reduce((s, r) => s + (r.valor_total || r.valor), 0);
+  const receitasPagasFaturas = filteredRecebimentos.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0);
+  const totalReceitasAvulsas = receitasAvulsasMes.reduce((s: number, r: any) => s + Number(r.valor), 0);
+  const receitasAvulsasRecebidas = receitasAvulsasMes.filter((r: any) => r.recebida).reduce((s: number, r: any) => s + Number(r.valor), 0);
+  const totalReceitasMes = totalReceitasFaturas + totalReceitasAvulsas;
+  const receitasPagasMes = receitasPagasFaturas + receitasAvulsasRecebidas;
 
   const monthDespesas = useMemo(() => {
     return despesas.filter((d) => {
