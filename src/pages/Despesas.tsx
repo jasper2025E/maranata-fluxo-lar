@@ -47,7 +47,6 @@ interface Despesa {
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const TABS = [
-  { key: "recebimentos", label: "Recebimentos" },
   { key: "despesas_fixas", label: "Despesas Fixas" },
   { key: "despesas_variaveis", label: "Despesas Variáveis" },
   { key: "pessoas", label: "Pessoas" },
@@ -61,7 +60,7 @@ const Despesas = () => {
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
-  const [activeTab, setActiveTab] = useState("recebimentos");
+  const [activeTab, setActiveTab] = useState("despesas_fixas");
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
@@ -162,12 +161,11 @@ const Despesas = () => {
   // ─── Active tab data ──────────────────────────────
   const activeData = useMemo((): any[] => {
     switch (activeTab) {
-      case "recebimentos": return filteredRecebimentos;
       case "despesas_fixas": return filteredDespesasFixas;
       case "despesas_variaveis": return filteredDespesasVariaveis;
       default: return [];
     }
-  }, [activeTab, filteredRecebimentos, filteredDespesasFixas, filteredDespesasVariaveis]);
+  }, [activeTab, filteredDespesasFixas, filteredDespesasVariaveis]);
 
   const totalPages = Math.max(1, Math.ceil(activeData.length / perPage));
   const paginatedData = activeData.slice((page - 1) * perPage, page * perPage);
@@ -284,7 +282,6 @@ const Despesas = () => {
     else createDespesa.mutate(despesaForm);
   };
 
-  const isRecebimentosTab = activeTab === "recebimentos";
   const isDespesaTab = activeTab === "despesas_fixas" || activeTab === "despesas_variaveis";
 
   return (
@@ -500,58 +497,6 @@ const Despesas = () => {
                   Nenhum registro encontrado para {MONTHS[selectedMonth]}/{selectedYear}.
                 </p>
               </div>
-            ) : isRecebimentosTab ? (
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="w-10"></TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Vencimento</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Aluno</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Curso</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {(paginatedData as Receita[]).map((r) => (
-                    <TableRow
-                      key={r.id}
-                      className={cn(
-                        "transition-colors border-l-4",
-                        r.status === "Paga" ? "border-l-primary/40 bg-primary/5" :
-                        r.status === "Vencida" ? "border-l-destructive/40 bg-destructive/5" :
-                        "border-l-muted bg-card"
-                      )}
-                    >
-                      <TableCell className="w-10">
-                        <Checkbox
-                          checked={selectedRows.has(r.id)}
-                          onCheckedChange={() => toggleRow(r.id)}
-                        />
-                      </TableCell>
-                      <TableCell className="text-sm text-foreground">
-                        {format(new Date(r.data_vencimento), "dd/MM/yyyy")}
-                      </TableCell>
-                      <TableCell className="text-sm text-foreground">{r.aluno_nome || "—"}</TableCell>
-                      <TableCell className="text-sm text-foreground">{r.curso_nome || "—"}</TableCell>
-                      <TableCell className="text-sm font-medium text-foreground">
-                        {(r.valor_total || r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell>
-                        <span className={cn(
-                          "inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
-                          r.status === "Paga" ? "bg-primary/10 text-primary" :
-                          r.status === "Vencida" ? "bg-destructive/10 text-destructive" :
-                          "bg-muted text-muted-foreground"
-                        )}>
-                          {r.status === "Paga" && <CheckCircle className="h-3 w-3" />}
-                          {r.status}
-                        </span>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
             ) : isDespesaTab ? (
               <Table>
                 <TableHeader>
