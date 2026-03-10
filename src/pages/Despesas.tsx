@@ -165,17 +165,23 @@ const Despesas = () => {
     return receitas.filter((r) => r.ano_referencia === selectedYear && r.mes_referencia === selectedMonth + 1);
   }, [receitas, selectedYear, selectedMonth]);
 
+  // Helper to parse "YYYY-MM-DD" without timezone shift
+  const parseDateParts = (dateStr: string) => {
+    const [y, m] = dateStr.split("-").map(Number);
+    return { year: y, month: m - 1 }; // month is 0-indexed
+  };
+
   const filteredDespesasFixas = useMemo(() => {
     return despesas.filter((d) => {
-      const dt = new Date(d.data_vencimento);
-      return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth && d.categoria === "Fixa";
+      const { year, month } = parseDateParts(d.data_vencimento);
+      return year === selectedYear && month === selectedMonth && d.categoria === "Fixa";
     });
   }, [despesas, selectedYear, selectedMonth]);
 
   const filteredDespesasVariaveis = useMemo(() => {
     return despesas.filter((d) => {
-      const dt = new Date(d.data_vencimento);
-      return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth && (d.categoria === "Variável" || d.categoria === "Única");
+      const { year, month } = parseDateParts(d.data_vencimento);
+      return year === selectedYear && month === selectedMonth && (d.categoria === "Variável" || d.categoria === "Única");
     });
   }, [despesas, selectedYear, selectedMonth]);
 
@@ -189,8 +195,8 @@ const Despesas = () => {
 
   const monthDespesas = useMemo(() => {
     return despesas.filter((d) => {
-      const dt = new Date(d.data_vencimento);
-      return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth;
+      const { year, month } = parseDateParts(d.data_vencimento);
+      return year === selectedYear && month === selectedMonth;
     });
   }, [despesas, selectedYear, selectedMonth]);
 
