@@ -460,7 +460,7 @@ const ptBR = {
       referenceYear: "Ano de Referência",
       printBooklet: "Imprimir Carnê",
       // KPI translations
-      monthlyBilling: "Movimentações Mensal",
+      monthlyBilling: "Tesouraria Mensal",
       toReceive: "A Receber",
       averageTicket: "Ticket Médio",
       delinquency: "Inadimplência",
