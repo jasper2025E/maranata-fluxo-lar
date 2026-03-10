@@ -537,12 +537,17 @@ const Despesas = () => {
                         <Label htmlFor="desp-recorrente">Recorrente</Label>
                       </div>
                     )}
-                    {despesaForm.recorrente && (
+                    {(despesaForm.recorrente || despesaForm.categoria === "Fixa") && (
                       <div className="grid gap-2">
                         <Label>Recorrência até (data final)</Label>
-                        <Input type="date" value={despesaForm.recorrencia_ate} onChange={(e) => setDespesaForm({ ...despesaForm, recorrencia_ate: e.target.value })} placeholder="Até quando repetir" />
-                        <p className="text-xs text-muted-foreground">As parcelas mensais serão geradas automaticamente até esta data, mantendo o mesmo dia de vencimento.</p>
+                        <Input type="date" value={despesaForm.recorrencia_ate} onChange={(e) => setDespesaForm({ ...despesaForm, recorrencia_ate: e.target.value })} />
+                        <p className="text-xs text-muted-foreground">
+                          {despesaForm.categoria === "Fixa" 
+                            ? "Despesa fixa — parcelas mensais serão geradas automaticamente até esta data."
+                            : "As parcelas mensais serão geradas automaticamente até esta data, mantendo o mesmo dia de vencimento."}
+                        </p>
                       </div>
+                    )}
                     )}
                     <div className="grid gap-2">
                       <Label>Observações</Label>
