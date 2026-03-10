@@ -85,6 +85,9 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     despesasHistoricoResult,
     funcionariosResult,
     folhaPagamentoResult,
+    pagamentosAnuaisResult,
+    faturasAnuaisResult,
+    despesasAnuaisResult,
   ] = await Promise.all([
     // Responsáveis
     supabase.from("responsaveis").select("id, ativo"),
