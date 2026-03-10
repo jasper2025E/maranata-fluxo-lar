@@ -204,6 +204,28 @@ const Despesas = () => {
   const receitaProgress = totalReceitasMes > 0 ? (receitasPagasMes / totalReceitasMes) * 100 : 0;
   const despesaProgress = totalDespesasMes > 0 ? (despesasPagasMes / totalDespesasMes) * 100 : 0;
 
+  // Annual totals
+  const yearReceitas = useMemo(() => {
+    return receitas.filter((r) => r.ano_referencia === selectedYear);
+  }, [receitas, selectedYear]);
+  const yearReceitasAvulsas = useMemo(() => {
+    return receitasAvulsas.filter((r: any) => new Date(r.data_recebimento).getFullYear() === selectedYear);
+  }, [receitasAvulsas, selectedYear]);
+  const totalReceitasAno = yearReceitas.reduce((s, r) => s + (r.valor_total || r.valor), 0) + yearReceitasAvulsas.reduce((s: number, r: any) => s + Number(r.valor), 0);
+  const receitasPagasAno = yearReceitas.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0) + yearReceitasAvulsas.filter((r: any) => r.recebida).reduce((s: number, r: any) => s + Number(r.valor), 0);
+
+  const yearDespesas = useMemo(() => {
+    return despesas.filter((d) => {
+      const { year } = parseDateParts(d.data_vencimento);
+      return year === selectedYear;
+    });
+  }, [despesas, selectedYear]);
+  const totalDespesasAno = yearDespesas.reduce((s, d) => s + d.valor, 0);
+  const despesasPagasAno = yearDespesas.filter((d) => d.paga).reduce((s, d) => s + d.valor, 0);
+
+  const receitaProgressAno = totalReceitasAno > 0 ? (receitasPagasAno / totalReceitasAno) * 100 : 0;
+  const despesaProgressAno = totalDespesasAno > 0 ? (despesasPagasAno / totalDespesasAno) * 100 : 0;
+
   // ─── Active tab data ──────────────────────────────
   const activeData = useMemo((): any[] => {
     switch (activeTab) {
