@@ -60,7 +60,7 @@ const Despesas = () => {
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [activeTab, setActiveTab] = useState("recebimentos");
   const [page, setPage] = useState(1);
-  const perPage = 50;
+  const perPage = 13;
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
   // ─── Despesas state ───────────────────────────────
