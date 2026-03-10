@@ -50,9 +50,9 @@ interface Despesa {
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const TABS = [
-  { key: "recebimentos", label: "Recebimentos" },
   { key: "despesas_fixas", label: "Despesas Fixas" },
   { key: "despesas_variaveis", label: "Despesas Variáveis" },
+  { key: "recebimentos", label: "Recebimentos" },
 ];
 
 const Despesas = () => {
@@ -61,7 +61,7 @@ const Despesas = () => {
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
-  const [activeTab, setActiveTab] = useState("recebimentos");
+  const [activeTab, setActiveTab] = useState("despesas_fixas");
   const [page, setPage] = useState(1);
   const perPage = 20;
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
