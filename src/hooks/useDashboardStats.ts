@@ -33,6 +33,12 @@ export interface DashboardStats {
   valorVencido: number;
   ticketMedio: number;
   
+  // Anuais
+  receitaAnualRecebida: number;
+  receitaAnualEsperada: number;
+  despesaAnualPaga: number;
+  despesaAnualTotal: number;
+  
   // Gráficos
   receitasMes: { mes: string; valor: number }[];
   despesasMes: { mes: string; valor: number }[];
@@ -79,6 +85,9 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     despesasHistoricoResult,
     funcionariosResult,
     folhaPagamentoResult,
+    pagamentosAnuaisResult,
+    faturasAnuaisResult,
+    despesasAnuaisResult,
   ] = await Promise.all([
     // Responsáveis
     supabase.from("responsaveis").select("id, ativo"),
@@ -171,6 +180,26 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .eq("mes_referencia", currentMonth)
       .eq("ano_referencia", currentYear)
       .eq("pago", true),
+
+    // Annual: all payments this year
+    supabase
+      .from("pagamentos")
+      .select("valor")
+      .gte("data_pagamento", `${currentYear}-01-01`)
+      .lt("data_pagamento", `${currentYear + 1}-01-01`),
+
+    // Annual: all invoices this year (expected revenue)
+    supabase
+      .from("faturas")
+      .select("valor, valor_total, status")
+      .eq("ano_referencia", currentYear),
+
+    // Annual: all paid expenses this year
+    supabase
+      .from("despesas")
+      .select("valor, paga")
+      .gte("data_vencimento", `${currentYear}-01-01`)
+      .lt("data_vencimento", `${currentYear + 1}-01-01`),
   ]);
 
   const responsaveis = responsaveisResult.data || [];
@@ -271,6 +300,16 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const funcionariosAtivos = funcionarios.filter(f => f.status === 'ativo').length;
   const gastoRHMensal = folhaPagamento.reduce((sum, f) => sum + Number(f.total_liquido || 0), 0);
 
+  // Annual calculations
+  const pagamentosAnuais = pagamentosAnuaisResult.data || [];
+  const faturasAnuais = faturasAnuaisResult.data || [];
+  const despesasAnuais = despesasAnuaisResult.data || [];
+
+  const receitaAnualRecebida = pagamentosAnuais.reduce((sum, p) => sum + Number(p.valor), 0);
+  const receitaAnualEsperada = faturasAnuais.reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
+  const despesaAnualPaga = despesasAnuais.filter(d => d.paga).reduce((sum, d) => sum + Number(d.valor), 0);
+  const despesaAnualTotal = despesasAnuais.reduce((sum, d) => sum + Number(d.valor), 0);
+
   const receitasMes = processMonthlyData(pagamentosHistoricoResult.data || [], monthNames);
   const despesasMes = processMonthlyData(despesasHistoricoResult.data || [], monthNames);
   
@@ -299,6 +338,10 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     valorAReceber,
     valorVencido,
     ticketMedio,
+    receitaAnualRecebida,
+    receitaAnualEsperada,
+    despesaAnualPaga,
+    despesaAnualTotal,
     receitasMes,
     despesasMes,
     combinedData,

@@ -230,6 +230,10 @@ const Dashboard = () => {
             despesas={stats.totalDespesas ?? 0}
             saldo={stats.saldoMensal ?? 0}
             saldoAnterior={stats.saldoAnterior ?? 0}
+            receitaAnualRecebida={stats.receitaAnualRecebida ?? 0}
+            receitaAnualEsperada={stats.receitaAnualEsperada ?? 0}
+            despesaAnualPaga={stats.despesaAnualPaga ?? 0}
+            despesaAnualTotal={stats.despesaAnualTotal ?? 0}
           />
         </div>
 

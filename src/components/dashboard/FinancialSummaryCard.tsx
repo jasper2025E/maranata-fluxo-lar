@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/formatters";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import { TrendingUp, TrendingDown, Target, AlertTriangle } from "lucide-react";
+import { TrendingUp, TrendingDown, Target, AlertTriangle, CalendarRange } from "lucide-react";
 
 interface FinancialSummaryCardProps {
   receitas: number;
@@ -12,7 +12,56 @@ interface FinancialSummaryCardProps {
   saldo: number;
   saldoAnterior?: number;
   meta?: number;
+  receitaAnualRecebida?: number;
+  receitaAnualEsperada?: number;
+  despesaAnualPaga?: number;
+  despesaAnualTotal?: number;
   className?: string;
+}
+
+function ProgressRow({ 
+  label, 
+  current, 
+  total, 
+  variant = "success" 
+}: { 
+  label: string; 
+  current: number; 
+  total: number; 
+  variant?: "success" | "destructive" | "primary";
+}) {
+  const percent = total > 0 ? Math.min((current / total) * 100, 100) : 0;
+  const colorClass = variant === "success" 
+    ? "text-success" 
+    : variant === "destructive" 
+      ? "text-destructive" 
+      : "text-primary";
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+          {label}
+        </span>
+        <span className={cn("text-sm font-semibold", colorClass)}>
+          {formatCurrency(current)} <span className="text-muted-foreground font-normal">de</span> {formatCurrency(total)}
+        </span>
+      </div>
+      <div className="relative h-2.5 w-full overflow-hidden rounded-full bg-muted/50">
+        <motion.div
+          initial={{ width: 0 }}
+          animate={{ width: `${percent}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className={cn(
+            "h-full rounded-full",
+            variant === "success" && "bg-success",
+            variant === "destructive" && "bg-destructive",
+            variant === "primary" && "bg-primary",
+          )}
+        />
+      </div>
+    </div>
+  );
 }
 
 export function FinancialSummaryCard({
@@ -21,12 +70,19 @@ export function FinancialSummaryCard({
   saldo,
   saldoAnterior = 0,
   meta,
+  receitaAnualRecebida = 0,
+  receitaAnualEsperada = 0,
+  despesaAnualPaga = 0,
+  despesaAnualTotal = 0,
   className,
 }: FinancialSummaryCardProps) {
   const { t } = useTranslation();
   const isPositive = saldo >= 0;
   const saldoDoMes = receitas - despesas;
   const progressMeta = meta ? Math.min((receitas / meta) * 100, 100) : 0;
+
+  // Valor esperado mensal = receitas + valor a receber (approx from saldo context)
+  const valorEsperadoMensal = receitas + Math.max(0, saldo - receitas + despesas - saldoAnterior) || receitas;
 
   return (
     <Card className={cn("border-border/50 shadow-sm", className)}>
@@ -82,25 +138,41 @@ export function FinancialSummaryCard({
           )}
         </div>
 
-        {/* Income vs Expenses */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="p-4 rounded-lg bg-success/5 border border-success/20">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingUp className="h-4 w-4 text-success" />
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                {t("dashboard.revenues")}
+        {/* Progress Bars: Receitas, Despesas, Receita Anual */}
+        <div className="space-y-4 p-4 rounded-xl bg-muted/20 border border-border/30">
+          <ProgressRow
+            label={t("dashboard.revenues")}
+            current={receitas}
+            total={receitaAnualEsperada > 0 ? (receitaAnualEsperada / 12) * (new Date().getMonth() + 1) : receitas}
+            variant="success"
+          />
+          <ProgressRow
+            label={t("dashboard.expenses")}
+            current={despesas}
+            total={despesaAnualTotal > 0 ? (despesaAnualTotal / 12) * (new Date().getMonth() + 1) : despesas}
+            variant="success"
+          />
+          <div className="border-t border-border/30 pt-4">
+            <div className="flex items-center gap-1.5 mb-3">
+              <CalendarRange className="h-3.5 w-3.5 text-primary" />
+              <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                {t("dashboard.annualSummary", "Resumo Anual")} {new Date().getFullYear()}
               </span>
             </div>
-            <p className="text-xl font-bold text-success">{formatCurrency(receitas)}</p>
-          </div>
-          <div className="p-4 rounded-lg bg-destructive/5 border border-destructive/20">
-            <div className="flex items-center gap-2 mb-2">
-              <TrendingDown className="h-4 w-4 text-destructive" />
-              <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-                {t("dashboard.expenses")}
-              </span>
+            <div className="space-y-4">
+              <ProgressRow
+                label={t("dashboard.revenues")}
+                current={receitaAnualRecebida}
+                total={receitaAnualEsperada}
+                variant="success"
+              />
+              <ProgressRow
+                label={t("dashboard.expenses")}
+                current={despesaAnualPaga}
+                total={despesaAnualTotal}
+                variant="success"
+              />
             </div>
-            <p className="text-xl font-bold text-destructive">{formatCurrency(despesas)}</p>
           </div>
         </div>
 
