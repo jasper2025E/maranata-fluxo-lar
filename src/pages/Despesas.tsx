@@ -718,60 +718,47 @@ const Despesas = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="w-10"></TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Data</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Descrição</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Aluno</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Referência</TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Origem</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Forma</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Status</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Método</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Gateway</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {(paginatedData as any[]).map((r) => (
-                    <TableRow
-                      key={r.id}
-                      className={cn(
-                        "transition-colors border-l-4",
-                        r.pago ? "border-l-primary/40 bg-primary/5" : "border-l-muted bg-card"
-                      )}
-                    >
-                      <TableCell className="w-10">
-                        <Checkbox
-                          checked={selectedRows.has(r.id)}
-                          onCheckedChange={() => toggleRow(r.id)}
-                        />
-                      </TableCell>
+                    <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell className="text-sm text-foreground">
                         {r.data ? format(new Date(r.data + "T00:00:00"), "dd/MM/yyyy") : "—"}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">
-                        <div className="flex flex-col">
-                          <span>{r.descricao}</span>
-                          {r.codigoFatura && (
-                            <span className="text-xs text-muted-foreground">{r.codigoFatura}</span>
-                          )}
-                          {r.tipoRegistro === "estorno" && (
-                            <span className="text-xs text-destructive font-medium">Estorno</span>
-                          )}
-                        </div>
+                      <TableCell className="text-sm font-medium text-foreground">
+                        {r.origem}
+                        {r.codigoFatura && (
+                          <span className="block text-xs text-muted-foreground">{r.codigoFatura}</span>
+                        )}
+                        {r.tipoRegistro === "estorno" && (
+                          <span className="block text-xs text-destructive font-medium">Estorno</span>
+                        )}
                       </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{r.referencia || "—"}</TableCell>
                       <TableCell className={cn(
-                        "text-sm font-medium",
-                        r.tipoRegistro === "estorno" ? "text-destructive" : "text-foreground"
+                        "text-sm font-semibold",
+                        r.tipoRegistro === "estorno" ? "text-destructive" : "text-primary"
                       )}>
                         {r.tipoRegistro === "estorno" ? "- " : ""}
-                        {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        R$ {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{r.origem}</TableCell>
-                      <TableCell className="text-sm text-foreground">{r.categoria}</TableCell>
                       <TableCell>
-                        {r.pago ? (
-                          <span className="flex items-center gap-1 text-sm text-foreground">
-                            Sim <CheckCircle className="h-4 w-4 text-primary" />
-                          </span>
+                        <Badge variant={r.pago ? "default" : "outline"} className="text-xs">
+                          {r.categoria}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {r.gateway ? (
+                          <span className="text-xs">{r.gatewayId ? `${r.gatewayId.substring(0, 14)}...` : r.gateway}</span>
                         ) : (
-                          <span className="text-sm text-muted-foreground">Não</span>
+                          "Manuais"
                         )}
                       </TableCell>
                     </TableRow>
