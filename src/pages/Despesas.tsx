@@ -204,14 +204,12 @@ const Despesas = () => {
     });
   }, [despesas, selectedYear, selectedMonth]);
 
-  // Monthly totals (faturas + receitas avulsas)
+  // Monthly totals (faturas)
   const totalReceitasFaturas = filteredRecebimentos.reduce((s, r) => s + (r.valor_total || r.valor), 0);
   const receitasPagasFaturas = filteredRecebimentos.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0);
-  const totalReceitasAvulsas = receitasAvulsasMes.reduce((s: number, r: any) => s + Number(r.valor), 0);
-  const receitasAvulsasRecebidas = receitasAvulsasMes.filter((r: any) => r.recebida).reduce((s: number, r: any) => s + Number(r.valor), 0);
   const totalPagamentosMes = pagamentosMes.reduce((s: number, p: any) => s + Number(p.valor), 0);
-  const totalReceitasMes = Math.max(totalReceitasFaturas, totalPagamentosMes) + totalReceitasAvulsas;
-  const receitasPagasMes = totalPagamentosMes + receitasAvulsasRecebidas;
+  const totalReceitasMes = Math.max(totalReceitasFaturas, totalPagamentosMes);
+  const receitasPagasMes = totalPagamentosMes;
 
   const monthDespesas = useMemo(() => {
     return despesas.filter((d) => {
@@ -230,12 +228,12 @@ const Despesas = () => {
   // ─── Active tab data ──────────────────────────────
   const activeData = useMemo((): any[] => {
     switch (activeTab) {
-      case "recebimentos": return recebimentosUnificados;
+      case "recebimentos": return filteredPagamentos;
       case "despesas_fixas": return filteredDespesasFixas;
       case "despesas_variaveis": return filteredDespesasVariaveis;
       default: return [];
     }
-  }, [activeTab, recebimentosUnificados, filteredDespesasFixas, filteredDespesasVariaveis]);
+  }, [activeTab, filteredPagamentos, filteredDespesasFixas, filteredDespesasVariaveis]);
 
   const totalPages = Math.max(1, Math.ceil(activeData.length / perPage));
   const paginatedData = activeData.slice((page - 1) * perPage, page * perPage);
