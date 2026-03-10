@@ -184,7 +184,11 @@ export function PreferencesTab({
       </TabsContent>
 
       <TabsContent value="cores">
-        {user && <ColorEditor userId={user.id} />}
+        {user ? (
+          <ErrorBoundaryWrapper>
+            <ColorEditor userId={user.id} />
+          </ErrorBoundaryWrapper>
+        ) : null}
       </TabsContent>
     </Tabs>
   );
