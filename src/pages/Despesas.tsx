@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
