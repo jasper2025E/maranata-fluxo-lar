@@ -80,6 +80,7 @@ const operationsItems = [
   { titleKey: "nav.invoices", url: "/faturas", icon: FileText },
   { titleKey: "nav.payments", url: "/pagamentos", icon: CreditCard },
   { titleKey: "nav.expenses", url: "/despesas", icon: Receipt },
+  { titleKey: "nav.financialMovements", url: "/movimentacoes", icon: Wallet },
 ];
 
 // Financial Analysis
