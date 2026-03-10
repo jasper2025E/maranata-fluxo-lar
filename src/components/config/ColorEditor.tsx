@@ -7,7 +7,7 @@ import { Loader2, RotateCcw, Palette, Check, Type, Layout, Sun, Moon } from "luc
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { updateThemeConfigCache } from "@/hooks/useThemeConfig";
+import { updateThemeConfigCache, applyThemeConfig } from "@/hooks/useThemeConfig";
 import {
   Popover,
   PopoverContent,
