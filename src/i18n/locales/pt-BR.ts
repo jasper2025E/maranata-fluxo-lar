@@ -102,7 +102,7 @@ const ptBR = {
       logout: "Sair",
       main: "Principal",
       finance: "Financeiro",
-      operations: "Movimentações",
+      operations: "Tesouraria",
       analysis: "Financeiro",
       system: "Configurações",
       profile: "Perfil",
