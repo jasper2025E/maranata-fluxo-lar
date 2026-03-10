@@ -282,7 +282,6 @@ const Despesas = () => {
     else createDespesa.mutate(despesaForm);
   };
 
-  const isRecebimentosTab = activeTab === "recebimentos";
   const isDespesaTab = activeTab === "despesas_fixas" || activeTab === "despesas_variaveis";
 
   return (
