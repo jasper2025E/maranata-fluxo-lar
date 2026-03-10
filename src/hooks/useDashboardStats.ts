@@ -203,6 +203,20 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .select("valor, paga")
       .gte("data_vencimento", `${currentYear}-01-01`)
       .lt("data_vencimento", `${currentYear + 1}-01-01`),
+
+    // Cumulative: ALL payments before current month (for accurate saldo anterior)
+    supabase
+      .from("pagamentos")
+      .select("valor")
+      .lt("data_pagamento", startOfCurrentMonth),
+
+    // Cumulative: ALL paid expenses before current month
+    supabase
+      .from("despesas")
+      .select("valor")
+      .eq("paga", true)
+      .not("data_pagamento", "is", null)
+      .lt("data_pagamento", startOfCurrentMonth),
   ]);
 
   const responsaveis = responsaveisResult.data || [];
