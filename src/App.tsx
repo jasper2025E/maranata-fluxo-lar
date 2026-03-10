@@ -29,6 +29,7 @@ const Escola = lazy(() => import("./pages/Escola"));
 const Faturas = lazy(() => import("./pages/Faturas"));
 const Pagamentos = lazy(() => import("./pages/Pagamentos"));
 const Despesas = lazy(() => import("./pages/Despesas"));
+const MovimentacoesFinanceiras = lazy(() => import("./pages/MovimentacoesFinanceiras"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
 const PaymentResult = lazy(() => import("./pages/PaymentResult"));
