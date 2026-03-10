@@ -9,6 +9,9 @@ export interface AlunoProfile {
   endereco: string | null;
   data_matricula: string;
   status_matricula: string | null;
+  foto_url: string | null;
+  observacoes: string | null;
+  telefone_responsavel: string | null;
   curso: { id: string; nome: string; mensalidade: number; duracao_meses: number } | null;
   turma: { id: string; nome: string } | null;
   responsavel: { id: string; nome: string; telefone: string; email: string | null } | null;
