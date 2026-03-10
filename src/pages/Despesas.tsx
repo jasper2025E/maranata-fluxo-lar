@@ -105,21 +105,15 @@ const Despesas = () => {
     },
   });
 
-  // Recebimentos = faturas dos alunos
+  // Recebimentos = faturas dos alunos (for KPI calculations)
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas-faturas"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("faturas")
         .select(`
-          id,
-          valor,
-          valor_total,
-          data_vencimento,
-          data_emissao,
-          status,
-          mes_referencia,
-          ano_referencia,
+          id, valor, valor_total, data_vencimento, data_emissao, status,
+          mes_referencia, ano_referencia,
           alunos!inner ( nome_completo ),
           cursos!inner ( nome )
         `)
@@ -127,35 +121,16 @@ const Despesas = () => {
         .order("data_vencimento", { ascending: false });
       if (error) throw error;
       return (data || []).map((f: any) => ({
-        id: f.id,
-        valor: f.valor,
-        valor_total: f.valor_total,
-        data_vencimento: f.data_vencimento,
-        data_emissao: f.data_emissao,
-        status: f.status,
-        mes_referencia: f.mes_referencia,
-        ano_referencia: f.ano_referencia,
-        aluno_nome: f.alunos?.nome_completo || null,
-        curso_nome: f.cursos?.nome || null,
+        id: f.id, valor: f.valor, valor_total: f.valor_total,
+        data_vencimento: f.data_vencimento, data_emissao: f.data_emissao,
+        status: f.status, mes_referencia: f.mes_referencia, ano_referencia: f.ano_referencia,
+        aluno_nome: f.alunos?.nome_completo || null, curso_nome: f.cursos?.nome || null,
       })) as Receita[];
     },
   });
 
-  // Receitas avulsas query
-  const { data: receitasAvulsas = [] } = useQuery({
-    queryKey: ["receitas-avulsas"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("receitas")
-        .select("*")
-        .order("data_recebimento", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  // Pagamentos - mesma query usada na página Pagamentos (funciona)
-  const { data: pagamentos = [] } = useQuery({
+  // ALL pagamentos - complete history for Recebimentos tab
+  const { data: pagamentos = [], isLoading: pagamentosLoading } = useQuery({
     queryKey: ["pagamentos"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -167,14 +142,36 @@ const Despesas = () => {
     },
   });
 
-  // Combine receitas avulsas + pagamentos for the month
-  const receitasAvulsasMes = useMemo(() => {
-    return receitasAvulsas.filter((r: any) => {
-      const dt = new Date(r.data_recebimento);
-      return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth;
-    });
-  }, [receitasAvulsas, selectedYear, selectedMonth]);
+  const mesesNomes = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
+  // KPIs for recebimentos
+  const totalRecebido = pagamentos.reduce((s: number, p: any) => s + Number(p.valor), 0);
+  const pagamentosAsaas = pagamentos.filter((p: any) => p.gateway === "asaas");
+  const pagamentosStripe = pagamentos.filter((p: any) => p.gateway === "stripe");
+  const pagamentosManuais = pagamentos.filter((p: any) => !p.gateway);
+
+  // Filtered pagamentos for recebimentos tab (search + gateway filter)
+  const filteredPagamentos = useMemo(() => {
+    return pagamentos.filter((p: any) => {
+      const searchLower = recebimentosSearch.toLowerCase();
+      const matchesSearch = !recebimentosSearch ||
+        p.faturas?.alunos?.nome_completo?.toLowerCase().includes(searchLower) ||
+        p.metodo?.toLowerCase().includes(searchLower) ||
+        p.referencia?.toLowerCase().includes(searchLower) ||
+        p.gateway_id?.toLowerCase().includes(searchLower) ||
+        p.faturas?.codigo_sequencial?.toLowerCase().includes(searchLower);
+
+      const matchesGateway =
+        recebimentosGatewayFilter === "todos" ||
+        (recebimentosGatewayFilter === "asaas" && p.gateway === "asaas") ||
+        (recebimentosGatewayFilter === "stripe" && p.gateway === "stripe") ||
+        (recebimentosGatewayFilter === "manual" && !p.gateway);
+
+      return matchesSearch && matchesGateway;
+    });
+  }, [pagamentos, recebimentosSearch, recebimentosGatewayFilter]);
+
+  // Monthly pagamentos for KPI progress bars
   const pagamentosMes = useMemo(() => {
     return pagamentos.filter((p: any) => {
       if (!p.data_pagamento) return false;
@@ -182,50 +179,6 @@ const Despesas = () => {
       return y === selectedYear && m === selectedMonth + 1;
     });
   }, [pagamentos, selectedYear, selectedMonth]);
-
-  // Unified recebimentos list for the tab
-  const recebimentosUnificados = useMemo(() => {
-    const meses = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-    const fromAvulsas = receitasAvulsasMes.map((r: any) => ({
-      id: r.id,
-      data: r.data_recebimento,
-      descricao: r.titulo,
-      valor: Number(r.valor),
-      origem: r.origem || "Manual",
-      categoria: r.categoria,
-      pago: r.recebida || false,
-      tipo: "avulsa" as const,
-      referencia: "—",
-      gateway: null as string | null,
-      gatewayId: null as string | null,
-      codigoFatura: null as string | null,
-      tipoRegistro: null as string | null,
-    }));
-    const fromPagamentos = pagamentosMes.map((p: any) => {
-      const mesRef = p.faturas?.mes_referencia;
-      const anoRef = p.faturas?.ano_referencia;
-      const ref = mesRef && anoRef ? `${meses[mesRef]}/${anoRef}` : "—";
-      return {
-        id: p.id,
-        data: p.data_pagamento,
-        descricao: `${p.faturas?.cursos?.nome || "Fatura"} - ${p.faturas?.alunos?.nome_completo || "Aluno"}`,
-        valor: Number(p.valor),
-        origem: p.faturas?.alunos?.nome_completo || "Aluno",
-        categoria: p.metodo || p.gateway || "Fatura",
-        pago: true,
-        tipo: "pagamento" as const,
-        codigoFatura: p.faturas?.codigo_sequencial,
-        tipoRegistro: p.tipo,
-        gateway: p.gateway as string | null,
-        gatewayId: p.gateway_id as string | null,
-        referencia: ref,
-      };
-    });
-    return [...fromPagamentos, ...fromAvulsas].sort((a, b) => 
-      new Date(b.data).getTime() - new Date(a.data).getTime()
-    );
-  }, [receitasAvulsasMes, pagamentosMes]);
-
 
   const filteredRecebimentos = useMemo(() => {
     return receitas.filter((r) => r.ano_referencia === selectedYear && r.mes_referencia === selectedMonth + 1);
