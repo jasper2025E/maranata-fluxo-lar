@@ -63,6 +63,7 @@ let configCache: ThemeConfig | null = null;
 let lastUserId: string | null = null;
 
 export function applyThemeConfig(cfg: ThemeConfig, isDark: boolean) {
+  if (!cfg || !cfg.lightColors || !cfg.darkColors || !cfg.layout || !cfg.typography) return;
   const root = document.documentElement;
   const colors = isDark ? cfg.darkColors : cfg.lightColors;
 
