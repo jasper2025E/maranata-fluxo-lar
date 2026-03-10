@@ -177,6 +177,26 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .eq("mes_referencia", currentMonth)
       .eq("ano_referencia", currentYear)
       .eq("pago", true),
+
+    // Annual: all payments this year
+    supabase
+      .from("pagamentos")
+      .select("valor")
+      .gte("data_pagamento", `${currentYear}-01-01`)
+      .lt("data_pagamento", `${currentYear + 1}-01-01`),
+
+    // Annual: all invoices this year (expected revenue)
+    supabase
+      .from("faturas")
+      .select("valor, valor_total, status")
+      .eq("ano_referencia", currentYear),
+
+    // Annual: all paid expenses this year
+    supabase
+      .from("despesas")
+      .select("valor, paga")
+      .gte("data_vencimento", `${currentYear}-01-01`)
+      .lt("data_vencimento", `${currentYear + 1}-01-01`),
   ]);
 
   const responsaveis = responsaveisResult.data || [];
