@@ -145,6 +145,14 @@ function AppContent() {
               }
             />
             <Route
+              path="/movimentacoes"
+              element={
+                <ProtectedRoute>
+                  <MovimentacoesFinanceiras />
+                </ProtectedRoute>
+              }
+            />
+            <Route
               path="/relatorios"
               element={
                 <ProtectedRoute>

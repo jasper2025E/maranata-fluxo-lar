@@ -603,6 +603,54 @@ const ptBR = {
       deleteError: "Erro ao remover despesa",
     },
 
+    // Income / Receitas
+    income: {
+      title: "Recebimentos",
+      subtitle: "Gerencie os recebimentos da escola",
+      newIncome: "Novo Recebimento",
+      editIncome: "Editar Recebimento",
+      fillData: "Preencha os dados do recebimento",
+      incomeTitle: "Título",
+      titlePlaceholder: "Ex: Mensalidade João, Matrícula Maria...",
+      category: "Categoria",
+      selectCategory: "Selecione a categoria",
+      value: "Valor",
+      receiptDate: "Data de Recebimento",
+      origin: "Origem",
+      originPlaceholder: "Ex: Responsável, Empresa...",
+      observations: "Observações",
+      observationsPlaceholder: "Observações adicionais sobre o recebimento",
+      recurring: "Recebimento recorrente",
+      recurringLabel: "recorrente",
+      // Categories
+      tuition: "Mensalidade",
+      enrollment: "Matrícula",
+      donation: "Doação",
+      other: "Outros",
+      // KPIs
+      totalIncome: "Total de Receitas",
+      received: "Recebido",
+      pendingIncome: "Pendente",
+      pendingTotal: "Total Pendente",
+      saldoAtual: "Saldo Atual",
+      incomeCount: "recebimento(s)",
+      // List
+      incomeList: "Lista de Recebimentos",
+      noIncomeFound: "Nenhum recebimento encontrado",
+      noIncomeDescription: "Cadastre o primeiro recebimento clicando no botão acima.",
+      // Actions
+      markAsReceived: "Confirmar recebimento",
+      markedAsReceived: "Recebimento confirmado!",
+      // Messages
+      createSuccess: "Recebimento cadastrado com sucesso!",
+      createError: "Erro ao cadastrar recebimento",
+      updateSuccess: "Recebimento atualizado com sucesso!",
+      updateError: "Erro ao atualizar recebimento",
+      deleteSuccess: "Recebimento removido com sucesso!",
+      deleteError: "Erro ao remover recebimento",
+      confirmDelete: "Tem certeza que deseja remover este recebimento?",
+    },
+
     // HR
     hr: {
       title: "Recursos Humanos",
