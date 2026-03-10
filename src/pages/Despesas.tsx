@@ -50,9 +50,6 @@ const TABS = [
   { key: "recebimentos", label: "Recebimentos" },
   { key: "despesas_fixas", label: "Despesas Fixas" },
   { key: "despesas_variaveis", label: "Despesas Variáveis" },
-  { key: "pessoas", label: "Pessoas" },
-  { key: "impostos", label: "Impostos" },
-  { key: "transferencias", label: "Transferências" },
 ];
 
 const Despesas = () => {
