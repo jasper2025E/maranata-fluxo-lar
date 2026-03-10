@@ -529,9 +529,16 @@ const Despesas = () => {
                       <Input type="date" value={despesaForm.data_vencimento} onChange={(e) => setDespesaForm({ ...despesaForm, data_vencimento: e.target.value })} required />
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="desp-recorrente" checked={despesaForm.recorrente} onCheckedChange={(c) => setDespesaForm({ ...despesaForm, recorrente: c as boolean })} />
+                      <Checkbox id="desp-recorrente" checked={despesaForm.recorrente} onCheckedChange={(c) => setDespesaForm({ ...despesaForm, recorrente: c as boolean, recorrencia_ate: c ? despesaForm.recorrencia_ate : "" })} />
                       <Label htmlFor="desp-recorrente">Recorrente</Label>
                     </div>
+                    {despesaForm.recorrente && (
+                      <div className="grid gap-2">
+                        <Label>Recorrência até (data final)</Label>
+                        <Input type="date" value={despesaForm.recorrencia_ate} onChange={(e) => setDespesaForm({ ...despesaForm, recorrencia_ate: e.target.value })} placeholder="Até quando repetir" />
+                        <p className="text-xs text-muted-foreground">As parcelas mensais serão geradas automaticamente até esta data, mantendo o mesmo dia de vencimento.</p>
+                      </div>
+                    )}
                     <div className="grid gap-2">
                       <Label>Observações</Label>
                       <Textarea value={despesaForm.observacoes} onChange={(e) => setDespesaForm({ ...despesaForm, observacoes: e.target.value })} />
