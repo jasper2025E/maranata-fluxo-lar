@@ -142,7 +142,8 @@ const Despesas = () => {
   }, [despesas, selectedYear, selectedMonth]);
 
   // Monthly totals
-  const totalReceitasMes = filteredRecebimentos.reduce((s, r) => s + r.valor, 0);
+  const totalReceitasMes = filteredRecebimentos.reduce((s, r) => s + (r.valor_total || r.valor), 0);
+  const receitasPagasMes = filteredRecebimentos.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0);
 
   const monthDespesas = useMemo(() => {
     return despesas.filter((d) => {
