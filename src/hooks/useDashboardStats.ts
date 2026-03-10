@@ -275,7 +275,11 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const totalDespesas = despesas.reduce((sum, d) => sum + Number(d.valor), 0);
   const totalReceitasPrev = pagamentosPrev.reduce((sum, p) => sum + Number(p.valor), 0);
   const totalDespesasPrev = despesasPrev.reduce((sum, d) => sum + Number(d.valor), 0);
-  const saldoAnterior = totalReceitasPrev - totalDespesasPrev;
+  
+  // Saldo anterior CUMULATIVO: soma de TODOS os pagamentos - TODAS as despesas pagas antes do mês atual
+  const totalReceitasAcumuladas = (pagamentosAcumuladosResult.data || []).reduce((sum, p) => sum + Number(p.valor), 0);
+  const totalDespesasAcumuladas = (despesasAcumuladasResult.data || []).reduce((sum, d) => sum + Number(d.valor), 0);
+  const saldoAnterior = totalReceitasAcumuladas - totalDespesasAcumuladas;
 
   // Variações
   const variacaoReceitas = totalReceitasPrev > 0 
