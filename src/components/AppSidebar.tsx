@@ -112,6 +112,11 @@ export function AppSidebar() {
   const isCollapsed = state === "collapsed";
   const { t } = useTranslation();
   
+  // Check if any cadastros route is active
+  const cadastrosRoutes = ["/alunos", "/responsaveis", "/cursos", "/turmas"];
+  const isCadastrosActive = cadastrosRoutes.some(route => location.pathname.startsWith(route));
+  const [isCadastrosOpen, setIsCadastrosOpen] = useState(isCadastrosActive);
+  
   // Check if any operations route is active
   const operationsRoutes = ["/faturas", "/despesas"];
   const isOperationsActive = operationsRoutes.some(route => location.pathname.startsWith(route));
