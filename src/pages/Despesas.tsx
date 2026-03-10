@@ -424,7 +424,7 @@ const Despesas = () => {
         </div>
 
         {/* ═══ Saldo + Receitas/Despesas ═══ */}
-        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border border-border">
             <CardContent className="flex items-center justify-center gap-6 py-8">
               <Select defaultValue="principal">
@@ -449,6 +449,7 @@ const Despesas = () => {
 
           <Card className="border border-border">
             <CardContent className="py-5 px-6 space-y-3">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-2">Mensal ({MONTHS[selectedMonth]})</p>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-semibold uppercase tracking-wide text-foreground">RECEITAS</span>
@@ -466,6 +467,30 @@ const Despesas = () => {
                   </span>
                 </div>
                 <Progress value={despesaProgress} className="h-2.5 bg-muted" />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="border border-border">
+            <CardContent className="py-5 px-6 space-y-3">
+              <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-2">Anual ({selectedYear})</p>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-foreground">RECEITAS</span>
+                  <span className="text-xs font-semibold text-primary">
+                    {formatCurrency(receitasPagasAno)} de {formatCurrency(totalReceitasAno)}
+                  </span>
+                </div>
+                <Progress value={receitaProgressAno} className="h-2.5 bg-muted" />
+              </div>
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-foreground">DESPESAS</span>
+                  <span className="text-xs font-semibold text-primary">
+                    {formatCurrency(despesasPagasAno)} de {formatCurrency(totalDespesasAno)}
+                  </span>
+                </div>
+                <Progress value={despesaProgressAno} className="h-2.5 bg-muted" />
               </div>
             </CardContent>
           </Card>
