@@ -12,9 +12,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Pencil, Trash2, CheckCircle, Wallet, ChevronLeft, ChevronRight, Printer } from "lucide-react";
+import { Plus, Trash2, Pencil, CheckCircle, ChevronDown, Printer, UserPlus, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -52,7 +51,9 @@ const TABS = [
   { key: "recebimentos", label: "Recebimentos" },
   { key: "despesas_fixas", label: "Despesas Fixas" },
   { key: "despesas_variaveis", label: "Despesas Variáveis" },
-  { key: "unicas", label: "Despesas Únicas" },
+  { key: "pessoas", label: "Pessoas" },
+  { key: "impostos", label: "Impostos" },
+  { key: "transferencias", label: "Transferências" },
 ];
 
 const Despesas = () => {
@@ -64,6 +65,7 @@ const Despesas = () => {
   const [activeTab, setActiveTab] = useState("recebimentos");
   const [page, setPage] = useState(1);
   const perPage = 10;
+  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
   // ─── Despesas state ───────────────────────────────
   const [isDespesaOpen, setIsDespesaOpen] = useState(false);
@@ -120,13 +122,6 @@ const Despesas = () => {
     });
   }, [despesas, selectedYear, selectedMonth]);
 
-  const filteredDespesasUnicas = useMemo(() => {
-    return despesas.filter((d) => {
-      const dt = new Date(d.data_vencimento);
-      return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth && d.categoria === "Única";
-    });
-  }, [despesas, selectedYear, selectedMonth]);
-
   // Monthly totals
   const monthReceitas = useMemo(() => {
     return receitas.filter((r) => {
@@ -152,21 +147,28 @@ const Despesas = () => {
   const despesaProgress = totalDespesasMes > 0 ? (despesasPagasMes / totalDespesasMes) * 100 : 0;
 
   // ─── Active tab data ──────────────────────────────
-  const activeData = useMemo(() => {
+  const activeData = useMemo((): (Receita | Despesa)[] => {
     switch (activeTab) {
       case "recebimentos": return filteredReceitas;
       case "despesas_fixas": return filteredDespesasFixas;
       case "despesas_variaveis": return filteredDespesasVariaveis;
-      case "unicas": return filteredDespesasUnicas;
       default: return [];
     }
-  }, [activeTab, filteredReceitas, filteredDespesasFixas, filteredDespesasVariaveis, filteredDespesasUnicas]);
+  }, [activeTab, filteredReceitas, filteredDespesasFixas, filteredDespesasVariaveis]);
 
   const totalPages = Math.max(1, Math.ceil(activeData.length / perPage));
   const paginatedData = activeData.slice((page - 1) * perPage, page * perPage);
 
-  const handleTabChange = (tab: string) => { setActiveTab(tab); setPage(1); };
-  const handleMonthChange = (m: number) => { setSelectedMonth(m); setPage(1); };
+  const handleTabChange = (tab: string) => { setActiveTab(tab); setPage(1); setSelectedRows(new Set()); };
+  const handleMonthChange = (m: number) => { setSelectedMonth(m); setPage(1); setSelectedRows(new Set()); };
+
+  const toggleRow = (id: string) => {
+    setSelectedRows((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   // ─── Mutations ────────────────────────────────────
   const createDespesa = useMutation({
@@ -179,7 +181,6 @@ const Despesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: "all" });
       toast.success(t("expenses.createSuccess"));
       resetDespesaForm();
     },
@@ -237,7 +238,6 @@ const Despesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["receitas"], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["dashboard"], refetchType: "all" });
       toast.success(t("income.createSuccess"));
       resetReceitaForm();
     },
@@ -283,6 +283,26 @@ const Despesas = () => {
       toast.success(t("income.markedAsReceived"));
     },
     onError: () => toast.error(t("income.updateError")),
+  });
+
+  const deleteSelected = useMutation({
+    mutationFn: async () => {
+      const ids = Array.from(selectedRows);
+      if (isRecebimentosTab) {
+        const { error } = await supabase.from("receitas").delete().in("id", ids);
+        if (error) throw error;
+      } else {
+        const { error } = await supabase.from("despesas").delete().in("id", ids);
+        if (error) throw error;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
+      queryClient.invalidateQueries({ queryKey: ["receitas"], refetchType: "all" });
+      setSelectedRows(new Set());
+      toast.success("Registros removidos com sucesso");
+    },
+    onError: () => toast.error("Erro ao remover registros"),
   });
 
   // ─── Helpers ──────────────────────────────────────
@@ -334,349 +354,457 @@ const Despesas = () => {
   };
 
   const isRecebimentosTab = activeTab === "recebimentos";
+  const isDespesaTab = activeTab === "despesas_fixas" || activeTab === "despesas_variaveis";
 
   return (
     <DashboardLayout>
-      <div className="max-w-6xl mx-auto space-y-6">
-        {/* Header */}
+      <div className="space-y-5">
+        {/* ═══ Header ═══ */}
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold text-foreground">Movimentações Financeiras</h1>
-          <Button variant="outline" size="sm" onClick={() => window.print()}>
+          <h1 className="text-lg font-medium text-foreground">Movimentações Financeiras</h1>
+          <Button
+            variant="default"
+            size="sm"
+            className="bg-primary hover:bg-primary/90"
+            onClick={() => window.print()}
+          >
             <Printer className="mr-2 h-4 w-4" />
             Imprimir
           </Button>
         </div>
 
-        {/* Saldo + Receitas/Despesas Card */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 animate-fade-in">
-          <Card className="border-border/50 shadow-sm rounded-2xl">
-            <CardContent className="flex items-center justify-center py-8 gap-4">
-              <Wallet className="h-8 w-8 text-muted-foreground" />
+        {/* ═══ Saldo + Receitas/Despesas ═══ */}
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4">
+          {/* Left: Conta Principal + Saldo */}
+          <Card className="border border-border">
+            <CardContent className="flex items-center justify-center gap-6 py-8">
+              <Select defaultValue="principal">
+                <SelectTrigger className="w-[160px] h-9 text-sm">
+                  <SelectValue placeholder="Conta Principal" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="principal">Conta Principal</SelectItem>
+                </SelectContent>
+              </Select>
               <div className="text-center">
-                <p className={cn("text-3xl font-bold", saldoAtual >= 0 ? "text-foreground" : "text-destructive")}>
+                <p className={cn(
+                  "text-3xl font-bold tracking-tight",
+                  saldoAtual >= 0 ? "text-foreground" : "text-destructive"
+                )}>
                   {formatCurrency(saldoAtual)}
                 </p>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide mt-1">Saldo Atual</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-widest mt-1">SALDO ATUAL</p>
               </div>
             </CardContent>
           </Card>
-          <Card className="border-border/50 shadow-sm rounded-2xl">
-            <CardContent className="py-6 space-y-4">
+
+          {/* Right: Receitas + Despesas bars */}
+          <Card className="border border-border">
+            <CardContent className="py-5 px-6 space-y-3">
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-foreground">RECEITAS</span>
-                  <span className="text-sm text-primary font-semibold">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-foreground">RECEITAS</span>
+                  <span className="text-xs font-semibold text-primary">
                     {formatCurrency(receitasRecebidasMes)} de {formatCurrency(totalReceitasMes)}
                   </span>
                 </div>
-                <Progress value={receitaProgress} className="h-2" />
+                <Progress value={receitaProgress} className="h-2.5 bg-muted" />
               </div>
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-foreground">DESPESAS</span>
-                  <span className="text-sm text-destructive font-semibold">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-foreground">DESPESAS</span>
+                  <span className="text-xs font-semibold text-primary">
                     {formatCurrency(despesasPagasMes)} de {formatCurrency(totalDespesasMes)}
                   </span>
                 </div>
-                <Progress value={despesaProgress} className="h-2 [&>div]:bg-destructive" />
+                <Progress value={despesaProgress} className="h-2.5 bg-muted" />
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Year + Month Selector */}
-        <div className="flex flex-col sm:flex-row items-center gap-3 animate-fade-in">
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedYear((y) => y - 1)}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <Badge variant="secondary" className="text-sm px-3 py-1 font-semibold">{selectedYear}</Badge>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setSelectedYear((y) => y + 1)}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-1">
+        {/* ═══ Year + Month Selector ═══ */}
+        <div className="flex flex-wrap items-center gap-2">
+          <Select
+            value={selectedYear.toString()}
+            onValueChange={(v) => { setSelectedYear(parseInt(v)); setPage(1); }}
+          >
+            <SelectTrigger className="w-[90px] h-9 text-sm font-semibold bg-primary text-primary-foreground border-0 rounded-full">
+              <SelectValue />
+              <ChevronDown className="ml-1 h-3.5 w-3.5" />
+            </SelectTrigger>
+            <SelectContent>
+              {[selectedYear - 2, selectedYear - 1, selectedYear, selectedYear + 1, selectedYear + 2].map((y) => (
+                <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <div className="flex flex-wrap gap-0">
             {MONTHS.map((m, i) => (
-              <Button
+              <button
                 key={m}
-                variant={selectedMonth === i ? "default" : "outline"}
-                size="sm"
-                className={cn("text-xs px-3 h-8", selectedMonth === i && "shadow-sm")}
+                className={cn(
+                  "px-4 py-2 text-sm border border-border transition-colors",
+                  "first:rounded-l-md last:rounded-r-md",
+                  selectedMonth === i
+                    ? "bg-primary text-primary-foreground border-primary font-semibold"
+                    : "bg-card text-foreground hover:bg-muted"
+                )}
                 onClick={() => handleMonthChange(i)}
               >
                 {m}
-              </Button>
+              </button>
             ))}
           </div>
         </div>
 
-        {/* Category Tabs */}
-        <Tabs value={activeTab} onValueChange={handleTabChange} className="animate-fade-in">
-          <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+        {/* ═══ Tabs ═══ */}
+        <div className="border-b border-border">
+          <div className="flex overflow-x-auto">
             {TABS.map((tab) => (
-              <TabsTrigger key={tab.key} value={tab.key} className="text-xs sm:text-sm">
+              <button
+                key={tab.key}
+                className={cn(
+                  "px-6 py-3 text-sm font-medium whitespace-nowrap border-b-2 transition-colors",
+                  activeTab === tab.key
+                    ? "border-primary text-primary"
+                    : "border-transparent text-muted-foreground hover:text-foreground hover:border-border"
+                )}
+                onClick={() => handleTabChange(tab.key)}
+              >
                 {tab.label}
-              </TabsTrigger>
+              </button>
             ))}
-          </TabsList>
-
-          {/* Action Buttons */}
-          <div className="flex flex-wrap gap-2 mt-4">
-            {isRecebimentosTab ? (
-              <Dialog open={isReceitaOpen} onOpenChange={(open) => { if (!open) resetReceitaForm(); setIsReceitaOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="mr-2 h-4 w-4" />Adicionar Recebimento</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <form onSubmit={handleSubmitReceita}>
-                    <DialogHeader>
-                      <DialogTitle>{editingReceita ? t("income.editIncome") : t("income.newIncome")}</DialogTitle>
-                      <DialogDescription>{t("income.fillData")}</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label>{t("income.incomeTitle")}</Label>
-                        <Input value={receitaForm.titulo} onChange={(e) => setReceitaForm({ ...receitaForm, titulo: e.target.value })} placeholder={t("income.titlePlaceholder")} required />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label>{t("income.category")}</Label>
-                          <Select value={receitaForm.categoria} onValueChange={(v) => setReceitaForm({ ...receitaForm, categoria: v })}>
-                            <SelectTrigger><SelectValue placeholder={t("income.selectCategory")} /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Mensalidade">{t("income.tuition")}</SelectItem>
-                              <SelectItem value="Matrícula">{t("income.enrollment")}</SelectItem>
-                              <SelectItem value="Doação">{t("income.donation")}</SelectItem>
-                              <SelectItem value="Outros">{t("income.other")}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label>{t("income.value")}</Label>
-                          <Input type="number" step="0.01" value={receitaForm.valor} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })} required />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label>{t("income.receiptDate")}</Label>
-                          <Input type="date" value={receitaForm.data_recebimento} onChange={(e) => setReceitaForm({ ...receitaForm, data_recebimento: e.target.value })} required />
-                        </div>
-                        <div className="grid gap-2">
-                          <Label>{t("income.origin")}</Label>
-                          <Input value={receitaForm.origem} onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })} placeholder={t("income.originPlaceholder")} />
-                        </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="rec-recorrente" checked={receitaForm.recorrente} onCheckedChange={(c) => setReceitaForm({ ...receitaForm, recorrente: c as boolean })} />
-                        <Label htmlFor="rec-recorrente">{t("income.recurring")}</Label>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>{t("income.observations")}</Label>
-                        <Textarea value={receitaForm.observacoes} onChange={(e) => setReceitaForm({ ...receitaForm, observacoes: e.target.value })} placeholder={t("income.observationsPlaceholder")} />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button type="button" variant="outline" onClick={resetReceitaForm}>{t("common.cancel")}</Button>
-                      <Button type="submit" disabled={createReceita.isPending || updateReceita.isPending}>{editingReceita ? t("common.save") : t("common.register")}</Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            ) : (
-              <Dialog open={isDespesaOpen} onOpenChange={(open) => { if (!open) resetDespesaForm(); setIsDespesaOpen(open); }}>
-                <DialogTrigger asChild>
-                  <Button size="sm"><Plus className="mr-2 h-4 w-4" />Adicionar Despesa</Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <form onSubmit={handleSubmitDespesa}>
-                    <DialogHeader>
-                      <DialogTitle>{editingDespesa ? t("expenses.editExpense") : t("expenses.newExpense")}</DialogTitle>
-                      <DialogDescription>{t("expenses.fillData")}</DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid gap-2">
-                        <Label>{t("expenses.expenseTitle")}</Label>
-                        <Input value={despesaForm.titulo} onChange={(e) => setDespesaForm({ ...despesaForm, titulo: e.target.value })} placeholder={t("expenses.titlePlaceholder")} required />
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="grid gap-2">
-                          <Label>{t("expenses.category")}</Label>
-                          <Select value={despesaForm.categoria} onValueChange={(v) => setDespesaForm({ ...despesaForm, categoria: v })}>
-                            <SelectTrigger><SelectValue placeholder={t("expenses.selectCategory")} /></SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="Fixa">{t("expenses.fixed")}</SelectItem>
-                              <SelectItem value="Variável">{t("expenses.variable")}</SelectItem>
-                              <SelectItem value="Única">{t("expenses.oneTime")}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="grid gap-2">
-                          <Label>{t("expenses.value")}</Label>
-                          <Input type="number" step="0.01" value={despesaForm.valor} onChange={(e) => setDespesaForm({ ...despesaForm, valor: e.target.value })} required />
-                        </div>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>{t("expenses.dueDate")}</Label>
-                        <Input type="date" value={despesaForm.data_vencimento} onChange={(e) => setDespesaForm({ ...despesaForm, data_vencimento: e.target.value })} required />
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <Checkbox id="desp-recorrente" checked={despesaForm.recorrente} onCheckedChange={(c) => setDespesaForm({ ...despesaForm, recorrente: c as boolean })} />
-                        <Label htmlFor="desp-recorrente">{t("expenses.recurring")}</Label>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>{t("expenses.observations")}</Label>
-                        <Textarea value={despesaForm.observacoes} onChange={(e) => setDespesaForm({ ...despesaForm, observacoes: e.target.value })} placeholder={t("expenses.observationsPlaceholder")} />
-                      </div>
-                    </div>
-                    <DialogFooter>
-                      <Button type="button" variant="outline" onClick={resetDespesaForm}>{t("common.cancel")}</Button>
-                      <Button type="submit" disabled={createDespesa.isPending || updateDespesa.isPending}>{editingDespesa ? t("common.save") : t("common.register")}</Button>
-                    </DialogFooter>
-                  </form>
-                </DialogContent>
-              </Dialog>
-            )}
           </div>
+        </div>
 
-          {/* Table */}
-          {TABS.map((tab) => (
-            <TabsContent key={tab.key} value={tab.key} className="mt-4">
-              <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden">
-                <CardContent className="p-0 overflow-x-auto">
-                  {paginatedData.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-16 text-center">
-                      <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center mb-4">
-                        <Wallet className="h-8 w-8 text-muted-foreground" />
-                      </div>
-                      <h3 className="text-lg font-medium text-foreground mb-1">Nenhum registro encontrado</h3>
-                      <p className="text-sm text-muted-foreground max-w-sm">
-                        Não há {isRecebimentosTab ? "recebimentos" : "despesas"} para {MONTHS[selectedMonth]}/{selectedYear}.
-                      </p>
+        {/* ═══ Action Buttons ═══ */}
+        <div className="flex flex-wrap gap-2">
+          {isRecebimentosTab ? (
+            <Dialog open={isReceitaOpen} onOpenChange={(open) => { if (!open) resetReceitaForm(); setIsReceitaOpen(open); }}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-primary hover:bg-primary/90">
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Adicionar
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <form onSubmit={handleSubmitReceita}>
+                  <DialogHeader>
+                    <DialogTitle>{editingReceita ? "Editar Recebimento" : "Novo Recebimento"}</DialogTitle>
+                    <DialogDescription>Preencha os dados do recebimento</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label>Título</Label>
+                      <Input value={receitaForm.titulo} onChange={(e) => setReceitaForm({ ...receitaForm, titulo: e.target.value })} required />
                     </div>
-                  ) : isRecebimentosTab ? (
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50 hover:bg-muted/50">
-                          <TableHead className="font-semibold text-foreground">Data</TableHead>
-                          <TableHead className="font-semibold text-foreground">Descrição</TableHead>
-                          <TableHead className="font-semibold text-foreground">Valor</TableHead>
-                          <TableHead className="font-semibold text-foreground">Origem</TableHead>
-                          <TableHead className="font-semibold text-foreground">Categoria</TableHead>
-                          <TableHead className="font-semibold text-foreground">Recebido</TableHead>
-                          <TableHead className="text-right font-semibold text-foreground">{t("common.actions")}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {(paginatedData as Receita[]).map((r) => (
-                          <TableRow key={r.id} className="hover:bg-muted/50 transition-colors">
-                            <TableCell className="text-muted-foreground">{format(new Date(r.data_recebimento), "dd/MM/yyyy")}</TableCell>
-                            <TableCell className="font-medium text-foreground">
-                              {r.titulo}
-                              {r.recorrente && <span className="ml-2 text-xs text-muted-foreground">(recorrente)</span>}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">{formatCurrency(r.valor)}</TableCell>
-                            <TableCell className="text-muted-foreground">{r.origem || "—"}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="text-xs">{r.categoria}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              {r.recebida ? (
-                                <span className="flex items-center gap-1 text-emerald-600"><CheckCircle className="h-4 w-4" /> Sim</span>
-                              ) : (
-                                <span className="text-muted-foreground">Não</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                {!r.recebida && (
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10" onClick={() => markReceitaReceived.mutate(r.id)}>
-                                    <CheckCircle className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10" onClick={() => handleEditReceita(r)}>
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => { if (confirm(t("income.confirmDelete"))) deleteReceita.mutate(r.id); }}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow className="bg-muted/50 hover:bg-muted/50">
-                          <TableHead className="font-semibold text-foreground">Vencimento</TableHead>
-                          <TableHead className="font-semibold text-foreground">Descrição</TableHead>
-                          <TableHead className="font-semibold text-foreground">Valor</TableHead>
-                          <TableHead className="font-semibold text-foreground">Categoria</TableHead>
-                          <TableHead className="font-semibold text-foreground">Pago</TableHead>
-                          <TableHead className="text-right font-semibold text-foreground">{t("common.actions")}</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {(paginatedData as Despesa[]).map((d) => (
-                          <TableRow key={d.id} className="hover:bg-muted/50 transition-colors">
-                            <TableCell className="text-muted-foreground">{format(new Date(d.data_vencimento), "dd/MM/yyyy")}</TableCell>
-                            <TableCell className="font-medium text-foreground">
-                              {d.titulo}
-                              {d.recorrente && <span className="ml-2 text-xs text-muted-foreground">(recorrente)</span>}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">{formatCurrency(d.valor)}</TableCell>
-                            <TableCell>
-                              <Badge variant="secondary" className="text-xs">{d.categoria}</Badge>
-                            </TableCell>
-                            <TableCell>
-                              {d.paga ? (
-                                <span className="flex items-center gap-1 text-emerald-600"><CheckCircle className="h-4 w-4" /> Sim</span>
-                              ) : (
-                                <span className="text-muted-foreground">Não</span>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                              <div className="flex items-center justify-end gap-1">
-                                {!d.paga && (
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-emerald-500 hover:bg-emerald-500/10" onClick={() => markDespesaPaid.mutate(d.id)}>
-                                    <CheckCircle className="h-4 w-4" />
-                                  </Button>
-                                )}
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10" onClick={() => handleEditDespesa(d)}>
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10" onClick={() => { if (confirm(t("expenses.confirmDelete"))) deleteDespesa.mutate(d.id); }}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </CardContent>
-              </Card>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Categoria</Label>
+                        <Select value={receitaForm.categoria} onValueChange={(v) => setReceitaForm({ ...receitaForm, categoria: v })}>
+                          <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Mensalidade">Mensalidade</SelectItem>
+                            <SelectItem value="Matrícula">Matrícula</SelectItem>
+                            <SelectItem value="Doação">Doação</SelectItem>
+                            <SelectItem value="Outros">Outros</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Valor</Label>
+                        <Input type="number" step="0.01" value={receitaForm.valor} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })} required />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Data de Recebimento</Label>
+                        <Input type="date" value={receitaForm.data_recebimento} onChange={(e) => setReceitaForm({ ...receitaForm, data_recebimento: e.target.value })} required />
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Recebido de</Label>
+                        <Input value={receitaForm.origem} onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })} />
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="rec-recorrente" checked={receitaForm.recorrente} onCheckedChange={(c) => setReceitaForm({ ...receitaForm, recorrente: c as boolean })} />
+                      <Label htmlFor="rec-recorrente">Recorrente</Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Observações</Label>
+                      <Textarea value={receitaForm.observacoes} onChange={(e) => setReceitaForm({ ...receitaForm, observacoes: e.target.value })} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={resetReceitaForm}>Cancelar</Button>
+                    <Button type="submit" disabled={createReceita.isPending || updateReceita.isPending}>
+                      {editingReceita ? "Salvar" : "Registrar"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          ) : isDespesaTab ? (
+            <Dialog open={isDespesaOpen} onOpenChange={(open) => { if (!open) resetDespesaForm(); setIsDespesaOpen(open); }}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="bg-primary hover:bg-primary/90">
+                  <Plus className="mr-1.5 h-4 w-4" />
+                  Adicionar
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <form onSubmit={handleSubmitDespesa}>
+                  <DialogHeader>
+                    <DialogTitle>{editingDespesa ? "Editar Despesa" : "Nova Despesa"}</DialogTitle>
+                    <DialogDescription>Preencha os dados da despesa</DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid gap-2">
+                      <Label>Título</Label>
+                      <Input value={despesaForm.titulo} onChange={(e) => setDespesaForm({ ...despesaForm, titulo: e.target.value })} required />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label>Categoria</Label>
+                        <Select value={despesaForm.categoria} onValueChange={(v) => setDespesaForm({ ...despesaForm, categoria: v })}>
+                          <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="Fixa">Fixa</SelectItem>
+                            <SelectItem value="Variável">Variável</SelectItem>
+                            <SelectItem value="Única">Única</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="grid gap-2">
+                        <Label>Valor</Label>
+                        <Input type="number" step="0.01" value={despesaForm.valor} onChange={(e) => setDespesaForm({ ...despesaForm, valor: e.target.value })} required />
+                      </div>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Data de Vencimento</Label>
+                      <Input type="date" value={despesaForm.data_vencimento} onChange={(e) => setDespesaForm({ ...despesaForm, data_vencimento: e.target.value })} required />
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Checkbox id="desp-recorrente" checked={despesaForm.recorrente} onCheckedChange={(c) => setDespesaForm({ ...despesaForm, recorrente: c as boolean })} />
+                      <Label htmlFor="desp-recorrente">Recorrente</Label>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Observações</Label>
+                      <Textarea value={despesaForm.observacoes} onChange={(e) => setDespesaForm({ ...despesaForm, observacoes: e.target.value })} />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={resetDespesaForm}>Cancelar</Button>
+                    <Button type="submit" disabled={createDespesa.isPending || updateDespesa.isPending}>
+                      {editingDespesa ? "Salvar" : "Registrar"}
+                    </Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+          ) : null}
 
-              {/* Pagination */}
-              <div className="flex items-center justify-between mt-4">
+          <Button
+            size="sm"
+            variant="destructive"
+            disabled={selectedRows.size === 0}
+            onClick={() => {
+              if (selectedRows.size > 0 && confirm(`Remover ${selectedRows.size} registro(s)?`)) {
+                deleteSelected.mutate();
+              }
+            }}
+          >
+            <Trash2 className="mr-1.5 h-4 w-4" />
+            Remover
+          </Button>
+
+          <Button size="sm" className="bg-primary hover:bg-primary/90">
+            <UserPlus className="mr-1.5 h-4 w-4" />
+            Nova Pessoa / Empresa
+          </Button>
+
+          <Button size="sm" className="bg-primary hover:bg-primary/90">
+            <Receipt className="mr-1.5 h-4 w-4" />
+            Emitir Recibo
+          </Button>
+        </div>
+
+        {/* ═══ Table ═══ */}
+        <Card className="border border-border overflow-hidden">
+          <CardContent className="p-0 overflow-x-auto">
+            {paginatedData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-sm text-muted-foreground">
-                  Mostrando {activeData.length === 0 ? 0 : (page - 1) * perPage + 1} até {Math.min(page * perPage, activeData.length)} de {activeData.length} registros
+                  Nenhum registro encontrado para {MONTHS[selectedMonth]}/{selectedYear}.
                 </p>
-                <div className="flex items-center gap-1">
-                  <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>
-                    Anterior
-                  </Button>
-                  <Badge variant="secondary" className="px-3 py-1">{page}</Badge>
-                  <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>
-                    Próximo
-                  </Button>
-                </div>
               </div>
-            </TabsContent>
-          ))}
-        </Tabs>
+            ) : isRecebimentosTab ? (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Vencimento</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Descrição</TableHead>
+                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Valor</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Recebido de</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Categoria</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Pago</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(paginatedData as Receita[]).map((r) => (
+                    <TableRow
+                      key={r.id}
+                      className={cn(
+                        "transition-colors border-l-4",
+                        r.recebida ? "border-l-primary/40 bg-primary/5" : "border-l-muted bg-card"
+                      )}
+                    >
+                      <TableCell className="w-10">
+                        <Checkbox
+                          checked={selectedRows.has(r.id)}
+                          onCheckedChange={() => toggleRow(r.id)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-sm text-foreground">
+                        {format(new Date(r.data_recebimento), "dd/MM/yyyy")}
+                      </TableCell>
+                      <TableCell className="text-sm text-foreground">{r.titulo}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => handleEditReceita(r)}
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-foreground">
+                        {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-sm text-foreground">{r.origem || "—"}</TableCell>
+                      <TableCell className="text-sm text-foreground">{r.categoria}</TableCell>
+                      <TableCell>
+                        {r.recebida ? (
+                          <span className="flex items-center gap-1 text-sm text-foreground">
+                            Sim <CheckCircle className="h-4 w-4 text-primary" />
+                          </span>
+                        ) : (
+                          <button
+                            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                            onClick={() => markReceitaReceived.mutate(r.id)}
+                          >
+                            Não
+                          </button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : isDespesaTab ? (
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/30 hover:bg-muted/30">
+                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Vencimento</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Descrição</TableHead>
+                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Valor</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Categoria</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Pago</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(paginatedData as Despesa[]).map((d) => (
+                    <TableRow
+                      key={d.id}
+                      className={cn(
+                        "transition-colors border-l-4",
+                        d.paga ? "border-l-primary/40 bg-primary/5" : "border-l-muted bg-card"
+                      )}
+                    >
+                      <TableCell className="w-10">
+                        <Checkbox
+                          checked={selectedRows.has(d.id)}
+                          onCheckedChange={() => toggleRow(d.id)}
+                        />
+                      </TableCell>
+                      <TableCell className="text-sm text-foreground">
+                        {format(new Date(d.data_vencimento), "dd/MM/yyyy")}
+                      </TableCell>
+                      <TableCell className="text-sm text-foreground">{d.titulo}</TableCell>
+                      <TableCell>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-7 w-7 text-muted-foreground hover:text-primary"
+                          onClick={() => handleEditDespesa(d)}
+                        >
+                          <ChevronDown className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                      <TableCell className="text-sm font-medium text-foreground">
+                        {d.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      </TableCell>
+                      <TableCell className="text-sm text-foreground">{d.categoria}</TableCell>
+                      <TableCell>
+                        {d.paga ? (
+                          <span className="flex items-center gap-1 text-sm text-foreground">
+                            Sim <CheckCircle className="h-4 w-4 text-primary" />
+                          </span>
+                        ) : (
+                          <button
+                            className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                            onClick={() => markDespesaPaid.mutate(d.id)}
+                          >
+                            Não
+                          </button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <p className="text-sm text-muted-foreground">
+                  Módulo em desenvolvimento.
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* ═══ Pagination ═══ */}
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-muted-foreground">
+            Mostrando {activeData.length === 0 ? 0 : (page - 1) * perPage + 1} até{" "}
+            {Math.min(page * perPage, activeData.length)} de {activeData.length} registros
+          </p>
+          <div className="flex items-center gap-0">
+            <button
+              className="px-4 py-2 text-sm border border-border rounded-l-md bg-card text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              disabled={page <= 1}
+              onClick={() => setPage((p) => p - 1)}
+            >
+              Anterior
+            </button>
+            <span className="px-4 py-2 text-sm border-y border-border bg-card text-foreground font-medium">
+              {page}
+            </span>
+            <button
+              className="px-4 py-2 text-sm border border-border rounded-r-md bg-card text-foreground hover:bg-muted disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              disabled={page >= totalPages}
+              onClick={() => setPage((p) => p + 1)}
+            >
+              Próximo
+            </button>
+          </div>
+        </div>
       </div>
     </DashboardLayout>
   );
