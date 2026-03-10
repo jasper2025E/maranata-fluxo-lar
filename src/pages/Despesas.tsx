@@ -161,12 +161,11 @@ const Despesas = () => {
   // ─── Active tab data ──────────────────────────────
   const activeData = useMemo((): any[] => {
     switch (activeTab) {
-      case "recebimentos": return filteredRecebimentos;
       case "despesas_fixas": return filteredDespesasFixas;
       case "despesas_variaveis": return filteredDespesasVariaveis;
       default: return [];
     }
-  }, [activeTab, filteredRecebimentos, filteredDespesasFixas, filteredDespesasVariaveis]);
+  }, [activeTab, filteredDespesasFixas, filteredDespesasVariaveis]);
 
   const totalPages = Math.max(1, Math.ceil(activeData.length / perPage));
   const paginatedData = activeData.slice((page - 1) * perPage, page * perPage);
