@@ -86,45 +86,46 @@ const Despesas = () => {
     },
   });
 
-  // Recebimentos = pagamentos reais das faturas
-  const { data: pagamentos = [] } = useQuery({
-    queryKey: ["pagamentos-recebimentos"],
+  // Recebimentos = faturas dos alunos
+  const { data: receitas = [] } = useQuery({
+    queryKey: ["receitas-faturas"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("pagamentos")
+        .from("faturas")
         .select(`
           id,
           valor,
-          metodo,
-          data_pagamento,
-          created_at,
-          faturas!inner (
-            alunos!inner ( nome_completo ),
-            cursos!inner ( nome )
-          )
+          valor_total,
+          data_vencimento,
+          data_emissao,
+          status,
+          mes_referencia,
+          ano_referencia,
+          alunos!inner ( nome_completo ),
+          cursos!inner ( nome )
         `)
-        .neq("tipo", "estorno")
-        .order("data_pagamento", { ascending: false });
+        .not("status", "eq", "Cancelada")
+        .order("data_vencimento", { ascending: false });
       if (error) throw error;
-      return (data || []).map((p: any) => ({
-        id: p.id,
-        valor: p.valor,
-        metodo: p.metodo,
-        data_pagamento: p.data_pagamento,
-        created_at: p.created_at,
-        aluno_nome: p.faturas?.alunos?.nome_completo || null,
-        curso_nome: p.faturas?.cursos?.nome || null,
-      })) as Pagamento[];
+      return (data || []).map((f: any) => ({
+        id: f.id,
+        valor: f.valor,
+        valor_total: f.valor_total,
+        data_vencimento: f.data_vencimento,
+        data_emissao: f.data_emissao,
+        status: f.status,
+        mes_referencia: f.mes_referencia,
+        ano_referencia: f.ano_referencia,
+        aluno_nome: f.alunos?.nome_completo || null,
+        curso_nome: f.cursos?.nome || null,
+      })) as Receita[];
     },
   });
 
   // ─── Filtered by month/year ───────────────────────
   const filteredRecebimentos = useMemo(() => {
-    return pagamentos.filter((p) => {
-      const d = new Date(p.data_pagamento);
-      return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
-    });
-  }, [pagamentos, selectedYear, selectedMonth]);
+    return receitas.filter((r) => r.ano_referencia === selectedYear && r.mes_referencia === selectedMonth + 1);
+  }, [receitas, selectedYear, selectedMonth]);
 
   const filteredDespesasFixas = useMemo(() => {
     return despesas.filter((d) => {
