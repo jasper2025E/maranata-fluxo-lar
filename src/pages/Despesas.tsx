@@ -10,10 +10,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Trash2, Pencil, CheckCircle, ChevronDown, Printer, UserPlus, Receipt } from "lucide-react";
+import { Plus, Trash2, CheckCircle, ChevronDown, Printer, UserPlus, Receipt } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -32,17 +31,14 @@ interface Despesa {
   observacoes: string | null;
 }
 
-interface Receita {
+interface Pagamento {
   id: string;
-  titulo: string;
-  categoria: string;
   valor: number;
-  data_recebimento: string;
-  recebida: boolean;
-  data_confirmacao: string | null;
-  recorrente: boolean;
-  origem: string | null;
-  observacoes: string | null;
+  metodo: string | null;
+  data_pagamento: string;
+  created_at: string | null;
+  aluno_nome: string | null;
+  curso_nome: string | null;
 }
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -74,39 +70,58 @@ const Despesas = () => {
     titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "",
   });
 
-  // ─── Receitas state ───────────────────────────────
-  const [isReceitaOpen, setIsReceitaOpen] = useState(false);
-  const [editingReceita, setEditingReceita] = useState<Receita | null>(null);
-  const [receitaForm, setReceitaForm] = useState({
-    titulo: "", categoria: "", valor: "", data_recebimento: "", recorrente: false, origem: "", observacoes: "",
-  });
-
   // ─── Queries ──────────────────────────────────────
   const { data: despesas = [] } = useQuery({
     queryKey: ["despesas"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("despesas").select("*").order("data_vencimento", { ascending: false });
+      const { data, error } = await supabase
+        .from("despesas")
+        .select("*")
+        .order("data_vencimento", { ascending: false });
       if (error) throw error;
       return data as Despesa[];
     },
   });
 
-  const { data: receitas = [] } = useQuery({
-    queryKey: ["receitas"],
+  // Recebimentos = pagamentos reais das faturas
+  const { data: pagamentos = [] } = useQuery({
+    queryKey: ["pagamentos-recebimentos"],
     queryFn: async () => {
-      const { data, error } = await supabase.from("receitas").select("*").order("data_recebimento", { ascending: false });
+      const { data, error } = await supabase
+        .from("pagamentos")
+        .select(`
+          id,
+          valor,
+          metodo,
+          data_pagamento,
+          created_at,
+          faturas!inner (
+            alunos!inner ( nome_completo ),
+            cursos!inner ( nome )
+          )
+        `)
+        .neq("tipo", "estorno")
+        .order("data_pagamento", { ascending: false });
       if (error) throw error;
-      return data as Receita[];
+      return (data || []).map((p: any) => ({
+        id: p.id,
+        valor: p.valor,
+        metodo: p.metodo,
+        data_pagamento: p.data_pagamento,
+        created_at: p.created_at,
+        aluno_nome: p.faturas?.alunos?.nome_completo || null,
+        curso_nome: p.faturas?.cursos?.nome || null,
+      })) as Pagamento[];
     },
   });
 
   // ─── Filtered by month/year ───────────────────────
-  const filteredReceitas = useMemo(() => {
-    return receitas.filter((r) => {
-      const d = new Date(r.data_recebimento);
+  const filteredRecebimentos = useMemo(() => {
+    return pagamentos.filter((p) => {
+      const d = new Date(p.data_pagamento);
       return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
     });
-  }, [receitas, selectedYear, selectedMonth]);
+  }, [pagamentos, selectedYear, selectedMonth]);
 
   const filteredDespesasFixas = useMemo(() => {
     return despesas.filter((d) => {
@@ -118,17 +133,12 @@ const Despesas = () => {
   const filteredDespesasVariaveis = useMemo(() => {
     return despesas.filter((d) => {
       const dt = new Date(d.data_vencimento);
-      return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth && d.categoria === "Variável";
+      return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth && (d.categoria === "Variável" || d.categoria === "Única");
     });
   }, [despesas, selectedYear, selectedMonth]);
 
   // Monthly totals
-  const monthReceitas = useMemo(() => {
-    return receitas.filter((r) => {
-      const d = new Date(r.data_recebimento);
-      return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
-    });
-  }, [receitas, selectedYear, selectedMonth]);
+  const totalReceitasMes = filteredRecebimentos.reduce((s, r) => s + r.valor, 0);
 
   const monthDespesas = useMemo(() => {
     return despesas.filter((d) => {
@@ -137,24 +147,22 @@ const Despesas = () => {
     });
   }, [despesas, selectedYear, selectedMonth]);
 
-  const totalReceitasMes = monthReceitas.reduce((s, r) => s + r.valor, 0);
-  const receitasRecebidasMes = monthReceitas.filter((r) => r.recebida).reduce((s, r) => s + r.valor, 0);
   const totalDespesasMes = monthDespesas.reduce((s, d) => s + d.valor, 0);
   const despesasPagasMes = monthDespesas.filter((d) => d.paga).reduce((s, d) => s + d.valor, 0);
-  const saldoAtual = receitasRecebidasMes - despesasPagasMes;
+  const saldoAtual = totalReceitasMes - despesasPagasMes;
 
-  const receitaProgress = totalReceitasMes > 0 ? (receitasRecebidasMes / totalReceitasMes) * 100 : 0;
+  const receitaProgress = totalReceitasMes > 0 ? 100 : 0;
   const despesaProgress = totalDespesasMes > 0 ? (despesasPagasMes / totalDespesasMes) * 100 : 0;
 
   // ─── Active tab data ──────────────────────────────
-  const activeData = useMemo((): (Receita | Despesa)[] => {
+  const activeData = useMemo((): any[] => {
     switch (activeTab) {
-      case "recebimentos": return filteredReceitas;
+      case "recebimentos": return filteredRecebimentos;
       case "despesas_fixas": return filteredDespesasFixas;
       case "despesas_variaveis": return filteredDespesasVariaveis;
       default: return [];
     }
-  }, [activeTab, filteredReceitas, filteredDespesasFixas, filteredDespesasVariaveis]);
+  }, [activeTab, filteredRecebimentos, filteredDespesasFixas, filteredDespesasVariaveis]);
 
   const totalPages = Math.max(1, Math.ceil(activeData.length / perPage));
   const paginatedData = activeData.slice((page - 1) * perPage, page * perPage);
@@ -181,10 +189,10 @@ const Despesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
-      toast.success(t("expenses.createSuccess"));
+      toast.success("Despesa criada com sucesso");
       resetDespesaForm();
     },
-    onError: () => toast.error(t("expenses.createError")),
+    onError: () => toast.error("Erro ao criar despesa"),
   });
 
   const updateDespesa = useMutation({
@@ -197,10 +205,10 @@ const Despesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
-      toast.success(t("expenses.updateSuccess"));
+      toast.success("Despesa atualizada");
       resetDespesaForm();
     },
-    onError: () => toast.error(t("expenses.updateError")),
+    onError: () => toast.error("Erro ao atualizar despesa"),
   });
 
   const deleteDespesa = useMutation({
@@ -210,99 +218,39 @@ const Despesas = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
-      toast.success(t("expenses.deleteSuccess"));
+      toast.success("Despesa removida");
     },
-    onError: () => toast.error(t("expenses.deleteError")),
+    onError: () => toast.error("Erro ao remover"),
   });
 
   const markDespesaPaid = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("despesas").update({ paga: true, data_pagamento: new Date().toISOString().split("T")[0] }).eq("id", id);
+      const { error } = await supabase.from("despesas").update({
+        paga: true, data_pagamento: new Date().toISOString().split("T")[0],
+      }).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
-      toast.success(t("expenses.markedAsPaid"));
+      toast.success("Despesa marcada como paga");
     },
-    onError: () => toast.error(t("expenses.updateError")),
-  });
-
-  const createReceita = useMutation({
-    mutationFn: async (data: typeof receitaForm) => {
-      const { error } = await supabase.from("receitas").insert({
-        titulo: data.titulo, categoria: data.categoria, valor: parseFloat(data.valor),
-        data_recebimento: data.data_recebimento, recorrente: data.recorrente,
-        origem: data.origem || null, observacoes: data.observacoes || null,
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["receitas"], refetchType: "all" });
-      toast.success(t("income.createSuccess"));
-      resetReceitaForm();
-    },
-    onError: () => toast.error(t("income.createError")),
-  });
-
-  const updateReceita = useMutation({
-    mutationFn: async (data: { id: string } & typeof receitaForm) => {
-      const { error } = await supabase.from("receitas").update({
-        titulo: data.titulo, categoria: data.categoria, valor: parseFloat(data.valor),
-        data_recebimento: data.data_recebimento, recorrente: data.recorrente,
-        origem: data.origem || null, observacoes: data.observacoes || null,
-      }).eq("id", data.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["receitas"], refetchType: "all" });
-      toast.success(t("income.updateSuccess"));
-      resetReceitaForm();
-    },
-    onError: () => toast.error(t("income.updateError")),
-  });
-
-  const deleteReceita = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("receitas").delete().eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["receitas"], refetchType: "all" });
-      toast.success(t("income.deleteSuccess"));
-    },
-    onError: () => toast.error(t("income.deleteError")),
-  });
-
-  const markReceitaReceived = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("receitas").update({ recebida: true, data_confirmacao: new Date().toISOString().split("T")[0] }).eq("id", id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["receitas"], refetchType: "all" });
-      toast.success(t("income.markedAsReceived"));
-    },
-    onError: () => toast.error(t("income.updateError")),
+    onError: () => toast.error("Erro ao atualizar"),
   });
 
   const deleteSelected = useMutation({
     mutationFn: async () => {
       const ids = Array.from(selectedRows);
-      if (isRecebimentosTab) {
-        const { error } = await supabase.from("receitas").delete().in("id", ids);
-        if (error) throw error;
-      } else {
+      if (activeTab !== "recebimentos") {
         const { error } = await supabase.from("despesas").delete().in("id", ids);
         if (error) throw error;
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
-      queryClient.invalidateQueries({ queryKey: ["receitas"], refetchType: "all" });
       setSelectedRows(new Set());
-      toast.success("Registros removidos com sucesso");
+      toast.success("Registros removidos");
     },
-    onError: () => toast.error("Erro ao remover registros"),
+    onError: () => toast.error("Erro ao remover"),
   });
 
   // ─── Helpers ──────────────────────────────────────
@@ -315,22 +263,10 @@ const Despesas = () => {
     setIsDespesaOpen(false);
   };
 
-  const resetReceitaForm = () => {
-    setReceitaForm({ titulo: "", categoria: "", valor: "", data_recebimento: "", recorrente: false, origem: "", observacoes: "" });
-    setEditingReceita(null);
-    setIsReceitaOpen(false);
-  };
-
   const handleEditDespesa = (d: Despesa) => {
     setEditingDespesa(d);
     setDespesaForm({ titulo: d.titulo, categoria: d.categoria, valor: d.valor.toString(), data_vencimento: d.data_vencimento, recorrente: d.recorrente, observacoes: d.observacoes || "" });
     setIsDespesaOpen(true);
-  };
-
-  const handleEditReceita = (r: Receita) => {
-    setEditingReceita(r);
-    setReceitaForm({ titulo: r.titulo, categoria: r.categoria, valor: r.valor.toString(), data_recebimento: r.data_recebimento, recorrente: r.recorrente, origem: r.origem || "", observacoes: r.observacoes || "" });
-    setIsReceitaOpen(true);
   };
 
   const handleSubmitDespesa = (e: React.FormEvent) => {
@@ -343,16 +279,6 @@ const Despesas = () => {
     else createDespesa.mutate(despesaForm);
   };
 
-  const handleSubmitReceita = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!receitaForm.titulo || !receitaForm.categoria || !receitaForm.valor || !receitaForm.data_recebimento) {
-      toast.error("Preencha todos os campos obrigatórios");
-      return;
-    }
-    if (editingReceita) updateReceita.mutate({ id: editingReceita.id, ...receitaForm });
-    else createReceita.mutate(receitaForm);
-  };
-
   const isRecebimentosTab = activeTab === "recebimentos";
   const isDespesaTab = activeTab === "despesas_fixas" || activeTab === "despesas_variaveis";
 
@@ -362,12 +288,7 @@ const Despesas = () => {
         {/* ═══ Header ═══ */}
         <div className="flex items-center justify-between">
           <h1 className="text-lg font-medium text-foreground">Movimentações Financeiras</h1>
-          <Button
-            variant="default"
-            size="sm"
-            className="bg-primary hover:bg-primary/90"
-            onClick={() => window.print()}
-          >
+          <Button variant="default" size="sm" onClick={() => window.print()}>
             <Printer className="mr-2 h-4 w-4" />
             Imprimir
           </Button>
@@ -375,7 +296,6 @@ const Despesas = () => {
 
         {/* ═══ Saldo + Receitas/Despesas ═══ */}
         <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4">
-          {/* Left: Conta Principal + Saldo */}
           <Card className="border border-border">
             <CardContent className="flex items-center justify-center gap-6 py-8">
               <Select defaultValue="principal">
@@ -398,14 +318,13 @@ const Despesas = () => {
             </CardContent>
           </Card>
 
-          {/* Right: Receitas + Despesas bars */}
           <Card className="border border-border">
             <CardContent className="py-5 px-6 space-y-3">
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-semibold uppercase tracking-wide text-foreground">RECEITAS</span>
                   <span className="text-xs font-semibold text-primary">
-                    {formatCurrency(receitasRecebidasMes)} de {formatCurrency(totalReceitasMes)}
+                    {formatCurrency(totalReceitasMes)}
                   </span>
                 </div>
                 <Progress value={receitaProgress} className="h-2.5 bg-muted" />
@@ -434,7 +353,7 @@ const Despesas = () => {
               <ChevronDown className="ml-1 h-3.5 w-3.5" />
             </SelectTrigger>
             <SelectContent>
-              {[selectedYear - 2, selectedYear - 1, selectedYear, selectedYear + 1, selectedYear + 2].map((y) => (
+              {[selectedYear - 2, selectedYear - 1, selectedYear, selectedYear + 1].map((y) => (
                 <SelectItem key={y} value={y.toString()}>{y}</SelectItem>
               ))}
             </SelectContent>
@@ -480,72 +399,7 @@ const Despesas = () => {
 
         {/* ═══ Action Buttons ═══ */}
         <div className="flex flex-wrap gap-2">
-          {isRecebimentosTab ? (
-            <Dialog open={isReceitaOpen} onOpenChange={(open) => { if (!open) resetReceitaForm(); setIsReceitaOpen(open); }}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="bg-primary hover:bg-primary/90">
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  Adicionar
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <form onSubmit={handleSubmitReceita}>
-                  <DialogHeader>
-                    <DialogTitle>{editingReceita ? "Editar Recebimento" : "Novo Recebimento"}</DialogTitle>
-                    <DialogDescription>Preencha os dados do recebimento</DialogDescription>
-                  </DialogHeader>
-                  <div className="grid gap-4 py-4">
-                    <div className="grid gap-2">
-                      <Label>Título</Label>
-                      <Input value={receitaForm.titulo} onChange={(e) => setReceitaForm({ ...receitaForm, titulo: e.target.value })} required />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label>Categoria</Label>
-                        <Select value={receitaForm.categoria} onValueChange={(v) => setReceitaForm({ ...receitaForm, categoria: v })}>
-                          <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Mensalidade">Mensalidade</SelectItem>
-                            <SelectItem value="Matrícula">Matrícula</SelectItem>
-                            <SelectItem value="Doação">Doação</SelectItem>
-                            <SelectItem value="Outros">Outros</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Valor</Label>
-                        <Input type="number" step="0.01" value={receitaForm.valor} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })} required />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="grid gap-2">
-                        <Label>Data de Recebimento</Label>
-                        <Input type="date" value={receitaForm.data_recebimento} onChange={(e) => setReceitaForm({ ...receitaForm, data_recebimento: e.target.value })} required />
-                      </div>
-                      <div className="grid gap-2">
-                        <Label>Recebido de</Label>
-                        <Input value={receitaForm.origem} onChange={(e) => setReceitaForm({ ...receitaForm, origem: e.target.value })} />
-                      </div>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="rec-recorrente" checked={receitaForm.recorrente} onCheckedChange={(c) => setReceitaForm({ ...receitaForm, recorrente: c as boolean })} />
-                      <Label htmlFor="rec-recorrente">Recorrente</Label>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Observações</Label>
-                      <Textarea value={receitaForm.observacoes} onChange={(e) => setReceitaForm({ ...receitaForm, observacoes: e.target.value })} />
-                    </div>
-                  </div>
-                  <DialogFooter>
-                    <Button type="button" variant="outline" onClick={resetReceitaForm}>Cancelar</Button>
-                    <Button type="submit" disabled={createReceita.isPending || updateReceita.isPending}>
-                      {editingReceita ? "Salvar" : "Registrar"}
-                    </Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          ) : isDespesaTab ? (
+          {isDespesaTab && (
             <Dialog open={isDespesaOpen} onOpenChange={(open) => { if (!open) resetDespesaForm(); setIsDespesaOpen(open); }}>
               <DialogTrigger asChild>
                 <Button size="sm" className="bg-primary hover:bg-primary/90">
@@ -603,21 +457,23 @@ const Despesas = () => {
                 </form>
               </DialogContent>
             </Dialog>
-          ) : null}
+          )}
 
-          <Button
-            size="sm"
-            variant="destructive"
-            disabled={selectedRows.size === 0}
-            onClick={() => {
-              if (selectedRows.size > 0 && confirm(`Remover ${selectedRows.size} registro(s)?`)) {
-                deleteSelected.mutate();
-              }
-            }}
-          >
-            <Trash2 className="mr-1.5 h-4 w-4" />
-            Remover
-          </Button>
+          {isDespesaTab && (
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={selectedRows.size === 0}
+              onClick={() => {
+                if (selectedRows.size > 0 && confirm(`Remover ${selectedRows.size} registro(s)?`)) {
+                  deleteSelected.mutate();
+                }
+              }}
+            >
+              <Trash2 className="mr-1.5 h-4 w-4" />
+              Remover
+            </Button>
+          )}
 
           <Button size="sm" className="bg-primary hover:bg-primary/90">
             <UserPlus className="mr-1.5 h-4 w-4" />
@@ -654,52 +510,36 @@ const Despesas = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(paginatedData as Receita[]).map((r) => (
+                  {(paginatedData as Pagamento[]).map((p) => (
                     <TableRow
-                      key={r.id}
-                      className={cn(
-                        "transition-colors border-l-4",
-                        r.recebida ? "border-l-primary/40 bg-primary/5" : "border-l-muted bg-card"
-                      )}
+                      key={p.id}
+                      className="transition-colors border-l-4 border-l-primary/40 bg-primary/5"
                     >
                       <TableCell className="w-10">
                         <Checkbox
-                          checked={selectedRows.has(r.id)}
-                          onCheckedChange={() => toggleRow(r.id)}
+                          checked={selectedRows.has(p.id)}
+                          onCheckedChange={() => toggleRow(p.id)}
                         />
                       </TableCell>
                       <TableCell className="text-sm text-foreground">
-                        {format(new Date(r.data_recebimento), "dd/MM/yyyy")}
+                        {format(new Date(p.data_pagamento), "dd/MM/yyyy")}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{r.titulo}</TableCell>
+                      <TableCell className="text-sm text-foreground">
+                        {p.aluno_nome || "Pagamento"}
+                        {p.curso_nome && <span className="text-muted-foreground"> - {p.curso_nome}</span>}
+                      </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-primary"
-                          onClick={() => handleEditReceita(r)}
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       </TableCell>
                       <TableCell className="text-sm font-medium text-foreground">
-                        {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        {p.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{r.origem || "—"}</TableCell>
-                      <TableCell className="text-sm text-foreground">{r.categoria}</TableCell>
+                      <TableCell className="text-sm text-foreground">{p.aluno_nome || "—"}</TableCell>
+                      <TableCell className="text-sm text-foreground">{p.metodo || "Manual"}</TableCell>
                       <TableCell>
-                        {r.recebida ? (
-                          <span className="flex items-center gap-1 text-sm text-foreground">
-                            Sim <CheckCircle className="h-4 w-4 text-primary" />
-                          </span>
-                        ) : (
-                          <button
-                            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                            onClick={() => markReceitaReceived.mutate(r.id)}
-                          >
-                            Não
-                          </button>
-                        )}
+                        <span className="flex items-center gap-1 text-sm text-foreground">
+                          Sim <CheckCircle className="h-4 w-4 text-primary" />
+                        </span>
                       </TableCell>
                     </TableRow>
                   ))}
