@@ -548,7 +548,6 @@ const Despesas = () => {
                         </p>
                       </div>
                     )}
-                    )}
                     <div className="grid gap-2">
                       <Label>Observações</Label>
                       <Textarea value={despesaForm.observacoes} onChange={(e) => setDespesaForm({ ...despesaForm, observacoes: e.target.value })} />
