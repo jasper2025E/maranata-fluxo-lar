@@ -19,13 +19,19 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 // ─── Types ──────────────────────────────────────────
-interface Despesa {
+interface Receita {
   id: string;
-  titulo: string;
-  categoria: string;
   valor: number;
+  valor_total: number | null;
   data_vencimento: string;
-  paga: boolean;
+  data_emissao: string;
+  status: string;
+  mes_referencia: number;
+  ano_referencia: number;
+  aluno_nome: string | null;
+  curso_nome: string | null;
+}
+
   data_pagamento: string | null;
   recorrente: boolean;
   observacoes: string | null;
