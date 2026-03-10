@@ -510,28 +510,33 @@ const Despesas = () => {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label>Categoria</Label>
-                        <Select value={despesaForm.categoria} onValueChange={(v) => setDespesaForm({ ...despesaForm, categoria: v })}>
-                          <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Fixa">Fixa</SelectItem>
-                            <SelectItem value="Variável">Variável</SelectItem>
-                            <SelectItem value="Única">Única</SelectItem>
-                          </SelectContent>
-                        </Select>
+                        <Select value={despesaForm.categoria} onValueChange={(v) => {
+                          const isFixa = v === "Fixa";
+                          setDespesaForm({ ...despesaForm, categoria: v, recorrente: isFixa ? true : despesaForm.recorrente, recorrencia_ate: isFixa ? despesaForm.recorrencia_ate : (v === "Única" ? "" : despesaForm.recorrencia_ate) });
+                        }}>
+                           <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                           <SelectContent>
+                             <SelectItem value="Fixa">Fixa (recorrente)</SelectItem>
+                             <SelectItem value="Variável">Variável</SelectItem>
+                             <SelectItem value="Única">Única</SelectItem>
+                           </SelectContent>
+                         </Select>
+                       </div>
+                       <div className="grid gap-2">
+                         <Label>Valor</Label>
+                         <Input type="number" step="0.01" value={despesaForm.valor} onChange={(e) => setDespesaForm({ ...despesaForm, valor: e.target.value })} required />
+                       </div>
+                     </div>
+                     <div className="grid gap-2">
+                       <Label>Data de Vencimento</Label>
+                       <Input type="date" value={despesaForm.data_vencimento} onChange={(e) => setDespesaForm({ ...despesaForm, data_vencimento: e.target.value })} required />
+                     </div>
+                    {despesaForm.categoria !== "Fixa" && (
+                      <div className="flex items-center space-x-2">
+                        <Checkbox id="desp-recorrente" checked={despesaForm.recorrente} onCheckedChange={(c) => setDespesaForm({ ...despesaForm, recorrente: c as boolean, recorrencia_ate: c ? despesaForm.recorrencia_ate : "" })} />
+                        <Label htmlFor="desp-recorrente">Recorrente</Label>
                       </div>
-                      <div className="grid gap-2">
-                        <Label>Valor</Label>
-                        <Input type="number" step="0.01" value={despesaForm.valor} onChange={(e) => setDespesaForm({ ...despesaForm, valor: e.target.value })} required />
-                      </div>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Data de Vencimento</Label>
-                      <Input type="date" value={despesaForm.data_vencimento} onChange={(e) => setDespesaForm({ ...despesaForm, data_vencimento: e.target.value })} required />
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox id="desp-recorrente" checked={despesaForm.recorrente} onCheckedChange={(c) => setDespesaForm({ ...despesaForm, recorrente: c as boolean, recorrencia_ate: c ? despesaForm.recorrencia_ate : "" })} />
-                      <Label htmlFor="desp-recorrente">Recorrente</Label>
-                    </div>
+                    )}
                     {despesaForm.recorrente && (
                       <div className="grid gap-2">
                         <Label>Recorrência até (data final)</Label>
