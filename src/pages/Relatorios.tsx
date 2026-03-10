@@ -112,19 +112,25 @@ const Relatorios = () => {
     });
   };
 
+  const parseDateMonth = (dateStr: string) => {
+    const [y, m] = dateStr.split("-").map(Number);
+    return { year: y, month: m - 1 };
+  };
+
   const ano = parseInt(anoSelecionado);
   const monthlyData = useMemo(() => meses.map((mes, index) => {
     const entradas = pagamentos
       .filter((p) => {
-        const date = new Date(p.data_pagamento);
-        return date.getMonth() === index && date.getFullYear() === ano;
+        if (!p.data_pagamento) return false;
+        const { year, month } = parseDateMonth(p.data_pagamento);
+        return month === index && year === ano;
       })
       .reduce((sum, p) => sum + Number(p.valor), 0);
 
     const saidas = despesas
       .filter((d) => {
-        const date = new Date(d.data_vencimento);
-        return date.getMonth() === index && date.getFullYear() === ano && d.paga;
+        const { year, month } = parseDateMonth(d.data_vencimento);
+        return month === index && year === ano && d.paga;
       })
       .reduce((sum, d) => sum + Number(d.valor), 0);
 
