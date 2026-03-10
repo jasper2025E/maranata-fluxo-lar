@@ -102,7 +102,7 @@ const ptBR = {
       logout: "Sair",
       main: "Principal",
       finance: "Financeiro",
-      operations: "Faturamento",
+      operations: "Movimentações",
       analysis: "Financeiro",
       system: "Configurações",
       profile: "Perfil",
@@ -460,7 +460,7 @@ const ptBR = {
       referenceYear: "Ano de Referência",
       printBooklet: "Imprimir Carnê",
       // KPI translations
-      monthlyBilling: "Faturamento Mensal",
+      monthlyBilling: "Movimentações Mensal",
       toReceive: "A Receber",
       averageTicket: "Ticket Médio",
       delinquency: "Inadimplência",
