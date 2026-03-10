@@ -153,42 +153,63 @@ const Despesas = () => {
   const { data: pagamentos = [] } = useQuery({
     queryKey: ["pagamentos-recebimentos"],
     queryFn: async () => {
+      // Simple flat query to avoid nested join issues
       const { data, error } = await supabase
         .from("pagamentos")
-        .select(`
-          id,
-          valor,
-          metodo,
-          data_pagamento,
-          gateway,
-          gateway_status,
-          tipo,
-          observacoes,
-          created_at,
-          fatura_id
-        `)
+        .select("id, valor, metodo, data_pagamento, gateway, tipo, fatura_id, created_at")
         .order("data_pagamento", { ascending: false });
-      if (error) throw error;
+      if (error) {
+        console.error("Erro ao buscar pagamentos:", error);
+        throw error;
+      }
+      
+      if (!data || data.length === 0) return [];
 
-      // Fetch fatura details for these pagamentos
-      const faturaIds = [...new Set((data || []).map((p: any) => p.fatura_id).filter(Boolean))];
-      let faturasMap: Record<string, any> = {};
-      if (faturaIds.length > 0) {
-        // Batch in chunks of 100
-        for (let i = 0; i < faturaIds.length; i += 100) {
-          const chunk = faturaIds.slice(i, i + 100);
-          const { data: faturas } = await supabase
-            .from("faturas")
-            .select("id, codigo_sequencial, mes_referencia, ano_referencia, alunos(nome_completo), cursos(nome)")
-            .in("id", chunk);
-          (faturas || []).forEach((f: any) => { faturasMap[f.id] = f; });
+      // Get unique fatura IDs
+      const faturaIds = [...new Set(data.map((p: any) => p.fatura_id).filter(Boolean))];
+      const faturasMap: Record<string, any> = {};
+
+      // Fetch faturas with aluno/curso names in batches
+      for (let i = 0; i < faturaIds.length; i += 50) {
+        const chunk = faturaIds.slice(i, i + 50);
+        const { data: faturas, error: fErr } = await supabase
+          .from("faturas")
+          .select("id, codigo_sequencial, aluno_id, curso_id")
+          .in("id", chunk);
+        if (!fErr && faturas) {
+          faturas.forEach((f: any) => { faturasMap[f.id] = f; });
         }
       }
 
-      return (data || []).map((p: any) => ({
-        ...p,
-        fatura: faturasMap[p.fatura_id] || null,
-      }));
+      // Fetch aluno and curso names
+      const alunoIds = [...new Set(Object.values(faturasMap).map((f: any) => f.aluno_id).filter(Boolean))];
+      const cursoIds = [...new Set(Object.values(faturasMap).map((f: any) => f.curso_id).filter(Boolean))];
+      
+      const alunosMap: Record<string, string> = {};
+      const cursosMap: Record<string, string> = {};
+
+      if (alunoIds.length > 0) {
+        for (let i = 0; i < alunoIds.length; i += 50) {
+          const { data: alunos } = await supabase.from("alunos").select("id, nome_completo").in("id", alunoIds.slice(i, i + 50));
+          (alunos || []).forEach((a: any) => { alunosMap[a.id] = a.nome_completo; });
+        }
+      }
+      if (cursoIds.length > 0) {
+        for (let i = 0; i < cursoIds.length; i += 50) {
+          const { data: cursos } = await supabase.from("cursos").select("id, nome").in("id", cursoIds.slice(i, i + 50));
+          (cursos || []).forEach((c: any) => { cursosMap[c.id] = c.nome; });
+        }
+      }
+
+      return data.map((p: any) => {
+        const fat = faturasMap[p.fatura_id];
+        return {
+          ...p,
+          aluno_nome: fat ? alunosMap[fat.aluno_id] || null : null,
+          curso_nome: fat ? cursosMap[fat.curso_id] || null : null,
+          codigo_sequencial: fat?.codigo_sequencial || null,
+        };
+      });
     },
   });
 
