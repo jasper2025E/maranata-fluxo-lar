@@ -259,7 +259,10 @@ const Despesas = () => {
       setPage(1);
       resetDespesaForm();
     },
-    onError: () => toast.error("Erro ao criar despesa"),
+    onError: (error: any) => {
+      console.error("Erro ao criar despesa:", error);
+      toast.error(`Erro ao criar despesa: ${error?.message || "Tente novamente"}`);
+    },
   });
 
   const updateDespesa = useMutation({
