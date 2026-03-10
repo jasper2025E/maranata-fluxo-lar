@@ -195,7 +195,8 @@ export function ColorEditor({ userId }: ColorEditorProps) {
 
   const handleReset = () => {
     setConfig(defaultConfig);
-    applyConfig(defaultConfig);
+    const isDark = document.documentElement.classList.contains("dark");
+    applyThemeConfig(defaultConfig, isDark);
   };
 
   const handleSave = async () => {
