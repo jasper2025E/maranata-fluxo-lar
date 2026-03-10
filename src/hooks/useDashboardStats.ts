@@ -89,20 +89,8 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     pagamentosAnuaisResult,
     faturasAnuaisResult,
     despesasAnuaisResult,
-
-    // Cumulative: ALL payments before current month (for accurate saldo anterior)
-    supabase
-      .from("pagamentos")
-      .select("valor")
-      .lt("data_pagamento", startOfCurrentMonth),
-
-    // Cumulative: ALL paid expenses before current month
-    supabase
-      .from("despesas")
-      .select("valor")
-      .eq("paga", true)
-      .not("data_pagamento", "is", null)
-      .lt("data_pagamento", startOfCurrentMonth),
+    pagamentosAcumuladosResult,
+    despesasAcumuladasResult,
   ] = await Promise.all([
     // Responsáveis
     supabase.from("responsaveis").select("id, ativo"),
