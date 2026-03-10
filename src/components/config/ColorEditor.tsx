@@ -133,11 +133,23 @@ export function ColorEditor({ userId }: ColorEditorProps) {
 
         if (data?.custom_colors && typeof data.custom_colors === 'object') {
           const saved = data.custom_colors as Record<string, unknown>;
+          const safeLightColors = typeof saved.lightColors === 'object' && saved.lightColors 
+            ? { ...defaultLightColors, ...(saved.lightColors as Partial<ColorConfig>) } 
+            : defaultLightColors;
+          const safeDarkColors = typeof saved.darkColors === 'object' && saved.darkColors 
+            ? { ...defaultDarkColors, ...(saved.darkColors as Partial<ColorConfig>) } 
+            : defaultDarkColors;
+          const safeLayout = typeof saved.layout === 'object' && saved.layout 
+            ? { ...defaultLayout, ...(saved.layout as Partial<LayoutConfig>) } 
+            : defaultLayout;
+          const safeTypography = typeof saved.typography === 'object' && saved.typography 
+            ? { ...defaultTypography, ...(saved.typography as Partial<TypographyConfig>) } 
+            : defaultTypography;
           setConfig({
-            lightColors: (saved.lightColors as ColorConfig) || defaultLightColors,
-            darkColors: (saved.darkColors as ColorConfig) || defaultDarkColors,
-            layout: (saved.layout as LayoutConfig) || defaultLayout,
-            typography: (saved.typography as TypographyConfig) || defaultTypography,
+            lightColors: safeLightColors,
+            darkColors: safeDarkColors,
+            layout: safeLayout,
+            typography: safeTypography,
           });
         }
       } catch (error) {

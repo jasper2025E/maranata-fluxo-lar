@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, Component, type ReactNode, type ErrorInfo } from "react";
 import { User } from "@supabase/supabase-js";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, Palette, Bell } from "lucide-react";
+import { Loader2, Palette, Bell, AlertTriangle, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,28 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+
+// Local error boundary for the color editor
+class ErrorBoundaryWrapper extends Component<{ children: ReactNode }, { hasError: boolean; error: Error | null }> {
+  state = { hasError: false, error: null as Error | null };
+  static getDerivedStateFromError(error: Error) { return { hasError: true, error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) { console.error("ColorEditor crash:", error, info); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12 gap-4">
+          <AlertTriangle className="h-8 w-8 text-warning" />
+          <p className="text-sm text-muted-foreground">Erro ao carregar editor de cores.</p>
+          <p className="text-xs text-muted-foreground max-w-md text-center">{this.state.error?.message}</p>
+          <Button size="sm" variant="outline" onClick={() => this.setState({ hasError: false, error: null })}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Tentar novamente
+          </Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 interface UserPreferences {
   email_notifications: boolean;
@@ -184,7 +206,11 @@ export function PreferencesTab({
       </TabsContent>
 
       <TabsContent value="cores">
-        {user && <ColorEditor userId={user.id} />}
+        {user ? (
+          <ErrorBoundaryWrapper>
+            <ColorEditor userId={user.id} />
+          </ErrorBoundaryWrapper>
+        ) : null}
       </TabsContent>
     </Tabs>
   );
