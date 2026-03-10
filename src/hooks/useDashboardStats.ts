@@ -28,6 +28,7 @@ export interface DashboardStats {
   totalReceitas: number;
   totalDespesas: number;
   saldoMensal: number;
+  saldoAcumulado: number;
   saldoAnterior: number;
   valorAReceber: number;
   valorVencido: number;
