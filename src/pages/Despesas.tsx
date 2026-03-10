@@ -154,9 +154,9 @@ const Despesas = () => {
 
   const totalDespesasMes = monthDespesas.reduce((s, d) => s + d.valor, 0);
   const despesasPagasMes = monthDespesas.filter((d) => d.paga).reduce((s, d) => s + d.valor, 0);
-  const saldoAtual = totalReceitasMes - despesasPagasMes;
+  const saldoAtual = receitasPagasMes - despesasPagasMes;
 
-  const receitaProgress = totalReceitasMes > 0 ? 100 : 0;
+  const receitaProgress = totalReceitasMes > 0 ? (receitasPagasMes / totalReceitasMes) * 100 : 0;
   const despesaProgress = totalDespesasMes > 0 ? (despesasPagasMes / totalDespesasMes) * 100 : 0;
 
   // ─── Active tab data ──────────────────────────────
