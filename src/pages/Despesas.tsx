@@ -61,7 +61,7 @@ const Despesas = () => {
   const now = new Date();
   const [selectedYear, setSelectedYear] = useState(now.getFullYear());
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
-  const [activeTab, setActiveTab] = useState("despesas_fixas");
+  const [activeTab, setActiveTab] = useState("recebimentos");
   const [page, setPage] = useState(1);
   const perPage = 10;
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
