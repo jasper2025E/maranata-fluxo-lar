@@ -870,9 +870,12 @@ export type Database = {
           created_at: string | null
           data_pagamento: string | null
           data_vencimento: string
+          despesa_origem_id: string | null
+          dia_vencimento: number | null
           id: string
           observacoes: string | null
           paga: boolean | null
+          recorrencia_ate: string | null
           recorrente: boolean | null
           tenant_id: string | null
           titulo: string
@@ -884,9 +887,12 @@ export type Database = {
           created_at?: string | null
           data_pagamento?: string | null
           data_vencimento: string
+          despesa_origem_id?: string | null
+          dia_vencimento?: number | null
           id?: string
           observacoes?: string | null
           paga?: boolean | null
+          recorrencia_ate?: string | null
           recorrente?: boolean | null
           tenant_id?: string | null
           titulo: string
@@ -898,9 +904,12 @@ export type Database = {
           created_at?: string | null
           data_pagamento?: string | null
           data_vencimento?: string
+          despesa_origem_id?: string | null
+          dia_vencimento?: number | null
           id?: string
           observacoes?: string | null
           paga?: boolean | null
+          recorrencia_ate?: string | null
           recorrente?: boolean | null
           tenant_id?: string | null
           titulo?: string
@@ -908,6 +917,13 @@ export type Database = {
           valor?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "despesas_despesa_origem_id_fkey"
+            columns: ["despesa_origem_id"]
+            isOneToOne: false
+            referencedRelation: "despesas"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "despesas_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -4753,6 +4769,7 @@ export type Database = {
         Args: { p_funcionario_id: string }
         Returns: string
       }
+      gerar_despesas_recorrentes: { Args: never; Returns: number }
       gerar_faturas_aluno:
         | {
             Args: {

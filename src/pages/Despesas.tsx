@@ -70,7 +70,7 @@ const Despesas = () => {
   const [isDespesaOpen, setIsDespesaOpen] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [despesaForm, setDespesaForm] = useState({
-    titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "",
+    titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "", recorrencia_ate: "",
   });
 
   // ─── Receitas avulsas state ───────────────────────
@@ -80,6 +80,17 @@ const Despesas = () => {
   });
 
   // ─── Queries ──────────────────────────────────────
+  // Auto-generate recurring despesas on load
+  useQuery({
+    queryKey: ["gerar-recorrentes"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("gerar_despesas_recorrentes");
+      if (error) console.error("Erro ao gerar recorrentes:", error);
+      return data;
+    },
+    staleTime: 1000 * 60 * 5, // only run every 5 min
+  });
+
   const { data: despesas = [] } = useQuery({
     queryKey: ["despesas"],
     queryFn: async () => {
@@ -217,11 +228,18 @@ const Despesas = () => {
   // ─── Mutations ────────────────────────────────────
   const createDespesa = useMutation({
     mutationFn: async (data: typeof despesaForm) => {
+      const dia = data.data_vencimento ? new Date(data.data_vencimento).getDate() : null;
       const { error } = await supabase.from("despesas").insert({
         titulo: data.titulo, categoria: data.categoria, valor: parseFloat(data.valor),
         data_vencimento: data.data_vencimento, recorrente: data.recorrente, observacoes: data.observacoes || null,
+        recorrencia_ate: data.recorrente && data.recorrencia_ate ? data.recorrencia_ate : null,
+        dia_vencimento: dia,
       });
       if (error) throw error;
+      // If recurring, trigger generation immediately
+      if (data.recorrente && data.recorrencia_ate) {
+        await supabase.rpc("gerar_despesas_recorrentes");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
@@ -316,7 +334,7 @@ const Despesas = () => {
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
   const resetDespesaForm = () => {
-    setDespesaForm({ titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "" });
+    setDespesaForm({ titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "", recorrencia_ate: "" });
     setEditingDespesa(null);
     setIsDespesaOpen(false);
   };
@@ -337,7 +355,7 @@ const Despesas = () => {
 
   const handleEditDespesa = (d: Despesa) => {
     setEditingDespesa(d);
-    setDespesaForm({ titulo: d.titulo, categoria: d.categoria, valor: d.valor.toString(), data_vencimento: d.data_vencimento, recorrente: d.recorrente, observacoes: d.observacoes || "" });
+    setDespesaForm({ titulo: d.titulo, categoria: d.categoria, valor: d.valor.toString(), data_vencimento: d.data_vencimento, recorrente: d.recorrente, observacoes: d.observacoes || "", recorrencia_ate: (d as any).recorrencia_ate || "" });
     setIsDespesaOpen(true);
   };
 
@@ -511,9 +529,16 @@ const Despesas = () => {
                       <Input type="date" value={despesaForm.data_vencimento} onChange={(e) => setDespesaForm({ ...despesaForm, data_vencimento: e.target.value })} required />
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Checkbox id="desp-recorrente" checked={despesaForm.recorrente} onCheckedChange={(c) => setDespesaForm({ ...despesaForm, recorrente: c as boolean })} />
+                      <Checkbox id="desp-recorrente" checked={despesaForm.recorrente} onCheckedChange={(c) => setDespesaForm({ ...despesaForm, recorrente: c as boolean, recorrencia_ate: c ? despesaForm.recorrencia_ate : "" })} />
                       <Label htmlFor="desp-recorrente">Recorrente</Label>
                     </div>
+                    {despesaForm.recorrente && (
+                      <div className="grid gap-2">
+                        <Label>Recorrência até (data final)</Label>
+                        <Input type="date" value={despesaForm.recorrencia_ate} onChange={(e) => setDespesaForm({ ...despesaForm, recorrencia_ate: e.target.value })} placeholder="Até quando repetir" />
+                        <p className="text-xs text-muted-foreground">As parcelas mensais serão geradas automaticamente até esta data, mantendo o mesmo dia de vencimento.</p>
+                      </div>
+                    )}
                     <div className="grid gap-2">
                       <Label>Observações</Label>
                       <Textarea value={despesaForm.observacoes} onChange={(e) => setDespesaForm({ ...despesaForm, observacoes: e.target.value })} />
