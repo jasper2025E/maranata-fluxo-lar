@@ -506,7 +506,15 @@ const Despesas = () => {
 
         {/* ═══ Action Buttons ═══ */}
         <div className="flex flex-wrap gap-2">
-          <Dialog open={isDespesaOpen} onOpenChange={(open) => { if (!open) resetDespesaForm(); setIsDespesaOpen(open); }}>
+          <Dialog open={isDespesaOpen} onOpenChange={(open) => {
+            if (!open) resetDespesaForm();
+            else {
+              // Auto-select category based on active tab
+              const autoCategoria = activeTab === "despesas_fixas" ? "Fixa" : "Variável";
+              setDespesaForm(prev => ({ ...prev, categoria: autoCategoria, recorrente: autoCategoria === "Fixa" }));
+            }
+            setIsDespesaOpen(open);
+          }}>
             <DialogTrigger asChild>
               <Button size="sm" className="bg-primary hover:bg-primary/90">
                 <Plus className="mr-1.5 h-4 w-4" />
