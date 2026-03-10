@@ -14,6 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
+      aluno_documentos: {
+        Row: {
+          aluno_id: string
+          created_at: string | null
+          id: string
+          nome: string
+          observacoes: string | null
+          tamanho_bytes: number | null
+          tenant_id: string | null
+          tipo: string
+          updated_at: string | null
+          uploaded_by: string | null
+          url: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string | null
+          id?: string
+          nome: string
+          observacoes?: string | null
+          tamanho_bytes?: number | null
+          tenant_id?: string | null
+          tipo?: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          url: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string | null
+          id?: string
+          nome?: string
+          observacoes?: string | null
+          tamanho_bytes?: number | null
+          tenant_id?: string | null
+          tipo?: string
+          updated_at?: string | null
+          uploaded_by?: string | null
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aluno_documentos_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aluno_documentos_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aluno_habilidades: {
+        Row: {
+          aluno_id: string
+          created_at: string | null
+          id: string
+          nivel: string | null
+          nome: string
+          observacoes: string | null
+          tenant_id: string | null
+          tipo: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string | null
+          id?: string
+          nivel?: string | null
+          nome: string
+          observacoes?: string | null
+          tenant_id?: string | null
+          tipo?: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string | null
+          id?: string
+          nivel?: string | null
+          nome?: string
+          observacoes?: string | null
+          tenant_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aluno_habilidades_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aluno_habilidades_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      aluno_historico: {
+        Row: {
+          aluno_id: string
+          created_at: string | null
+          created_by: string | null
+          dados: Json | null
+          descricao: string
+          id: string
+          tenant_id: string | null
+          tipo: string
+        }
+        Insert: {
+          aluno_id: string
+          created_at?: string | null
+          created_by?: string | null
+          dados?: Json | null
+          descricao: string
+          id?: string
+          tenant_id?: string | null
+          tipo: string
+        }
+        Update: {
+          aluno_id?: string
+          created_at?: string | null
+          created_by?: string | null
+          dados?: Json | null
+          descricao?: string
+          id?: string
+          tenant_id?: string | null
+          tipo?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "aluno_historico_aluno_id_fkey"
+            columns: ["aluno_id"]
+            isOneToOne: false
+            referencedRelation: "alunos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "aluno_historico_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       alunos: {
         Row: {
           created_at: string | null
@@ -25,6 +178,7 @@ export type Database = {
           dia_vencimento: number | null
           email_responsavel: string | null
           endereco: string | null
+          foto_url: string | null
           id: string
           nome_completo: string
           observacoes: string | null
@@ -46,6 +200,7 @@ export type Database = {
           dia_vencimento?: number | null
           email_responsavel?: string | null
           endereco?: string | null
+          foto_url?: string | null
           id?: string
           nome_completo: string
           observacoes?: string | null
@@ -67,6 +222,7 @@ export type Database = {
           dia_vencimento?: number | null
           email_responsavel?: string | null
           endereco?: string | null
+          foto_url?: string | null
           id?: string
           nome_completo?: string
           observacoes?: string | null
