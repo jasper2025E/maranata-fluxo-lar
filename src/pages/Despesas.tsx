@@ -244,13 +244,13 @@ const Despesas = () => {
     const fromPagamentos = pagamentosMes.map((p: any) => ({
       id: p.id,
       data: p.data_pagamento,
-      descricao: `${p.fatura?.cursos?.nome || "Fatura"} - ${p.fatura?.alunos?.nome_completo || "Aluno"}`,
+      descricao: `${p.curso_nome || "Fatura"} - ${p.aluno_nome || "Aluno"}`,
       valor: Number(p.valor),
-      origem: p.fatura?.alunos?.nome_completo || "Aluno",
+      origem: p.aluno_nome || "Aluno",
       categoria: p.metodo || p.gateway || "Fatura",
       pago: true,
       tipo: "pagamento" as const,
-      codigoFatura: p.fatura?.codigo_sequencial,
+      codigoFatura: p.codigo_sequencial,
       tipoRegistro: p.tipo,
     }));
     return [...fromPagamentos, ...fromAvulsas].sort((a, b) => 
