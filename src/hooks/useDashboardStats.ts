@@ -300,6 +300,16 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const funcionariosAtivos = funcionarios.filter(f => f.status === 'ativo').length;
   const gastoRHMensal = folhaPagamento.reduce((sum, f) => sum + Number(f.total_liquido || 0), 0);
 
+  // Annual calculations
+  const pagamentosAnuais = pagamentosAnuaisResult.data || [];
+  const faturasAnuais = faturasAnuaisResult.data || [];
+  const despesasAnuais = despesasAnuaisResult.data || [];
+
+  const receitaAnualRecebida = pagamentosAnuais.reduce((sum, p) => sum + Number(p.valor), 0);
+  const receitaAnualEsperada = faturasAnuais.reduce((sum, f) => sum + Number((f as any).valor_total || f.valor), 0);
+  const despesaAnualPaga = despesasAnuais.filter(d => d.paga).reduce((sum, d) => sum + Number(d.valor), 0);
+  const despesaAnualTotal = despesasAnuais.reduce((sum, d) => sum + Number(d.valor), 0);
+
   const receitasMes = processMonthlyData(pagamentosHistoricoResult.data || [], monthNames);
   const despesasMes = processMonthlyData(despesasHistoricoResult.data || [], monthNames);
   
@@ -328,6 +338,10 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     valorAReceber,
     valorVencido,
     ticketMedio,
+    receitaAnualRecebida,
+    receitaAnualEsperada,
+    despesaAnualPaga,
+    despesaAnualTotal,
     receitasMes,
     despesasMes,
     combinedData,
