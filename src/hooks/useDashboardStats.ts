@@ -28,6 +28,7 @@ export interface DashboardStats {
   totalReceitas: number;
   totalDespesas: number;
   saldoMensal: number;
+  saldoAcumulado: number;
   saldoAnterior: number;
   valorAReceber: number;
   valorVencido: number;
@@ -358,7 +359,8 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     faturasVencidas,
     totalReceitas,
     totalDespesas,
-    saldoMensal: saldoAnterior + totalReceitas - totalDespesas,
+    saldoMensal: totalReceitas - totalDespesas,
+    saldoAcumulado: saldoAnterior + totalReceitas - totalDespesas,
     saldoAnterior,
     valorAReceber,
     valorVencido,
