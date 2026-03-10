@@ -277,16 +277,17 @@ const Despesas = () => {
     onError: () => toast.error("Erro ao remover"),
   });
 
-  const markDespesaPaid = useMutation({
-    mutationFn: async (id: string) => {
+  const toggleDespesaPaid = useMutation({
+    mutationFn: async ({ id, currentlyPaid }: { id: string; currentlyPaid: boolean }) => {
       const { error } = await supabase.from("despesas").update({
-        paga: true, data_pagamento: new Date().toISOString().split("T")[0],
+        paga: !currentlyPaid,
+        data_pagamento: !currentlyPaid ? new Date().toISOString().split("T")[0] : null,
       }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, { currentlyPaid }) => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
-      toast.success("Despesa marcada como paga");
+      toast.success(currentlyPaid ? "Pagamento desmarcado" : "Despesa marcada como paga");
     },
     onError: () => toast.error("Erro ao atualizar"),
   });
@@ -763,18 +764,22 @@ const Despesas = () => {
                       </TableCell>
                       <TableCell className="text-sm text-foreground">{d.categoria}</TableCell>
                       <TableCell>
-                        {d.paga ? (
-                          <span className="flex items-center gap-1 text-sm text-foreground">
-                            Sim <CheckCircle className="h-4 w-4 text-primary" />
-                          </span>
-                        ) : (
-                          <button
-                            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                            onClick={() => markDespesaPaid.mutate(d.id)}
-                          >
-                            Não
-                          </button>
-                        )}
+                        <button
+                          className={cn(
+                            "flex items-center gap-1 text-sm transition-colors cursor-pointer",
+                            d.paga
+                              ? "text-foreground hover:text-destructive"
+                              : "text-muted-foreground hover:text-primary"
+                          )}
+                          onClick={() => toggleDespesaPaid.mutate({ id: d.id, currentlyPaid: d.paga })}
+                          title={d.paga ? "Clique para desmarcar" : "Clique para marcar como paga"}
+                        >
+                          {d.paga ? (
+                            <>Sim <CheckCircle className="h-4 w-4 text-primary" /></>
+                          ) : (
+                            "Não"
+                          )}
+                        </button>
                       </TableCell>
                     </TableRow>
                   ))}
