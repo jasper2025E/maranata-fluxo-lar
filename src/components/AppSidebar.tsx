@@ -110,7 +110,7 @@ export function AppSidebar() {
   const { t } = useTranslation();
   
   // Check if any operations route is active
-  const operationsRoutes = ["/faturas", "/pagamentos", "/despesas", "/movimentacoes"];
+  const operationsRoutes = ["/faturas", "/pagamentos", "/despesas"];
   const isOperationsActive = operationsRoutes.some(route => location.pathname.startsWith(route));
   const [isOperationsOpen, setIsOperationsOpen] = useState(isOperationsActive);
   
