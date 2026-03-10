@@ -68,6 +68,7 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   // Calculate previous month for comparison
   const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
   const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+  const startOfCurrentMonth = `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`;
 
   // Execute all queries in parallel
   const [
@@ -88,6 +89,8 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
     pagamentosAnuaisResult,
     faturasAnuaisResult,
     despesasAnuaisResult,
+    pagamentosAcumuladosResult,
+    despesasAcumuladasResult,
   ] = await Promise.all([
     // Responsáveis
     supabase.from("responsaveis").select("id, ativo"),
@@ -200,6 +203,20 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .select("valor, paga")
       .gte("data_vencimento", `${currentYear}-01-01`)
       .lt("data_vencimento", `${currentYear + 1}-01-01`),
+
+    // Cumulative: ALL payments before current month (for accurate saldo anterior)
+    supabase
+      .from("pagamentos")
+      .select("valor")
+      .lt("data_pagamento", startOfCurrentMonth),
+
+    // Cumulative: ALL paid expenses before current month
+    supabase
+      .from("despesas")
+      .select("valor")
+      .eq("paga", true)
+      .not("data_pagamento", "is", null)
+      .lt("data_pagamento", startOfCurrentMonth),
   ]);
 
   const responsaveis = responsaveisResult.data || [];
@@ -258,7 +275,11 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   const totalDespesas = despesas.reduce((sum, d) => sum + Number(d.valor), 0);
   const totalReceitasPrev = pagamentosPrev.reduce((sum, p) => sum + Number(p.valor), 0);
   const totalDespesasPrev = despesasPrev.reduce((sum, d) => sum + Number(d.valor), 0);
-  const saldoAnterior = totalReceitasPrev - totalDespesasPrev;
+  
+  // Saldo anterior CUMULATIVO: soma de TODOS os pagamentos - TODAS as despesas pagas antes do mês atual
+  const totalReceitasAcumuladas = (pagamentosAcumuladosResult.data || []).reduce((sum, p) => sum + Number(p.valor), 0);
+  const totalDespesasAcumuladas = (despesasAcumuladasResult.data || []).reduce((sum, d) => sum + Number(d.valor), 0);
+  const saldoAnterior = totalReceitasAcumuladas - totalDespesasAcumuladas;
 
   // Variações
   const variacaoReceitas = totalReceitasPrev > 0 
