@@ -392,7 +392,7 @@ const Despesas = () => {
       <div className="space-y-5">
         {/* ═══ Header ═══ */}
         <div className="flex items-center justify-between">
-          <h1 className="text-lg font-medium text-foreground">Movimentações Financeiras</h1>
+          <h1 className="text-lg font-medium text-foreground">Tesouraria</h1>
           <Button variant="default" size="sm" onClick={() => window.print()}>
             <Printer className="mr-2 h-4 w-4" />
             Imprimir
