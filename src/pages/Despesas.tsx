@@ -649,7 +649,7 @@ const Despesas = () => {
 
           <Dialog open={isReceitaOpen} onOpenChange={(open) => { if (!open) resetReceitaForm(); setIsReceitaOpen(open); }}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/10">
                 <TrendingUp className="mr-1.5 h-4 w-4" />
                 Adicionar Receita
               </Button>
