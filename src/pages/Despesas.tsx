@@ -50,9 +50,6 @@ const TABS = [
   { key: "recebimentos", label: "Recebimentos" },
   { key: "despesas_fixas", label: "Despesas Fixas" },
   { key: "despesas_variaveis", label: "Despesas Variáveis" },
-  { key: "pessoas", label: "Pessoas" },
-  { key: "impostos", label: "Impostos" },
-  { key: "transferencias", label: "Transferências" },
 ];
 
 const Despesas = () => {
@@ -250,6 +247,16 @@ const Despesas = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
       toast.success("Despesa criada com sucesso");
+      // Navigate to the correct tab and month based on what was created
+      const createdCategoria = despesaForm.categoria;
+      const createdDate = despesaForm.data_vencimento;
+      if (createdDate) {
+        const [y, m] = createdDate.split("-").map(Number);
+        setSelectedYear(y);
+        setSelectedMonth(m - 1);
+      }
+      setActiveTab(createdCategoria === "Fixa" ? "despesas_fixas" : "despesas_variaveis");
+      setPage(1);
       resetDespesaForm();
     },
     onError: () => toast.error("Erro ao criar despesa"),
