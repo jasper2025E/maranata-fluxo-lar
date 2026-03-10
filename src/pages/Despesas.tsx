@@ -593,13 +593,44 @@ const Despesas = () => {
           )}
         </div>
 
+        {/* ═══ Recebimentos KPIs + Search (only on recebimentos tab) ═══ */}
+        {isRecebimentosTab && (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <FinancialKPICard title="Total Pagamentos" value={pagamentos.length} icon={Receipt} variant="info" />
+              <FinancialKPICard title="Total Recebido" value={formatCurrency(totalRecebido)} icon={DollarSign} variant="success" />
+              <FinancialKPICard title="Via Asaas" value={pagamentosAsaas.length} icon={QrCode} variant="default" />
+              <FinancialKPICard title="Manuais" value={pagamentosManuais.length} icon={FileBarChart} variant="warning" />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Tabs value={recebimentosGatewayFilter} onValueChange={(v) => { setRecebimentosGatewayFilter(v); setPage(1); }} className="w-auto">
+                <TabsList className="h-9">
+                  <TabsTrigger value="todos" className="text-xs">Todos</TabsTrigger>
+                  <TabsTrigger value="asaas" className="text-xs">Asaas</TabsTrigger>
+                  <TabsTrigger value="stripe" className="text-xs">Stripe</TabsTrigger>
+                  <TabsTrigger value="manual" className="text-xs">Manual</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar aluno, método, código..."
+                  value={recebimentosSearch}
+                  onChange={(e) => { setRecebimentosSearch(e.target.value); setPage(1); }}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+          </>
+        )}
+
         {/* ═══ Table ═══ */}
         <Card className="border border-border overflow-hidden">
           <CardContent className="p-0 overflow-x-auto">
             {paginatedData.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-sm text-muted-foreground">
-                  Nenhum registro encontrado para {MONTHS[selectedMonth]}/{selectedYear}.
+                  {isRecebimentosTab ? "Nenhum pagamento encontrado." : `Nenhum registro encontrado para ${MONTHS[selectedMonth]}/${selectedYear}.`}
                 </p>
               </div>
              ) : isRecebimentosTab ? (
@@ -615,42 +646,46 @@ const Despesas = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(paginatedData as any[]).map((r) => (
-                    <TableRow key={r.id} className="hover:bg-muted/30">
-                      <TableCell className="text-sm text-foreground">
-                        {r.data ? format(new Date(r.data + "T00:00:00"), "dd/MM/yyyy") : "—"}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium text-foreground">
-                        {r.origem}
-                        {r.codigoFatura && (
-                          <span className="block text-xs text-muted-foreground">{r.codigoFatura}</span>
-                        )}
-                        {r.tipoRegistro === "estorno" && (
-                          <span className="block text-xs text-destructive font-medium">Estorno</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{r.referencia || "—"}</TableCell>
-                      <TableCell className={cn(
-                        "text-sm font-semibold",
-                        r.tipoRegistro === "estorno" ? "text-destructive" : "text-primary"
-                      )}>
-                        {r.tipoRegistro === "estorno" ? "- " : ""}
-                        R$ {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={r.pago ? "default" : "outline"} className="text-xs">
-                          {r.categoria}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {r.gateway ? (
-                          <span className="text-xs">{r.gatewayId ? `${r.gatewayId.substring(0, 14)}...` : r.gateway}</span>
-                        ) : (
-                          "Manuais"
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {(paginatedData as any[]).map((p) => {
+                    const mesRef = p.faturas?.mes_referencia;
+                    const anoRef = p.faturas?.ano_referencia;
+                    const ref = mesRef && anoRef ? `${mesesNomes[mesRef]}/${anoRef}` : "—";
+                    return (
+                      <TableRow key={p.id} className="hover:bg-muted/30">
+                        <TableCell className="text-sm text-foreground">
+                          {p.data_pagamento ? format(new Date(p.data_pagamento + "T00:00:00"), "dd/MM/yyyy") : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm font-medium text-foreground">
+                          {p.faturas?.alunos?.nome_completo || "—"}
+                          {p.faturas?.codigo_sequencial && (
+                            <span className="block text-xs text-muted-foreground">{p.faturas.codigo_sequencial}</span>
+                          )}
+                          {p.tipo === "estorno" && (
+                            <span className="block text-xs text-destructive font-medium">Estorno</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{ref}</TableCell>
+                        <TableCell className={cn(
+                          "text-sm font-semibold",
+                          p.tipo === "estorno" ? "text-destructive" : "text-primary"
+                        )}>
+                          {p.tipo === "estorno" ? "- " : ""}{formatCurrency(Number(p.valor))}
+                        </TableCell>
+                        <TableCell>{getMetodoBadge(p.metodo, p.gateway)}</TableCell>
+                        <TableCell>
+                          {p.gateway ? (
+                            <Badge variant="outline" className="text-xs">
+                              {p.gateway === "asaas" && <QrCode className="h-3 w-3 mr-1" />}
+                              {p.gateway === "stripe" && <CardIcon className="h-3 w-3 mr-1" />}
+                              {p.gateway_id?.slice(0, 12)}...
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">Manual</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             ) : isDespesaTab ? (
