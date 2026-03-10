@@ -75,11 +75,6 @@ const Despesas = () => {
     titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "", recorrencia_ate: "",
   });
 
-  // ─── Receitas avulsas state ───────────────────────
-  const [isReceitaOpen, setIsReceitaOpen] = useState(false);
-  const [receitaForm, setReceitaForm] = useState({
-    titulo: "", categoria: "Avulsa", valor: "", data_recebimento: "", recorrente: false, observacoes: "",
-  });
 
   // ─── Queries ──────────────────────────────────────
   // Auto-generate recurring despesas on load
