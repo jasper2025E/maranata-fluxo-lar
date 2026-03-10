@@ -80,6 +80,17 @@ const Despesas = () => {
   });
 
   // ─── Queries ──────────────────────────────────────
+  // Auto-generate recurring despesas on load
+  useQuery({
+    queryKey: ["gerar-recorrentes"],
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("gerar_despesas_recorrentes");
+      if (error) console.error("Erro ao gerar recorrentes:", error);
+      return data;
+    },
+    staleTime: 1000 * 60 * 5, // only run every 5 min
+  });
+
   const { data: despesas = [] } = useQuery({
     queryKey: ["despesas"],
     queryFn: async () => {
