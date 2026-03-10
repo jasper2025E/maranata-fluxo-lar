@@ -287,6 +287,28 @@ const Despesas = () => {
     onError: () => toast.error("Erro ao remover"),
   });
 
+  // ─── Receita Mutation ─────────────────────────────
+  const createReceita = useMutation({
+    mutationFn: async (data: typeof receitaForm) => {
+      const { error } = await supabase.from("receitas").insert({
+        titulo: data.titulo,
+        categoria: data.categoria,
+        valor: parseFloat(data.valor),
+        data_recebimento: data.data_recebimento,
+        recorrente: data.recorrente,
+        observacoes: data.observacoes || null,
+        origem: "manual",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receitas-avulsas"], refetchType: "all" });
+      toast.success("Receita registrada com sucesso");
+      resetReceitaForm();
+    },
+    onError: () => toast.error("Erro ao registrar receita"),
+  });
+
   // ─── Helpers ──────────────────────────────────────
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -295,6 +317,20 @@ const Despesas = () => {
     setDespesaForm({ titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "" });
     setEditingDespesa(null);
     setIsDespesaOpen(false);
+  };
+
+  const resetReceitaForm = () => {
+    setReceitaForm({ titulo: "", categoria: "Avulsa", valor: "", data_recebimento: "", recorrente: false, observacoes: "" });
+    setIsReceitaOpen(false);
+  };
+
+  const handleSubmitReceita = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receitaForm.titulo || !receitaForm.valor || !receitaForm.data_recebimento) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+    createReceita.mutate(receitaForm);
   };
 
   const handleEditDespesa = (d: Despesa) => {
