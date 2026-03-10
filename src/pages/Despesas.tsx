@@ -329,7 +329,7 @@ const Despesas = () => {
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-semibold uppercase tracking-wide text-foreground">RECEITAS</span>
                   <span className="text-xs font-semibold text-primary">
-                    {formatCurrency(totalReceitasMes)}
+                    {formatCurrency(receitasPagasMes)} de {formatCurrency(totalReceitasMes)}
                   </span>
                 </div>
                 <Progress value={receitaProgress} className="h-2.5 bg-muted" />
