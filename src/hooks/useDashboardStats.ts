@@ -33,6 +33,12 @@ export interface DashboardStats {
   valorVencido: number;
   ticketMedio: number;
   
+  // Anuais
+  receitaAnualRecebida: number;
+  receitaAnualEsperada: number;
+  despesaAnualPaga: number;
+  despesaAnualTotal: number;
+  
   // Gráficos
   receitasMes: { mes: string; valor: number }[];
   despesasMes: { mes: string; valor: number }[];
