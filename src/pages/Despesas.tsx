@@ -814,8 +814,7 @@ const Despesas = () => {
         {/* ═══ Pagination ═══ */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Mostrando {activeData.length === 0 ? 0 : (page - 1) * perPage + 1} até{" "}
-            {Math.min(page * perPage, activeData.length)} de {activeData.length} registros
+            Mostrando {Math.min(page * perPage, activeData.length)} de {activeData.length} registros
           </p>
           <div className="flex items-center gap-0">
             <button
