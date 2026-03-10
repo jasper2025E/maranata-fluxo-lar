@@ -719,7 +719,6 @@ const Despesas = () => {
               Remover
             </Button>
           )}
-          </Button>
         </div>
 
         {/* ═══ Table ═══ */}
