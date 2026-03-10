@@ -60,7 +60,7 @@ const Despesas = () => {
   const [selectedMonth, setSelectedMonth] = useState(now.getMonth());
   const [activeTab, setActiveTab] = useState("recebimentos");
   const [page, setPage] = useState(1);
-  const perPage = 50;
+  const perPage = 13;
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
 
   // ─── Despesas state ───────────────────────────────
@@ -814,8 +814,7 @@ const Despesas = () => {
         {/* ═══ Pagination ═══ */}
         <div className="flex items-center justify-between">
           <p className="text-sm text-muted-foreground">
-            Mostrando {activeData.length === 0 ? 0 : (page - 1) * perPage + 1} até{" "}
-            {Math.min(page * perPage, activeData.length)} de {activeData.length} registros
+            Mostrando {Math.min(page * perPage, activeData.length)} de {activeData.length} registros
           </p>
           <div className="flex items-center gap-0">
             <button
