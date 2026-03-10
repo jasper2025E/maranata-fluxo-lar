@@ -26,7 +26,7 @@ export function useAlunoProfile(alunoId: string | null) {
         .from("alunos")
         .select(`
           id, nome_completo, data_nascimento, email_responsavel, endereco,
-          data_matricula, status_matricula,
+          data_matricula, status_matricula, foto_url, observacoes, telefone_responsavel,
           cursos(id, nome, mensalidade, duracao_meses),
           turmas(id, nome),
           responsaveis(id, nome, telefone, email)
