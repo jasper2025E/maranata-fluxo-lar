@@ -52,10 +52,14 @@ import {
 
 const menuItems = [
   { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
-  { titleKey: "nav.guardians", url: "/responsaveis", icon: UserCheck },
+];
+
+// Cadastros Sub-items
+const cadastrosItems = [
   { titleKey: "nav.students", url: "/alunos", icon: Users },
-  { titleKey: "nav.classes", url: "/turmas", icon: GraduationCap },
+  { titleKey: "nav.guardians", url: "/responsaveis", icon: UserCheck },
   { titleKey: "nav.courses", url: "/cursos", icon: BookOpen },
+  { titleKey: "nav.classes", url: "/turmas", icon: GraduationCap },
 ];
 
 // Escola Sub-items
