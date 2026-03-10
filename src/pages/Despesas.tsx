@@ -181,7 +181,7 @@ const Despesas = () => {
   const filteredDespesasVariaveis = useMemo(() => {
     return despesas.filter((d) => {
       const { year, month } = parseDateParts(d.data_vencimento);
-      return year === selectedYear && month === selectedMonth && (d.categoria === "Variável" || d.categoria === "Única");
+      return year === selectedYear && month === selectedMonth && d.categoria !== "Fixa";
     });
   }, [despesas, selectedYear, selectedMonth]);
 
