@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Trash2, CheckCircle, ChevronDown, Printer, UserPlus, Receipt } from "lucide-react";
+import { Plus, Trash2, CheckCircle, ChevronDown, Printer, UserPlus, Receipt, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -72,6 +72,12 @@ const Despesas = () => {
     titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "",
   });
 
+  // ─── Receitas avulsas state ───────────────────────
+  const [isReceitaOpen, setIsReceitaOpen] = useState(false);
+  const [receitaForm, setReceitaForm] = useState({
+    titulo: "", categoria: "Avulsa", valor: "", data_recebimento: "", recorrente: false, observacoes: "",
+  });
+
   // ─── Queries ──────────────────────────────────────
   const { data: despesas = [] } = useQuery({
     queryKey: ["despesas"],
@@ -121,7 +127,28 @@ const Despesas = () => {
     },
   });
 
-  // ─── Filtered by month/year ───────────────────────
+  // Receitas avulsas query
+  const { data: receitasAvulsas = [] } = useQuery({
+    queryKey: ["receitas-avulsas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("receitas")
+        .select("*")
+        .order("data_recebimento", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Receitas avulsas do mês filtrado
+  const receitasAvulsasMes = useMemo(() => {
+    return receitasAvulsas.filter((r: any) => {
+      const dt = new Date(r.data_recebimento);
+      return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth;
+    });
+  }, [receitasAvulsas, selectedYear, selectedMonth]);
+
+
   const filteredRecebimentos = useMemo(() => {
     return receitas.filter((r) => r.ano_referencia === selectedYear && r.mes_referencia === selectedMonth + 1);
   }, [receitas, selectedYear, selectedMonth]);
@@ -140,9 +167,13 @@ const Despesas = () => {
     });
   }, [despesas, selectedYear, selectedMonth]);
 
-  // Monthly totals
-  const totalReceitasMes = filteredRecebimentos.reduce((s, r) => s + (r.valor_total || r.valor), 0);
-  const receitasPagasMes = filteredRecebimentos.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0);
+  // Monthly totals (faturas + receitas avulsas)
+  const totalReceitasFaturas = filteredRecebimentos.reduce((s, r) => s + (r.valor_total || r.valor), 0);
+  const receitasPagasFaturas = filteredRecebimentos.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0);
+  const totalReceitasAvulsas = receitasAvulsasMes.reduce((s: number, r: any) => s + Number(r.valor), 0);
+  const receitasAvulsasRecebidas = receitasAvulsasMes.filter((r: any) => r.recebida).reduce((s: number, r: any) => s + Number(r.valor), 0);
+  const totalReceitasMes = totalReceitasFaturas + totalReceitasAvulsas;
+  const receitasPagasMes = receitasPagasFaturas + receitasAvulsasRecebidas;
 
   const monthDespesas = useMemo(() => {
     return despesas.filter((d) => {
@@ -256,6 +287,28 @@ const Despesas = () => {
     onError: () => toast.error("Erro ao remover"),
   });
 
+  // ─── Receita Mutation ─────────────────────────────
+  const createReceita = useMutation({
+    mutationFn: async (data: typeof receitaForm) => {
+      const { error } = await supabase.from("receitas").insert({
+        titulo: data.titulo,
+        categoria: data.categoria,
+        valor: parseFloat(data.valor),
+        data_recebimento: data.data_recebimento,
+        recorrente: data.recorrente,
+        observacoes: data.observacoes || null,
+        origem: "manual",
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["receitas-avulsas"], refetchType: "all" });
+      toast.success("Receita registrada com sucesso");
+      resetReceitaForm();
+    },
+    onError: () => toast.error("Erro ao registrar receita"),
+  });
+
   // ─── Helpers ──────────────────────────────────────
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
@@ -264,6 +317,20 @@ const Despesas = () => {
     setDespesaForm({ titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "" });
     setEditingDespesa(null);
     setIsDespesaOpen(false);
+  };
+
+  const resetReceitaForm = () => {
+    setReceitaForm({ titulo: "", categoria: "Avulsa", valor: "", data_recebimento: "", recorrente: false, observacoes: "" });
+    setIsReceitaOpen(false);
+  };
+
+  const handleSubmitReceita = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receitaForm.titulo || !receitaForm.valor || !receitaForm.data_recebimento) {
+      toast.error("Preencha todos os campos obrigatórios");
+      return;
+    }
+    createReceita.mutate(receitaForm);
   };
 
   const handleEditDespesa = (d: Despesa) => {
@@ -458,6 +525,64 @@ const Despesas = () => {
                 </form>
               </DialogContent>
             </Dialog>
+
+          <Dialog open={isReceitaOpen} onOpenChange={(open) => { if (!open) resetReceitaForm(); setIsReceitaOpen(open); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" variant="outline">
+                <TrendingUp className="mr-1.5 h-4 w-4" />
+                Adicionar Receita
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <form onSubmit={handleSubmitReceita}>
+                <DialogHeader>
+                  <DialogTitle>Nova Receita Avulsa</DialogTitle>
+                  <DialogDescription>Registre uma receita que não está vinculada a faturas de alunos</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid gap-2">
+                    <Label>Título</Label>
+                    <Input value={receitaForm.titulo} onChange={(e) => setReceitaForm({ ...receitaForm, titulo: e.target.value })} placeholder="Ex: Venda de materiais, Doação, Aluguel de espaço" required />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="grid gap-2">
+                      <Label>Categoria</Label>
+                      <Select value={receitaForm.categoria} onValueChange={(v) => setReceitaForm({ ...receitaForm, categoria: v })}>
+                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Avulsa">Avulsa</SelectItem>
+                          <SelectItem value="Doação">Doação</SelectItem>
+                          <SelectItem value="Evento">Evento</SelectItem>
+                          <SelectItem value="Aluguel">Aluguel</SelectItem>
+                          <SelectItem value="Outro">Outro</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="grid gap-2">
+                      <Label>Valor</Label>
+                      <Input type="number" step="0.01" value={receitaForm.valor} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })} required />
+                    </div>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Data de Recebimento</Label>
+                    <Input type="date" value={receitaForm.data_recebimento} onChange={(e) => setReceitaForm({ ...receitaForm, data_recebimento: e.target.value })} required />
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Checkbox id="rec-recorrente" checked={receitaForm.recorrente} onCheckedChange={(c) => setReceitaForm({ ...receitaForm, recorrente: c as boolean })} />
+                    <Label htmlFor="rec-recorrente">Recorrente</Label>
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>Observações</Label>
+                    <Textarea value={receitaForm.observacoes} onChange={(e) => setReceitaForm({ ...receitaForm, observacoes: e.target.value })} />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={resetReceitaForm}>Cancelar</Button>
+                  <Button type="submit" disabled={createReceita.isPending}>Registrar</Button>
+                </DialogFooter>
+              </form>
+            </DialogContent>
+          </Dialog>
           {isDespesaTab && (
             <Button
               size="sm"
