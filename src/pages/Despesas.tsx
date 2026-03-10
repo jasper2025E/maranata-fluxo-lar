@@ -596,10 +596,11 @@ const Despesas = () => {
         {/* ═══ Recebimentos KPIs + Search (only on recebimentos tab) ═══ */}
         {isRecebimentosTab && (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
               <FinancialKPICard title="Total Pagamentos" value={pagamentos.length} icon={Receipt} variant="info" />
               <FinancialKPICard title="Total Recebido" value={formatCurrency(totalRecebido)} icon={DollarSign} variant="success" />
               <FinancialKPICard title="Via Asaas" value={pagamentosAsaas.length} icon={QrCode} variant="default" />
+              <FinancialKPICard title="Via Stripe" value={pagamentosStripe.length} icon={CardIcon} variant="premium" />
               <FinancialKPICard title="Manuais" value={pagamentosManuais.length} icon={FileBarChart} variant="warning" />
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
