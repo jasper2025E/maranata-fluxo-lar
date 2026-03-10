@@ -32,19 +32,16 @@ interface Receita {
   curso_nome: string | null;
 }
 
+interface Despesa {
+  id: string;
+  titulo: string;
+  categoria: string;
+  valor: number;
+  data_vencimento: string;
+  paga: boolean;
   data_pagamento: string | null;
   recorrente: boolean;
   observacoes: string | null;
-}
-
-interface Pagamento {
-  id: string;
-  valor: number;
-  metodo: string | null;
-  data_pagamento: string;
-  created_at: string | null;
-  aluno_nome: string | null;
-  curso_nome: string | null;
 }
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
