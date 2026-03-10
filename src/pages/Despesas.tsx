@@ -458,7 +458,6 @@ const Despesas = () => {
                 </form>
               </DialogContent>
             </Dialog>
-          </Dialog>
           {isDespesaTab && (
             <Button
               size="sm"
