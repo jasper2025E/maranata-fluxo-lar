@@ -65,6 +65,8 @@ const Despesas = () => {
   const [page, setPage] = useState(1);
   const perPage = 13;
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [recebimentosSearch, setRecebimentosSearch] = useState("");
+  const [recebimentosGatewayFilter, setRecebimentosGatewayFilter] = useState("todos");
 
   // ─── Despesas state ───────────────────────────────
   const [isDespesaOpen, setIsDespesaOpen] = useState(false);
