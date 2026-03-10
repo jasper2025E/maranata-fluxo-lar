@@ -13,11 +13,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Trash2, CheckCircle, ChevronDown, Printer, TrendingUp } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Plus, Trash2, CheckCircle, ChevronDown, Printer, TrendingUp, Search, QrCode, CreditCard as CardIcon, Receipt, DollarSign, FileBarChart, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { FinancialKPICard } from "@/components/dashboard";
 
 // ─── Types ──────────────────────────────────────────
 interface Receita {
@@ -63,6 +65,8 @@ const Despesas = () => {
   const [page, setPage] = useState(1);
   const perPage = 13;
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [recebimentosSearch, setRecebimentosSearch] = useState("");
+  const [recebimentosGatewayFilter, setRecebimentosGatewayFilter] = useState("todos");
 
   // ─── Despesas state ───────────────────────────────
   const [isDespesaOpen, setIsDespesaOpen] = useState(false);
@@ -71,11 +75,6 @@ const Despesas = () => {
     titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "", recorrencia_ate: "",
   });
 
-  // ─── Receitas avulsas state ───────────────────────
-  const [isReceitaOpen, setIsReceitaOpen] = useState(false);
-  const [receitaForm, setReceitaForm] = useState({
-    titulo: "", categoria: "Avulsa", valor: "", data_recebimento: "", recorrente: false, observacoes: "",
-  });
 
   // ─── Queries ──────────────────────────────────────
   // Auto-generate recurring despesas on load
@@ -101,21 +100,15 @@ const Despesas = () => {
     },
   });
 
-  // Recebimentos = faturas dos alunos
+  // Recebimentos = faturas dos alunos (for KPI calculations)
   const { data: receitas = [] } = useQuery({
     queryKey: ["receitas-faturas"],
     queryFn: async () => {
       const { data, error } = await supabase
         .from("faturas")
         .select(`
-          id,
-          valor,
-          valor_total,
-          data_vencimento,
-          data_emissao,
-          status,
-          mes_referencia,
-          ano_referencia,
+          id, valor, valor_total, data_vencimento, data_emissao, status,
+          mes_referencia, ano_referencia,
           alunos!inner ( nome_completo ),
           cursos!inner ( nome )
         `)
@@ -123,35 +116,16 @@ const Despesas = () => {
         .order("data_vencimento", { ascending: false });
       if (error) throw error;
       return (data || []).map((f: any) => ({
-        id: f.id,
-        valor: f.valor,
-        valor_total: f.valor_total,
-        data_vencimento: f.data_vencimento,
-        data_emissao: f.data_emissao,
-        status: f.status,
-        mes_referencia: f.mes_referencia,
-        ano_referencia: f.ano_referencia,
-        aluno_nome: f.alunos?.nome_completo || null,
-        curso_nome: f.cursos?.nome || null,
+        id: f.id, valor: f.valor, valor_total: f.valor_total,
+        data_vencimento: f.data_vencimento, data_emissao: f.data_emissao,
+        status: f.status, mes_referencia: f.mes_referencia, ano_referencia: f.ano_referencia,
+        aluno_nome: f.alunos?.nome_completo || null, curso_nome: f.cursos?.nome || null,
       })) as Receita[];
     },
   });
 
-  // Receitas avulsas query
-  const { data: receitasAvulsas = [] } = useQuery({
-    queryKey: ["receitas-avulsas"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("receitas")
-        .select("*")
-        .order("data_recebimento", { ascending: false });
-      if (error) throw error;
-      return data || [];
-    },
-  });
-
-  // Pagamentos - mesma query usada na página Pagamentos (funciona)
-  const { data: pagamentos = [] } = useQuery({
+  // ALL pagamentos - complete history for Recebimentos tab
+  const { data: pagamentos = [], isLoading: pagamentosLoading } = useQuery({
     queryKey: ["pagamentos"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -163,14 +137,36 @@ const Despesas = () => {
     },
   });
 
-  // Combine receitas avulsas + pagamentos for the month
-  const receitasAvulsasMes = useMemo(() => {
-    return receitasAvulsas.filter((r: any) => {
-      const dt = new Date(r.data_recebimento);
-      return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth;
-    });
-  }, [receitasAvulsas, selectedYear, selectedMonth]);
+  const mesesNomes = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
 
+  // KPIs for recebimentos
+  const totalRecebido = pagamentos.reduce((s: number, p: any) => s + Number(p.valor), 0);
+  const pagamentosAsaas = pagamentos.filter((p: any) => p.gateway === "asaas");
+  const pagamentosStripe = pagamentos.filter((p: any) => p.gateway === "stripe");
+  const pagamentosManuais = pagamentos.filter((p: any) => !p.gateway);
+
+  // Filtered pagamentos for recebimentos tab (search + gateway filter)
+  const filteredPagamentos = useMemo(() => {
+    return pagamentos.filter((p: any) => {
+      const searchLower = recebimentosSearch.toLowerCase();
+      const matchesSearch = !recebimentosSearch ||
+        p.faturas?.alunos?.nome_completo?.toLowerCase().includes(searchLower) ||
+        p.metodo?.toLowerCase().includes(searchLower) ||
+        p.referencia?.toLowerCase().includes(searchLower) ||
+        p.gateway_id?.toLowerCase().includes(searchLower) ||
+        p.faturas?.codigo_sequencial?.toLowerCase().includes(searchLower);
+
+      const matchesGateway =
+        recebimentosGatewayFilter === "todos" ||
+        (recebimentosGatewayFilter === "asaas" && p.gateway === "asaas") ||
+        (recebimentosGatewayFilter === "stripe" && p.gateway === "stripe") ||
+        (recebimentosGatewayFilter === "manual" && !p.gateway);
+
+      return matchesSearch && matchesGateway;
+    });
+  }, [pagamentos, recebimentosSearch, recebimentosGatewayFilter]);
+
+  // Monthly pagamentos for KPI progress bars
   const pagamentosMes = useMemo(() => {
     return pagamentos.filter((p: any) => {
       if (!p.data_pagamento) return false;
@@ -178,50 +174,6 @@ const Despesas = () => {
       return y === selectedYear && m === selectedMonth + 1;
     });
   }, [pagamentos, selectedYear, selectedMonth]);
-
-  // Unified recebimentos list for the tab
-  const recebimentosUnificados = useMemo(() => {
-    const meses = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-    const fromAvulsas = receitasAvulsasMes.map((r: any) => ({
-      id: r.id,
-      data: r.data_recebimento,
-      descricao: r.titulo,
-      valor: Number(r.valor),
-      origem: r.origem || "Manual",
-      categoria: r.categoria,
-      pago: r.recebida || false,
-      tipo: "avulsa" as const,
-      referencia: "—",
-      gateway: null as string | null,
-      gatewayId: null as string | null,
-      codigoFatura: null as string | null,
-      tipoRegistro: null as string | null,
-    }));
-    const fromPagamentos = pagamentosMes.map((p: any) => {
-      const mesRef = p.faturas?.mes_referencia;
-      const anoRef = p.faturas?.ano_referencia;
-      const ref = mesRef && anoRef ? `${meses[mesRef]}/${anoRef}` : "—";
-      return {
-        id: p.id,
-        data: p.data_pagamento,
-        descricao: `${p.faturas?.cursos?.nome || "Fatura"} - ${p.faturas?.alunos?.nome_completo || "Aluno"}`,
-        valor: Number(p.valor),
-        origem: p.faturas?.alunos?.nome_completo || "Aluno",
-        categoria: p.metodo || p.gateway || "Fatura",
-        pago: true,
-        tipo: "pagamento" as const,
-        codigoFatura: p.faturas?.codigo_sequencial,
-        tipoRegistro: p.tipo,
-        gateway: p.gateway as string | null,
-        gatewayId: p.gateway_id as string | null,
-        referencia: ref,
-      };
-    });
-    return [...fromPagamentos, ...fromAvulsas].sort((a, b) => 
-      new Date(b.data).getTime() - new Date(a.data).getTime()
-    );
-  }, [receitasAvulsasMes, pagamentosMes]);
-
 
   const filteredRecebimentos = useMemo(() => {
     return receitas.filter((r) => r.ano_referencia === selectedYear && r.mes_referencia === selectedMonth + 1);
@@ -247,14 +199,12 @@ const Despesas = () => {
     });
   }, [despesas, selectedYear, selectedMonth]);
 
-  // Monthly totals (faturas + receitas avulsas)
+  // Monthly totals (faturas)
   const totalReceitasFaturas = filteredRecebimentos.reduce((s, r) => s + (r.valor_total || r.valor), 0);
   const receitasPagasFaturas = filteredRecebimentos.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0);
-  const totalReceitasAvulsas = receitasAvulsasMes.reduce((s: number, r: any) => s + Number(r.valor), 0);
-  const receitasAvulsasRecebidas = receitasAvulsasMes.filter((r: any) => r.recebida).reduce((s: number, r: any) => s + Number(r.valor), 0);
   const totalPagamentosMes = pagamentosMes.reduce((s: number, p: any) => s + Number(p.valor), 0);
-  const totalReceitasMes = Math.max(totalReceitasFaturas, totalPagamentosMes) + totalReceitasAvulsas;
-  const receitasPagasMes = totalPagamentosMes + receitasAvulsasRecebidas;
+  const totalReceitasMes = Math.max(totalReceitasFaturas, totalPagamentosMes);
+  const receitasPagasMes = totalPagamentosMes;
 
   const monthDespesas = useMemo(() => {
     return despesas.filter((d) => {
@@ -273,12 +223,12 @@ const Despesas = () => {
   // ─── Active tab data ──────────────────────────────
   const activeData = useMemo((): any[] => {
     switch (activeTab) {
-      case "recebimentos": return recebimentosUnificados;
+      case "recebimentos": return filteredPagamentos;
       case "despesas_fixas": return filteredDespesasFixas;
       case "despesas_variaveis": return filteredDespesasVariaveis;
       default: return [];
     }
-  }, [activeTab, recebimentosUnificados, filteredDespesasFixas, filteredDespesasVariaveis]);
+  }, [activeTab, filteredPagamentos, filteredDespesasFixas, filteredDespesasVariaveis]);
 
   const totalPages = Math.max(1, Math.ceil(activeData.length / perPage));
   const paginatedData = activeData.slice((page - 1) * perPage, page * perPage);
@@ -390,50 +340,32 @@ const Despesas = () => {
     onError: () => toast.error("Erro ao remover"),
   });
 
-  // ─── Receita Mutation ─────────────────────────────
-  const createReceita = useMutation({
-    mutationFn: async (data: typeof receitaForm) => {
-      const { error } = await supabase.from("receitas").insert({
-        titulo: data.titulo,
-        categoria: data.categoria,
-        valor: parseFloat(data.valor),
-        data_recebimento: data.data_recebimento,
-        recorrente: data.recorrente,
-        observacoes: data.observacoes || null,
-        origem: "manual",
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["receitas-avulsas"], refetchType: "all" });
-      toast.success("Receita registrada com sucesso");
-      resetReceitaForm();
-    },
-    onError: () => toast.error("Erro ao registrar receita"),
-  });
-
   // ─── Helpers ──────────────────────────────────────
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
+  const getMetodoBadge = (metodo: string, gateway: string | null) => {
+    if (gateway === "asaas") {
+      if (metodo === "PIX") return <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20">PIX Asaas</Badge>;
+      if (metodo === "Boleto") return <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20">Boleto Asaas</Badge>;
+      if (metodo === "Cartão") return <Badge className="bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 border-purple-500/20">Cartão Asaas</Badge>;
+      return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">{metodo} Asaas</Badge>;
+    }
+    if (gateway === "stripe") {
+      return <Badge className="bg-violet-500/10 text-violet-600 hover:bg-violet-500/20 border-violet-500/20">Stripe</Badge>;
+    }
+    switch (metodo) {
+      case "PIX": return <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20">PIX</Badge>;
+      case "Cartão": return <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20">Cartão</Badge>;
+      case "Boleto": return <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">Boleto</Badge>;
+      default: return <Badge variant="outline">Dinheiro</Badge>;
+    }
+  };
 
   const resetDespesaForm = () => {
     setDespesaForm({ titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "", recorrencia_ate: "" });
     setEditingDespesa(null);
     setIsDespesaOpen(false);
-  };
-
-  const resetReceitaForm = () => {
-    setReceitaForm({ titulo: "", categoria: "Avulsa", valor: "", data_recebimento: "", recorrente: false, observacoes: "" });
-    setIsReceitaOpen(false);
-  };
-
-  const handleSubmitReceita = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!receitaForm.titulo || !receitaForm.valor || !receitaForm.data_recebimento) {
-      toast.error("Preencha todos os campos obrigatórios");
-      return;
-    }
-    createReceita.mutate(receitaForm);
   };
 
   const handleEditDespesa = (d: Despesa) => {
@@ -644,63 +576,6 @@ const Despesas = () => {
               </DialogContent>
             </Dialog>
 
-          <Dialog open={isReceitaOpen} onOpenChange={(open) => { if (!open) resetReceitaForm(); setIsReceitaOpen(open); }}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                <TrendingUp className="mr-1.5 h-4 w-4" />
-                Adicionar Receita
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <form onSubmit={handleSubmitReceita}>
-                <DialogHeader>
-                  <DialogTitle>Nova Receita Avulsa</DialogTitle>
-                  <DialogDescription>Registre uma receita que não está vinculada a faturas de alunos</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label>Título</Label>
-                    <Input value={receitaForm.titulo} onChange={(e) => setReceitaForm({ ...receitaForm, titulo: e.target.value })} placeholder="Ex: Venda de materiais, Doação, Aluguel de espaço" required />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Categoria</Label>
-                      <Select value={receitaForm.categoria} onValueChange={(v) => setReceitaForm({ ...receitaForm, categoria: v })}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Avulsa">Avulsa</SelectItem>
-                          <SelectItem value="Doação">Doação</SelectItem>
-                          <SelectItem value="Evento">Evento</SelectItem>
-                          <SelectItem value="Aluguel">Aluguel</SelectItem>
-                          <SelectItem value="Outro">Outro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Valor</Label>
-                      <Input type="number" step="0.01" value={receitaForm.valor} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })} required />
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Data de Recebimento</Label>
-                    <Input type="date" value={receitaForm.data_recebimento} onChange={(e) => setReceitaForm({ ...receitaForm, data_recebimento: e.target.value })} required />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="rec-recorrente" checked={receitaForm.recorrente} onCheckedChange={(c) => setReceitaForm({ ...receitaForm, recorrente: c as boolean })} />
-                    <Label htmlFor="rec-recorrente">Recorrente</Label>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Observações</Label>
-                    <Textarea value={receitaForm.observacoes} onChange={(e) => setReceitaForm({ ...receitaForm, observacoes: e.target.value })} />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={resetReceitaForm}>Cancelar</Button>
-                  <Button type="submit" disabled={createReceita.isPending}>Registrar</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
           {isDespesaTab && (
             <Button
               size="sm"
@@ -718,13 +593,44 @@ const Despesas = () => {
           )}
         </div>
 
+        {/* ═══ Recebimentos KPIs + Search (only on recebimentos tab) ═══ */}
+        {isRecebimentosTab && (
+          <>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <FinancialKPICard title="Total Pagamentos" value={pagamentos.length} icon={Receipt} variant="info" />
+              <FinancialKPICard title="Total Recebido" value={formatCurrency(totalRecebido)} icon={DollarSign} variant="success" />
+              <FinancialKPICard title="Via Asaas" value={pagamentosAsaas.length} icon={QrCode} variant="default" />
+              <FinancialKPICard title="Manuais" value={pagamentosManuais.length} icon={FileBarChart} variant="warning" />
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Tabs value={recebimentosGatewayFilter} onValueChange={(v) => { setRecebimentosGatewayFilter(v); setPage(1); }} className="w-auto">
+                <TabsList className="h-9">
+                  <TabsTrigger value="todos" className="text-xs">Todos</TabsTrigger>
+                  <TabsTrigger value="asaas" className="text-xs">Asaas</TabsTrigger>
+                  <TabsTrigger value="stripe" className="text-xs">Stripe</TabsTrigger>
+                  <TabsTrigger value="manual" className="text-xs">Manual</TabsTrigger>
+                </TabsList>
+              </Tabs>
+              <div className="relative w-full sm:w-64">
+                <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar aluno, método, código..."
+                  value={recebimentosSearch}
+                  onChange={(e) => { setRecebimentosSearch(e.target.value); setPage(1); }}
+                  className="pl-8"
+                />
+              </div>
+            </div>
+          </>
+        )}
+
         {/* ═══ Table ═══ */}
         <Card className="border border-border overflow-hidden">
           <CardContent className="p-0 overflow-x-auto">
             {paginatedData.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
                 <p className="text-sm text-muted-foreground">
-                  Nenhum registro encontrado para {MONTHS[selectedMonth]}/{selectedYear}.
+                  {isRecebimentosTab ? "Nenhum pagamento encontrado." : `Nenhum registro encontrado para ${MONTHS[selectedMonth]}/${selectedYear}.`}
                 </p>
               </div>
              ) : isRecebimentosTab ? (
@@ -740,42 +646,46 @@ const Despesas = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(paginatedData as any[]).map((r) => (
-                    <TableRow key={r.id} className="hover:bg-muted/30">
-                      <TableCell className="text-sm text-foreground">
-                        {r.data ? format(new Date(r.data + "T00:00:00"), "dd/MM/yyyy") : "—"}
-                      </TableCell>
-                      <TableCell className="text-sm font-medium text-foreground">
-                        {r.origem}
-                        {r.codigoFatura && (
-                          <span className="block text-xs text-muted-foreground">{r.codigoFatura}</span>
-                        )}
-                        {r.tipoRegistro === "estorno" && (
-                          <span className="block text-xs text-destructive font-medium">Estorno</span>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{r.referencia || "—"}</TableCell>
-                      <TableCell className={cn(
-                        "text-sm font-semibold",
-                        r.tipoRegistro === "estorno" ? "text-destructive" : "text-primary"
-                      )}>
-                        {r.tipoRegistro === "estorno" ? "- " : ""}
-                        R$ {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={r.pago ? "default" : "outline"} className="text-xs">
-                          {r.categoria}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">
-                        {r.gateway ? (
-                          <span className="text-xs">{r.gatewayId ? `${r.gatewayId.substring(0, 14)}...` : r.gateway}</span>
-                        ) : (
-                          "Manuais"
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {(paginatedData as any[]).map((p) => {
+                    const mesRef = p.faturas?.mes_referencia;
+                    const anoRef = p.faturas?.ano_referencia;
+                    const ref = mesRef && anoRef ? `${mesesNomes[mesRef]}/${anoRef}` : "—";
+                    return (
+                      <TableRow key={p.id} className="hover:bg-muted/30">
+                        <TableCell className="text-sm text-foreground">
+                          {p.data_pagamento ? format(new Date(p.data_pagamento + "T00:00:00"), "dd/MM/yyyy") : "—"}
+                        </TableCell>
+                        <TableCell className="text-sm font-medium text-foreground">
+                          {p.faturas?.alunos?.nome_completo || "—"}
+                          {p.faturas?.codigo_sequencial && (
+                            <span className="block text-xs text-muted-foreground">{p.faturas.codigo_sequencial}</span>
+                          )}
+                          {p.tipo === "estorno" && (
+                            <span className="block text-xs text-destructive font-medium">Estorno</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{ref}</TableCell>
+                        <TableCell className={cn(
+                          "text-sm font-semibold",
+                          p.tipo === "estorno" ? "text-destructive" : "text-primary"
+                        )}>
+                          {p.tipo === "estorno" ? "- " : ""}{formatCurrency(Number(p.valor))}
+                        </TableCell>
+                        <TableCell>{getMetodoBadge(p.metodo, p.gateway)}</TableCell>
+                        <TableCell>
+                          {p.gateway ? (
+                            <Badge variant="outline" className="text-xs">
+                              {p.gateway === "asaas" && <QrCode className="h-3 w-3 mr-1" />}
+                              {p.gateway === "stripe" && <CardIcon className="h-3 w-3 mr-1" />}
+                              {p.gateway_id?.slice(0, 12)}...
+                            </Badge>
+                          ) : (
+                            <span className="text-muted-foreground text-xs">Manual</span>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             ) : isDespesaTab ? (
