@@ -9,20 +9,19 @@ import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import {
-  User, BookOpen, Wallet, Star, ArrowLeft, Calendar, Mail, MapPin,
+  User, BookOpen, Wallet, Star, ArrowLeft, Calendar, Mail, MapPin, Phone,
   GraduationCap, CheckCircle2, XCircle, Clock, TrendingUp, MessageSquare,
-  Activity, Award, ChevronRight,
+  Activity, Award, ChevronRight, FileText, Sparkles, History,
 } from "lucide-react";
 import {
-  useAlunoProfile,
-  useAlunoNotas,
-  useAlunoFrequencia,
-  useAlunoFaturas,
-  useAlunoPagamentos,
-  useAlunoAvaliacoes,
-  useAlunoAtividades,
-  useAlunoFeedback,
+  useAlunoProfile, useAlunoNotas, useAlunoFrequencia,
+  useAlunoFaturas, useAlunoPagamentos, useAlunoAvaliacoes,
+  useAlunoAtividades, useAlunoFeedback,
 } from "@/hooks/useAlunoProfile";
+import { AlunoFotoUpload } from "@/components/alunos/AlunoFotoUpload";
+import { AlunoDocumentos } from "@/components/alunos/AlunoDocumentos";
+import { AlunoHabilidades } from "@/components/alunos/AlunoHabilidades";
+import { AlunoTimeline } from "@/components/alunos/AlunoTimeline";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -33,6 +32,7 @@ const statusColor: Record<string, string> = {
   ativo: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400",
   inativo: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
   trancado: "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400",
+  cancelado: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400",
 };
 
 const faturaStatusBadge: Record<string, string> = {
@@ -69,7 +69,6 @@ export default function PerfilAluno() {
     );
   }
 
-  // Stats
   const totalAulas = frequencia?.length || 0;
   const presencas = frequencia?.filter(f => f.presente).length || 0;
   const freqPercent = totalAulas > 0 ? Math.round((presencas / totalAulas) * 100) : 0;
@@ -91,13 +90,11 @@ export default function PerfilAluno() {
           <span className="font-medium text-foreground">Perfil do Aluno</span>
         </nav>
 
-        {/* Header Card */}
+        {/* Header Card with Photo */}
         <Card className="border-border/50 shadow-sm rounded-2xl overflow-hidden bg-card">
           <CardContent className="p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-              <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                <User className="h-8 w-8 text-primary" />
-              </div>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-5">
+              <AlunoFotoUpload alunoId={aluno.id} currentUrl={aluno.foto_url} nome={aluno.nome_completo} />
               <div className="flex-1 min-w-0">
                 <h1 className="text-2xl font-bold text-foreground truncate">{aluno.nome_completo}</h1>
                 <div className="flex flex-wrap items-center gap-3 mt-1 text-sm text-muted-foreground">
@@ -109,6 +106,9 @@ export default function PerfilAluno() {
                   )}
                   <Badge className={statusColor[aluno.status_matricula || "ativo"]}>{aluno.status_matricula || "ativo"}</Badge>
                 </div>
+                {aluno.observacoes && (
+                  <p className="text-sm text-muted-foreground mt-2 line-clamp-2">{aluno.observacoes}</p>
+                )}
               </div>
               {/* Quick Stats */}
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
@@ -135,27 +135,29 @@ export default function PerfilAluno() {
 
         {/* Tabs */}
         <Tabs value={tab} onValueChange={setTab}>
-          <TabsList className="grid grid-cols-4 w-full">
-            <TabsTrigger value="pessoal" className="gap-1.5 text-xs sm:text-sm"><User className="h-4 w-4 hidden sm:block" />Pessoal</TabsTrigger>
-            <TabsTrigger value="academico" className="gap-1.5 text-xs sm:text-sm"><BookOpen className="h-4 w-4 hidden sm:block" />Acadêmico</TabsTrigger>
-            <TabsTrigger value="financeiro" className="gap-1.5 text-xs sm:text-sm"><Wallet className="h-4 w-4 hidden sm:block" />Financeiro</TabsTrigger>
-            <TabsTrigger value="outros" className="gap-1.5 text-xs sm:text-sm"><Star className="h-4 w-4 hidden sm:block" />Outros</TabsTrigger>
+          <TabsList className="grid grid-cols-3 sm:grid-cols-6 w-full">
+            <TabsTrigger value="pessoal" className="gap-1.5 text-xs"><User className="h-3.5 w-3.5 hidden sm:block" />Pessoal</TabsTrigger>
+            <TabsTrigger value="academico" className="gap-1.5 text-xs"><BookOpen className="h-3.5 w-3.5 hidden sm:block" />Acadêmico</TabsTrigger>
+            <TabsTrigger value="financeiro" className="gap-1.5 text-xs"><Wallet className="h-3.5 w-3.5 hidden sm:block" />Financeiro</TabsTrigger>
+            <TabsTrigger value="documentos" className="gap-1.5 text-xs"><FileText className="h-3.5 w-3.5 hidden sm:block" />Documentos</TabsTrigger>
+            <TabsTrigger value="habilidades" className="gap-1.5 text-xs"><Sparkles className="h-3.5 w-3.5 hidden sm:block" />Perfil</TabsTrigger>
+            <TabsTrigger value="historico" className="gap-1.5 text-xs"><History className="h-3.5 w-3.5 hidden sm:block" />Histórico</TabsTrigger>
           </TabsList>
 
           {/* Pessoal Tab */}
           <TabsContent value="pessoal" className="space-y-4 mt-4">
             <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
-              <CardHeader>
-                <CardTitle className="text-lg">Informações Pessoais</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-lg">Informações Pessoais</CardTitle></CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid sm:grid-cols-2 gap-4">
                   <InfoRow icon={User} label="Nome Completo" value={aluno.nome_completo} />
                   <InfoRow icon={Calendar} label="Data de Nascimento" value={aluno.data_nascimento ? format(new Date(aluno.data_nascimento), "dd/MM/yyyy") : "Não informada"} />
                   <InfoRow icon={Mail} label="E-mail Responsável" value={aluno.email_responsavel || "Não informado"} />
+                  <InfoRow icon={Phone} label="Telefone" value={aluno.telefone_responsavel || "Não informado"} />
                   <InfoRow icon={MapPin} label="Endereço" value={aluno.endereco || "Não informado"} />
                   <InfoRow icon={Calendar} label="Data de Matrícula" value={format(new Date(aluno.data_matricula), "dd/MM/yyyy")} />
-                  <InfoRow icon={GraduationCap} label="Curso" value={aluno.curso?.nome || "—"} />
+                  <InfoRow icon={GraduationCap} label="Curso" value={aluno.curso ? `${aluno.curso.nome} (${aluno.curso.duracao_meses} meses)` : "—"} />
+                  <InfoRow icon={Wallet} label="Mensalidade" value={aluno.curso ? formatCurrency(aluno.curso.mensalidade) : "—"} />
                 </div>
                 {aluno.responsavel && (
                   <>
@@ -164,6 +166,7 @@ export default function PerfilAluno() {
                       <h4 className="font-semibold text-foreground mb-3">Responsável</h4>
                       <div className="grid sm:grid-cols-2 gap-4">
                         <InfoRow icon={User} label="Nome" value={aluno.responsavel.nome} />
+                        <InfoRow icon={Phone} label="Telefone" value={aluno.responsavel.telefone || "—"} />
                         <InfoRow icon={Mail} label="E-mail" value={aluno.responsavel.email || "—"} />
                       </div>
                     </div>
@@ -171,11 +174,42 @@ export default function PerfilAluno() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Avaliações e Feedback na tab pessoal */}
+            <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2"><Award className="h-5 w-5" /> Avaliações de Desempenho</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {avaliacoes && avaliacoes.length > 0 ? (
+                  <div className="space-y-4">
+                    {avaliacoes.map((a: any) => (
+                      <div key={a.id} className="p-4 rounded-xl bg-muted/50 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="font-medium text-foreground">{a.periodo}</p>
+                            <p className="text-sm text-muted-foreground">Avaliador: {a.avaliador_nome}</p>
+                          </div>
+                          {a.nota_geral && (
+                            <span className={`text-2xl font-bold ${Number(a.nota_geral) >= 7 ? "text-emerald-600" : Number(a.nota_geral) >= 5 ? "text-amber-600" : "text-red-500"}`}>
+                              {Number(a.nota_geral).toFixed(1)}
+                            </span>
+                          )}
+                        </div>
+                        {a.pontos_fortes && <div><span className="text-xs font-semibold text-emerald-600">Pontos fortes:</span><p className="text-sm text-muted-foreground">{a.pontos_fortes}</p></div>}
+                        {a.pontos_melhoria && <div><span className="text-xs font-semibold text-amber-600">Pontos a melhorar:</span><p className="text-sm text-muted-foreground">{a.pontos_melhoria}</p></div>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">Nenhuma avaliação de desempenho.</p>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Acadêmico Tab */}
           <TabsContent value="academico" className="space-y-4 mt-4">
-            {/* Notas */}
             <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
               <CardHeader>
                 <CardTitle className="text-lg">Notas por Disciplina</CardTitle>
@@ -217,13 +251,10 @@ export default function PerfilAluno() {
               </CardContent>
             </Card>
 
-            {/* Frequência */}
             <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
               <CardHeader>
                 <CardTitle className="text-lg">Histórico de Frequência</CardTitle>
-                <CardDescription>
-                  {presencas}/{totalAulas} presenças ({freqPercent}%)
-                </CardDescription>
+                <CardDescription>{presencas}/{totalAulas} presenças ({freqPercent}%)</CardDescription>
               </CardHeader>
               <CardContent>
                 {frequencia && frequencia.length > 0 ? (
@@ -243,11 +274,65 @@ export default function PerfilAluno() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Atividades Extracurriculares */}
+            <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2"><Activity className="h-5 w-5" /> Atividades Extracurriculares</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {atividades && atividades.length > 0 ? (
+                  <div className="space-y-3">
+                    {atividades.map((a: any) => (
+                      <div key={a.id} className="p-3 rounded-xl bg-muted/50">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-foreground">{a.nome}</p>
+                          <Badge variant="outline">{a.status}</Badge>
+                        </div>
+                        {a.descricao && <p className="text-sm text-muted-foreground mt-1">{a.descricao}</p>}
+                        {a.data_inicio && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(a.data_inicio), "dd/MM/yyyy")}
+                            {a.data_fim && ` — ${format(new Date(a.data_fim), "dd/MM/yyyy")}`}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">Nenhuma atividade extracurricular registrada.</p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Feedback de Professores */}
+            <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2"><MessageSquare className="h-5 w-5" /> Feedback de Professores</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {feedbacks && feedbacks.length > 0 ? (
+                  <div className="space-y-3">
+                    {feedbacks.map((fb: any) => (
+                      <div key={fb.id} className="p-3 rounded-xl bg-muted/50">
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-medium text-foreground text-sm">{fb.professor_nome}</p>
+                          <span className="text-xs text-muted-foreground">{format(new Date(fb.data_feedback), "dd/MM/yyyy")}</span>
+                        </div>
+                        {fb.disciplinas?.nome && <Badge variant="outline" className="text-xs mb-1">{fb.disciplinas.nome}</Badge>}
+                        <p className="text-sm text-muted-foreground">{fb.comentario}</p>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">Nenhum feedback de professores.</p>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Financeiro Tab */}
           <TabsContent value="financeiro" className="space-y-4 mt-4">
-            {/* KPIs */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <MiniKPI icon={Wallet} label="Mensalidade" value={aluno.curso ? formatCurrency(aluno.curso.mensalidade) : "—"} />
               <MiniKPI icon={CheckCircle2} label="Total Pago" value={formatCurrency(totalPago)} color="text-emerald-600" />
@@ -255,23 +340,16 @@ export default function PerfilAluno() {
               <MiniKPI icon={TrendingUp} label="Faturas" value={`${faturas?.length || 0}`} />
             </div>
 
-            {/* Faturas */}
             <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
-              <CardHeader>
-                <CardTitle className="text-lg">Faturas</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-lg">Faturas</CardTitle></CardHeader>
               <CardContent>
                 {faturas && faturas.length > 0 ? (
                   <div className="space-y-2">
                     {faturas.map((f: any) => (
                       <div key={f.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted transition-colors">
                         <div>
-                          <p className="text-sm font-medium text-foreground">
-                            {f.mes_referencia}/{f.ano_referencia}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Venc: {format(new Date(f.data_vencimento), "dd/MM/yyyy")}
-                          </p>
+                          <p className="text-sm font-medium text-foreground">{f.mes_referencia}/{f.ano_referencia}</p>
+                          <p className="text-xs text-muted-foreground">Venc: {format(new Date(f.data_vencimento), "dd/MM/yyyy")}</p>
                         </div>
                         <div className="flex items-center gap-3">
                           <Badge className={faturaStatusBadge[f.status] || "bg-muted"}>{f.status}</Badge>
@@ -286,11 +364,8 @@ export default function PerfilAluno() {
               </CardContent>
             </Card>
 
-            {/* Pagamentos */}
             <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
-              <CardHeader>
-                <CardTitle className="text-lg">Pagamentos Realizados</CardTitle>
-              </CardHeader>
+              <CardHeader><CardTitle className="text-lg">Pagamentos Realizados</CardTitle></CardHeader>
               <CardContent>
                 {pagamentos && pagamentos.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -322,98 +397,19 @@ export default function PerfilAluno() {
             </Card>
           </TabsContent>
 
-          {/* Outros Tab */}
-          <TabsContent value="outros" className="space-y-4 mt-4">
-            {/* Atividades Extracurriculares */}
-            <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2"><Activity className="h-5 w-5" /> Atividades Extracurriculares</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {atividades && atividades.length > 0 ? (
-                  <div className="space-y-3">
-                    {atividades.map((a: any) => (
-                      <div key={a.id} className="p-3 rounded-xl bg-muted/50">
-                        <div className="flex items-center justify-between">
-                          <p className="font-medium text-foreground">{a.nome}</p>
-                          <Badge variant="outline">{a.status}</Badge>
-                        </div>
-                        {a.descricao && <p className="text-sm text-muted-foreground mt-1">{a.descricao}</p>}
-                        {a.data_inicio && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {format(new Date(a.data_inicio), "dd/MM/yyyy")}
-                            {a.data_fim && ` — ${format(new Date(a.data_fim), "dd/MM/yyyy")}`}
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">Nenhuma atividade extracurricular registrada.</p>
-                )}
-              </CardContent>
-            </Card>
+          {/* Documentos Tab */}
+          <TabsContent value="documentos" className="mt-4">
+            <AlunoDocumentos alunoId={alunoId!} />
+          </TabsContent>
 
-            {/* Avaliações de Desempenho */}
-            <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2"><Award className="h-5 w-5" /> Avaliações de Desempenho</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {avaliacoes && avaliacoes.length > 0 ? (
-                  <div className="space-y-4">
-                    {avaliacoes.map((a: any) => (
-                      <div key={a.id} className="p-4 rounded-xl bg-muted/50 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="font-medium text-foreground">{a.periodo}</p>
-                            <p className="text-sm text-muted-foreground">Avaliador: {a.avaliador_nome}</p>
-                          </div>
-                          {a.nota_geral && (
-                            <span className={`text-2xl font-bold ${Number(a.nota_geral) >= 7 ? "text-emerald-600" : Number(a.nota_geral) >= 5 ? "text-amber-600" : "text-red-500"}`}>
-                              {Number(a.nota_geral).toFixed(1)}
-                            </span>
-                          )}
-                        </div>
-                        {a.pontos_fortes && (
-                          <div><span className="text-xs font-semibold text-emerald-600">Pontos fortes:</span><p className="text-sm text-muted-foreground">{a.pontos_fortes}</p></div>
-                        )}
-                        {a.pontos_melhoria && (
-                          <div><span className="text-xs font-semibold text-amber-600">Pontos a melhorar:</span><p className="text-sm text-muted-foreground">{a.pontos_melhoria}</p></div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">Nenhuma avaliação de desempenho.</p>
-                )}
-              </CardContent>
-            </Card>
+          {/* Habilidades/Perfil Tab */}
+          <TabsContent value="habilidades" className="mt-4">
+            <AlunoHabilidades alunoId={alunoId!} />
+          </TabsContent>
 
-            {/* Feedback de Professores */}
-            <Card className="border-border/50 shadow-sm rounded-2xl bg-card">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2"><MessageSquare className="h-5 w-5" /> Feedback de Professores</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {feedbacks && feedbacks.length > 0 ? (
-                  <div className="space-y-3">
-                    {feedbacks.map((fb: any) => (
-                      <div key={fb.id} className="p-3 rounded-xl bg-muted/50">
-                        <div className="flex items-center justify-between mb-1">
-                          <p className="font-medium text-foreground text-sm">{fb.professor_nome}</p>
-                          <span className="text-xs text-muted-foreground">{format(new Date(fb.data_feedback), "dd/MM/yyyy")}</span>
-                        </div>
-                        {fb.disciplinas?.nome && <Badge variant="outline" className="text-xs mb-1">{fb.disciplinas.nome}</Badge>}
-                        <p className="text-sm text-muted-foreground">{fb.comentario}</p>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">Nenhum feedback de professores.</p>
-                )}
-              </CardContent>
-            </Card>
+          {/* Histórico Tab */}
+          <TabsContent value="historico" className="mt-4">
+            <AlunoTimeline alunoId={alunoId!} />
           </TabsContent>
         </Tabs>
       </div>
