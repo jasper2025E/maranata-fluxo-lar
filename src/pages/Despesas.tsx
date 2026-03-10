@@ -149,13 +149,81 @@ const Despesas = () => {
     },
   });
 
-  // Receitas avulsas do mês filtrado
+  // Pagamentos (histórico de recebimentos de faturas)
+  const { data: pagamentos = [] } = useQuery({
+    queryKey: ["pagamentos-recebimentos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pagamentos")
+        .select(`
+          id,
+          valor,
+          metodo,
+          data_pagamento,
+          gateway,
+          gateway_status,
+          tipo,
+          observacoes,
+          created_at,
+          faturas!inner (
+            id,
+            mes_referencia,
+            ano_referencia,
+            codigo_sequencial,
+            alunos!inner ( nome_completo ),
+            cursos!inner ( nome )
+          )
+        `)
+        .order("data_pagamento", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Combine receitas avulsas + pagamentos for the month
   const receitasAvulsasMes = useMemo(() => {
     return receitasAvulsas.filter((r: any) => {
       const dt = new Date(r.data_recebimento);
       return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth;
     });
   }, [receitasAvulsas, selectedYear, selectedMonth]);
+
+  const pagamentosMes = useMemo(() => {
+    return pagamentos.filter((p: any) => {
+      if (!p.data_pagamento) return false;
+      const [y, m] = p.data_pagamento.split("-").map(Number);
+      return y === selectedYear && m === selectedMonth + 1;
+    });
+  }, [pagamentos, selectedYear, selectedMonth]);
+
+  // Unified recebimentos list for the tab
+  const recebimentosUnificados = useMemo(() => {
+    const fromAvulsas = receitasAvulsasMes.map((r: any) => ({
+      id: r.id,
+      data: r.data_recebimento,
+      descricao: r.titulo,
+      valor: Number(r.valor),
+      origem: r.origem || "Manual",
+      categoria: r.categoria,
+      pago: r.recebida || false,
+      tipo: "avulsa" as const,
+    }));
+    const fromPagamentos = pagamentosMes.map((p: any) => ({
+      id: p.id,
+      data: p.data_pagamento,
+      descricao: `${p.faturas?.cursos?.nome || "Fatura"} - ${p.faturas?.alunos?.nome_completo || "Aluno"}`,
+      valor: Number(p.valor),
+      origem: p.faturas?.alunos?.nome_completo || "Aluno",
+      categoria: p.metodo || p.gateway || "Fatura",
+      pago: true,
+      tipo: "pagamento" as const,
+      codigoFatura: p.faturas?.codigo_sequencial,
+      tipoRegistro: p.tipo,
+    }));
+    return [...fromPagamentos, ...fromAvulsas].sort((a, b) => 
+      new Date(b.data).getTime() - new Date(a.data).getTime()
+    );
+  }, [receitasAvulsasMes, pagamentosMes]);
 
 
   const filteredRecebimentos = useMemo(() => {
@@ -187,8 +255,9 @@ const Despesas = () => {
   const receitasPagasFaturas = filteredRecebimentos.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0);
   const totalReceitasAvulsas = receitasAvulsasMes.reduce((s: number, r: any) => s + Number(r.valor), 0);
   const receitasAvulsasRecebidas = receitasAvulsasMes.filter((r: any) => r.recebida).reduce((s: number, r: any) => s + Number(r.valor), 0);
-  const totalReceitasMes = totalReceitasFaturas + totalReceitasAvulsas;
-  const receitasPagasMes = receitasPagasFaturas + receitasAvulsasRecebidas;
+  const totalPagamentosMes = pagamentosMes.reduce((s: number, p: any) => s + Number(p.valor), 0);
+  const totalReceitasMes = Math.max(totalReceitasFaturas, totalPagamentosMes) + totalReceitasAvulsas;
+  const receitasPagasMes = totalPagamentosMes + receitasAvulsasRecebidas;
 
   const monthDespesas = useMemo(() => {
     return despesas.filter((d) => {
@@ -207,12 +276,12 @@ const Despesas = () => {
   // ─── Active tab data ──────────────────────────────
   const activeData = useMemo((): any[] => {
     switch (activeTab) {
-      case "recebimentos": return receitasAvulsasMes;
+      case "recebimentos": return recebimentosUnificados;
       case "despesas_fixas": return filteredDespesasFixas;
       case "despesas_variaveis": return filteredDespesasVariaveis;
       default: return [];
     }
-  }, [activeTab, receitasAvulsasMes, filteredDespesasFixas, filteredDespesasVariaveis]);
+  }, [activeTab, recebimentosUnificados, filteredDespesasFixas, filteredDespesasVariaveis]);
 
   const totalPages = Math.max(1, Math.ceil(activeData.length / perPage));
   const paginatedData = activeData.slice((page - 1) * perPage, page * perPage);
@@ -676,13 +745,12 @@ const Despesas = () => {
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
                     <TableHead className="w-10"></TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Vencimento</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Data</TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Descrição</TableHead>
-                    <TableHead className="w-10"></TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Recebido de</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Categoria</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Pago</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Origem</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Forma</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -691,7 +759,7 @@ const Despesas = () => {
                       key={r.id}
                       className={cn(
                         "transition-colors border-l-4",
-                        r.recebida ? "border-l-primary/40 bg-primary/5" : "border-l-muted bg-card"
+                        r.pago ? "border-l-primary/40 bg-primary/5" : "border-l-muted bg-card"
                       )}
                     >
                       <TableCell className="w-10">
@@ -701,25 +769,30 @@ const Despesas = () => {
                         />
                       </TableCell>
                       <TableCell className="text-sm text-foreground">
-                        {format(new Date(r.data_recebimento), "dd/MM/yyyy")}
+                        {r.data ? format(new Date(r.data + "T00:00:00"), "dd/MM/yyyy") : "—"}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{r.titulo}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-primary"
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
+                      <TableCell className="text-sm text-foreground">
+                        <div className="flex flex-col">
+                          <span>{r.descricao}</span>
+                          {r.codigoFatura && (
+                            <span className="text-xs text-muted-foreground">{r.codigoFatura}</span>
+                          )}
+                          {r.tipoRegistro === "estorno" && (
+                            <span className="text-xs text-destructive font-medium">Estorno</span>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-sm font-medium text-foreground">
-                        {Number(r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      <TableCell className={cn(
+                        "text-sm font-medium",
+                        r.tipoRegistro === "estorno" ? "text-destructive" : "text-foreground"
+                      )}>
+                        {r.tipoRegistro === "estorno" ? "- " : ""}
+                        {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{r.origem || "Manual"}</TableCell>
+                      <TableCell className="text-sm text-foreground">{r.origem}</TableCell>
                       <TableCell className="text-sm text-foreground">{r.categoria}</TableCell>
                       <TableCell>
-                        {r.recebida ? (
+                        {r.pago ? (
                           <span className="flex items-center gap-1 text-sm text-foreground">
                             Sim <CheckCircle className="h-4 w-4 text-primary" />
                           </span>
