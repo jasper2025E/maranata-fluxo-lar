@@ -355,7 +355,7 @@ const Despesas = () => {
 
   const handleEditDespesa = (d: Despesa) => {
     setEditingDespesa(d);
-    setDespesaForm({ titulo: d.titulo, categoria: d.categoria, valor: d.valor.toString(), data_vencimento: d.data_vencimento, recorrente: d.recorrente, observacoes: d.observacoes || "" });
+    setDespesaForm({ titulo: d.titulo, categoria: d.categoria, valor: d.valor.toString(), data_vencimento: d.data_vencimento, recorrente: d.recorrente, observacoes: d.observacoes || "", recorrencia_ate: (d as any).recorrencia_ate || "" });
     setIsDespesaOpen(true);
   };
 
