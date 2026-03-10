@@ -127,7 +127,28 @@ const Despesas = () => {
     },
   });
 
-  // ─── Filtered by month/year ───────────────────────
+  // Receitas avulsas query
+  const { data: receitasAvulsas = [] } = useQuery({
+    queryKey: ["receitas-avulsas"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("receitas")
+        .select("*")
+        .order("data_recebimento", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Receitas avulsas do mês filtrado
+  const receitasAvulsasMes = useMemo(() => {
+    return receitasAvulsas.filter((r: any) => {
+      const dt = new Date(r.data_recebimento);
+      return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth;
+    });
+  }, [receitasAvulsas, selectedYear, selectedMonth]);
+
+
   const filteredRecebimentos = useMemo(() => {
     return receitas.filter((r) => r.ano_referencia === selectedYear && r.mes_referencia === selectedMonth + 1);
   }, [receitas, selectedYear, selectedMonth]);
