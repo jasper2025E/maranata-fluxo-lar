@@ -12,7 +12,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
-import { Plus, Trash2, CheckCircle, ChevronDown, Printer, UserPlus, Receipt, TrendingUp } from "lucide-react";
+import { Plus, Trash2, CheckCircle, ChevronDown, Printer, TrendingUp } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -649,7 +649,7 @@ const Despesas = () => {
 
           <Dialog open={isReceitaOpen} onOpenChange={(open) => { if (!open) resetReceitaForm(); setIsReceitaOpen(open); }}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
+              <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/10">
                 <TrendingUp className="mr-1.5 h-4 w-4" />
                 Adicionar Receita
               </Button>
@@ -719,16 +719,6 @@ const Despesas = () => {
               Remover
             </Button>
           )}
-
-          <Button size="sm" className="bg-primary hover:bg-primary/90">
-            <UserPlus className="mr-1.5 h-4 w-4" />
-            Nova Pessoa / Empresa
-          </Button>
-
-          <Button size="sm" className="bg-primary hover:bg-primary/90">
-            <Receipt className="mr-1.5 h-4 w-4" />
-            Emitir Recibo
-          </Button>
         </div>
 
         {/* ═══ Table ═══ */}
