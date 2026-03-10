@@ -576,63 +576,6 @@ const Despesas = () => {
               </DialogContent>
             </Dialog>
 
-          <Dialog open={isReceitaOpen} onOpenChange={(open) => { if (!open) resetReceitaForm(); setIsReceitaOpen(open); }}>
-            <DialogTrigger asChild>
-              <Button size="sm" variant="outline" className="border-primary text-primary hover:bg-primary/10">
-                <TrendingUp className="mr-1.5 h-4 w-4" />
-                Adicionar Receita
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <form onSubmit={handleSubmitReceita}>
-                <DialogHeader>
-                  <DialogTitle>Nova Receita Avulsa</DialogTitle>
-                  <DialogDescription>Registre uma receita que não está vinculada a faturas de alunos</DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid gap-2">
-                    <Label>Título</Label>
-                    <Input value={receitaForm.titulo} onChange={(e) => setReceitaForm({ ...receitaForm, titulo: e.target.value })} placeholder="Ex: Venda de materiais, Doação, Aluguel de espaço" required />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="grid gap-2">
-                      <Label>Categoria</Label>
-                      <Select value={receitaForm.categoria} onValueChange={(v) => setReceitaForm({ ...receitaForm, categoria: v })}>
-                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="Avulsa">Avulsa</SelectItem>
-                          <SelectItem value="Doação">Doação</SelectItem>
-                          <SelectItem value="Evento">Evento</SelectItem>
-                          <SelectItem value="Aluguel">Aluguel</SelectItem>
-                          <SelectItem value="Outro">Outro</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="grid gap-2">
-                      <Label>Valor</Label>
-                      <Input type="number" step="0.01" value={receitaForm.valor} onChange={(e) => setReceitaForm({ ...receitaForm, valor: e.target.value })} required />
-                    </div>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Data de Recebimento</Label>
-                    <Input type="date" value={receitaForm.data_recebimento} onChange={(e) => setReceitaForm({ ...receitaForm, data_recebimento: e.target.value })} required />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox id="rec-recorrente" checked={receitaForm.recorrente} onCheckedChange={(c) => setReceitaForm({ ...receitaForm, recorrente: c as boolean })} />
-                    <Label htmlFor="rec-recorrente">Recorrente</Label>
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>Observações</Label>
-                    <Textarea value={receitaForm.observacoes} onChange={(e) => setReceitaForm({ ...receitaForm, observacoes: e.target.value })} />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={resetReceitaForm}>Cancelar</Button>
-                  <Button type="submit" disabled={createReceita.isPending}>Registrar</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
           {isDespesaTab && (
             <Button
               size="sm"
