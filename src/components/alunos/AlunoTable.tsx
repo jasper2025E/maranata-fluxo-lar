@@ -133,7 +133,7 @@ export function AlunoTable({
               </TableCell>
               <TableCell className="text-right">
                 <div className="flex items-center justify-end gap-1">
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10" onClick={() => navigate(`/alunos/${aluno.id}`)} title="Ver perfil">
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10" onClick={() => navigate(`/alunos/${aluno.id}/perfil`)} title="Ver perfil">
                     <ExternalLink className="h-4 w-4" />
                   </Button>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10" onClick={() => onEnturmar(aluno)} title={t("students.assignClass")}>
