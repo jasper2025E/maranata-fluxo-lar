@@ -277,16 +277,17 @@ const Despesas = () => {
     onError: () => toast.error("Erro ao remover"),
   });
 
-  const markDespesaPaid = useMutation({
-    mutationFn: async (id: string) => {
+  const toggleDespesaPaid = useMutation({
+    mutationFn: async ({ id, currentlyPaid }: { id: string; currentlyPaid: boolean }) => {
       const { error } = await supabase.from("despesas").update({
-        paga: true, data_pagamento: new Date().toISOString().split("T")[0],
+        paga: !currentlyPaid,
+        data_pagamento: !currentlyPaid ? new Date().toISOString().split("T")[0] : null,
       }).eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, { currentlyPaid }) => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
-      toast.success("Despesa marcada como paga");
+      toast.success(currentlyPaid ? "Pagamento desmarcado" : "Despesa marcada como paga");
     },
     onError: () => toast.error("Erro ao atualizar"),
   });
