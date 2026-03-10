@@ -19,6 +19,19 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 
 // ─── Types ──────────────────────────────────────────
+interface Receita {
+  id: string;
+  valor: number;
+  valor_total: number | null;
+  data_vencimento: string;
+  data_emissao: string;
+  status: string;
+  mes_referencia: number;
+  ano_referencia: number;
+  aluno_nome: string | null;
+  curso_nome: string | null;
+}
+
 interface Despesa {
   id: string;
   titulo: string;
@@ -29,16 +42,6 @@ interface Despesa {
   data_pagamento: string | null;
   recorrente: boolean;
   observacoes: string | null;
-}
-
-interface Pagamento {
-  id: string;
-  valor: number;
-  metodo: string | null;
-  data_pagamento: string;
-  created_at: string | null;
-  aluno_nome: string | null;
-  curso_nome: string | null;
 }
 
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
@@ -83,45 +86,46 @@ const Despesas = () => {
     },
   });
 
-  // Recebimentos = pagamentos reais das faturas
-  const { data: pagamentos = [] } = useQuery({
-    queryKey: ["pagamentos-recebimentos"],
+  // Recebimentos = faturas dos alunos
+  const { data: receitas = [] } = useQuery({
+    queryKey: ["receitas-faturas"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("pagamentos")
+        .from("faturas")
         .select(`
           id,
           valor,
-          metodo,
-          data_pagamento,
-          created_at,
-          faturas!inner (
-            alunos!inner ( nome_completo ),
-            cursos!inner ( nome )
-          )
+          valor_total,
+          data_vencimento,
+          data_emissao,
+          status,
+          mes_referencia,
+          ano_referencia,
+          alunos!inner ( nome_completo ),
+          cursos!inner ( nome )
         `)
-        .neq("tipo", "estorno")
-        .order("data_pagamento", { ascending: false });
+        .not("status", "eq", "Cancelada")
+        .order("data_vencimento", { ascending: false });
       if (error) throw error;
-      return (data || []).map((p: any) => ({
-        id: p.id,
-        valor: p.valor,
-        metodo: p.metodo,
-        data_pagamento: p.data_pagamento,
-        created_at: p.created_at,
-        aluno_nome: p.faturas?.alunos?.nome_completo || null,
-        curso_nome: p.faturas?.cursos?.nome || null,
-      })) as Pagamento[];
+      return (data || []).map((f: any) => ({
+        id: f.id,
+        valor: f.valor,
+        valor_total: f.valor_total,
+        data_vencimento: f.data_vencimento,
+        data_emissao: f.data_emissao,
+        status: f.status,
+        mes_referencia: f.mes_referencia,
+        ano_referencia: f.ano_referencia,
+        aluno_nome: f.alunos?.nome_completo || null,
+        curso_nome: f.cursos?.nome || null,
+      })) as Receita[];
     },
   });
 
   // ─── Filtered by month/year ───────────────────────
   const filteredRecebimentos = useMemo(() => {
-    return pagamentos.filter((p) => {
-      const d = new Date(p.data_pagamento);
-      return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
-    });
-  }, [pagamentos, selectedYear, selectedMonth]);
+    return receitas.filter((r) => r.ano_referencia === selectedYear && r.mes_referencia === selectedMonth + 1);
+  }, [receitas, selectedYear, selectedMonth]);
 
   const filteredDespesasFixas = useMemo(() => {
     return despesas.filter((d) => {
@@ -138,7 +142,8 @@ const Despesas = () => {
   }, [despesas, selectedYear, selectedMonth]);
 
   // Monthly totals
-  const totalReceitasMes = filteredRecebimentos.reduce((s, r) => s + r.valor, 0);
+  const totalReceitasMes = filteredRecebimentos.reduce((s, r) => s + (r.valor_total || r.valor), 0);
+  const receitasPagasMes = filteredRecebimentos.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0);
 
   const monthDespesas = useMemo(() => {
     return despesas.filter((d) => {
@@ -149,9 +154,9 @@ const Despesas = () => {
 
   const totalDespesasMes = monthDespesas.reduce((s, d) => s + d.valor, 0);
   const despesasPagasMes = monthDespesas.filter((d) => d.paga).reduce((s, d) => s + d.valor, 0);
-  const saldoAtual = totalReceitasMes - despesasPagasMes;
+  const saldoAtual = receitasPagasMes - despesasPagasMes;
 
-  const receitaProgress = totalReceitasMes > 0 ? 100 : 0;
+  const receitaProgress = totalReceitasMes > 0 ? (receitasPagasMes / totalReceitasMes) * 100 : 0;
   const despesaProgress = totalDespesasMes > 0 ? (despesasPagasMes / totalDespesasMes) * 100 : 0;
 
   // ─── Active tab data ──────────────────────────────
@@ -324,7 +329,7 @@ const Despesas = () => {
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-semibold uppercase tracking-wide text-foreground">RECEITAS</span>
                   <span className="text-xs font-semibold text-primary">
-                    {formatCurrency(totalReceitasMes)}
+                    {formatCurrency(receitasPagasMes)} de {formatCurrency(totalReceitasMes)}
                   </span>
                 </div>
                 <Progress value={receitaProgress} className="h-2.5 bg-muted" />
@@ -501,44 +506,46 @@ const Despesas = () => {
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
                     <TableHead className="w-10"></TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Vencimento</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Descrição</TableHead>
-                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Aluno</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Curso</TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Recebido de</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Categoria</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Pago</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(paginatedData as Pagamento[]).map((p) => (
+                  {(paginatedData as Receita[]).map((r) => (
                     <TableRow
-                      key={p.id}
-                      className="transition-colors border-l-4 border-l-primary/40 bg-primary/5"
+                      key={r.id}
+                      className={cn(
+                        "transition-colors border-l-4",
+                        r.status === "Paga" ? "border-l-primary/40 bg-primary/5" :
+                        r.status === "Vencida" ? "border-l-destructive/40 bg-destructive/5" :
+                        "border-l-muted bg-card"
+                      )}
                     >
                       <TableCell className="w-10">
                         <Checkbox
-                          checked={selectedRows.has(p.id)}
-                          onCheckedChange={() => toggleRow(p.id)}
+                          checked={selectedRows.has(r.id)}
+                          onCheckedChange={() => toggleRow(r.id)}
                         />
                       </TableCell>
                       <TableCell className="text-sm text-foreground">
-                        {format(new Date(p.data_pagamento), "dd/MM/yyyy")}
+                        {format(new Date(r.data_vencimento), "dd/MM/yyyy")}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">
-                        {p.aluno_nome || "Pagamento"}
-                        {p.curso_nome && <span className="text-muted-foreground"> - {p.curso_nome}</span>}
-                      </TableCell>
-                      <TableCell>
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      </TableCell>
+                      <TableCell className="text-sm text-foreground">{r.aluno_nome || "—"}</TableCell>
+                      <TableCell className="text-sm text-foreground">{r.curso_nome || "—"}</TableCell>
                       <TableCell className="text-sm font-medium text-foreground">
-                        {p.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        {(r.valor_total || r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{p.aluno_nome || "—"}</TableCell>
-                      <TableCell className="text-sm text-foreground">{p.metodo || "Manual"}</TableCell>
                       <TableCell>
-                        <span className="flex items-center gap-1 text-sm text-foreground">
-                          Sim <CheckCircle className="h-4 w-4 text-primary" />
+                        <span className={cn(
+                          "inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
+                          r.status === "Paga" ? "bg-primary/10 text-primary" :
+                          r.status === "Vencida" ? "bg-destructive/10 text-destructive" :
+                          "bg-muted text-muted-foreground"
+                        )}>
+                          {r.status === "Paga" && <CheckCircle className="h-3 w-3" />}
+                          {r.status}
                         </span>
                       </TableCell>
                     </TableRow>
