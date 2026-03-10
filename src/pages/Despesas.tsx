@@ -165,13 +165,13 @@ const Despesas = () => {
           tipo,
           observacoes,
           created_at,
-          faturas!inner (
+          faturas (
             id,
             mes_referencia,
             ano_referencia,
             codigo_sequencial,
-            alunos!inner ( nome_completo ),
-            cursos!inner ( nome )
+            alunos ( nome_completo ),
+            cursos ( nome )
           )
         `)
         .order("data_pagamento", { ascending: false });
