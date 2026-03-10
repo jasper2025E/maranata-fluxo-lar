@@ -328,7 +328,7 @@ const ResponsavelDashboard = () => {
               <Button
                 variant="outline"
                 className="h-auto py-4 flex flex-col items-center gap-2 hover:bg-success/5 hover:border-success/30 transition-all duration-200"
-                onClick={() => navigate("/pagamentos")}
+                onClick={() => navigate("/despesas")}
               >
                 <CreditCard className="h-5 w-5 text-success" />
                 <span className="text-sm font-medium">Registrar Pagamento</span>
