@@ -47,7 +47,6 @@ interface Despesa {
 const MONTHS = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
 
 const TABS = [
-  { key: "recebimentos", label: "Recebimentos" },
   { key: "despesas_fixas", label: "Despesas Fixas" },
   { key: "despesas_variaveis", label: "Despesas Variáveis" },
   { key: "pessoas", label: "Pessoas" },
