@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -149,67 +150,16 @@ const Despesas = () => {
     },
   });
 
-  // Pagamentos (histórico de recebimentos de faturas)
+  // Pagamentos - mesma query usada na página Pagamentos (funciona)
   const { data: pagamentos = [] } = useQuery({
-    queryKey: ["pagamentos-recebimentos"],
+    queryKey: ["pagamentos"],
     queryFn: async () => {
-      // Simple flat query to avoid nested join issues
       const { data, error } = await supabase
         .from("pagamentos")
-        .select("id, valor, metodo, data_pagamento, gateway, tipo, fatura_id, created_at")
+        .select("*, faturas(mes_referencia, ano_referencia, codigo_sequencial, asaas_payment_id, alunos(nome_completo), cursos(nome))")
         .order("data_pagamento", { ascending: false });
-      if (error) {
-        console.error("Erro ao buscar pagamentos:", error);
-        throw error;
-      }
-      
-      if (!data || data.length === 0) return [];
-
-      // Get unique fatura IDs
-      const faturaIds = [...new Set(data.map((p: any) => p.fatura_id).filter(Boolean))];
-      const faturasMap: Record<string, any> = {};
-
-      // Fetch faturas with aluno/curso names in batches
-      for (let i = 0; i < faturaIds.length; i += 50) {
-        const chunk = faturaIds.slice(i, i + 50);
-        const { data: faturas, error: fErr } = await supabase
-          .from("faturas")
-          .select("id, codigo_sequencial, aluno_id, curso_id")
-          .in("id", chunk);
-        if (!fErr && faturas) {
-          faturas.forEach((f: any) => { faturasMap[f.id] = f; });
-        }
-      }
-
-      // Fetch aluno and curso names
-      const alunoIds = [...new Set(Object.values(faturasMap).map((f: any) => f.aluno_id).filter(Boolean))];
-      const cursoIds = [...new Set(Object.values(faturasMap).map((f: any) => f.curso_id).filter(Boolean))];
-      
-      const alunosMap: Record<string, string> = {};
-      const cursosMap: Record<string, string> = {};
-
-      if (alunoIds.length > 0) {
-        for (let i = 0; i < alunoIds.length; i += 50) {
-          const { data: alunos } = await supabase.from("alunos").select("id, nome_completo").in("id", alunoIds.slice(i, i + 50));
-          (alunos || []).forEach((a: any) => { alunosMap[a.id] = a.nome_completo; });
-        }
-      }
-      if (cursoIds.length > 0) {
-        for (let i = 0; i < cursoIds.length; i += 50) {
-          const { data: cursos } = await supabase.from("cursos").select("id, nome").in("id", cursoIds.slice(i, i + 50));
-          (cursos || []).forEach((c: any) => { cursosMap[c.id] = c.nome; });
-        }
-      }
-
-      return data.map((p: any) => {
-        const fat = faturasMap[p.fatura_id];
-        return {
-          ...p,
-          aluno_nome: fat ? alunosMap[fat.aluno_id] || null : null,
-          curso_nome: fat ? cursosMap[fat.curso_id] || null : null,
-          codigo_sequencial: fat?.codigo_sequencial || null,
-        };
-      });
+      if (error) throw error;
+      return data || [];
     },
   });
 
@@ -231,6 +181,7 @@ const Despesas = () => {
 
   // Unified recebimentos list for the tab
   const recebimentosUnificados = useMemo(() => {
+    const meses = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
     const fromAvulsas = receitasAvulsasMes.map((r: any) => ({
       id: r.id,
       data: r.data_recebimento,
@@ -240,19 +191,32 @@ const Despesas = () => {
       categoria: r.categoria,
       pago: r.recebida || false,
       tipo: "avulsa" as const,
+      referencia: "—",
+      gateway: null as string | null,
+      gatewayId: null as string | null,
+      codigoFatura: null as string | null,
+      tipoRegistro: null as string | null,
     }));
-    const fromPagamentos = pagamentosMes.map((p: any) => ({
-      id: p.id,
-      data: p.data_pagamento,
-      descricao: `${p.curso_nome || "Fatura"} - ${p.aluno_nome || "Aluno"}`,
-      valor: Number(p.valor),
-      origem: p.aluno_nome || "Aluno",
-      categoria: p.metodo || p.gateway || "Fatura",
-      pago: true,
-      tipo: "pagamento" as const,
-      codigoFatura: p.codigo_sequencial,
-      tipoRegistro: p.tipo,
-    }));
+    const fromPagamentos = pagamentosMes.map((p: any) => {
+      const mesRef = p.faturas?.mes_referencia;
+      const anoRef = p.faturas?.ano_referencia;
+      const ref = mesRef && anoRef ? `${meses[mesRef]}/${anoRef}` : "—";
+      return {
+        id: p.id,
+        data: p.data_pagamento,
+        descricao: `${p.faturas?.cursos?.nome || "Fatura"} - ${p.faturas?.alunos?.nome_completo || "Aluno"}`,
+        valor: Number(p.valor),
+        origem: p.faturas?.alunos?.nome_completo || "Aluno",
+        categoria: p.metodo || p.gateway || "Fatura",
+        pago: true,
+        tipo: "pagamento" as const,
+        codigoFatura: p.faturas?.codigo_sequencial,
+        tipoRegistro: p.tipo,
+        gateway: p.gateway as string | null,
+        gatewayId: p.gateway_id as string | null,
+        referencia: ref,
+      };
+    });
     return [...fromPagamentos, ...fromAvulsas].sort((a, b) => 
       new Date(b.data).getTime() - new Date(a.data).getTime()
     );
@@ -767,60 +731,47 @@ const Despesas = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
-                    <TableHead className="w-10"></TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Data</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Descrição</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Aluno</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Referência</TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Origem</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Forma</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Status</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Método</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Gateway</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {(paginatedData as any[]).map((r) => (
-                    <TableRow
-                      key={r.id}
-                      className={cn(
-                        "transition-colors border-l-4",
-                        r.pago ? "border-l-primary/40 bg-primary/5" : "border-l-muted bg-card"
-                      )}
-                    >
-                      <TableCell className="w-10">
-                        <Checkbox
-                          checked={selectedRows.has(r.id)}
-                          onCheckedChange={() => toggleRow(r.id)}
-                        />
-                      </TableCell>
+                    <TableRow key={r.id} className="hover:bg-muted/30">
                       <TableCell className="text-sm text-foreground">
                         {r.data ? format(new Date(r.data + "T00:00:00"), "dd/MM/yyyy") : "—"}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">
-                        <div className="flex flex-col">
-                          <span>{r.descricao}</span>
-                          {r.codigoFatura && (
-                            <span className="text-xs text-muted-foreground">{r.codigoFatura}</span>
-                          )}
-                          {r.tipoRegistro === "estorno" && (
-                            <span className="text-xs text-destructive font-medium">Estorno</span>
-                          )}
-                        </div>
+                      <TableCell className="text-sm font-medium text-foreground">
+                        {r.origem}
+                        {r.codigoFatura && (
+                          <span className="block text-xs text-muted-foreground">{r.codigoFatura}</span>
+                        )}
+                        {r.tipoRegistro === "estorno" && (
+                          <span className="block text-xs text-destructive font-medium">Estorno</span>
+                        )}
                       </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{r.referencia || "—"}</TableCell>
                       <TableCell className={cn(
-                        "text-sm font-medium",
-                        r.tipoRegistro === "estorno" ? "text-destructive" : "text-foreground"
+                        "text-sm font-semibold",
+                        r.tipoRegistro === "estorno" ? "text-destructive" : "text-primary"
                       )}>
                         {r.tipoRegistro === "estorno" ? "- " : ""}
-                        {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        R$ {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{r.origem}</TableCell>
-                      <TableCell className="text-sm text-foreground">{r.categoria}</TableCell>
                       <TableCell>
-                        {r.pago ? (
-                          <span className="flex items-center gap-1 text-sm text-foreground">
-                            Sim <CheckCircle className="h-4 w-4 text-primary" />
-                          </span>
+                        <Badge variant={r.pago ? "default" : "outline"} className="text-xs">
+                          {r.categoria}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {r.gateway ? (
+                          <span className="text-xs">{r.gatewayId ? `${r.gatewayId.substring(0, 14)}...` : r.gateway}</span>
                         ) : (
-                          <span className="text-sm text-muted-foreground">Não</span>
+                          "Manuais"
                         )}
                       </TableCell>
                     </TableRow>
