@@ -149,13 +149,81 @@ const Despesas = () => {
     },
   });
 
-  // Receitas avulsas do mês filtrado
+  // Pagamentos (histórico de recebimentos de faturas)
+  const { data: pagamentos = [] } = useQuery({
+    queryKey: ["pagamentos-recebimentos"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("pagamentos")
+        .select(`
+          id,
+          valor,
+          metodo,
+          data_pagamento,
+          gateway,
+          gateway_status,
+          tipo,
+          observacoes,
+          created_at,
+          faturas!inner (
+            id,
+            mes_referencia,
+            ano_referencia,
+            codigo_sequencial,
+            alunos!inner ( nome_completo ),
+            cursos!inner ( nome )
+          )
+        `)
+        .order("data_pagamento", { ascending: false });
+      if (error) throw error;
+      return data || [];
+    },
+  });
+
+  // Combine receitas avulsas + pagamentos for the month
   const receitasAvulsasMes = useMemo(() => {
     return receitasAvulsas.filter((r: any) => {
       const dt = new Date(r.data_recebimento);
       return dt.getFullYear() === selectedYear && dt.getMonth() === selectedMonth;
     });
   }, [receitasAvulsas, selectedYear, selectedMonth]);
+
+  const pagamentosMes = useMemo(() => {
+    return pagamentos.filter((p: any) => {
+      if (!p.data_pagamento) return false;
+      const [y, m] = p.data_pagamento.split("-").map(Number);
+      return y === selectedYear && m === selectedMonth + 1;
+    });
+  }, [pagamentos, selectedYear, selectedMonth]);
+
+  // Unified recebimentos list for the tab
+  const recebimentosUnificados = useMemo(() => {
+    const fromAvulsas = receitasAvulsasMes.map((r: any) => ({
+      id: r.id,
+      data: r.data_recebimento,
+      descricao: r.titulo,
+      valor: Number(r.valor),
+      origem: r.origem || "Manual",
+      categoria: r.categoria,
+      pago: r.recebida || false,
+      tipo: "avulsa" as const,
+    }));
+    const fromPagamentos = pagamentosMes.map((p: any) => ({
+      id: p.id,
+      data: p.data_pagamento,
+      descricao: `${p.faturas?.cursos?.nome || "Fatura"} - ${p.faturas?.alunos?.nome_completo || "Aluno"}`,
+      valor: Number(p.valor),
+      origem: p.faturas?.alunos?.nome_completo || "Aluno",
+      categoria: p.metodo || p.gateway || "Fatura",
+      pago: true,
+      tipo: "pagamento" as const,
+      codigoFatura: p.faturas?.codigo_sequencial,
+      tipoRegistro: p.tipo,
+    }));
+    return [...fromPagamentos, ...fromAvulsas].sort((a, b) => 
+      new Date(b.data).getTime() - new Date(a.data).getTime()
+    );
+  }, [receitasAvulsasMes, pagamentosMes]);
 
 
   const filteredRecebimentos = useMemo(() => {
