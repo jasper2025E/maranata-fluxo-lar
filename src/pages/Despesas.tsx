@@ -228,11 +228,18 @@ const Despesas = () => {
   // ─── Mutations ────────────────────────────────────
   const createDespesa = useMutation({
     mutationFn: async (data: typeof despesaForm) => {
+      const dia = data.data_vencimento ? new Date(data.data_vencimento).getDate() : null;
       const { error } = await supabase.from("despesas").insert({
         titulo: data.titulo, categoria: data.categoria, valor: parseFloat(data.valor),
         data_vencimento: data.data_vencimento, recorrente: data.recorrente, observacoes: data.observacoes || null,
+        recorrencia_ate: data.recorrente && data.recorrencia_ate ? data.recorrencia_ate : null,
+        dia_vencimento: dia,
       });
       if (error) throw error;
+      // If recurring, trigger generation immediately
+      if (data.recorrente && data.recorrencia_ate) {
+        await supabase.rpc("gerar_despesas_recorrentes");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["despesas"], refetchType: "all" });
