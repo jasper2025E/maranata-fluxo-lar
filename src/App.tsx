@@ -128,14 +128,6 @@ function AppContent() {
               }
             />
             <Route
-              path="/pagamentos"
-              element={
-                <ProtectedRoute>
-                  <Pagamentos />
-                </ProtectedRoute>
-              }
-            />
-            <Route
               path="/despesas"
               element={
                 <ProtectedRoute>
