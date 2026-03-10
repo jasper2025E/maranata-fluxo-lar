@@ -506,44 +506,46 @@ const Despesas = () => {
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
                     <TableHead className="w-10"></TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Vencimento</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Descrição</TableHead>
-                    <TableHead className="w-10"></TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Aluno</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Curso</TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Recebido de</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Categoria</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Pago</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {(paginatedData as Pagamento[]).map((p) => (
+                  {(paginatedData as Receita[]).map((r) => (
                     <TableRow
-                      key={p.id}
-                      className="transition-colors border-l-4 border-l-primary/40 bg-primary/5"
+                      key={r.id}
+                      className={cn(
+                        "transition-colors border-l-4",
+                        r.status === "Paga" ? "border-l-primary/40 bg-primary/5" :
+                        r.status === "Vencida" ? "border-l-destructive/40 bg-destructive/5" :
+                        "border-l-muted bg-card"
+                      )}
                     >
                       <TableCell className="w-10">
                         <Checkbox
-                          checked={selectedRows.has(p.id)}
-                          onCheckedChange={() => toggleRow(p.id)}
+                          checked={selectedRows.has(r.id)}
+                          onCheckedChange={() => toggleRow(r.id)}
                         />
                       </TableCell>
                       <TableCell className="text-sm text-foreground">
-                        {format(new Date(p.data_pagamento), "dd/MM/yyyy")}
+                        {format(new Date(r.data_vencimento), "dd/MM/yyyy")}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">
-                        {p.aluno_nome || "Pagamento"}
-                        {p.curso_nome && <span className="text-muted-foreground"> - {p.curso_nome}</span>}
-                      </TableCell>
-                      <TableCell>
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                      </TableCell>
+                      <TableCell className="text-sm text-foreground">{r.aluno_nome || "—"}</TableCell>
+                      <TableCell className="text-sm text-foreground">{r.curso_nome || "—"}</TableCell>
                       <TableCell className="text-sm font-medium text-foreground">
-                        {p.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                        {(r.valor_total || r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{p.aluno_nome || "—"}</TableCell>
-                      <TableCell className="text-sm text-foreground">{p.metodo || "Manual"}</TableCell>
                       <TableCell>
-                        <span className="flex items-center gap-1 text-sm text-foreground">
-                          Sim <CheckCircle className="h-4 w-4 text-primary" />
+                        <span className={cn(
+                          "inline-flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-full",
+                          r.status === "Paga" ? "bg-primary/10 text-primary" :
+                          r.status === "Vencida" ? "bg-destructive/10 text-destructive" :
+                          "bg-muted text-muted-foreground"
+                        )}>
+                          {r.status === "Paga" && <CheckCircle className="h-3 w-3" />}
+                          {r.status}
                         </span>
                       </TableCell>
                     </TableRow>
