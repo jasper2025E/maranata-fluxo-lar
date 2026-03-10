@@ -228,7 +228,7 @@ const Dashboard = () => {
           <FinancialSummaryCard
             receitas={stats.totalReceitas ?? 0}
             despesas={stats.totalDespesas ?? 0}
-            saldo={stats.saldoMensal ?? 0}
+            saldo={stats.saldoAcumulado ?? 0}
             saldoAnterior={stats.saldoAnterior ?? 0}
             receitaAnualRecebida={stats.receitaAnualRecebida ?? 0}
             receitaAnualEsperada={stats.receitaAnualEsperada ?? 0}
