@@ -334,7 +334,7 @@ const Despesas = () => {
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
 
   const resetDespesaForm = () => {
-    setDespesaForm({ titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "" });
+    setDespesaForm({ titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "", recorrencia_ate: "" });
     setEditingDespesa(null);
     setIsDespesaOpen(false);
   };
