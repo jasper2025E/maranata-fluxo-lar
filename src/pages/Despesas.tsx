@@ -352,6 +352,7 @@ const Despesas = () => {
   };
 
   const isDespesaTab = activeTab === "despesas_fixas" || activeTab === "despesas_variaveis";
+  const isRecebimentosTab = activeTab === "recebimentos";
 
   return (
     <DashboardLayout>
