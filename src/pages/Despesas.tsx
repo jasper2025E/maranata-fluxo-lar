@@ -181,6 +181,7 @@ const Despesas = () => {
 
   // Unified recebimentos list for the tab
   const recebimentosUnificados = useMemo(() => {
+    const meses = ["", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
     const fromAvulsas = receitasAvulsasMes.map((r: any) => ({
       id: r.id,
       data: r.data_recebimento,
@@ -190,21 +191,32 @@ const Despesas = () => {
       categoria: r.categoria,
       pago: r.recebida || false,
       tipo: "avulsa" as const,
+      referencia: "—",
+      gateway: null as string | null,
+      gatewayId: null as string | null,
+      codigoFatura: null as string | null,
+      tipoRegistro: null as string | null,
     }));
-    const fromPagamentos = pagamentosMes.map((p: any) => ({
-      id: p.id,
-      data: p.data_pagamento,
-      descricao: `${p.faturas?.cursos?.nome || "Fatura"} - ${p.faturas?.alunos?.nome_completo || "Aluno"}`,
-      valor: Number(p.valor),
-      origem: p.faturas?.alunos?.nome_completo || "Aluno",
-      categoria: p.metodo || p.gateway || "Fatura",
-      pago: true,
-      tipo: "pagamento" as const,
-      codigoFatura: p.faturas?.codigo_sequencial,
-      tipoRegistro: p.tipo,
-      gateway: p.gateway,
-      gatewayId: p.gateway_id,
-    }));
+    const fromPagamentos = pagamentosMes.map((p: any) => {
+      const mesRef = p.faturas?.mes_referencia;
+      const anoRef = p.faturas?.ano_referencia;
+      const ref = mesRef && anoRef ? `${meses[mesRef]}/${anoRef}` : "—";
+      return {
+        id: p.id,
+        data: p.data_pagamento,
+        descricao: `${p.faturas?.cursos?.nome || "Fatura"} - ${p.faturas?.alunos?.nome_completo || "Aluno"}`,
+        valor: Number(p.valor),
+        origem: p.faturas?.alunos?.nome_completo || "Aluno",
+        categoria: p.metodo || p.gateway || "Fatura",
+        pago: true,
+        tipo: "pagamento" as const,
+        codigoFatura: p.faturas?.codigo_sequencial,
+        tipoRegistro: p.tipo,
+        gateway: p.gateway as string | null,
+        gatewayId: p.gateway_id as string | null,
+        referencia: ref,
+      };
+    });
     return [...fromPagamentos, ...fromAvulsas].sort((a, b) => 
       new Date(b.data).getTime() - new Date(a.data).getTime()
     );
