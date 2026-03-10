@@ -345,50 +345,32 @@ const Despesas = () => {
     onError: () => toast.error("Erro ao remover"),
   });
 
-  // ─── Receita Mutation ─────────────────────────────
-  const createReceita = useMutation({
-    mutationFn: async (data: typeof receitaForm) => {
-      const { error } = await supabase.from("receitas").insert({
-        titulo: data.titulo,
-        categoria: data.categoria,
-        valor: parseFloat(data.valor),
-        data_recebimento: data.data_recebimento,
-        recorrente: data.recorrente,
-        observacoes: data.observacoes || null,
-        origem: "manual",
-      });
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["receitas-avulsas"], refetchType: "all" });
-      toast.success("Receita registrada com sucesso");
-      resetReceitaForm();
-    },
-    onError: () => toast.error("Erro ao registrar receita"),
-  });
-
   // ─── Helpers ──────────────────────────────────────
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+
+  const getMetodoBadge = (metodo: string, gateway: string | null) => {
+    if (gateway === "asaas") {
+      if (metodo === "PIX") return <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20">PIX Asaas</Badge>;
+      if (metodo === "Boleto") return <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20 border-blue-500/20">Boleto Asaas</Badge>;
+      if (metodo === "Cartão") return <Badge className="bg-purple-500/10 text-purple-600 hover:bg-purple-500/20 border-purple-500/20">Cartão Asaas</Badge>;
+      return <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20">{metodo} Asaas</Badge>;
+    }
+    if (gateway === "stripe") {
+      return <Badge className="bg-violet-500/10 text-violet-600 hover:bg-violet-500/20 border-violet-500/20">Stripe</Badge>;
+    }
+    switch (metodo) {
+      case "PIX": return <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20">PIX</Badge>;
+      case "Cartão": return <Badge className="bg-blue-500/10 text-blue-600 hover:bg-blue-500/20">Cartão</Badge>;
+      case "Boleto": return <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20">Boleto</Badge>;
+      default: return <Badge variant="outline">Dinheiro</Badge>;
+    }
+  };
 
   const resetDespesaForm = () => {
     setDespesaForm({ titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "", recorrencia_ate: "" });
     setEditingDespesa(null);
     setIsDespesaOpen(false);
-  };
-
-  const resetReceitaForm = () => {
-    setReceitaForm({ titulo: "", categoria: "Avulsa", valor: "", data_recebimento: "", recorrente: false, observacoes: "" });
-    setIsReceitaOpen(false);
-  };
-
-  const handleSubmitReceita = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!receitaForm.titulo || !receitaForm.valor || !receitaForm.data_recebimento) {
-      toast.error("Preencha todos os campos obrigatórios");
-      return;
-    }
-    createReceita.mutate(receitaForm);
   };
 
   const handleEditDespesa = (d: Despesa) => {
