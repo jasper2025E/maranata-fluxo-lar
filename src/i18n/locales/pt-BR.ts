@@ -93,6 +93,7 @@ const ptBR = {
       invoices: "Faturas",
       payments: "Pagamentos",
       expenses: "Despesas",
+      financialMovements: "Movimentações",
       reports: "Relatórios",
       subscription: "Assinatura",
       settings: "Configurações",
