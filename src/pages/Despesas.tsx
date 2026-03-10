@@ -70,7 +70,7 @@ const Despesas = () => {
   const [isDespesaOpen, setIsDespesaOpen] = useState(false);
   const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null);
   const [despesaForm, setDespesaForm] = useState({
-    titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "",
+    titulo: "", categoria: "", valor: "", data_vencimento: "", recorrente: false, observacoes: "", recorrencia_ate: "",
   });
 
   // ─── Receitas avulsas state ───────────────────────
