@@ -204,28 +204,6 @@ const Despesas = () => {
   const receitaProgress = totalReceitasMes > 0 ? (receitasPagasMes / totalReceitasMes) * 100 : 0;
   const despesaProgress = totalDespesasMes > 0 ? (despesasPagasMes / totalDespesasMes) * 100 : 0;
 
-  // Annual totals
-  const yearReceitas = useMemo(() => {
-    return receitas.filter((r) => r.ano_referencia === selectedYear);
-  }, [receitas, selectedYear]);
-  const yearReceitasAvulsas = useMemo(() => {
-    return receitasAvulsas.filter((r: any) => new Date(r.data_recebimento).getFullYear() === selectedYear);
-  }, [receitasAvulsas, selectedYear]);
-  const totalReceitasAno = yearReceitas.reduce((s, r) => s + (r.valor_total || r.valor), 0) + yearReceitasAvulsas.reduce((s: number, r: any) => s + Number(r.valor), 0);
-  const receitasPagasAno = yearReceitas.filter((r) => r.status === "Paga").reduce((s, r) => s + (r.valor_total || r.valor), 0) + yearReceitasAvulsas.filter((r: any) => r.recebida).reduce((s: number, r: any) => s + Number(r.valor), 0);
-
-  const yearDespesas = useMemo(() => {
-    return despesas.filter((d) => {
-      const { year } = parseDateParts(d.data_vencimento);
-      return year === selectedYear;
-    });
-  }, [despesas, selectedYear]);
-  const totalDespesasAno = yearDespesas.reduce((s, d) => s + d.valor, 0);
-  const despesasPagasAno = yearDespesas.filter((d) => d.paga).reduce((s, d) => s + d.valor, 0);
-
-  const receitaProgressAno = totalReceitasAno > 0 ? (receitasPagasAno / totalReceitasAno) * 100 : 0;
-  const despesaProgressAno = totalDespesasAno > 0 ? (despesasPagasAno / totalDespesasAno) * 100 : 0;
-
   // ─── Active tab data ──────────────────────────────
   const activeData = useMemo((): any[] => {
     switch (activeTab) {
@@ -424,7 +402,7 @@ const Despesas = () => {
         </div>
 
         {/* ═══ Saldo + Receitas/Despesas ═══ */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-[1fr_1fr] gap-4">
           <Card className="border border-border">
             <CardContent className="flex items-center justify-center gap-6 py-8">
               <Select defaultValue="principal">
@@ -449,7 +427,6 @@ const Despesas = () => {
 
           <Card className="border border-border">
             <CardContent className="py-5 px-6 space-y-3">
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-2">Mensal ({MONTHS[selectedMonth]})</p>
               <div>
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="text-xs font-semibold uppercase tracking-wide text-foreground">RECEITAS</span>
@@ -467,30 +444,6 @@ const Despesas = () => {
                   </span>
                 </div>
                 <Progress value={despesaProgress} className="h-2.5 bg-muted" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="border border-border">
-            <CardContent className="py-5 px-6 space-y-3">
-              <p className="text-xs text-muted-foreground uppercase tracking-widest font-semibold mb-2">Anual ({selectedYear})</p>
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-foreground">RECEITAS</span>
-                  <span className="text-xs font-semibold text-primary">
-                    {formatCurrency(receitasPagasAno)} de {formatCurrency(totalReceitasAno)}
-                  </span>
-                </div>
-                <Progress value={receitaProgressAno} className="h-2.5 bg-muted" />
-              </div>
-              <div>
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-foreground">DESPESAS</span>
-                  <span className="text-xs font-semibold text-primary">
-                    {formatCurrency(despesasPagasAno)} de {formatCurrency(totalDespesasAno)}
-                  </span>
-                </div>
-                <Progress value={despesaProgressAno} className="h-2.5 bg-muted" />
               </div>
             </CardContent>
           </Card>
