@@ -745,13 +745,12 @@ const Despesas = () => {
                 <TableHeader>
                   <TableRow className="bg-muted/30 hover:bg-muted/30">
                     <TableHead className="w-10"></TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Vencimento</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Data</TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Descrição</TableHead>
-                    <TableHead className="w-10"></TableHead>
                     <TableHead className="font-semibold text-foreground text-xs uppercase">Valor</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Recebido de</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Categoria</TableHead>
-                    <TableHead className="font-semibold text-foreground text-xs uppercase">Pago</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Origem</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Forma</TableHead>
+                    <TableHead className="font-semibold text-foreground text-xs uppercase">Status</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -760,7 +759,7 @@ const Despesas = () => {
                       key={r.id}
                       className={cn(
                         "transition-colors border-l-4",
-                        r.recebida ? "border-l-primary/40 bg-primary/5" : "border-l-muted bg-card"
+                        r.pago ? "border-l-primary/40 bg-primary/5" : "border-l-muted bg-card"
                       )}
                     >
                       <TableCell className="w-10">
@@ -770,25 +769,30 @@ const Despesas = () => {
                         />
                       </TableCell>
                       <TableCell className="text-sm text-foreground">
-                        {format(new Date(r.data_recebimento), "dd/MM/yyyy")}
+                        {r.data ? format(new Date(r.data + "T00:00:00"), "dd/MM/yyyy") : "—"}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{r.titulo}</TableCell>
-                      <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-7 w-7 text-muted-foreground hover:text-primary"
-                        >
-                          <ChevronDown className="h-4 w-4" />
-                        </Button>
+                      <TableCell className="text-sm text-foreground">
+                        <div className="flex flex-col">
+                          <span>{r.descricao}</span>
+                          {r.codigoFatura && (
+                            <span className="text-xs text-muted-foreground">{r.codigoFatura}</span>
+                          )}
+                          {r.tipoRegistro === "estorno" && (
+                            <span className="text-xs text-destructive font-medium">Estorno</span>
+                          )}
+                        </div>
                       </TableCell>
-                      <TableCell className="text-sm font-medium text-foreground">
-                        {Number(r.valor).toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
+                      <TableCell className={cn(
+                        "text-sm font-medium",
+                        r.tipoRegistro === "estorno" ? "text-destructive" : "text-foreground"
+                      )}>
+                        {r.tipoRegistro === "estorno" ? "- " : ""}
+                        {r.valor.toLocaleString("pt-BR", { minimumFractionDigits: 2 })}
                       </TableCell>
-                      <TableCell className="text-sm text-foreground">{r.origem || "Manual"}</TableCell>
+                      <TableCell className="text-sm text-foreground">{r.origem}</TableCell>
                       <TableCell className="text-sm text-foreground">{r.categoria}</TableCell>
                       <TableCell>
-                        {r.recebida ? (
+                        {r.pago ? (
                           <span className="flex items-center gap-1 text-sm text-foreground">
                             Sim <CheckCircle className="h-4 w-4 text-primary" />
                           </span>
