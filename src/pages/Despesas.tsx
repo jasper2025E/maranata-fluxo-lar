@@ -165,18 +165,30 @@ const Despesas = () => {
           tipo,
           observacoes,
           created_at,
-          faturas (
-            id,
-            mes_referencia,
-            ano_referencia,
-            codigo_sequencial,
-            alunos ( nome_completo ),
-            cursos ( nome )
-          )
+          fatura_id
         `)
         .order("data_pagamento", { ascending: false });
       if (error) throw error;
-      return data || [];
+
+      // Fetch fatura details for these pagamentos
+      const faturaIds = [...new Set((data || []).map((p: any) => p.fatura_id).filter(Boolean))];
+      let faturasMap: Record<string, any> = {};
+      if (faturaIds.length > 0) {
+        // Batch in chunks of 100
+        for (let i = 0; i < faturaIds.length; i += 100) {
+          const chunk = faturaIds.slice(i, i + 100);
+          const { data: faturas } = await supabase
+            .from("faturas")
+            .select("id, codigo_sequencial, mes_referencia, ano_referencia, alunos(nome_completo), cursos(nome)")
+            .in("id", chunk);
+          (faturas || []).forEach((f: any) => { faturasMap[f.id] = f; });
+        }
+      }
+
+      return (data || []).map((p: any) => ({
+        ...p,
+        fatura: faturasMap[p.fatura_id] || null,
+      }));
     },
   });
 
