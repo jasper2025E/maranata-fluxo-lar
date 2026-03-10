@@ -204,10 +204,10 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
       .gte("data_vencimento", `${currentYear}-01-01`)
       .lt("data_vencimento", `${currentYear + 1}-01-01`),
 
-    // Cumulative: ALL payments before current month (for accurate saldo anterior)
+    // Cumulative: ALL payments before current month (includes tipo for estorno handling)
     supabase
       .from("pagamentos")
-      .select("valor")
+      .select("valor, tipo")
       .lt("data_pagamento", startOfCurrentMonth),
 
     // Cumulative: ALL paid expenses before current month
