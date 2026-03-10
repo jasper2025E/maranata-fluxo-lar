@@ -68,6 +68,7 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   // Calculate previous month for comparison
   const prevMonth = currentMonth === 1 ? 12 : currentMonth - 1;
   const prevYear = currentMonth === 1 ? currentYear - 1 : currentYear;
+  const startOfCurrentMonth = `${currentYear}-${String(currentMonth).padStart(2, "0")}-01`;
 
   // Execute all queries in parallel
   const [
