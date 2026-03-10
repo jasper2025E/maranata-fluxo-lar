@@ -450,14 +450,13 @@ const Despesas = () => {
         </div>
 
         {/* ═══ Year + Month Selector ═══ */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex items-center gap-0">
           <Select
             value={selectedYear.toString()}
             onValueChange={(v) => { setSelectedYear(parseInt(v)); setPage(1); }}
           >
-            <SelectTrigger className="w-[90px] h-9 text-sm font-semibold bg-primary text-primary-foreground border-0 rounded-full">
+            <SelectTrigger className="w-[90px] h-[38px] text-sm font-semibold bg-primary text-primary-foreground border-0 rounded-lg mr-2 gap-1">
               <SelectValue />
-              <ChevronDown className="ml-1 h-3.5 w-3.5" />
             </SelectTrigger>
             <SelectContent>
               {[selectedYear - 2, selectedYear - 1, selectedYear, selectedYear + 1].map((y) => (
@@ -465,15 +464,14 @@ const Despesas = () => {
               ))}
             </SelectContent>
           </Select>
-          <div className="flex flex-wrap gap-0">
+          <div className="inline-flex border border-border rounded-md overflow-hidden">
             {MONTHS.map((m, i) => (
               <button
                 key={m}
                 className={cn(
-                  "px-4 py-2 text-sm border border-border transition-colors",
-                  "first:rounded-l-md last:rounded-r-md",
+                  "px-3 py-2 text-sm transition-colors border-r border-border last:border-r-0",
                   selectedMonth === i
-                    ? "bg-primary text-primary-foreground border-primary font-semibold"
+                    ? "bg-primary text-primary-foreground font-semibold"
                     : "bg-card text-foreground hover:bg-muted"
                 )}
                 onClick={() => handleMonthChange(i)}
