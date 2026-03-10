@@ -401,14 +401,13 @@ const Despesas = () => {
 
         {/* ═══ Action Buttons ═══ */}
         <div className="flex flex-wrap gap-2">
-          {isDespesaTab && (
-            <Dialog open={isDespesaOpen} onOpenChange={(open) => { if (!open) resetDespesaForm(); setIsDespesaOpen(open); }}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="bg-primary hover:bg-primary/90">
-                  <Plus className="mr-1.5 h-4 w-4" />
-                  Adicionar
-                </Button>
-              </DialogTrigger>
+          <Dialog open={isDespesaOpen} onOpenChange={(open) => { if (!open) resetDespesaForm(); setIsDespesaOpen(open); }}>
+            <DialogTrigger asChild>
+              <Button size="sm" className="bg-primary hover:bg-primary/90">
+                <Plus className="mr-1.5 h-4 w-4" />
+                Adicionar Despesa
+              </Button>
+            </DialogTrigger>
               <DialogContent>
                 <form onSubmit={handleSubmitDespesa}>
                   <DialogHeader>
