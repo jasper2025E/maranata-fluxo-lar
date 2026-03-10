@@ -78,7 +78,6 @@ const hrItems = [
 // Financial Operations
 const operationsItems = [
   { titleKey: "nav.invoices", url: "/faturas", icon: FileText },
-  { titleKey: "nav.payments", url: "/pagamentos", icon: CreditCard },
   { titleKey: "nav.expenses", url: "/despesas", icon: Receipt },
 ];
 
@@ -110,7 +109,7 @@ export function AppSidebar() {
   const { t } = useTranslation();
   
   // Check if any operations route is active
-  const operationsRoutes = ["/faturas", "/pagamentos", "/despesas"];
+  const operationsRoutes = ["/faturas", "/despesas"];
   const isOperationsActive = operationsRoutes.some(route => location.pathname.startsWith(route));
   const [isOperationsOpen, setIsOperationsOpen] = useState(isOperationsActive);
   

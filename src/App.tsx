@@ -27,7 +27,7 @@ const Cursos = lazy(() => import("./pages/Cursos"));
 const Turmas = lazy(() => import("./pages/Turmas"));
 const Escola = lazy(() => import("./pages/Escola"));
 const Faturas = lazy(() => import("./pages/Faturas"));
-const Pagamentos = lazy(() => import("./pages/Pagamentos"));
+
 const Despesas = lazy(() => import("./pages/Despesas"));
 const Relatorios = lazy(() => import("./pages/Relatorios"));
 const Configuracoes = lazy(() => import("./pages/Configuracoes"));
@@ -124,14 +124,6 @@ function AppContent() {
               element={
                 <ProtectedRoute>
                   <Faturas />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/pagamentos"
-              element={
-                <ProtectedRoute>
-                  <Pagamentos />
                 </ProtectedRoute>
               }
             />
