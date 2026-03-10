@@ -719,15 +719,6 @@ const Despesas = () => {
               Remover
             </Button>
           )}
-
-          <Button size="sm" className="bg-primary hover:bg-primary/90">
-            <UserPlus className="mr-1.5 h-4 w-4" />
-            Nova Pessoa / Empresa
-          </Button>
-
-          <Button size="sm" className="bg-primary hover:bg-primary/90">
-            <Receipt className="mr-1.5 h-4 w-4" />
-            Emitir Recibo
           </Button>
         </div>
 
