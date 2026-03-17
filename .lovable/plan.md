@@ -1,94 +1,72 @@
 
 
-## Plano: Fluxo Completo de Aceite LGPD + DPA + Termos Contratuais
+# Solucao Definitiva: Juros e Multas no Asaas
 
-### Visão Geral
+## Problema
 
-Criar um sistema nativo de aceite de termos legais que bloqueia o acesso ao sistema até que o usuário aceite todos os documentos obrigatórios. Cada aceite é registrado com dados completos de auditoria (nome, email, CPF/CNPJ, IP, versão do documento, hash SHA-256 do texto).
+Atualmente, juros (0,06%/dia) e multas (1,9%) sao calculados **apenas localmente** no trigger do banco de dados. O Asaas nao sabe nada sobre esses encargos, entao quando o responsavel vai pagar:
 
----
+- **Boleto no banco**: cobra R$ 290 (valor original)
+- **PIX via QR Code**: cobra R$ 290 (valor original)
+- **Seu sistema**: mostra R$ 295,86 (com encargos)
 
-### 1. Banco de Dados (Migration)
+O banco nunca vai cobrar os encargos porque eles nao foram informados ao Asaas.
 
-**Tabela `legal_documents`** — armazena os documentos e suas versões:
-- `id`, `slug` (ex: `lgpd`, `dpa`, `politica-privacidade`, `termos-uso`), `title`, `content` (texto completo em Markdown), `version` (ex: `v1.2`), `effective_date`, `is_active`, `content_hash` (SHA-256 do texto para auditoria), `tenant_id`, `created_at`
+## Solucao
 
-**Tabela `user_legal_acceptances`** — registro de cada aceite:
-- `id`, `user_id` (ref auth.users), `document_id` (ref legal_documents), `document_version`, `document_hash`, `user_name`, `user_email`, `user_cpf_cnpj`, `ip_address`, `user_agent`, `accepted_at`, `tenant_id`
-- Constraint UNIQUE em `(user_id, document_id, document_version)` para evitar duplicatas
+A API do Asaas suporta nativamente os campos `interest` e `fine` na criacao da cobranca. Ao incluir esses parametros, o **proprio Asaas** calcula e cobra os encargos automaticamente quando o pagamento e feito apos o vencimento.
 
-**RLS**: Ambas as tabelas isoladas por `tenant_id` via `get_user_tenant_id()`. Leitura para authenticated, insert para authenticated (user_id = auth.uid()).
+## O que vai mudar
 
-**Seed**: Inserir os 4 documentos iniciais (LGPD, Política de Privacidade, Termos de Uso, DPA) com textos fixos e versão `v1.0`.
+### 1. Criar cobranca com juros e multa nativos (Edge Function `asaas-create-payment`)
 
----
+Ao criar a cobranca no Asaas, incluir os campos `interest` e `fine` com os valores da configuracao da escola:
 
-### 2. Função RPC para Capturar IP
+```text
+POST /v3/payments
+{
+  "customer": "cus_xxx",
+  "billingType": "BOLETO",
+  "value": 290.00,
+  "dueDate": "2026-02-15",
+  "interest": { "value": 1.8 },   <-- juros mensal (0.06/dia x 30 = 1.8% ao mes)
+  "fine": { "value": 1.9 }        <-- multa percentual
+}
+```
 
-Criar função `accept_legal_document` (SECURITY DEFINER) que:
-- Recebe `document_id`, `document_version`, `document_hash`, `user_name`, `user_cpf_cnpj`
-- Captura IP e user_agent dos headers da request
-- Insere em `user_legal_acceptances`
-- Retorna sucesso/erro
+Com isso, quando o responsavel pagar apos o vencimento, o banco automaticamente cobra o valor **com** juros e multa.
 
----
+### 2. Buscar taxas da escola antes de criar a cobranca
 
-### 3. Frontend — Página `/termos`
+A Edge Function vai buscar `juros_percentual_mensal_padrao` e `multa_percentual_padrao` da tabela `escola` usando o `tenant_id` da fatura.
 
-**Novo arquivo**: `src/pages/TermosAceite.tsx`
+### 3. Atualizar cobranças existentes
 
-Layout profissional com:
-- Cards expansíveis para cada documento (LGPD, Política de Privacidade, Termos de Uso, DPA)
-- ScrollArea com o texto completo de cada documento
-- Checkbox individual obrigatório para cada documento: "Li e concordo com [nome do documento] (versão X)"
-- Campo de CPF/CNPJ (input com máscara) — obrigatório para registro de auditoria
-- Botão "Aceitar Todos" — habilitado apenas quando todos os checkboxes estão marcados e CPF/CNPJ preenchido
-- Botão "Baixar Cópia (PDF)" — gera PDF com dados do aceite usando jspdf (já disponível no projeto)
+Para as faturas vencidas que ja tem cobranca no Asaas **sem** os encargos configurados, vamos atualizar via API do Asaas (`PUT /v3/payments/{id}`) adicionando os campos `interest` e `fine`.
 
-**Textos incluídos nos documentos:**
-- **LGPD**: Direitos do titular, finalidade, base legal, retenção, compartilhamento, controlador/operador
-- **DPA**: Responsabilidades como operador, sub-processadores, medidas de segurança, notificação de vazamento em 72h, transferência internacional
-- **Política de Privacidade**: Coleta de dados, cookies, armazenamento, direitos ARCO
-- **Termos de Uso**: Condições de uso do sistema, responsabilidades, limitação de responsabilidade
+## Detalhes Tecnicos
 
----
+### Arquivo: `supabase/functions/asaas-create-payment/index.ts`
 
-### 4. Bloqueio de Acesso — ProtectedRoute
+- Antes de criar o pagamento, buscar da tabela `escola` os campos `juros_percentual_mensal_padrao`, `multa_percentual_padrao` e `multa_fixa_padrao`
+- Incluir no body do `POST /payments`:
+  - `interest: { value: juros_mensal }` (percentual mensal)
+  - `fine: { value: multa_percentual }` (percentual de multa)
+  - Se houver `multa_fixa_padrao`, usar `fine: { value: multa_fixa, type: "FIXED" }`
 
-Modificar `src/components/ProtectedRoute.tsx` para:
-1. Após confirmar user autenticado, verificar se existem documentos ativos sem aceite
-2. Query: comparar `legal_documents` ativos vs `user_legal_acceptances` do user
-3. Se houver documentos pendentes → `<Navigate to="/termos" />`
-4. Se todos aceitos → renderizar children normalmente
+### Arquivo: `supabase/functions/asaas-update-payment/index.ts`
 
-Adicionar estado `termsLoading` para evitar flicker.
+- Ao atualizar cobranças, tambem incluir `interest` e `fine` se ainda nao estiverem configurados
 
----
+### Migracao: Atualizar cobranças existentes em atraso
 
-### 5. Rota no App.tsx
+- Criar uma Edge Function ou SQL que identifique faturas vencidas com `asaas_payment_id` e atualize cada uma no Asaas com os campos `interest` e `fine`
+- Isso sera feito via chamada a API do Asaas para cada fatura pendente
 
-- Adicionar rota `/termos` com `TermosAceite` (protegida por auth mas SEM a verificação de termos, para evitar loop)
-- Criar variante do ProtectedRoute que não verifica termos (ex: prop `skipTermsCheck`)
+### Resultado esperado
 
----
-
-### 6. Geração de PDF
-
-Usar `jspdf` (já no projeto) para gerar PDF com:
-- Cabeçalho com logo da escola
-- Dados do aceite: nome completo, email, CPF/CNPJ, data/hora
-- Lista de documentos aceitos com versão e hash
-- Texto completo de cada documento
-
----
-
-### Arquivos a criar/modificar
-
-| Ação | Arquivo |
-|------|---------|
-| Criar | `src/pages/TermosAceite.tsx` |
-| Criar | `src/hooks/useLegalDocuments.ts` |
-| Modificar | `src/components/ProtectedRoute.tsx` (adicionar verificação de termos) |
-| Modificar | `src/App.tsx` (adicionar rota `/termos`) |
-| Migration | Tabelas `legal_documents` + `user_legal_acceptances` + RPC + seed data |
+- O boleto impresso continuara mostrando o valor original (R$ 290)
+- Quando o responsavel pagar **apos o vencimento**, o banco cobrara automaticamente valor + juros + multa
+- O PIX QR Code dinamico ja reflete os encargos no momento do escaneamento
+- O sistema local e o Asaas ficarao 100% sincronizados
 
