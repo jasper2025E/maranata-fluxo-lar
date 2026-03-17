@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useLegalDocuments, useAcceptLegalDocument } from "@/hooks/useLegalDocuments";
@@ -56,6 +56,12 @@ export default function TermosAceite() {
     nomeCompleto.trim().length >= 3 &&
     isValidCpfCnpj(cpfCnpj) &&
     !submitting;
+
+  useEffect(() => {
+    if (!termsLoading && docsToShow.length === 0) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [termsLoading, docsToShow.length, navigate]);
 
   async function handleAcceptAll() {
     if (!canSubmit) return;
@@ -128,7 +134,6 @@ export default function TermosAceite() {
       pdf.text(`Vigência: ${new Date(doc.effective_date).toLocaleDateString("pt-BR")}`, 15, y);
       y += 8;
 
-      // Add content (simplified - split by lines)
       pdf.setFontSize(9);
       const plainText = doc.content.replace(/[#*|]/g, "").replace(/\n{2,}/g, "\n");
       const lines = pdf.splitTextToSize(plainText, pageW - 30);
@@ -152,7 +157,6 @@ export default function TermosAceite() {
   }
 
   if (docsToShow.length === 0) {
-    navigate("/dashboard", { replace: true });
     return null;
   }
 
