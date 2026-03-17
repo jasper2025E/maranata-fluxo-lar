@@ -2506,6 +2506,53 @@ export type Database = {
           },
         ]
       }
+      legal_documents: {
+        Row: {
+          content: string
+          content_hash: string
+          created_at: string
+          effective_date: string
+          id: string
+          is_active: boolean
+          slug: string
+          tenant_id: string | null
+          title: string
+          version: string
+        }
+        Insert: {
+          content: string
+          content_hash: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          is_active?: boolean
+          slug: string
+          tenant_id?: string | null
+          title: string
+          version?: string
+        }
+        Update: {
+          content?: string
+          content_hash?: string
+          created_at?: string
+          effective_date?: string
+          id?: string
+          is_active?: boolean
+          slug?: string
+          tenant_id?: string | null
+          title?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "legal_documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       lgpd_deletion_requests: {
         Row: {
           affected_tables: string[] | null
@@ -4384,6 +4431,66 @@ export type Database = {
           },
         ]
       }
+      user_legal_acceptances: {
+        Row: {
+          accepted_at: string
+          document_hash: string
+          document_id: string
+          document_version: string
+          id: string
+          ip_address: string | null
+          tenant_id: string | null
+          user_agent: string | null
+          user_cpf_cnpj: string | null
+          user_email: string
+          user_id: string
+          user_name: string
+        }
+        Insert: {
+          accepted_at?: string
+          document_hash: string
+          document_id: string
+          document_version: string
+          id?: string
+          ip_address?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_cpf_cnpj?: string | null
+          user_email: string
+          user_id: string
+          user_name: string
+        }
+        Update: {
+          accepted_at?: string
+          document_hash?: string
+          document_id?: string
+          document_version?: string
+          id?: string
+          ip_address?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_cpf_cnpj?: string | null
+          user_email?: string
+          user_id?: string
+          user_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_legal_acceptances_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "legal_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_legal_acceptances_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_preferences: {
         Row: {
           browser_notifications: boolean | null
@@ -4889,6 +4996,17 @@ export type Database = {
       }
     }
     Functions: {
+      accept_legal_document: {
+        Args: {
+          p_document_hash: string
+          p_document_id: string
+          p_document_version: string
+          p_user_cpf_cnpj?: string
+          p_user_email: string
+          p_user_name: string
+        }
+        Returns: string
+      }
       anonymize_old_logs: { Args: never; Returns: Json }
       atualizar_status_faturas: { Args: never; Returns: undefined }
       can_view_security_summary: { Args: never; Returns: boolean }
