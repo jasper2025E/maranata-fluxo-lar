@@ -151,8 +151,13 @@ export default function TermosAceite() {
     );
   }
 
+  useEffect(() => {
+    if (!termsLoading && docsToShow.length === 0) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [termsLoading, docsToShow.length, navigate]);
+
   if (docsToShow.length === 0) {
-    navigate("/dashboard", { replace: true });
     return null;
   }
 
