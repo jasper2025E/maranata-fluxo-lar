@@ -192,7 +192,7 @@ export default function TermosAceite() {
                       </span>
                     </div>
                     {checkedDocs[doc.id] && (
-                      <CheckCircle2 className="h-4 w-4 text-green-600 ml-auto mr-2 shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-primary ml-auto mr-2 shrink-0" />
                     )}
                   </div>
                 </AccordionTrigger>
