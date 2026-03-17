@@ -94,7 +94,7 @@ export function useAcceptLegalDocument() {
         p_document_hash: params.documentHash,
         p_user_name: params.userName,
         p_user_email: user?.email ?? "",
-        p_user_cpf_cnpj: params.userCpfCnpj ?? null,
+        p_user_cpf_cnpj: params.userCpfCnpj || undefined,
       });
       if (error) throw error;
       return data;
