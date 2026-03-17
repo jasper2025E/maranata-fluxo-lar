@@ -63,6 +63,16 @@ function AppContent() {
             <Route path="/site" element={<Institucional />} />
             <Route path="/auth" element={<Auth />} />
             
+            {/* Termos legais - protegido mas sem verificação de termos */}
+            <Route
+              path="/termos"
+              element={
+                <ProtectedRoute skipTermsCheck>
+                  <TermosAceite />
+                </ProtectedRoute>
+              }
+            />
+            
             {/* Protegido - Escola Maranata */}
             <Route
               path="/dashboard"
