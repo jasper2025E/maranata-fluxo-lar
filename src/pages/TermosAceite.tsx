@@ -57,6 +57,12 @@ export default function TermosAceite() {
     isValidCpfCnpj(cpfCnpj) &&
     !submitting;
 
+  useEffect(() => {
+    if (!termsLoading && docsToShow.length === 0) {
+      navigate("/dashboard", { replace: true });
+    }
+  }, [termsLoading, docsToShow.length, navigate]);
+
   async function handleAcceptAll() {
     if (!canSubmit) return;
     setSubmitting(true);
@@ -128,7 +134,6 @@ export default function TermosAceite() {
       pdf.text(`Vigência: ${new Date(doc.effective_date).toLocaleDateString("pt-BR")}`, 15, y);
       y += 8;
 
-      // Add content (simplified - split by lines)
       pdf.setFontSize(9);
       const plainText = doc.content.replace(/[#*|]/g, "").replace(/\n{2,}/g, "\n");
       const lines = pdf.splitTextToSize(plainText, pageW - 30);
@@ -150,12 +155,6 @@ export default function TermosAceite() {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (!termsLoading && docsToShow.length === 0) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [termsLoading, docsToShow.length, navigate]);
 
   if (docsToShow.length === 0) {
     return null;
