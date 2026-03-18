@@ -270,8 +270,6 @@ export default function ExportarDados() {
     const zip = new JSZip();
     const tables = Array.from(selected);
     const exportResults: { table: string; rows: number }[] = [];
-    const userIdsFound = new Set<string>();
-    const authUserColumns = ["created_by", "updated_by", "uploaded_by", "cancelada_por", "read_by", "user_id"];
 
     for (let i = 0; i < tables.length; i++) {
       const tableName = tables[i];
