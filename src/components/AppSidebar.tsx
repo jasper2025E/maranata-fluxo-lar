@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import doodlePatternBg from "@/assets/doodle-pattern-bg.png";
 import {
   LayoutDashboard,
@@ -143,6 +143,22 @@ export function AppSidebar() {
   const isEscolaActive = location.pathname.startsWith("/escola");
   const [isEscolaOpen, setIsEscolaOpen] = useState(isEscolaActive);
   const escolaTab = "dados";
+
+  useEffect(() => {
+    if (isCadastrosActive) setIsCadastrosOpen(true);
+    if (isOperationsActive) setIsOperationsOpen(true);
+    if (isAnalysisActive) setIsAnalysisOpen(true);
+    if (isHRActive) setIsHROpen(true);
+    if (isConfigActive) setIsConfigOpen(true);
+    if (isEscolaActive) setIsEscolaOpen(true);
+  }, [
+    isCadastrosActive,
+    isOperationsActive,
+    isAnalysisActive,
+    isHRActive,
+    isConfigActive,
+    isEscolaActive,
+  ]);
 
   // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
