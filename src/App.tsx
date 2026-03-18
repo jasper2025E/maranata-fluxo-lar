@@ -40,6 +40,7 @@ const PerfilAluno = lazy(() => import("./pages/PerfilAluno"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Institucional = lazy(() => import("./pages/Institucional"));
 const TermosAceite = lazy(() => import("./pages/TermosAceite"));
+const ExportarDados = lazy(() => import("./pages/ExportarDados"));
 
 // Componente interno que usa hooks de proteção
 function AppContent() {
@@ -201,6 +202,15 @@ function AppContent() {
               }
             />
             
+            {/* Exportar Dados */}
+            <Route
+              path="/exportar-dados"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <ExportarDados />
+                </ProtectedRoute>
+              }
+            />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />

@@ -102,6 +102,7 @@ const configItems = [
   { titleKey: "nav.config.users", url: "/configuracoes?tab=usuarios", tab: "usuarios", adminOnly: true },
   { titleKey: "nav.config.gateways", url: "/configuracoes?tab=gateways", tab: "gateways", adminOnly: true },
   { titleKey: "nav.config.system", url: "/configuracoes?tab=sistema", tab: "sistema", adminOnly: true },
+  { titleKey: "nav.config.export", url: "/exportar-dados", tab: "exportar", adminOnly: true },
 ];
 
 export function AppSidebar() {
