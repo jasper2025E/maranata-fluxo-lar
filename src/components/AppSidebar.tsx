@@ -134,7 +134,7 @@ export function AppSidebar() {
   const rhTab = new URLSearchParams(location.search).get("tab") || "dashboard";
   
   // Check if Config route is active
-  const configRoutes = ["/configuracoes"];
+  const configRoutes = ["/configuracoes", "/exportar-dados"];
   const isConfigActive = configRoutes.some(route => location.pathname.startsWith(route));
   const [isConfigOpen, setIsConfigOpen] = useState(isConfigActive);
   const configTab = new URLSearchParams(location.search).get("tab") || "perfil";
@@ -614,9 +614,11 @@ export function AppSidebar() {
                               return true;
                             })
                             .map((item) => {
-                              const isTabActive = item.tab 
+                              const isConfigTabItem = item.url.startsWith("/configuracoes");
+                              const isDirectRouteActive = location.pathname === item.url;
+                              const isTabActive = isConfigTabItem
                                 ? (location.pathname === "/configuracoes" && configTab === item.tab)
-                                : false;
+                                : isDirectRouteActive;
                               return (
                                 <SidebarMenuItem key={item.titleKey}>
                                   <SidebarMenuButton asChild>
