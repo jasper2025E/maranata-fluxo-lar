@@ -614,9 +614,11 @@ export function AppSidebar() {
                               return true;
                             })
                             .map((item) => {
-                              const isTabActive = item.tab 
+                              const isConfigTabItem = item.url.startsWith("/configuracoes");
+                              const isDirectRouteActive = location.pathname === item.url;
+                              const isTabActive = isConfigTabItem
                                 ? (location.pathname === "/configuracoes" && configTab === item.tab)
-                                : false;
+                                : isDirectRouteActive;
                               return (
                                 <SidebarMenuItem key={item.titleKey}>
                                   <SidebarMenuButton asChild>
