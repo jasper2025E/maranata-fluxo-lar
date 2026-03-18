@@ -146,6 +146,21 @@ const tableGroups = [
 
 const allTableNames = tableGroups.flatMap((g) => g.tables.map((t) => t.name));
 
+// Columns that are GENERATED ALWAYS AS and must be excluded from CSV exports
+// (they cannot accept non-DEFAULT values on INSERT)
+const generatedColumns: Record<string, string[]> = {
+  faturas: ["valor_total"],
+  bens_patrimoniais: ["valor_contabil_atual"],
+};
+
+function stripGeneratedColumns(row: Record<string, any>, tableName: string): Record<string, any> {
+  const cols = generatedColumns[tableName];
+  if (!cols || cols.length === 0) return row;
+  const cleaned = { ...row };
+  cols.forEach((col) => delete cleaned[col]);
+  return cleaned;
+}
+
 // UUID remapping: source (this DB) → destination (new DB)
 const userIdMapping: Record<string, string> = {
   // victordbvtey@outlook.com
