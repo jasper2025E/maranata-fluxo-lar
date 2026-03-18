@@ -146,6 +146,41 @@ const tableGroups = [
 
 const allTableNames = tableGroups.flatMap((g) => g.tables.map((t) => t.name));
 
+// UUID remapping: source (this DB) → destination (new DB)
+const userIdMapping: Record<string, string> = {
+  // victordbvtey@outlook.com
+  "464496d1-ed66-4f03-8f86-38b3f148bf5a": "108a2103-f009-4f99-968a-8e9ed1a54bf5",
+  // neivanemendys@gmail.com
+  "27f49e9e-cab6-40fb-9ff9-77bfa855615b": "d59d952e-0b2f-4f0e-92d0-9f671ed5e0ae",
+};
+
+// Columns that contain user UUIDs (both FK to auth.users and profile references)
+const userIdColumns = [
+  "id", "user_id", "created_by", "updated_by", "uploaded_by",
+  "cancelada_por", "read_by", "responsavel_user_id",
+];
+
+function remapUserIds(row: Record<string, any>, tableName: string): Record<string, any> {
+  const remapped = { ...row };
+  
+  // For profiles table, remap the 'id' column
+  // For other tables, remap all user reference columns
+  const columnsToCheck = tableName === "profiles" 
+    ? userIdColumns 
+    : userIdColumns.filter(c => c !== "id"); // don't touch PKs of other tables
+  
+  columnsToCheck.forEach((col) => {
+    if (remapped[col] && typeof remapped[col] === "string") {
+      const newId = userIdMapping[remapped[col]];
+      if (newId) {
+        remapped[col] = newId;
+      }
+    }
+  });
+  
+  return remapped;
+}
+
 function arrayToCSV(data: Record<string, any>[]): string {
   if (!data || data.length === 0) return "";
   const headers = Object.keys(data[0]);
