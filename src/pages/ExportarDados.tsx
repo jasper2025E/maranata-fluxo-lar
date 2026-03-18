@@ -179,7 +179,7 @@ export default function ExportarDados() {
   const handleLoadSchema = async () => {
     setLoadingSql(true);
     try {
-      const { data, error } = await (supabase.rpc as any)("get_public_tables_ddl");
+      const { data, error } = await supabase.rpc("get_public_tables_ddl" as any);
       if (error) throw error;
       setSchemaSql(data || "");
       setSqlVisible(true);
