@@ -202,6 +202,15 @@ function AppContent() {
               }
             />
             
+            {/* Exportar Dados */}
+            <Route
+              path="/exportar-dados"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <ExportarDados />
+                </ProtectedRoute>
+              }
+            />
             
             {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
