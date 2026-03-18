@@ -5,6 +5,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Database,
   Download,
@@ -13,6 +14,8 @@ import {
   FolderArchive,
   ChevronRight,
   AlertTriangle,
+  Copy,
+  Code,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -169,7 +172,30 @@ export default function ExportarDados() {
   const [currentTable, setCurrentTable] = useState("");
   const [exportDone, setExportDone] = useState(false);
   const [results, setResults] = useState<{ table: string; rows: number }[]>([]);
+  const [schemaSql, setSchemaSql] = useState("");
+  const [loadingSql, setLoadingSql] = useState(false);
+  const [sqlVisible, setSqlVisible] = useState(false);
 
+  const handleLoadSchema = async () => {
+    setLoadingSql(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)("get_public_tables_ddl");
+      if (error) throw error;
+      setSchemaSql(data || "");
+      setSqlVisible(true);
+      toast.success("Schema SQL carregado com sucesso!");
+    } catch (err: any) {
+      console.error("Erro ao carregar schema:", err);
+      toast.error("Erro ao carregar schema SQL");
+    } finally {
+      setLoadingSql(false);
+    }
+  };
+
+  const handleCopySql = () => {
+    navigator.clipboard.writeText(schemaSql);
+    toast.success("SQL copiado para a área de transferência!");
+  };
   const allSelected = allTableNames.every((n) => selected.has(n));
 
   const toggle = (name: string) => {
@@ -406,6 +432,51 @@ export default function ExportarDados() {
             </div>
           </div>
         )}
+
+        {/* SQL Schema Section */}
+        <div className="bg-card border border-border rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Code className="h-5 w-5 text-primary" />
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Schema SQL (CREATE TABLE)</h3>
+                <p className="text-xs text-muted-foreground">
+                  Gere o SQL completo das tabelas para recriar a estrutura em outro banco
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleLoadSchema}
+              disabled={loadingSql}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              {loadingSql ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Database className="h-4 w-4" />
+              )}
+              {loadingSql ? "Carregando..." : "Gerar SQL"}
+            </Button>
+          </div>
+
+          {sqlVisible && schemaSql && (
+            <div className="space-y-2">
+              <div className="flex justify-end">
+                <Button onClick={handleCopySql} variant="ghost" size="sm" className="gap-1.5 text-xs">
+                  <Copy className="h-3.5 w-3.5" />
+                  Copiar SQL
+                </Button>
+              </div>
+              <Textarea
+                value={schemaSql}
+                readOnly
+                className="font-mono text-xs h-[300px] bg-muted/50 resize-y"
+              />
+            </div>
+          )}
+        </div>
 
         {/* Export button */}
         <div className="flex justify-end">
