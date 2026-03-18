@@ -24,22 +24,57 @@ import { saveAs } from "file-saver";
 import { useAuth } from "@/contexts/AuthContext";
 
 // All exportable tables grouped by category
+// IMPORTANT: Groups are ordered by FK dependency for safe import:
+// 1. Base/independent tables first (tenants, profiles, enums)
+// 2. Tables that depend on group 1
+// 3. Tables that depend on group 2, and so on
 const tableGroups = [
   {
-    category: "Cadastros",
+    category: "1 · Base (importar primeiro)",
     tables: [
+      { name: "tenants", label: "Tenants (Instituições)" },
       { name: "profiles", label: "Perfis de Usuários" },
       { name: "user_roles", label: "Permissões de Usuários" },
-      { name: "escola", label: "Dados da Escola" },
-      { name: "alunos", label: "Alunos" },
-      { name: "responsaveis", label: "Responsáveis" },
-      { name: "cursos", label: "Cursos" },
-      { name: "turmas", label: "Turmas" },
-      { name: "disciplinas", label: "Disciplinas" },
+      { name: "data_retention_config", label: "Configuração de Retenção" },
+      { name: "pontos_autorizados", label: "Pontos Autorizados" },
+      { name: "platform_announcements", label: "Anúncios" },
+      { name: "platform_changelog", label: "Changelog" },
+      { name: "platform_roadmap", label: "Roadmap" },
     ],
   },
   {
-    category: "Financeiro",
+    category: "2 · Cadastros Principais",
+    tables: [
+      { name: "escola", label: "Dados da Escola" },
+      { name: "setores", label: "Setores" },
+      { name: "cursos", label: "Cursos" },
+      { name: "responsaveis", label: "Responsáveis" },
+      { name: "categorias_contabeis", label: "Categorias Contábeis" },
+      { name: "centros_custo", label: "Centros de Custo" },
+      { name: "legal_documents", label: "Documentos Legais" },
+      { name: "tenant_gateway_configs", label: "Configurações de Gateway" },
+      { name: "integration_settings", label: "Configurações de Integração" },
+      { name: "user_preferences", label: "Preferências de Usuário" },
+    ],
+  },
+  {
+    category: "3 · Cadastros Dependentes",
+    tables: [
+      { name: "cargos", label: "Cargos" },
+      { name: "turmas", label: "Turmas" },
+      { name: "disciplinas", label: "Disciplinas" },
+      { name: "alunos", label: "Alunos" },
+      { name: "funcionarios", label: "Funcionários" },
+      { name: "despesas", label: "Despesas" },
+      { name: "receitas", label: "Receitas" },
+      { name: "lancamentos_contabeis", label: "Lançamentos Contábeis" },
+      { name: "bens_patrimoniais", label: "Bens Patrimoniais" },
+      { name: "school_website_config", label: "Config do Site" },
+      { name: "school_website_pages", label: "Páginas do Site" },
+    ],
+  },
+  {
+    category: "4 · Financeiro",
     tables: [
       { name: "faturas", label: "Faturas" },
       { name: "fatura_itens", label: "Itens de Fatura" },
@@ -48,26 +83,22 @@ const tableGroups = [
       { name: "fatura_documentos", label: "Documentos de Fatura" },
       { name: "fatura_historico", label: "Histórico de Fatura" },
       { name: "pagamentos", label: "Pagamentos" },
-      { name: "despesas", label: "Despesas" },
-      { name: "receitas", label: "Receitas" },
+      { name: "impostos_estimados", label: "Impostos Estimados" },
+      { name: "depreciacao_mensal", label: "Depreciação Mensal" },
     ],
   },
   {
-    category: "RH",
+    category: "5 · RH",
     tables: [
-      { name: "funcionarios", label: "Funcionários" },
-      { name: "cargos", label: "Cargos" },
-      { name: "setores", label: "Setores" },
       { name: "contratos", label: "Contratos" },
       { name: "folha_pagamento", label: "Folha de Pagamento" },
       { name: "ponto_registros", label: "Ponto Eletrônico" },
-      { name: "pontos_autorizados", label: "Pontos Autorizados" },
       { name: "funcionario_documentos", label: "Documentos de Funcionários" },
       { name: "funcionario_turmas", label: "Funcionário x Turmas" },
     ],
   },
   {
-    category: "Acadêmico",
+    category: "6 · Acadêmico",
     tables: [
       { name: "aluno_documentos", label: "Documentos de Alunos" },
       { name: "aluno_habilidades", label: "Habilidades de Alunos" },
@@ -80,28 +111,16 @@ const tableGroups = [
     ],
   },
   {
-    category: "Contabilidade",
+    category: "7 · Site & Leads",
     tables: [
-      { name: "lancamentos_contabeis", label: "Lançamentos Contábeis" },
-      { name: "categorias_contabeis", label: "Categorias Contábeis" },
-      { name: "centros_custo", label: "Centros de Custo" },
-      { name: "bens_patrimoniais", label: "Bens Patrimoniais" },
-      { name: "depreciacao_mensal", label: "Depreciação Mensal" },
-      { name: "impostos_estimados", label: "Impostos Estimados" },
-    ],
-  },
-  {
-    category: "Configurações & Gateway",
-    tables: [
-      { name: "tenant_gateway_configs", label: "Configurações de Gateway" },
-      { name: "gateway_transaction_logs", label: "Logs de Transações Gateway" },
-      { name: "integration_settings", label: "Configurações de Integração" },
-      { name: "user_preferences", label: "Preferências de Usuário" },
+      { name: "school_website_blocks", label: "Blocos do Site" },
+      { name: "prematricula_leads", label: "Leads de Pré-matrícula" },
       { name: "notifications", label: "Notificações" },
+      { name: "announcement_reads", label: "Leitura de Anúncios" },
     ],
   },
   {
-    category: "Logs & Auditoria",
+    category: "8 · Logs & Auditoria (importar por último)",
     tables: [
       { name: "audit_logs", label: "Logs de Auditoria" },
       { name: "auditoria_contabil", label: "Auditoria Contábil" },
@@ -110,34 +129,11 @@ const tableGroups = [
       { name: "security_alerts", label: "Alertas de Segurança" },
       { name: "immutable_security_logs", label: "Logs Imutáveis de Segurança" },
       { name: "api_request_logs", label: "Logs de API" },
-    ],
-  },
-  {
-    category: "Termos & LGPD",
-    tables: [
-      { name: "legal_documents", label: "Documentos Legais" },
+      { name: "gateway_transaction_logs", label: "Logs de Transações Gateway" },
+      { name: "platform_audit_logs", label: "Logs de Auditoria Plataforma" },
       { name: "user_legal_acceptances", label: "Aceites de Termos" },
       { name: "lgpd_deletion_requests", label: "Solicitações LGPD" },
-      { name: "data_retention_config", label: "Configuração de Retenção" },
-    ],
-  },
-  {
-    category: "Site Escolar",
-    tables: [
-      { name: "school_website_config", label: "Config do Site" },
-      { name: "school_website_pages", label: "Páginas do Site" },
-      { name: "school_website_blocks", label: "Blocos do Site" },
-      { name: "prematricula_leads", label: "Leads de Pré-matrícula" },
-    ],
-  },
-  {
-    category: "Plataforma",
-    tables: [
       { name: "subscription_history", label: "Histórico de Assinatura" },
-      { name: "platform_announcements", label: "Anúncios" },
-      { name: "platform_audit_logs", label: "Logs de Auditoria Plataforma" },
-      { name: "platform_changelog", label: "Changelog" },
-      { name: "platform_roadmap", label: "Roadmap" },
       { name: "roadmap_votes", label: "Votos Roadmap" },
     ],
   },
