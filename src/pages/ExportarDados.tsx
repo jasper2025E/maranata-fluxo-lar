@@ -433,6 +433,51 @@ export default function ExportarDados() {
           </div>
         )}
 
+        {/* SQL Schema Section */}
+        <div className="bg-card border border-border rounded-lg p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Code className="h-5 w-5 text-primary" />
+              <div>
+                <h3 className="text-sm font-semibold text-foreground">Schema SQL (CREATE TABLE)</h3>
+                <p className="text-xs text-muted-foreground">
+                  Gere o SQL completo das tabelas para recriar a estrutura em outro banco
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleLoadSchema}
+              disabled={loadingSql}
+              variant="outline"
+              size="sm"
+              className="gap-2"
+            >
+              {loadingSql ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Database className="h-4 w-4" />
+              )}
+              {loadingSql ? "Carregando..." : "Gerar SQL"}
+            </Button>
+          </div>
+
+          {sqlVisible && schemaSql && (
+            <div className="space-y-2">
+              <div className="flex justify-end">
+                <Button onClick={handleCopySql} variant="ghost" size="sm" className="gap-1.5 text-xs">
+                  <Copy className="h-3.5 w-3.5" />
+                  Copiar SQL
+                </Button>
+              </div>
+              <Textarea
+                value={schemaSql}
+                readOnly
+                className="font-mono text-xs h-[300px] bg-muted/50 resize-y"
+              />
+            </div>
+          )}
+        </div>
+
         {/* Export button */}
         <div className="flex justify-end">
           <Button
