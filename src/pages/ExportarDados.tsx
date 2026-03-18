@@ -172,7 +172,30 @@ export default function ExportarDados() {
   const [currentTable, setCurrentTable] = useState("");
   const [exportDone, setExportDone] = useState(false);
   const [results, setResults] = useState<{ table: string; rows: number }[]>([]);
+  const [schemaSql, setSchemaSql] = useState("");
+  const [loadingSql, setLoadingSql] = useState(false);
+  const [sqlVisible, setSqlVisible] = useState(false);
 
+  const handleLoadSchema = async () => {
+    setLoadingSql(true);
+    try {
+      const { data, error } = await (supabase.rpc as any)("get_public_tables_ddl");
+      if (error) throw error;
+      setSchemaSql(data || "");
+      setSqlVisible(true);
+      toast.success("Schema SQL carregado com sucesso!");
+    } catch (err: any) {
+      console.error("Erro ao carregar schema:", err);
+      toast.error("Erro ao carregar schema SQL");
+    } finally {
+      setLoadingSql(false);
+    }
+  };
+
+  const handleCopySql = () => {
+    navigator.clipboard.writeText(schemaSql);
+    toast.success("SQL copiado para a área de transferência!");
+  };
   const allSelected = allTableNames.every((n) => selected.has(n));
 
   const toggle = (name: string) => {
