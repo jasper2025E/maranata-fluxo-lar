@@ -32,7 +32,7 @@ const tableGroups = [
   {
     category: "1 · Base (importar primeiro)",
     tables: [
-      { name: "tenants", label: "Tenants (Instituições)" },
+      { name: "tenants", label: "Dados da Instituição" },
       { name: "profiles", label: "Perfis de Usuários" },
       { name: "user_roles", label: "Permissões de Usuários" },
       { name: "data_retention_config", label: "Configuração de Retenção" },
