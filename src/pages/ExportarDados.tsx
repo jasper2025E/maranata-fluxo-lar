@@ -146,6 +146,41 @@ const tableGroups = [
 
 const allTableNames = tableGroups.flatMap((g) => g.tables.map((t) => t.name));
 
+// UUID remapping: source (this DB) → destination (new DB)
+const userIdMapping: Record<string, string> = {
+  // victordbvtey@outlook.com
+  "464496d1-ed66-4f03-8f86-38b3f148bf5a": "108a2103-f009-4f99-968a-8e9ed1a54bf5",
+  // neivanemendys@gmail.com
+  "27f49e9e-cab6-40fb-9ff9-77bfa855615b": "d59d952e-0b2f-4f0e-92d0-9f671ed5e0ae",
+};
+
+// Columns that contain user UUIDs (both FK to auth.users and profile references)
+const userIdColumns = [
+  "id", "user_id", "created_by", "updated_by", "uploaded_by",
+  "cancelada_por", "read_by", "responsavel_user_id",
+];
+
+function remapUserIds(row: Record<string, any>, tableName: string): Record<string, any> {
+  const remapped = { ...row };
+  
+  // For profiles table, remap the 'id' column
+  // For other tables, remap all user reference columns
+  const columnsToCheck = tableName === "profiles" 
+    ? userIdColumns 
+    : userIdColumns.filter(c => c !== "id"); // don't touch PKs of other tables
+  
+  columnsToCheck.forEach((col) => {
+    if (remapped[col] && typeof remapped[col] === "string") {
+      const newId = userIdMapping[remapped[col]];
+      if (newId) {
+        remapped[col] = newId;
+      }
+    }
+  });
+  
+  return remapped;
+}
+
 function arrayToCSV(data: Record<string, any>[]): string {
   if (!data || data.length === 0) return "";
   const headers = Object.keys(data[0]);
@@ -235,8 +270,6 @@ export default function ExportarDados() {
     const zip = new JSZip();
     const tables = Array.from(selected);
     const exportResults: { table: string; rows: number }[] = [];
-    const userIdsFound = new Set<string>();
-    const authUserColumns = ["created_by", "updated_by", "uploaded_by", "cancelada_por", "read_by", "user_id"];
 
     for (let i = 0; i < tables.length; i++) {
       const tableName = tables[i];
@@ -273,19 +306,10 @@ export default function ExportarDados() {
         }
 
         if (allData.length > 0) {
-          // Collect user IDs for reference file, then null them for clean import
-          const cleanedData = allData.map((row) => {
-            const cleanRow = { ...row };
-            authUserColumns.forEach((col) => {
-              if (cleanRow[col] && typeof cleanRow[col] === "string" && cleanRow[col].match(/^[0-9a-f-]{36}$/i)) {
-                userIdsFound.add(cleanRow[col]);
-                cleanRow[col] = null;
-              }
-            });
-            return cleanRow;
-          });
+          // Remap user UUIDs from source to destination
+          const remappedData = allData.map((row) => remapUserIds(row, tableName));
 
-          const csv = arrayToCSV(cleanedData);
+          const csv = arrayToCSV(remappedData);
           zip.file(`${tableName}.csv`, csv);
         }
 
@@ -296,45 +320,12 @@ export default function ExportarDados() {
       }
     }
 
-    // Generate user reference mapping file
-    if (userIdsFound.size > 0) {
-      setCurrentTable("Gerando mapeamento de usuários...");
-      try {
-        const userIds = Array.from(userIdsFound);
-        const userMap: Record<string, any>[] = [];
-        
-        // Fetch profiles for all collected user IDs
-        for (let i = 0; i < userIds.length; i += 50) {
-          const batch = userIds.slice(i, i + 50);
-          const { data } = await supabase
-            .from("profiles")
-            .select("id, nome, email")
-            .in("id", batch);
-          if (data) {
-            data.forEach((p: any) => {
-              userMap.push({
-                user_id: p.id,
-                nome: p.nome || "",
-                email: p.email || "",
-              });
-            });
-          }
-        }
-
-        // Add IDs not found in profiles
-        userIds.forEach((uid) => {
-          if (!userMap.find((u) => u.user_id === uid)) {
-            userMap.push({ user_id: uid, nome: "(não encontrado)", email: "" });
-          }
-        });
-
-        if (userMap.length > 0) {
-          zip.file("_usuarios_referencia.csv", arrayToCSV(userMap));
-        }
-      } catch (err) {
-        console.warn("Erro ao gerar mapeamento de usuários:", err);
-      }
-    }
+    // Generate UUID mapping reference file
+    const mappingRows = Object.entries(userIdMapping).map(([oldId, newId]) => ({
+      old_uuid: oldId,
+      new_uuid: newId,
+    }));
+    zip.file("_uuid_mapping.csv", arrayToCSV(mappingRows));
 
     setProgress(100);
     setCurrentTable("Gerando arquivo ZIP...");
