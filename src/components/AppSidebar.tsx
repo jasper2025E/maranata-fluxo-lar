@@ -5,7 +5,6 @@ import {
   Users,
   BookOpen,
   FileText,
-  CreditCard,
   Receipt,
   BarChart3,
   Settings,
@@ -17,7 +16,6 @@ import {
   Briefcase,
   Activity,
   ChevronDown,
-  Globe,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -26,7 +24,6 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useEscola } from "@/hooks/useEscola";
 import { useTranslation } from "react-i18next";
-import { SidebarColorPicker } from "@/components/sidebar/SidebarColorPicker";
 import {
   Sidebar,
   SidebarContent,
@@ -54,7 +51,6 @@ const menuItems = [
   { titleKey: "nav.dashboard", url: "/dashboard", icon: LayoutDashboard },
 ];
 
-// Cadastros Sub-items
 const cadastrosItems = [
   { titleKey: "nav.students", url: "/alunos", icon: Users },
   { titleKey: "nav.guardians", url: "/responsaveis", icon: UserCheck },
@@ -62,12 +58,10 @@ const cadastrosItems = [
   { titleKey: "nav.classes", url: "/turmas", icon: GraduationCap },
 ];
 
-// Escola Sub-items
 const escolaItems = [
   { titleKey: "nav.escola.dados", url: "/escola", tab: "dados" },
 ];
 
-// HR Sub-items
 const hrItems = [
   { titleKey: "nav.hrDashboard", url: "/rh", tab: "dashboard" },
   { titleKey: "nav.hrEmployees", url: "/rh?tab=funcionarios", tab: "funcionarios" },
@@ -79,13 +73,11 @@ const hrItems = [
   { titleKey: "nav.hrContracts", url: "/rh?tab=contratos", tab: "contratos" },
 ];
 
-// Financial Operations
 const operationsItems = [
   { titleKey: "nav.invoices", url: "/faturas", icon: FileText },
   { titleKey: "nav.expenses", url: "/despesas", icon: Receipt },
 ];
 
-// Financial Analysis
 const analysisItems = [
   { titleKey: "nav.financialDashboard", url: "/dashboard/financeiro", icon: Wallet },
   { titleKey: "nav.reports", url: "/relatorios", icon: BarChart3 },
@@ -93,7 +85,6 @@ const analysisItems = [
   { titleKey: "nav.accounting", url: "/contabilidade", icon: BookOpen, roles: ["admin"] },
 ];
 
-// System Sub-items
 const configItems = [
   { titleKey: "nav.config.profile", url: "/configuracoes", tab: "perfil" },
   { titleKey: "nav.config.security", url: "/configuracoes?tab=seguranca", tab: "seguranca" },
@@ -105,6 +96,8 @@ const configItems = [
   { titleKey: "nav.config.export", url: "/exportar-dados", tab: "exportar", adminOnly: true },
 ];
 
+type RoleItem = { titleKey: string; url: string; icon?: any; roles?: string[] };
+
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
@@ -112,34 +105,28 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const { t } = useTranslation();
-  
-  // Check if any cadastros route is active
+
   const cadastrosRoutes = ["/alunos", "/responsaveis", "/cursos", "/turmas"];
-  const isCadastrosActive = cadastrosRoutes.some(route => location.pathname.startsWith(route));
+  const isCadastrosActive = cadastrosRoutes.some((route) => location.pathname.startsWith(route));
   const [isCadastrosOpen, setIsCadastrosOpen] = useState(isCadastrosActive);
-  
-  // Check if any operations route is active
+
   const operationsRoutes = ["/faturas", "/despesas"];
-  const isOperationsActive = operationsRoutes.some(route => location.pathname.startsWith(route));
+  const isOperationsActive = operationsRoutes.some((route) => location.pathname.startsWith(route));
   const [isOperationsOpen, setIsOperationsOpen] = useState(isOperationsActive);
-  
-  // Check if any analysis route is active
+
   const analysisRoutes = ["/dashboard/financeiro", "/relatorios", "/saude-financeira", "/contabilidade"];
-  const isAnalysisActive = analysisRoutes.some(route => location.pathname.startsWith(route));
+  const isAnalysisActive = analysisRoutes.some((route) => location.pathname.startsWith(route));
   const [isAnalysisOpen, setIsAnalysisOpen] = useState(isAnalysisActive);
-  
-  // Check if HR route is active
+
   const isHRActive = location.pathname.startsWith("/rh");
   const [isHROpen, setIsHROpen] = useState(isHRActive);
   const rhTab = new URLSearchParams(location.search).get("tab") || "dashboard";
-  
-  // Check if Config route is active
+
   const configRoutes = ["/configuracoes", "/exportar-dados"];
-  const isConfigActive = configRoutes.some(route => location.pathname.startsWith(route));
+  const isConfigActive = configRoutes.some((route) => location.pathname.startsWith(route));
   const [isConfigOpen, setIsConfigOpen] = useState(isConfigActive);
   const configTab = new URLSearchParams(location.search).get("tab") || "perfil";
-  
-  // Check if Escola route is active
+
   const isEscolaActive = location.pathname.startsWith("/escola");
   const [isEscolaOpen, setIsEscolaOpen] = useState(isEscolaActive);
   const escolaTab = "dados";
@@ -151,43 +138,35 @@ export function AppSidebar() {
     if (isHRActive) setIsHROpen(true);
     if (isConfigActive) setIsConfigOpen(true);
     if (isEscolaActive) setIsEscolaOpen(true);
-  }, [
-    isCadastrosActive,
-    isOperationsActive,
-    isAnalysisActive,
-    isHRActive,
-    isConfigActive,
-    isEscolaActive,
-  ]);
+  }, [isCadastrosActive, isOperationsActive, isAnalysisActive, isHRActive, isConfigActive, isEscolaActive]);
 
-  // Use React Query para cachear os dados da escola
   const { data: escola } = useEscola();
   const escolaNome = escola?.nome || "Escola Maranata";
   const logoUrl = escola?.logo_url;
   const escolaCnpj = escola?.cnpj;
   const escolaEndereco = escola?.endereco;
 
-  const canAccessAdminMenus = !loading && !roleLoading && hasRole("admin");
-  const visibleConfigItems = configItems.filter((item) => !item.adminOnly || canAccessAdminMenus);
+  const permissionsReady = !loading && !roleLoading;
+  const canAccessAdminMenus = permissionsReady && hasRole("admin");
 
   const handleLogout = async () => {
     try {
       await signOut();
       toast.success(t("success.logout"));
       navigate("/auth");
-    } catch (error) {
+    } catch {
       toast.error(t("errors.generic"));
     }
   };
 
-  const filterByRole = (items: Array<{ titleKey: string; url: string; icon?: any; roles?: string[] }>) => {
-    return items.filter((item) => {
+  const filterByRole = (items: RoleItem[]) =>
+    items.filter((item) => {
       if (!item.roles) return true;
+      if (!permissionsReady) return false;
       return item.roles.some((role) => hasRole(role as any));
     });
-  };
 
-  const renderMenuItem = (item: typeof menuItems[0]) => (
+  const renderMenuItem = (item: (typeof menuItems)[number]) => (
     <SidebarMenuItem key={item.titleKey}>
       {isCollapsed ? (
         <Tooltip>
@@ -231,11 +210,10 @@ export function AppSidebar() {
     </SidebarMenuItem>
   );
 
-  // Logo component
   const LogoContent = logoUrl ? (
-    <img 
-      src={logoUrl} 
-      alt={escolaNome} 
+    <img
+      src={logoUrl}
+      alt={escolaNome}
       className="h-10 w-10 rounded-xl object-cover shrink-0 shadow-lg"
       loading="eager"
     />
@@ -245,9 +223,10 @@ export function AppSidebar() {
     </div>
   );
 
+  const visibleConfigItems = configItems.filter((item) => !item.adminOnly || canAccessAdminMenus);
+
   return (
     <Sidebar className="border-r-0 [&_[data-sidebar=sidebar]]:relative [&_[data-sidebar=sidebar]]:overflow-hidden" collapsible="icon">
-      {/* Doodle pattern overlay on top of default sidebar background */}
       <div
         className="absolute inset-0 z-0 pointer-events-none"
         style={{
@@ -257,19 +236,13 @@ export function AppSidebar() {
           opacity: 0.08,
         }}
       />
-      
+
       <SidebarContent className="relative z-10">
-        {/* Logo */}
-        <div className={cn(
-          "flex items-center gap-3 px-4 py-6",
-          isCollapsed && "justify-center px-3"
-        )}>
+        <div className={cn("flex items-center gap-3 px-4 py-6", isCollapsed && "justify-center px-3")}>
           {isCollapsed ? (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="cursor-pointer">
-                  {LogoContent}
-                </div>
+                <div className="cursor-pointer">{LogoContent}</div>
               </TooltipTrigger>
               <TooltipContent side="right" className="font-medium">
                 <p>{escolaNome}</p>
@@ -297,7 +270,6 @@ export function AppSidebar() {
             <SidebarMenu className="space-y-0.5">
               {filterByRole(menuItems).map(renderMenuItem)}
 
-              {/* Collapsible Cadastros */}
               <SidebarMenuItem>
                 <Collapsible open={isCadastrosOpen} onOpenChange={setIsCadastrosOpen}>
                   <CollapsibleTrigger asChild>
@@ -309,19 +281,14 @@ export function AppSidebar() {
                           "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                           "transition-colors duration-150",
                           isCadastrosActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                          !isCollapsed && isCadastrosActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                          !isCollapsed && isCadastrosActive && "border-l-2 border-sidebar-primary -ml-[2px]"
                         )}
                       >
                         <Users className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
                         {!isCollapsed && (
                           <>
                             <span className="text-sm flex-1 text-left">{t("nav.registrations")}</span>
-                            <ChevronDown
-                              className={cn(
-                                "h-4 w-4 transition-transform duration-200",
-                                isCadastrosOpen && "rotate-180"
-                              )}
-                            />
+                            <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isCadastrosOpen && "rotate-180")} />
                           </>
                         )}
                       </button>
@@ -353,7 +320,6 @@ export function AppSidebar() {
                 </Collapsible>
               </SidebarMenuItem>
 
-              {/* Collapsible Operations - after Cadastros */}
               <SidebarMenuItem>
                 <Collapsible open={isOperationsOpen} onOpenChange={setIsOperationsOpen}>
                   <CollapsibleTrigger asChild>
@@ -365,19 +331,14 @@ export function AppSidebar() {
                           "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                           "transition-colors duration-150",
                           isOperationsActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                          !isCollapsed && isOperationsActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                          !isCollapsed && isOperationsActive && "border-l-2 border-sidebar-primary -ml-[2px]"
                         )}
                       >
                         <Wallet className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
                         {!isCollapsed && (
                           <>
                             <span className="text-sm flex-1 text-left">{t("nav.operations")}</span>
-                            <ChevronDown
-                              className={cn(
-                                "h-4 w-4 transition-transform duration-200",
-                                isOperationsOpen && "rotate-180"
-                              )}
-                            />
+                            <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isOperationsOpen && "rotate-180")} />
                           </>
                         )}
                       </button>
@@ -409,7 +370,6 @@ export function AppSidebar() {
                 </Collapsible>
               </SidebarMenuItem>
 
-              {/* Collapsible Analysis */}
               <SidebarMenuItem>
                 <Collapsible open={isAnalysisOpen} onOpenChange={setIsAnalysisOpen}>
                   <CollapsibleTrigger asChild>
@@ -421,19 +381,14 @@ export function AppSidebar() {
                           "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                           "transition-colors duration-150",
                           isAnalysisActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                          !isCollapsed && isAnalysisActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                          !isCollapsed && isAnalysisActive && "border-l-2 border-sidebar-primary -ml-[2px]"
                         )}
                       >
                         <BarChart3 className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
                         {!isCollapsed && (
                           <>
                             <span className="text-sm flex-1 text-left">{t("nav.analysis")}</span>
-                            <ChevronDown
-                              className={cn(
-                                "h-4 w-4 transition-transform duration-200",
-                                isAnalysisOpen && "rotate-180"
-                              )}
-                            />
+                            <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isAnalysisOpen && "rotate-180")} />
                           </>
                         )}
                       </button>
@@ -442,33 +397,30 @@ export function AppSidebar() {
                   <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                     {!isCollapsed && (
                       <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
-                        {filterByRole(analysisItems).map((item) => {
-                          return (
-                            <SidebarMenuItem key={item.titleKey}>
-                              <SidebarMenuButton asChild>
-                                <NavLink
-                                  to={item.url}
-                                  className={cn(
-                                    "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
-                                    "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
-                                    "transition-all duration-150"
-                                  )}
-                                  activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
-                                >
-                                  <span>{t(item.titleKey)}</span>
-                                </NavLink>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
-                          );
-                        })}
+                        {filterByRole(analysisItems).map((item) => (
+                          <SidebarMenuItem key={item.titleKey}>
+                            <SidebarMenuButton asChild>
+                              <NavLink
+                                to={item.url}
+                                className={cn(
+                                  "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
+                                  "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                                  "transition-all duration-150"
+                                )}
+                                activeClassName="text-sidebar-primary font-medium bg-sidebar-primary/5"
+                              >
+                                <span>{t(item.titleKey)}</span>
+                              </NavLink>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        ))}
                       </SidebarMenu>
                     )}
                   </CollapsibleContent>
                 </Collapsible>
               </SidebarMenuItem>
 
-              {/* Collapsible Escola */}
-              {hasRole("admin") && (
+              {canAccessAdminMenus && (
                 <SidebarMenuItem>
                   <Collapsible open={isEscolaOpen} onOpenChange={setIsEscolaOpen}>
                     <CollapsibleTrigger asChild>
@@ -480,19 +432,14 @@ export function AppSidebar() {
                             "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                             "transition-colors duration-150",
                             isEscolaActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                            !isCollapsed && isEscolaActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                            !isCollapsed && isEscolaActive && "border-l-2 border-sidebar-primary -ml-[2px]"
                           )}
                         >
                           <Building2 className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
                           {!isCollapsed && (
                             <>
                               <span className="text-sm flex-1 text-left">{t("nav.school")}</span>
-                              <ChevronDown
-                                className={cn(
-                                  "h-4 w-4 transition-transform duration-200",
-                                  isEscolaOpen && "rotate-180"
-                                )}
-                              />
+                              <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isEscolaOpen && "rotate-180")} />
                             </>
                           )}
                         </button>
@@ -530,8 +477,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {/* Collapsible HR - after Escola */}
-              {(hasRole("admin") || hasRole("staff")) && (
+              {permissionsReady && (hasRole("admin") || hasRole("staff")) && (
                 <SidebarMenuItem>
                   <Collapsible open={isHROpen} onOpenChange={setIsHROpen}>
                     <CollapsibleTrigger asChild>
@@ -543,19 +489,14 @@ export function AppSidebar() {
                             "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                             "transition-colors duration-150",
                             isHRActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                            !isCollapsed && isHRActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                            !isCollapsed && isHRActive && "border-l-2 border-sidebar-primary -ml-[2px]"
                           )}
                         >
                           <Briefcase className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
                           {!isCollapsed && (
                             <>
                               <span className="text-sm flex-1 text-left">{t("nav.hr")}</span>
-                              <ChevronDown
-                                className={cn(
-                                  "h-4 w-4 transition-transform duration-200",
-                                  isHROpen && "rotate-180"
-                                )}
-                              />
+                              <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isHROpen && "rotate-180")} />
                             </>
                           )}
                         </button>
@@ -567,23 +508,23 @@ export function AppSidebar() {
                           {hrItems.map((item) => {
                             const isTabActive = isHRActive && rhTab === item.tab;
                             return (
-                            <SidebarMenuItem key={item.titleKey}>
-                              <SidebarMenuButton asChild>
-                                <NavLink
-                                  to={item.url}
-                                  className={cn(
-                                    "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
-                                    isTabActive
-                                      ? "text-sidebar-primary font-medium bg-sidebar-primary/5"
-                                      : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
-                                    "transition-all duration-150"
-                                  )}
-                                  activeClassName=""
-                                >
-                                  <span className="flex-1">{t(item.titleKey)}</span>
-                                </NavLink>
-                              </SidebarMenuButton>
-                            </SidebarMenuItem>
+                              <SidebarMenuItem key={item.titleKey}>
+                                <SidebarMenuButton asChild>
+                                  <NavLink
+                                    to={item.url}
+                                    className={cn(
+                                      "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
+                                      isTabActive
+                                        ? "text-sidebar-primary font-medium bg-sidebar-primary/5"
+                                        : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50",
+                                      "transition-all duration-150"
+                                    )}
+                                    activeClassName=""
+                                  >
+                                    <span className="flex-1">{t(item.titleKey)}</span>
+                                  </NavLink>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
                             );
                           })}
                         </SidebarMenu>
@@ -593,7 +534,6 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {/* Collapsible Configurações */}
               {visibleConfigItems.length > 0 && (
                 <SidebarMenuItem>
                   <Collapsible open={isConfigOpen} onOpenChange={setIsConfigOpen}>
@@ -606,19 +546,14 @@ export function AppSidebar() {
                             "text-sidebar-foreground/60 hover:text-sidebar-foreground hover:bg-sidebar-accent",
                             "transition-colors duration-150",
                             isConfigActive && "bg-sidebar-primary/10 text-sidebar-primary font-medium",
-                            !isCollapsed && isConfigActive && "border-l-2 border-sidebar-primary -ml-[2px]",
+                            !isCollapsed && isConfigActive && "border-l-2 border-sidebar-primary -ml-[2px]"
                           )}
                         >
                           <Settings className={cn(isCollapsed ? "h-5 w-5" : "h-[18px] w-[18px]", "shrink-0")} strokeWidth={1.75} />
                           {!isCollapsed && (
                             <>
                               <span className="text-sm flex-1 text-left">{t("nav.system")}</span>
-                              <ChevronDown
-                                className={cn(
-                                  "h-4 w-4 transition-transform duration-200",
-                                  isConfigOpen && "rotate-180"
-                                )}
-                              />
+                              <ChevronDown className={cn("h-4 w-4 transition-transform duration-200", isConfigOpen && "rotate-180")} />
                             </>
                           )}
                         </button>
@@ -666,22 +601,15 @@ export function AppSidebar() {
       </SidebarContent>
 
       <SidebarFooter className="relative z-10 border-t border-sidebar-border/50 p-3">
-        {/* School Info */}
         {!isCollapsed && (escolaCnpj || escolaEndereco) && (
           <div className="mb-3 px-3 py-3 rounded-lg bg-sidebar-accent/50 border border-sidebar-border/30">
             <p className="font-semibold text-sm text-sidebar-foreground">{escolaNome}</p>
-            {escolaCnpj && (
-              <p className="text-xs text-sidebar-primary mt-0.5">CNPJ: {escolaCnpj}</p>
-            )}
-            {escolaEndereco && (
-              <p className="text-xs text-sidebar-foreground/50 mt-0.5">{escolaEndereco}</p>
-            )}
+            {escolaCnpj && <p className="text-xs text-sidebar-primary mt-0.5">CNPJ: {escolaCnpj}</p>}
+            {escolaEndereco && <p className="text-xs text-sidebar-foreground/50 mt-0.5">{escolaEndereco}</p>}
           </div>
         )}
-        
-        <SidebarMenu className="space-y-1">
 
-          {/* Logout */}
+        <SidebarMenu className="space-y-1">
           <SidebarMenuItem>
             {isCollapsed ? (
               <Tooltip>
