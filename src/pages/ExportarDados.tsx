@@ -273,18 +273,16 @@ export default function ExportarDados() {
         }
 
         if (allData.length > 0) {
-          // Remove columns that reference auth.users (FK won't exist in target DB)
-          const authUserColumns = ["created_by", "updated_by", "uploaded_by", "cancelada_por", "read_by"];
-          const cleanedData = allData.map((row) => {
-            const cleanRow = { ...row };
+          // Collect user IDs from auth-referencing columns for the mapping file
+          allData.forEach((row) => {
             authUserColumns.forEach((col) => {
-              if (col in cleanRow) {
-                cleanRow[col] = null;
+              if (row[col] && typeof row[col] === "string" && row[col].match(/^[0-9a-f-]{36}$/i)) {
+                userIdsFound.add(row[col]);
               }
             });
-            return cleanRow;
           });
-          const csv = arrayToCSV(cleanedData);
+
+          const csv = arrayToCSV(allData);
           zip.file(`${tableName}.csv`, csv);
         }
 
