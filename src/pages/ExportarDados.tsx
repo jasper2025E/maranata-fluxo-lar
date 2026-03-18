@@ -30,20 +30,17 @@ import { useAuth } from "@/contexts/AuthContext";
 // 3. Tables that depend on group 2, and so on
 const tableGroups = [
   {
-    category: "1 · Base (importar primeiro)",
+    category: "1 · Base (sem dependências — importar primeiro)",
     tables: [
       { name: "tenants", label: "Dados da Instituição" },
-      { name: "profiles", label: "Perfis de Usuários" },
-      { name: "user_roles", label: "Permissões de Usuários" },
       { name: "data_retention_config", label: "Configuração de Retenção" },
-      { name: "pontos_autorizados", label: "Pontos Autorizados" },
       { name: "platform_announcements", label: "Anúncios" },
       { name: "platform_changelog", label: "Changelog" },
       { name: "platform_roadmap", label: "Roadmap" },
     ],
   },
   {
-    category: "2 · Cadastros Principais",
+    category: "2 · Cadastros (dependem apenas da Instituição)",
     tables: [
       { name: "escola", label: "Dados da Escola" },
       { name: "setores", label: "Setores" },
@@ -54,27 +51,31 @@ const tableGroups = [
       { name: "legal_documents", label: "Documentos Legais" },
       { name: "tenant_gateway_configs", label: "Configurações de Gateway" },
       { name: "integration_settings", label: "Configurações de Integração" },
-      { name: "user_preferences", label: "Preferências de Usuário" },
     ],
   },
   {
-    category: "3 · Cadastros Dependentes",
+    category: "3 · Usuários (⚠️ requer que os usuários existam no sistema de autenticação)",
+    tables: [
+      { name: "profiles", label: "Perfis de Usuários" },
+      { name: "user_roles", label: "Permissões de Usuários" },
+      { name: "user_preferences", label: "Preferências de Usuário" },
+      { name: "pontos_autorizados", label: "Pontos Autorizados" },
+    ],
+  },
+  {
+    category: "4 · Cadastros Dependentes (dependem dos grupos 2 e 3)",
     tables: [
       { name: "cargos", label: "Cargos" },
       { name: "turmas", label: "Turmas" },
       { name: "disciplinas", label: "Disciplinas" },
-      { name: "alunos", label: "Alunos" },
       { name: "funcionarios", label: "Funcionários" },
-      { name: "despesas", label: "Despesas" },
-      { name: "receitas", label: "Receitas" },
-      { name: "lancamentos_contabeis", label: "Lançamentos Contábeis" },
-      { name: "bens_patrimoniais", label: "Bens Patrimoniais" },
+      { name: "alunos", label: "Alunos" },
       { name: "school_website_config", label: "Config do Site" },
       { name: "school_website_pages", label: "Páginas do Site" },
     ],
   },
   {
-    category: "4 · Financeiro",
+    category: "5 · Financeiro (dependem de Alunos e Cursos)",
     tables: [
       { name: "faturas", label: "Faturas" },
       { name: "fatura_itens", label: "Itens de Fatura" },
@@ -83,12 +84,16 @@ const tableGroups = [
       { name: "fatura_documentos", label: "Documentos de Fatura" },
       { name: "fatura_historico", label: "Histórico de Fatura" },
       { name: "pagamentos", label: "Pagamentos" },
+      { name: "despesas", label: "Despesas" },
+      { name: "receitas", label: "Receitas" },
+      { name: "lancamentos_contabeis", label: "Lançamentos Contábeis" },
+      { name: "bens_patrimoniais", label: "Bens Patrimoniais" },
       { name: "impostos_estimados", label: "Impostos Estimados" },
       { name: "depreciacao_mensal", label: "Depreciação Mensal" },
     ],
   },
   {
-    category: "5 · RH",
+    category: "6 · RH (dependem de Funcionários)",
     tables: [
       { name: "contratos", label: "Contratos" },
       { name: "folha_pagamento", label: "Folha de Pagamento" },
@@ -98,7 +103,7 @@ const tableGroups = [
     ],
   },
   {
-    category: "6 · Acadêmico",
+    category: "7 · Acadêmico (dependem de Alunos)",
     tables: [
       { name: "aluno_documentos", label: "Documentos de Alunos" },
       { name: "aluno_habilidades", label: "Habilidades de Alunos" },
@@ -111,7 +116,7 @@ const tableGroups = [
     ],
   },
   {
-    category: "7 · Site & Leads",
+    category: "8 · Site & Leads",
     tables: [
       { name: "school_website_blocks", label: "Blocos do Site" },
       { name: "prematricula_leads", label: "Leads de Pré-matrícula" },
@@ -120,7 +125,7 @@ const tableGroups = [
     ],
   },
   {
-    category: "8 · Logs & Auditoria (importar por último)",
+    category: "9 · Logs & Auditoria (importar por último)",
     tables: [
       { name: "audit_logs", label: "Logs de Auditoria" },
       { name: "auditoria_contabil", label: "Auditoria Contábil" },
