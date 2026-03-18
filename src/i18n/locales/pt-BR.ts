@@ -115,6 +115,7 @@ const ptBR = {
         gateways: "Gateways",
         integrations: "Integrações",
         system: "Sistema",
+        export: "Exportar Dados",
       },
       escola: {
         dados: "Dados da Escola",
