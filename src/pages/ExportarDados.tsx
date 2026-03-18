@@ -293,6 +293,46 @@ export default function ExportarDados() {
       }
     }
 
+    // Generate user reference mapping file
+    if (userIdsFound.size > 0) {
+      setCurrentTable("Gerando mapeamento de usuários...");
+      try {
+        const userIds = Array.from(userIdsFound);
+        const userMap: Record<string, any>[] = [];
+        
+        // Fetch profiles for all collected user IDs
+        for (let i = 0; i < userIds.length; i += 50) {
+          const batch = userIds.slice(i, i + 50);
+          const { data } = await supabase
+            .from("profiles")
+            .select("id, nome, email")
+            .in("id", batch);
+          if (data) {
+            data.forEach((p: any) => {
+              userMap.push({
+                user_id: p.id,
+                nome: p.nome || "",
+                email: p.email || "",
+              });
+            });
+          }
+        }
+
+        // Add IDs not found in profiles
+        userIds.forEach((uid) => {
+          if (!userMap.find((u) => u.user_id === uid)) {
+            userMap.push({ user_id: uid, nome: "(não encontrado)", email: "" });
+          }
+        });
+
+        if (userMap.length > 0) {
+          zip.file("_usuarios_referencia.csv", arrayToCSV(userMap));
+        }
+      } catch (err) {
+        console.warn("Erro ao gerar mapeamento de usuários:", err);
+      }
+    }
+
     setProgress(100);
     setCurrentTable("Gerando arquivo ZIP...");
 
