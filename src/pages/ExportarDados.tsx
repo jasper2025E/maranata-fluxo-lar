@@ -271,7 +271,18 @@ export default function ExportarDados() {
         }
 
         if (allData.length > 0) {
-          const csv = arrayToCSV(allData);
+          // Remove columns that reference auth.users (FK won't exist in target DB)
+          const authUserColumns = ["created_by", "updated_by", "uploaded_by", "cancelada_por", "read_by"];
+          const cleanedData = allData.map((row) => {
+            const cleanRow = { ...row };
+            authUserColumns.forEach((col) => {
+              if (col in cleanRow) {
+                cleanRow[col] = null;
+              }
+            });
+            return cleanRow;
+          });
+          const csv = arrayToCSV(cleanedData);
           zip.file(`${tableName}.csv`, csv);
         }
 
