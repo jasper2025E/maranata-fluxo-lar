@@ -40,6 +40,7 @@ const PerfilAluno = lazy(() => import("./pages/PerfilAluno"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const Institucional = lazy(() => import("./pages/Institucional"));
 const TermosAceite = lazy(() => import("./pages/TermosAceite"));
+const ExportarDados = lazy(() => import("./pages/ExportarDados"));
 
 // Componente interno que usa hooks de proteção
 function AppContent() {
