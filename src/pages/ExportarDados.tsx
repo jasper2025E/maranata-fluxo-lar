@@ -235,6 +235,8 @@ export default function ExportarDados() {
     const zip = new JSZip();
     const tables = Array.from(selected);
     const exportResults: { table: string; rows: number }[] = [];
+    const userIdsFound = new Set<string>();
+    const authUserColumns = ["created_by", "updated_by", "uploaded_by", "cancelada_por", "read_by", "user_id"];
 
     for (let i = 0; i < tables.length; i++) {
       const tableName = tables[i];
@@ -271,18 +273,16 @@ export default function ExportarDados() {
         }
 
         if (allData.length > 0) {
-          // Remove columns that reference auth.users (FK won't exist in target DB)
-          const authUserColumns = ["created_by", "updated_by", "uploaded_by", "cancelada_por", "read_by"];
-          const cleanedData = allData.map((row) => {
-            const cleanRow = { ...row };
+          // Collect user IDs from auth-referencing columns for the mapping file
+          allData.forEach((row) => {
             authUserColumns.forEach((col) => {
-              if (col in cleanRow) {
-                cleanRow[col] = null;
+              if (row[col] && typeof row[col] === "string" && row[col].match(/^[0-9a-f-]{36}$/i)) {
+                userIdsFound.add(row[col]);
               }
             });
-            return cleanRow;
           });
-          const csv = arrayToCSV(cleanedData);
+
+          const csv = arrayToCSV(allData);
           zip.file(`${tableName}.csv`, csv);
         }
 
@@ -290,6 +290,46 @@ export default function ExportarDados() {
       } catch (err) {
         console.warn(`Falha ao exportar ${tableName}:`, err);
         exportResults.push({ table: label, rows: -1 });
+      }
+    }
+
+    // Generate user reference mapping file
+    if (userIdsFound.size > 0) {
+      setCurrentTable("Gerando mapeamento de usuários...");
+      try {
+        const userIds = Array.from(userIdsFound);
+        const userMap: Record<string, any>[] = [];
+        
+        // Fetch profiles for all collected user IDs
+        for (let i = 0; i < userIds.length; i += 50) {
+          const batch = userIds.slice(i, i + 50);
+          const { data } = await supabase
+            .from("profiles")
+            .select("id, nome, email")
+            .in("id", batch);
+          if (data) {
+            data.forEach((p: any) => {
+              userMap.push({
+                user_id: p.id,
+                nome: p.nome || "",
+                email: p.email || "",
+              });
+            });
+          }
+        }
+
+        // Add IDs not found in profiles
+        userIds.forEach((uid) => {
+          if (!userMap.find((u) => u.user_id === uid)) {
+            userMap.push({ user_id: uid, nome: "(não encontrado)", email: "" });
+          }
+        });
+
+        if (userMap.length > 0) {
+          zip.file("_usuarios_referencia.csv", arrayToCSV(userMap));
+        }
+      } catch (err) {
+        console.warn("Erro ao gerar mapeamento de usuários:", err);
       }
     }
 
