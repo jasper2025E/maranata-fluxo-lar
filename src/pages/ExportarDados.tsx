@@ -321,8 +321,10 @@ export default function ExportarDados() {
         }
 
         if (allData.length > 0) {
-          // Remap user UUIDs from source to destination
-          const remappedData = allData.map((row) => remapUserIds(row, tableName));
+          // Strip generated columns, then remap user UUIDs
+          const remappedData = allData
+            .map((row) => stripGeneratedColumns(row, tableName))
+            .map((row) => remapUserIds(row, tableName));
 
           const csv = arrayToCSV(remappedData);
           zip.file(`${tableName}.csv`, csv);
