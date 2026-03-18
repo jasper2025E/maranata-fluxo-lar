@@ -108,7 +108,7 @@ const configItems = [
 export function AppSidebar() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signOut, hasRole } = useAuth();
+  const { signOut, hasRole, loading, roleLoading } = useAuth();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   const { t } = useTranslation();
@@ -166,6 +166,9 @@ export function AppSidebar() {
   const logoUrl = escola?.logo_url;
   const escolaCnpj = escola?.cnpj;
   const escolaEndereco = escola?.endereco;
+
+  const canAccessAdminMenus = !loading && !roleLoading && hasRole("admin");
+  const visibleConfigItems = configItems.filter((item) => !item.adminOnly || canAccessAdminMenus);
 
   const handleLogout = async () => {
     try {
@@ -591,7 +594,7 @@ export function AppSidebar() {
               )}
 
               {/* Collapsible Configurações */}
-              {hasRole("admin") && (
+              {visibleConfigItems.length > 0 && (
                 <SidebarMenuItem>
                   <Collapsible open={isConfigOpen} onOpenChange={setIsConfigOpen}>
                     <CollapsibleTrigger asChild>
@@ -624,37 +627,33 @@ export function AppSidebar() {
                     <CollapsibleContent className="overflow-hidden data-[state=open]:animate-collapsible-down data-[state=closed]:animate-collapsible-up">
                       {!isCollapsed && (
                         <SidebarMenu className="mt-1 ml-6 space-y-0.5 border-l border-sidebar-border/30 pl-3">
-                          {configItems
-                            .filter(item => {
-                              if (item.adminOnly) return hasRole("admin");
-                              return true;
-                            })
-                            .map((item) => {
-                              const isConfigTabItem = item.url.startsWith("/configuracoes");
-                              const isDirectRouteActive = location.pathname === item.url;
-                              const isTabActive = isConfigTabItem
-                                ? (location.pathname === "/configuracoes" && configTab === item.tab)
-                                : isDirectRouteActive;
-                              return (
-                                <SidebarMenuItem key={item.titleKey}>
-                                  <SidebarMenuButton asChild>
-                                    <NavLink
-                                      to={item.url}
-                                      className={cn(
-                                        "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
-                                        "transition-all duration-150",
-                                        isTabActive 
-                                          ? "text-sidebar-primary font-medium bg-sidebar-primary/5" 
-                                          : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
-                                      )}
-                                      activeClassName=""
-                                    >
-                                      <span className="flex-1">{t(item.titleKey)}</span>
-                                    </NavLink>
-                                  </SidebarMenuButton>
-                                </SidebarMenuItem>
-                              );
-                            })}
+                          {visibleConfigItems.map((item) => {
+                            const isConfigTabItem = item.url.startsWith("/configuracoes");
+                            const isDirectRouteActive = location.pathname === item.url;
+                            const isTabActive = isConfigTabItem
+                              ? location.pathname === "/configuracoes" && configTab === item.tab
+                              : isDirectRouteActive;
+
+                            return (
+                              <SidebarMenuItem key={item.titleKey}>
+                                <SidebarMenuButton asChild>
+                                  <NavLink
+                                    to={item.url}
+                                    className={cn(
+                                      "flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm",
+                                      "transition-all duration-150",
+                                      isTabActive
+                                        ? "text-sidebar-primary font-medium bg-sidebar-primary/5"
+                                        : "text-sidebar-foreground/50 hover:text-sidebar-foreground hover:bg-sidebar-accent/50"
+                                    )}
+                                    activeClassName=""
+                                  >
+                                    <span className="flex-1">{t(item.titleKey)}</span>
+                                  </NavLink>
+                                </SidebarMenuButton>
+                              </SidebarMenuItem>
+                            );
+                          })}
                         </SidebarMenu>
                       )}
                     </CollapsibleContent>
