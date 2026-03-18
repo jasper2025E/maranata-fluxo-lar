@@ -5091,6 +5091,7 @@ export type Database = {
           total_valor_vencido: number
         }[]
       }
+      get_public_tables_ddl: { Args: never; Returns: string }
       get_public_website_by_slug: {
         Args: { p_slug: string }
         Returns: {
