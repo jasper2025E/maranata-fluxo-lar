@@ -80,14 +80,16 @@ export default function TermosAceite() {
         title: "Termos aceitos com sucesso",
         description: "Seus aceites foram registrados. Você já pode acessar o sistema.",
       });
-      navigate("/dashboard", { replace: true });
+      // Small delay to ensure query cache is updated before navigation
+      setTimeout(() => {
+        window.location.href = "/dashboard";
+      }, 500);
     } catch (err: any) {
       toast({
         title: "Erro ao registrar aceite",
         description: err.message || "Tente novamente.",
         variant: "destructive",
       });
-    } finally {
       setSubmitting(false);
     }
   }
